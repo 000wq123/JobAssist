@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alexandra Chen — Minimalist Grid</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } }
+  </script>
+  <style>
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white !important; padding: 0 !important; }
+      .resume { box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen py-10 font-sans">
+
+<div class="resume max-w-[840px] mx-auto shadow-2xl rounded-xl overflow-hidden bg-white" style="min-height:1100px">
+
+  <!-- ═══════════════════════════════════════════════ TYPOGRAPHIC HEADER -->
+  <header class="px-14 pt-12 pb-8 bg-white border-b border-gray-200">
+    <div class="flex justify-between items-end">
+      <div>
+        <p class="text-[10px] font-semibold tracking-[0.25em] uppercase text-emerald-600 mb-2">Senior Project Manager · PMP® Certified</p>
+        <h1 class="text-5xl font-light text-gray-900 tracking-tight leading-none">Alexandra <span class="font-bold">Chen</span></h1>
+      </div>
+      <div class="text-right text-xs text-gray-500 space-y-1 pb-1">
+        <p>a.chen@email.com</p>
+        <p>+1 (415) 555-0192</p>
+        <p>San Francisco, CA</p>
+        <p>linkedin.com/in/alexchen</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════ BODY -->
+  <div class="px-14 py-8 space-y-0">
+
+    <!-- Summary — white zone -->
+    <section class="py-7 border-b border-gray-100">
+      <div class="flex gap-10">
+        <div class="w-32 flex-shrink-0">
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-gray-400">Summary</h2>
+        </div>
+        <div class="flex-1">
+          <p class="text-gray-700 text-[13.5px] leading-relaxed font-light">
+            Results-driven Senior Project Manager with <span class="font-semibold text-gray-900">12+ years</span> of experience leading cross-functional teams and delivering complex technology initiatives on time and within budget. Proven track record managing <span class="font-semibold text-gray-900">$50M+ programs</span> across FinTech and Enterprise SaaS sectors. Recognized for transforming ambiguous requirements into measurable delivery outcomes.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills — soft gray zone -->
+    <section class="py-7 -mx-14 px-14 border-b border-gray-100 bg-gray-50">
+      <div class="flex gap-10">
+        <div class="w-32 flex-shrink-0 pt-0.5">
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-gray-400">Skills</h2>
+        </div>
+        <div class="flex-1">
+          <div class="grid grid-cols-3 gap-x-8 gap-y-1">
+            <div>
+              <p class="text-[9px] font-bold tracking-widest uppercase text-emerald-600 mb-2">Leadership</p>
+              <div class="space-y-1">
+                <p class="text-xs text-gray-700">Agile &amp; Scrum Methodology</p>
+                <p class="text-xs text-gray-700">Program Governance</p>
+                <p class="text-xs text-gray-700">Stakeholder Management</p>
+                <p class="text-xs text-gray-700">Change Management</p>
+                <p class="text-xs text-gray-700">Risk Mitigation</p>
+              </div>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold tracking-widest uppercase text-emerald-600 mb-2">Management</p>
+              <div class="space-y-1">
+                <p class="text-xs text-gray-700">Budget Control</p>
+                <p class="text-xs text-gray-700">Strategic Planning</p>
+                <p class="text-xs text-gray-700">Cross-functional Teams</p>
+                <p class="text-xs text-gray-700">Executive Reporting</p>
+                <p class="text-xs text-gray-700">OKR / KPI Frameworks</p>
+              </div>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold tracking-widest uppercase text-emerald-600 mb-2">Tools</p>
+              <div class="space-y-1">
+                <p class="text-xs text-gray-700">Jira &amp; Confluence</p>
+                <p class="text-xs text-gray-700">MS Project / Power BI</p>
+                <p class="text-xs text-gray-700">Salesforce</p>
+                <p class="text-xs text-gray-700">SQL / Data Analysis</p>
+                <p class="text-xs text-gray-700">Smartsheet</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Experience — white zone -->
+    <section class="py-7 border-b border-gray-100">
+      <div class="flex gap-10">
+        <div class="w-32 flex-shrink-0 pt-0.5">
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-gray-400">Experience</h2>
+        </div>
+        <div class="flex-1 space-y-6">
+
+          <!-- Role 1 -->
+          <div>
+            <div class="flex items-baseline justify-between mb-1">
+              <h3 class="text-[13.5px] font-semibold text-gray-900">Director of Product Operations</h3>
+              <span class="text-xs text-gray-400 font-medium">Jan 2020 – Present</span>
+            </div>
+            <p class="text-xs font-semibold text-emerald-700 mb-2.5 tracking-wide">Acme Technologies</p>
+            <div class="space-y-1.5 pl-0">
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>Orchestrated delivery of 4 concurrent Agile programs across 3 international time zones</p>
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>Reduced deployment cycle time by <strong class="text-gray-800 font-semibold">40%</strong> by implementing CI/CD pipeline governance</p>
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>Managed $18M annual operating budget with <strong class="text-gray-800 font-semibold">97% forecast accuracy</strong></p>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100"></div>
+
+          <!-- Role 2 -->
+          <div>
+            <div class="flex items-baseline justify-between mb-1">
+              <h3 class="text-[13.5px] font-semibold text-gray-900">Senior Project Manager</h3>
+              <span class="text-xs text-gray-400 font-medium">Mar 2016 – Dec 2019</span>
+            </div>
+            <p class="text-xs font-semibold text-emerald-700 mb-2.5 tracking-wide">Beta Financial Group</p>
+            <div class="space-y-1.5">
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>Led <strong class="text-gray-800 font-semibold">$12M enterprise ERP migration</strong> affecting 1,200+ employees across 6 departments</p>
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>Achieved 100% on-time milestone delivery across a 3-year program lifecycle</p>
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>Designed and facilitated 200+ stakeholder workshops and executive briefings</p>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100"></div>
+
+          <!-- Role 3 -->
+          <div>
+            <div class="flex items-baseline justify-between mb-1">
+              <h3 class="text-[13.5px] font-semibold text-gray-900">Project Manager</h3>
+              <span class="text-xs text-gray-400 font-medium">Jun 2013 – Feb 2016</span>
+            </div>
+            <p class="text-xs font-semibold text-emerald-700 mb-2.5 tracking-wide">Gamma Solutions</p>
+            <div class="space-y-1.5">
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-300 mt-1.5 flex-shrink-0"></span>Delivered 8 concurrent client engagements totaling <strong class="text-gray-800 font-semibold">$8M in contract value</strong></p>
+              <p class="text-xs text-gray-600 leading-relaxed flex items-start gap-2.5"><span class="w-1 h-1 rounded-full bg-emerald-300 mt-1.5 flex-shrink-0"></span>Mentored 6 junior PMs, improving team velocity by 30%</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Education + Certifications — soft gray zone -->
+    <section class="py-7 -mx-14 px-14 bg-gray-50">
+      <div class="flex gap-10">
+        <div class="w-32 flex-shrink-0 pt-0.5">
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-gray-400">Education &amp;<br/>Certs</h2>
+        </div>
+        <div class="flex-1 grid grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-[13px] font-semibold text-gray-900">MBA, Strategy &amp; Operations</h3>
+              <p class="text-xs text-emerald-700 font-semibold mt-0.5">Wharton School, U Penn</p>
+              <p class="text-xs text-gray-400 mt-0.5">2014</p>
+            </div>
+            <div>
+              <h3 class="text-[13px] font-semibold text-gray-900">B.Sc., Computer Science</h3>
+              <p class="text-xs text-emerald-700 font-semibold mt-0.5">University of California, Berkeley</p>
+              <p class="text-xs text-gray-400 mt-0.5">2010</p>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-[10px] flex-shrink-0">PMP</div>
+              <div>
+                <p class="text-xs font-semibold text-gray-900">Project Mgmt. Professional</p>
+                <p class="text-[11px] text-gray-400">PMI · 2018</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-[9px] flex-shrink-0">CSM</div>
+              <div>
+                <p class="text-xs font-semibold text-gray-900">Certified Scrum Master</p>
+                <p class="text-[11px] text-gray-400">Scrum Alliance · 2019</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

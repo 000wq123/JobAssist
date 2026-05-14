@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alexandra Chen — Accent Column</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } }
+  </script>
+  <style>
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white !important; padding: 0 !important; }
+      .resume { box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-rose-50 min-h-screen py-10 font-sans">
+
+<div class="resume max-w-[860px] mx-auto flex shadow-2xl rounded-xl overflow-hidden bg-white" style="min-height:1100px">
+
+  <!-- ═══════════════════════════════════════════════ LEFT ACCENT BAR -->
+  <div class="w-2 flex-shrink-0" style="background: linear-gradient(180deg, #e11d48 0%, #be185d 50%, #9d174d 100%)"></div>
+
+  <!-- ═══════════════════════════════════════════════ CONTENT AREA -->
+  <div class="flex-1 flex flex-col">
+
+    <!-- HEADER -->
+    <header class="px-10 pt-10 pb-7 border-b border-gray-100">
+      <div class="flex justify-between items-start">
+        <div>
+          <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-none">Alexandra Chen</h1>
+          <p class="text-rose-600 text-xs font-bold tracking-[0.2em] uppercase mt-2">Senior Project Manager &nbsp;·&nbsp; PMP® Certified</p>
+        </div>
+        <div class="text-right">
+          <!-- Contact with SVG icons -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-end gap-2 text-gray-500 text-xs">
+              <span>a.chen@email.com</span>
+              <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+            <div class="flex items-center justify-end gap-2 text-gray-500 text-xs">
+              <span>+1 (415) 555-0192</span>
+              <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            </div>
+            <div class="flex items-center justify-end gap-2 text-gray-500 text-xs">
+              <span>San Francisco, CA</span>
+              <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div class="flex items-center justify-end gap-2 text-gray-500 text-xs">
+              <span>linkedin.com/in/alexchen</span>
+              <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- TWO-COLUMN BODY -->
+    <div class="flex flex-1">
+
+      <!-- LEFT CONTENT: Summary + Experience -->
+      <main class="flex-1 px-10 py-7 space-y-7">
+
+        <!-- Summary -->
+        <section>
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-rose-600 mb-3 flex items-center gap-3">
+            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            <span>Professional Summary</span>
+            <span class="flex-1 h-px bg-rose-100"></span>
+          </h2>
+          <p class="text-gray-600 text-[12.5px] leading-relaxed">
+            Results-driven Senior Project Manager with <strong class="text-gray-900">12+ years</strong> of experience leading cross-functional teams and delivering complex technology initiatives on time and within budget. Proven track record managing <strong class="text-gray-900">$50M+ programs</strong> across FinTech and Enterprise SaaS. Recognized for transforming ambiguous requirements into structured delivery roadmaps and measurable outcomes.
+          </p>
+        </section>
+
+        <!-- Experience -->
+        <section>
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-rose-600 mb-4 flex items-center gap-3">
+            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"/><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z"/></svg>
+            <span>Work Experience</span>
+            <span class="flex-1 h-px bg-rose-100"></span>
+          </h2>
+          <div class="space-y-5">
+
+            <div>
+              <div class="flex justify-between items-start">
+                <h3 class="text-[13px] font-bold text-gray-900">Director of Product Operations</h3>
+                <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap">Jan 2020 – Present</span>
+              </div>
+              <p class="text-rose-600 text-[11.5px] font-semibold mt-0.5 mb-2">Acme Technologies</p>
+              <div class="space-y-1.5">
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-400 font-bold flex-shrink-0 mt-0">◆</span>Orchestrated delivery of 4 concurrent Agile programs across 3 international time zones</p>
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-400 font-bold flex-shrink-0">◆</span>Reduced deployment cycle time by <strong class="text-gray-800">40%</strong> through CI/CD pipeline governance</p>
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-400 font-bold flex-shrink-0">◆</span>Managed $18M annual operating budget with <strong class="text-gray-800">97% forecast accuracy</strong></p>
+              </div>
+            </div>
+
+            <div class="h-px bg-gradient-to-r from-rose-100 to-transparent"></div>
+
+            <div>
+              <div class="flex justify-between items-start">
+                <h3 class="text-[13px] font-bold text-gray-900">Senior Project Manager</h3>
+                <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap">Mar 2016 – Dec 2019</span>
+              </div>
+              <p class="text-rose-600 text-[11.5px] font-semibold mt-0.5 mb-2">Beta Financial Group</p>
+              <div class="space-y-1.5">
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-400 font-bold flex-shrink-0">◆</span>Led <strong class="text-gray-800">$12M enterprise ERP migration</strong> affecting 1,200+ employees across 6 departments</p>
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-400 font-bold flex-shrink-0">◆</span>Achieved 100% on-time milestone delivery across a 3-year program lifecycle</p>
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-400 font-bold flex-shrink-0">◆</span>Designed and facilitated 200+ stakeholder workshops and executive briefings</p>
+              </div>
+            </div>
+
+            <div class="h-px bg-gradient-to-r from-rose-100 to-transparent"></div>
+
+            <div>
+              <div class="flex justify-between items-start">
+                <h3 class="text-[13px] font-bold text-gray-900">Project Manager</h3>
+                <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap">Jun 2013 – Feb 2016</span>
+              </div>
+              <p class="text-rose-600 text-[11.5px] font-semibold mt-0.5 mb-2">Gamma Solutions</p>
+              <div class="space-y-1.5">
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-300 font-bold flex-shrink-0">◆</span>Delivered 8 concurrent client engagements totaling <strong class="text-gray-800">$8M in contract value</strong></p>
+                <p class="text-xs text-gray-600 leading-relaxed flex gap-2"><span class="text-rose-300 font-bold flex-shrink-0">◆</span>Mentored 6 junior PMs, improving team velocity by 30%</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+
+      <!-- RIGHT SIDEBAR: Skills + Education + Certs -->
+      <aside class="w-52 flex-shrink-0 border-l border-gray-100 px-6 py-7 space-y-6 bg-rose-50/30">
+
+        <!-- Skills -->
+        <div>
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-rose-600 mb-3 flex items-center gap-2">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            Skills
+          </h2>
+          <div class="space-y-1.5">
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1 mt-2">Leadership</p>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Agile / Scrum</p>
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Program Governance</p>
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Risk Mitigation</p>
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Change Management</p>
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Budget Control</p>
+            </div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1 mt-3">Tools</p>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-300 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Jira / Confluence</p>
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-300 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>MS Project / Power BI</p>
+              <p class="text-xs text-gray-700 flex items-center gap-1.5"><svg class="w-3 h-3 text-rose-300 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Salesforce / SQL</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-rose-100"></div>
+
+        <!-- Education -->
+        <div>
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-rose-600 mb-3 flex items-center gap-2">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>
+            Education
+          </h2>
+          <div class="space-y-3">
+            <div>
+              <p class="text-xs font-bold text-gray-900 leading-tight">MBA, Strategy &amp; Ops</p>
+              <p class="text-[11px] text-rose-600 font-medium">Wharton · 2014</p>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-gray-900 leading-tight">B.Sc. Computer Science</p>
+              <p class="text-[11px] text-rose-600 font-medium">UC Berkeley · 2010</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-rose-100"></div>
+
+        <!-- Certifications -->
+        <div>
+          <h2 class="text-[9px] font-bold tracking-[0.25em] uppercase text-rose-600 mb-3 flex items-center gap-2">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+            Certifications
+          </h2>
+          <div class="space-y-2.5">
+            <div class="bg-white rounded-lg p-2.5 border border-rose-100">
+              <p class="text-xs font-bold text-gray-900">PMP®</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">PMI · 2018</p>
+            </div>
+            <div class="bg-white rounded-lg p-2.5 border border-rose-100">
+              <p class="text-xs font-bold text-gray-900">Certified Scrum Master</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Scrum Alliance · 2019</p>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alexandra Chen — Executive Header</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } }
+  </script>
+  <style>
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white !important; padding: 0 !important; }
+      .resume { box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-indigo-50 min-h-screen py-10 font-sans">
+
+<div class="resume max-w-[860px] mx-auto shadow-2xl rounded-xl overflow-hidden bg-white" style="min-height:1100px">
+
+  <!-- ═══════════════════════════════════════════════ BANNER HEADER -->
+  <header style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #3730a3 100%)" class="px-10 py-8 relative overflow-hidden">
+    <!-- Decorative circles -->
+    <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style="background:radial-gradient(circle, #a5b4fc, transparent); transform:translate(30%,-30%)"></div>
+    <div class="absolute bottom-0 left-1/2 w-40 h-40 rounded-full opacity-5" style="background:radial-gradient(circle, #c7d2fe, transparent); transform:translate(-50%,50%)"></div>
+
+    <div class="flex items-center gap-8 relative z-10">
+      <!-- Profile Circle -->
+      <div class="flex-shrink-0">
+        <div class="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-indigo-900 ring-4 ring-indigo-300 ring-offset-2 ring-offset-transparent"
+             style="background: linear-gradient(135deg, #c7d2fe, #a5b4fc)">
+          AC
+        </div>
+      </div>
+
+      <!-- Name + Title -->
+      <div class="flex-1">
+        <h1 class="text-4xl font-extrabold text-white tracking-tight leading-none">Alexandra Chen</h1>
+        <p class="text-indigo-300 text-sm font-semibold tracking-[0.15em] uppercase mt-2">Senior Project Manager &nbsp;·&nbsp; PMP® Certified</p>
+        <!-- Inline quick stats -->
+        <div class="flex gap-6 mt-4">
+          <div class="text-center">
+            <p class="text-2xl font-bold text-white leading-none">12+</p>
+            <p class="text-indigo-300 text-[9px] uppercase tracking-widest mt-0.5">Years Exp.</p>
+          </div>
+          <div class="w-px bg-indigo-600"></div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-white leading-none">$50M+</p>
+            <p class="text-indigo-300 text-[9px] uppercase tracking-widest mt-0.5">Programs Led</p>
+          </div>
+          <div class="w-px bg-indigo-600"></div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-white leading-none">40%</p>
+            <p class="text-indigo-300 text-[9px] uppercase tracking-widest mt-0.5">Cycle Reduction</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════ BELOW HEADER: TWO COLUMNS -->
+  <div class="flex">
+
+    <!-- LEFT COLUMN: Contact + Skills + Certs -->
+    <div class="w-60 flex-shrink-0 bg-slate-50 border-r border-slate-100 p-7">
+
+      <!-- Contact -->
+      <div class="mb-6">
+        <h2 class="text-[9px] font-bold tracking-[0.22em] uppercase text-indigo-600 mb-3 pb-1.5 border-b border-indigo-100">Contact</h2>
+        <div class="space-y-2">
+          <div class="flex items-start gap-2 text-slate-600 text-xs">
+            <span class="text-indigo-400 mt-0.5 text-sm leading-none">✉</span>
+            <span class="leading-tight">a.chen@email.com</span>
+          </div>
+          <div class="flex items-start gap-2 text-slate-600 text-xs">
+            <span class="text-indigo-400 mt-0.5 text-sm leading-none">✆</span>
+            <span>+1 (415) 555-0192</span>
+          </div>
+          <div class="flex items-start gap-2 text-slate-600 text-xs">
+            <span class="text-indigo-400 mt-0.5 text-sm leading-none">⌖</span>
+            <span>San Francisco, CA</span>
+          </div>
+          <div class="flex items-start gap-2 text-slate-600 text-xs">
+            <span class="text-indigo-500 font-bold mt-0.5 text-[10px] leading-none">in</span>
+            <span class="leading-tight">linkedin.com/in/alexchen</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Core Skills -->
+      <div class="mb-6">
+        <h2 class="text-[9px] font-bold tracking-[0.22em] uppercase text-indigo-600 mb-3 pb-1.5 border-b border-indigo-100">Core Skills</h2>
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>Agile / Scrum</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>Program Governance</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>Stakeholder Mgmt.</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>Risk Mitigation</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>Budget Control</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>Change Management</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>Jira &amp; Confluence</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>MS Project / Power BI</p>
+          <p class="text-xs text-slate-700 leading-snug flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>Salesforce / SQL</p>
+        </div>
+      </div>
+
+      <!-- Certifications -->
+      <div>
+        <h2 class="text-[9px] font-bold tracking-[0.22em] uppercase text-indigo-600 mb-3 pb-1.5 border-b border-indigo-100">Certifications</h2>
+        <div class="space-y-3">
+          <div class="bg-indigo-50 rounded-lg p-2.5">
+            <p class="text-xs font-semibold text-indigo-900 leading-tight">PMP®</p>
+            <p class="text-[10px] text-indigo-500 mt-0.5">PMI · 2018</p>
+          </div>
+          <div class="bg-indigo-50 rounded-lg p-2.5">
+            <p class="text-xs font-semibold text-indigo-900 leading-tight">Certified Scrum Master</p>
+            <p class="text-[10px] text-indigo-500 mt-0.5">Scrum Alliance · 2019</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Summary + Experience + Education -->
+    <main class="flex-1 p-8 bg-white">
+
+      <!-- Summary -->
+      <section class="mb-7">
+        <h2 class="text-[10px] font-bold tracking-[0.2em] uppercase text-indigo-600 mb-3 flex items-center gap-3">
+          <span>Professional Summary</span>
+          <span class="flex-1 h-px bg-indigo-100"></span>
+        </h2>
+        <p class="text-slate-600 text-[13px] leading-relaxed">
+          Results-driven Senior Project Manager with <strong class="text-slate-800">12+ years</strong> of experience leading cross-functional teams delivering complex technology initiatives on time and within budget. Proven track record managing <strong class="text-slate-800">$50M+ programs</strong> across FinTech and Enterprise SaaS. Recognized for transforming ambiguous requirements into structured delivery roadmaps.
+        </p>
+      </section>
+
+      <!-- Experience -->
+      <section class="mb-7">
+        <h2 class="text-[10px] font-bold tracking-[0.2em] uppercase text-indigo-600 mb-4 flex items-center gap-3">
+          <span>Work Experience</span>
+          <span class="flex-1 h-px bg-indigo-100"></span>
+        </h2>
+        <div class="space-y-5">
+
+          <div class="pl-3 border-l-2 border-indigo-300">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-[13px] font-bold text-slate-900">Director of Product Operations</h3>
+                <p class="text-indigo-600 text-xs font-semibold mt-0.5">Acme Technologies</p>
+              </div>
+              <span class="text-[11px] text-slate-500 italic whitespace-nowrap">Jan 2020 – Present</span>
+            </div>
+            <ul class="mt-2 space-y-1.5">
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Orchestrated 4 concurrent Agile programs across 3 international time zones</li>
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Reduced deployment cycle time by <strong class="text-slate-700">40%</strong> through CI/CD pipeline governance</li>
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Managed $18M annual operating budget with <strong class="text-slate-700">97% forecast accuracy</strong></li>
+            </ul>
+          </div>
+
+          <div class="pl-3 border-l-2 border-indigo-200">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-[13px] font-bold text-slate-900">Senior Project Manager</h3>
+                <p class="text-indigo-600 text-xs font-semibold mt-0.5">Beta Financial Group</p>
+              </div>
+              <span class="text-[11px] text-slate-500 italic whitespace-nowrap">Mar 2016 – Dec 2019</span>
+            </div>
+            <ul class="mt-2 space-y-1.5">
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Led <strong class="text-slate-700">$12M ERP migration</strong> affecting 1,200+ employees across 6 departments</li>
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Achieved 100% on-time milestone delivery across 3-year program lifecycle</li>
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Designed and facilitated 200+ stakeholder workshops and executive briefings</li>
+            </ul>
+          </div>
+
+          <div class="pl-3 border-l-2 border-indigo-100">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-[13px] font-bold text-slate-900">Project Manager</h3>
+                <p class="text-indigo-600 text-xs font-semibold mt-0.5">Gamma Solutions</p>
+              </div>
+              <span class="text-[11px] text-slate-500 italic whitespace-nowrap">Jun 2013 – Feb 2016</span>
+            </div>
+            <ul class="mt-2 space-y-1.5">
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Delivered 8 concurrent client engagements totaling <strong class="text-slate-700">$8M in contract value</strong></li>
+              <li class="text-slate-600 text-xs leading-relaxed flex items-start gap-2"><span class="text-indigo-400 font-bold mt-0.5">▸</span>Mentored 6 junior PMs, improving team velocity by 30%</li>
+            </ul>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Education -->
+      <section>
+        <h2 class="text-[10px] font-bold tracking-[0.2em] uppercase text-indigo-600 mb-4 flex items-center gap-3">
+          <span>Education</span>
+          <span class="flex-1 h-px bg-indigo-100"></span>
+        </h2>
+        <div class="space-y-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="text-[13px] font-bold text-slate-900">MBA, Strategy &amp; Operations</h3>
+              <p class="text-indigo-600 text-xs font-semibold mt-0.5">Wharton School, University of Pennsylvania</p>
+            </div>
+            <span class="text-[11px] text-slate-500 italic">2014</span>
+          </div>
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="text-[13px] font-bold text-slate-900">B.Sc., Computer Science</h3>
+              <p class="text-indigo-600 text-xs font-semibold mt-0.5">University of California, Berkeley</p>
+            </div>
+            <span class="text-[11px] text-slate-500 italic">2010</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

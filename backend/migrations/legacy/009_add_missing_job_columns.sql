@@ -1,0 +1,6 @@
+-- Migration 009: Add missing columns to jobs table
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS url TEXT;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS category VARCHAR DEFAULT 'other';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS research_data TEXT;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS cover_letter TEXT;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS interview_qa TEXT;

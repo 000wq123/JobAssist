@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Env files (NEVER commit these)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Node
+node_modules/
+.next/
+dist/
+
+# Vite / Vitest
+.vite/
+coverage/
+
+# Playwright
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / lint output
+*.log
+**/lint_out.txt
+**/lint_result.txt
+
+# Misc cruft that shouldn't be checked in
+get.pip.py
+sse3_temp.txt
