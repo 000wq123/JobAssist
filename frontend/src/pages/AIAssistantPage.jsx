@@ -324,8 +324,22 @@ export default function AIAssistantPage() {
   const { guardedRun, atLimit: chatAtLimit } = useUsageGuard("ai_chat");
   const [streamingMsg, setStreamingMsg] = useState(null);
   const [assessmentDisclaimerOpen, setAssessmentDisclaimerOpen] = useState(false);
-  const streamingTextRef = useRef("");
   const { send: streamChat, isStreaming } = useStreamingChat();
+
+  // ── Streaming reveal state — typewriter-style drip + smart auto-scroll ──
+  // `streamingTextRef` holds the full text accumulated from SSE so far.
+  // `revealedLengthRef` tracks how many of those characters are currently
+  // shown in the bubble. A requestAnimationFrame loop closes the gap between
+  // the two at an adaptive speed so the user sees text appear progressively
+  // (like ChatGPT) instead of in big bursts.
+  const streamingTextRef     = useRef("");
+  const revealedLengthRef    = useRef(0);
+  const revealRafRef         = useRef(null);
+  const streamDoneRef        = useRef(false);
+  // True when the user is parked at (or very near) the bottom of the chat
+  // log; we only auto-scroll while pinned, so reading older content is not
+  // interrupted by new tokens.
+  const userPinnedToBottomRef = useRef(true);
 
   const { data: uploadedResumes = [] } = useQuery({
     queryKey: ["resumes"],
@@ -338,15 +352,86 @@ export default function AIAssistantPage() {
   });
 
 
+  // Track whether the user is parked near the bottom. We treat "within 96px
+  // of the end" as pinned; any further up means the user is reading and we
+  // must not yank them down when new chunks arrive.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const el = chatContainerRef.current;
+    if (!el) return undefined;
+    const onScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      userPinnedToBottomRef.current = distanceFromBottom < 96;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
-  useEffect(() => {
-    if (streamingMsg && chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+  /**
+   * Scrolls the chat container to its bottom, but only if the user is still
+   * pinned there. `smooth=false` is used during the reveal animation so each
+   * frame's scroll matches the per-frame text growth (smooth scroll fights
+   * with rapid scrollHeight changes and produces visible jitter).
+   */
+  const scrollToBottomIfPinned = useCallback((smooth = true) => {
+    if (!userPinnedToBottomRef.current) return;
+    const el = chatContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
+  /**
+   * Animation tick: reveal a small slice of the buffered text into the
+   * visible bubble each frame. Reveal speed adapts to backlog so a long
+   * response does not lag indefinitely behind the SSE stream while still
+   * feeling progressive on short answers (~ChatGPT cadence).
+   * When all text is shown AND the SSE stream signalled `[DONE]`, we commit
+   * the assistant message into history and clear the streaming state.
+   */
+  const tickReveal = useCallback(() => {
+    const full = streamingTextRef.current;
+    const remaining = full.length - revealedLengthRef.current;
+    if (remaining > 0) {
+      // Adaptive cadence: 2 chars/frame baseline, more when backlog grows.
+      // At 60 fps this is ~120 chars/s minimum, scaling up automatically.
+      const step = Math.max(2, Math.min(remaining, Math.ceil(remaining / 18)));
+      revealedLengthRef.current = Math.min(full.length, revealedLengthRef.current + step);
+      setStreamingMsg({ shown: full.slice(0, revealedLengthRef.current) });
+      scrollToBottomIfPinned(false);
+      revealRafRef.current = requestAnimationFrame(tickReveal);
+      return;
     }
-  }, [streamingMsg]);
+    // Caught up to the buffer.
+    if (streamDoneRef.current) {
+      // Stream finished — commit the assistant message and clear state.
+      const finalText = full;
+      revealRafRef.current = null;
+      streamingTextRef.current = "";
+      revealedLengthRef.current = 0;
+      streamDoneRef.current = false;
+      setStreamingMsg(null);
+      setMessages((prev) => [...prev, { role: "assistant", content: finalText }]);
+      return;
+    }
+    // Stream still running but no new chunks yet — pause until next chunk
+    // arrives (onChunk will restart the loop).
+    revealRafRef.current = null;
+  }, [scrollToBottomIfPinned]);
+
+  // Cancel any in-flight reveal frame on unmount to avoid setState-after-unmount.
+  useEffect(() => () => {
+    if (revealRafRef.current) {
+      cancelAnimationFrame(revealRafRef.current);
+      revealRafRef.current = null;
+    }
+  }, []);
+
+  // When committed messages change (user sent / assistant final), pin to
+  // bottom and smooth-scroll the new bubble into view.
+  useEffect(() => {
+    if (messages.length === 0) return;
+    userPinnedToBottomRef.current = true;
+    requestAnimationFrame(() => scrollToBottomIfPinned(true));
+  }, [messages, scrollToBottomIfPinned]);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -383,9 +468,20 @@ export default function AIAssistantPage() {
     const message = (text ?? input).trim();
     if (!message) return;
     guardedRun(() => {
+      // Reset all streaming buffers — a new send overrides any in-flight one.
+      if (revealRafRef.current) {
+        cancelAnimationFrame(revealRafRef.current);
+        revealRafRef.current = null;
+      }
+      streamingTextRef.current  = "";
+      revealedLengthRef.current = 0;
+      streamDoneRef.current     = false;
+      // User just sent: they want to see the reply, so pin to bottom.
+      userPinnedToBottomRef.current = true;
+
       setMessages((prev) => [...prev, { role: "user", content: message }]);
       setInput("");
-      streamingTextRef.current = "";
+
       streamChat(
         {
           message,
@@ -394,17 +490,39 @@ export default function AIAssistantPage() {
         },
         {
           onChunk: (chunk) => {
+            // Append raw text to the buffer; the RAF loop drips it into the UI.
             streamingTextRef.current += chunk;
-            setStreamingMsg({ shown: streamingTextRef.current });
+            if (revealRafRef.current == null) {
+              // Show the bubble immediately so the typing-dots indicator
+              // hands off cleanly to the streaming bubble.
+              setStreamingMsg({ shown: streamingTextRef.current.slice(0, revealedLengthRef.current) });
+              revealRafRef.current = requestAnimationFrame(tickReveal);
+            }
           },
           onDone: () => {
-            const finalText = streamingTextRef.current;
-            streamingTextRef.current = "";
-            setMessages((prev) => [...prev, { role: "assistant", content: finalText }]);
-            setStreamingMsg(null);
+            streamDoneRef.current = true;
+            // If the reveal loop has already drained the buffer (e.g. very
+            // short answer that finished before the next frame), commit now.
+            if (revealRafRef.current == null) {
+              const finalText = streamingTextRef.current;
+              streamingTextRef.current  = "";
+              revealedLengthRef.current = 0;
+              streamDoneRef.current     = false;
+              setStreamingMsg(null);
+              if (finalText) {
+                setMessages((prev) => [...prev, { role: "assistant", content: finalText }]);
+              }
+            }
+            // Otherwise tickReveal will commit when it catches up.
           },
           onError: () => {
-            streamingTextRef.current = "";
+            if (revealRafRef.current) {
+              cancelAnimationFrame(revealRafRef.current);
+              revealRafRef.current = null;
+            }
+            streamingTextRef.current  = "";
+            revealedLengthRef.current = 0;
+            streamDoneRef.current     = false;
             setStreamingMsg(null);
             toast.error("Fehler bei der KI-Antwort");
             setMessages((prev) => [
@@ -415,7 +533,7 @@ export default function AIAssistantPage() {
         }
       );
     });
-  }, [input, messages, selectedResumeId, guardedRun, streamChat]);
+  }, [input, messages, selectedResumeId, guardedRun, streamChat, tickReveal]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }

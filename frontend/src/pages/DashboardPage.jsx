@@ -7,8 +7,6 @@ import {
   Sparkles,
   Mic,
   FileText,
-  Star,
-  Zap,
   CheckCircle2,
   TrendingUp,
   Plus,
