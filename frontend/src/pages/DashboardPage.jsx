@@ -69,9 +69,18 @@ function Widget({ children, className = '', style = {} }) {
 }
 
 // ─── Label ─────────────────────────────────────────────────────────────────────
-function Label({ children, className = '' }) {
+/**
+ * Section label rendered in the dashboard. Supports an optional `tooltip` that
+ * is attached as a native `title` attribute (and as `aria-label` for SR users).
+ * @param {{children: React.ReactNode, className?: string, tooltip?: string}} props
+ */
+function Label({ children, className = '', tooltip }) {
   return (
-    <span className={`block text-[11px] font-semibold tracking-[0.18em] uppercase text-[#8888A0] ${className}`}>
+    <span
+      className={`block text-[11px] font-semibold tracking-[0.18em] uppercase text-[#8888A0] ${className}`}
+      title={tooltip || undefined}
+      aria-label={tooltip || undefined}
+    >
       {children}
     </span>
   );
@@ -354,60 +363,41 @@ export default function DashboardPage() {
   const todayCount     = dailyActivity[todayIdx]?.val ?? 0;
   const dailyGoalFilled = Math.min(todayCount, 3);
 
-  // Funnel
-  const analyzedBase = analyzed || total;
-  const applyRate    = analyzedBase > 0 ? Math.round((appliedCount / analyzedBase) * 100) : 0;
-  const returnRate   = appliedCount > 0 ? Math.round((interviewingCount / appliedCount) * 100) : 0;
-  const interviewPct = appliedCount > 0 ? Math.round((interviewingCount / appliedCount) * 100) : 0;
-  const funnelStages = [
-    { label: 'Analysiert', value: String(analyzedBase),                        barWidth: 100,         color: C.textDim,  glow: 'rgba(136,136,160,0.5)' },
-    { label: 'Beworben',   value: `${appliedCount}/${analyzedBase}`,            barWidth: applyRate,   color: C.indigo,   glow: C.indigoGlow },
-    { label: 'Rücklauf',   value: appliedCount > 0 ? `${returnRate}%` : '—',   barWidth: returnRate,  color: C.violet,   glow: C.violetGlow },
-    { label: 'Interview',  value: String(interviewingCount),                    barWidth: interviewPct, color: C.amber,   glow: 'rgba(245,158,11,0.35)', note: interviewingCount > 0 ? 'Aktiv' : undefined },
-  ];
-
-  // Profile strength
-  const hasJobAlert      = jobAlerts.length > 0;
-  const hasSkillsAnalysis = resumes.some(r => {
-    if (r.has_skill_analysis) return true;
-    try { return !!localStorage.getItem(`resume_analysis_${r.id}`); } catch { return false; }
-  });
-  const profileItems = [
-    { label: 'Lebenslauf',  complete: hasResume,          icon: FileText },
-    { label: 'Fähigkeiten', complete: hasSkillsAnalysis,  icon: Star     },
-    { label: 'Job-Alert',   complete: hasJobAlert,        icon: Zap      },
-  ];
-  const profileStrength = Math.round((profileItems.filter(x => x.complete).length / profileItems.length) * 100);
-
-  // Scores
+  // ─── Real, defensible KPIs (no vanity scores) ──────────────────────────────
+  // 1) Average match score across analyzed jobs — actionable, derived from real LLM output.
   const avgMatchScore = analyzed > 0
     ? Math.round(jobs.filter(j => j.match_score != null).reduce((s, j) => s + j.match_score, 0) / analyzed)
     : 0;
-  const marketScore     = analyzed === 0 ? 0 : avgMatchScore;
-  const prevMarketScore = analyzed > 1
+  const prevAvgMatchScore = analyzed > 1
     ? Math.round(jobs.filter(j => j.match_score != null).slice(0, -1).reduce((s, j) => s + j.match_score, 0) / (analyzed - 1))
     : 0;
-  const marketDelta = analyzed > 1 ? marketScore - prevMarketScore : 0;
-  const leistungsIndex = Math.min(96, Math.round(
-    (analyzed >= 5 ? 35 : analyzed * 7) +
-    (topMatches > 0 ? 20 : 0) +
-    (appliedCount >= 3 ? 25 : appliedCount * 8) +
-    (interviewingCount > 0 ? 20 : 0)
-  ));
-  const prevAnalyzed     = Math.max(0, analyzed - weekTotal);
-  const prevLeistungsIndex = Math.min(96, Math.round(
-    (prevAnalyzed >= 5 ? 35 : prevAnalyzed * 7) +
-    (topMatches > 0 ? 20 : 0) +
-    (appliedCount >= 3 ? 25 : appliedCount * 8) +
-    (interviewingCount > 0 ? 20 : 0)
-  ));
-  const leistungsDelta = leistungsIndex - prevLeistungsIndex;
+  const matchDelta = analyzed > 1 ? avgMatchScore - prevAvgMatchScore : 0;
 
-  // Weekly missions
+  // 2) Response rate — the most important job-search metric: % of applications that got any reply.
+  //    We count anything past "Beworben" (interview / offer / rejection) as a response.
+  const rejectedCount   = jobs.filter(j => j.status === 'rejected').length;
+  const respondedCount  = interviewingCount + rejectedCount;
+  const responseRate    = appliedCount > 0 ? Math.round((respondedCount / appliedCount) * 100) : 0;
+
+  // ─── Funnel — Analysiert → Beworben → Rücklauf → Interview ────────────────
+  const analyzedBase    = analyzed || total;
+  const applyRateFunnel = analyzedBase > 0 ? Math.round((appliedCount / analyzedBase) * 100) : 0;
+  const interviewPct    = appliedCount > 0 ? Math.round((interviewingCount / appliedCount) * 100) : 0;
+  const funnelStages = [
+    { label: 'Analysiert', value: String(analyzedBase),                                 barWidth: 100,             color: C.textDim, glow: 'rgba(136,136,160,0.5)' },
+    { label: 'Beworben',   value: `${appliedCount}/${analyzedBase}`,                    barWidth: applyRateFunnel, color: C.indigo,  glow: C.indigoGlow },
+    { label: 'Rücklauf',   value: appliedCount > 0 ? `${responseRate}%` : '—',         barWidth: responseRate,    color: C.violet,  glow: C.violetGlow },
+    { label: 'Interview',  value: String(interviewingCount),                            barWidth: interviewPct,    color: C.amber,   glow: 'rgba(245,158,11,0.35)', note: interviewingCount > 0 ? 'Aktiv' : undefined },
+  ];
+
+  const hasJobAlert = jobAlerts.length > 0;
+  // (Profile-strength badge was retired — it always showed 100% once setup was complete and added no value.)
+
+  // Weekly progress chips (factual counts, not arbitrary "missions")
   const weeklyGoals = [
-    { label: `${analyzed} Analysen`,        complete: analyzed >= 5,       icon: Search     },
-    { label: 'Top-Treffer',                 complete: topMatches > 0,      icon: TrendingUp },
-    { label: `${appliedCount} Bewerbungen`, complete: appliedCount >= 3,   icon: Sparkles   },
+    { label: `${analyzed} Stellen analysiert`,   complete: analyzed >= 5,     icon: Search     },
+    { label: `${topMatches} Top-Treffer (≥70%)`, complete: topMatches > 0,    icon: TrendingUp },
+    { label: `${appliedCount} Bewerbungen`,      complete: appliedCount >= 3, icon: Sparkles   },
   ];
 
   // ─── Action-first onboarding — pick the single most important next step ───
@@ -473,101 +463,110 @@ export default function DashboardPage() {
         <NextStepHero next={nextStep} steps={setupSteps} onNavigate={navigate} />
       )}
 
-      {/* ── KPI Bar ─────────────────────────────────────────────────────────── */}
+      {/* ── KPI Bar — three honest metrics, no vanity scores ────────────────── */}
       <Widget className="px-6 py-5">
         <div className="grid grid-cols-1 sm:grid-cols-3 divide-y divide-white/[0.05] sm:divide-y-0 sm:divide-x">
 
-          {/* Markt-Score */}
+          {/* Ø Match-Score — average LLM match across analyzed jobs */}
           <div className="pb-5 sm:pb-0 sm:pr-6">
-            <Label className="mb-2">Markt-Score</Label>
+            <Label className="mb-2" tooltip="Durchschnittlicher KI-Match-Score über alle analysierten Stellen.">
+              Ø Match-Score
+            </Label>
             <div className="flex items-baseline gap-1">
               <span
                 className="text-[40px] font-bold leading-none tabular-nums"
-                style={{ letterSpacing: '-0.05em', color: marketScore === 0 ? C.warn : '#FFFFFF' }}
+                style={{ letterSpacing: '-0.05em', color: analyzed === 0 ? C.textDim : '#FFFFFF' }}
               >
-                {marketScore}
+                {analyzed === 0 ? '—' : avgMatchScore}
               </span>
-              <span className="text-[20px] font-medium leading-none" style={{ color: C.textDim }}>%</span>
+              {analyzed > 0 && (
+                <span className="text-[20px] font-medium leading-none" style={{ color: C.textDim }}>%</span>
+              )}
             </div>
             <div className="mt-2.5 flex items-center gap-2.5">
-              {analyzed > 1 ? (
-                <span className="text-[12px] font-semibold" style={{ color: marketDelta >= 0 ? C.emerald : C.amber }}>
-                  {marketDelta >= 0 ? '▲' : '▼'} {Math.abs(marketDelta)}%
+              {analyzed === 0 ? (
+                <button
+                  onClick={() => navigate('/jobs')}
+                  className="text-[11px] transition-all active:scale-95"
+                  style={{ color: C.violet, background: 'none', border: 'none', padding: 0 }}
+                >
+                  + Erste Analyse starten →
+                </button>
+              ) : (
+                <>
+                  {analyzed > 1 && (
+                    <span className="text-[12px] font-semibold" style={{ color: matchDelta >= 0 ? C.emerald : C.amber }}>
+                      {matchDelta >= 0 ? '▲' : '▼'} {Math.abs(matchDelta)}%
+                    </span>
+                  )}
+                  <span className="text-[11px]" style={{ color: C.textMeta }}>
+                    {topMatches} Top-Treffer · {analyzed} analysiert
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Rücklaufquote — response rate over applications */}
+          <div className="py-5 sm:py-0 sm:px-6">
+            <Label className="mb-2" tooltip="Anteil deiner Bewerbungen mit einer Rückmeldung (Interview, Angebot oder Absage).">
+              Rücklaufquote
+            </Label>
+            <div className="flex items-baseline gap-1">
+              <span
+                className="text-[40px] font-bold leading-none tabular-nums"
+                style={{ letterSpacing: '-0.05em', color: appliedCount === 0 ? C.textDim : '#FFFFFF' }}
+              >
+                {appliedCount === 0 ? '—' : responseRate}
+              </span>
+              {appliedCount > 0 && (
+                <span className="text-[20px] font-medium leading-none" style={{ color: C.textDim }}>%</span>
+              )}
+            </div>
+            <div className="mt-2.5">
+              {appliedCount === 0 ? (
+                <button
+                  onClick={() => navigate('/jobs')}
+                  className="text-[11px] transition-all active:scale-95"
+                  style={{ color: C.violet, background: 'none', border: 'none', padding: 0 }}
+                >
+                  + Bewerbungen erfassen →
+                </button>
+              ) : (
+                <span className="text-[11px]" style={{ color: C.textMeta }}>
+                  {respondedCount} von {appliedCount} Bewerbungen
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Aktiv im Prozess — open interviews + offers */}
+          <div className="pt-5 sm:pt-0 sm:pl-6">
+            <Label className="mb-2" tooltip="Stellen, bei denen du aktuell im Gespräch oder Angebotsprozess bist.">
+              Aktiv im Prozess
+            </Label>
+            <div className="flex items-baseline gap-1">
+              <span
+                className="text-[40px] font-bold leading-none tabular-nums"
+                style={{ letterSpacing: '-0.05em', color: interviewingCount === 0 ? C.textDim : '#FFFFFF' }}
+              >
+                {interviewingCount}
+              </span>
+            </div>
+            <div className="mt-2.5">
+              {interviewingCount === 0 ? (
+                <span className="text-[11px]" style={{ color: C.textMeta }}>
+                  Noch kein laufendes Gespräch
                 </span>
               ) : (
                 <button
                   onClick={() => navigate('/jobs')}
                   className="text-[11px] transition-all active:scale-95"
                   style={{ color: C.violet, background: 'none', border: 'none', padding: 0 }}
-                  onMouseEnter={e => { e.currentTarget.style.textShadow = `0 0 12px ${C.violetGlow}`; }}
-                  onMouseLeave={e => { e.currentTarget.style.textShadow = 'none'; }}
                 >
-                  + Erste Analyse starten →
+                  Pipeline öffnen →
                 </button>
               )}
-              <span className="text-[11px]" style={{ color: C.textMeta }}>
-                {topMatches} Treffer · {analyzedBase} analysiert
-              </span>
-            </div>
-          </div>
-
-          {/* Leistungsindex */}
-          <div className="py-5 sm:py-0 sm:px-6">
-            <Label className="mb-2">Leistungsindex</Label>
-            <div className="flex items-baseline gap-1">
-              <span
-                className="text-[40px] font-bold leading-none tabular-nums"
-                style={{ letterSpacing: '-0.05em', color: leistungsIndex === 0 ? C.warn : '#FFFFFF' }}
-              >
-                {leistungsIndex}
-              </span>
-              <span className="text-[20px] font-medium leading-none" style={{ color: C.textDim }}>%</span>
-              {leistungsDelta !== 0 && (
-                <span className="text-[12px] font-semibold" style={{ color: leistungsDelta >= 0 ? C.emerald : C.amber }}>
-                  {leistungsDelta >= 0 ? '↑' : '↓'}{Math.abs(leistungsDelta)}
-                </span>
-              )}
-            </div>
-            <div className="mt-3 h-[10px] w-full rounded-full overflow-hidden" style={{ background: C.bgElevated }}>
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${leistungsIndex}%`,
-                  background: `linear-gradient(90deg, ${C.emerald}BB, ${C.emerald})`,
-                  boxShadow: `0 0 10px ${C.emeraldGlow}`,
-                }}
-              />
-            </div>
-            <span className="mt-1.5 block text-[11px]" style={{ color: C.textDim }}>
-              Top {leistungsIndex >= 80 ? '5%' : leistungsIndex >= 60 ? '20%' : '50%'} Bewerber
-            </span>
-          </div>
-
-          {/* Profil-Stärke */}
-          <div className="pt-5 sm:pt-0 sm:pl-6">
-            <Label className="mb-2">Profil-Stärke</Label>
-            <div className="flex items-baseline gap-1">
-              <span
-                className="text-[40px] font-bold leading-none tabular-nums"
-                style={{ letterSpacing: '-0.05em', color: profileStrength === 0 ? C.warn : '#FFFFFF' }}
-              >
-                {profileStrength}
-              </span>
-              <span className="text-[20px] font-medium leading-none" style={{ color: C.textDim }}>%</span>
-            </div>
-            <div className="mt-2.5 flex items-center gap-1.5">
-              {profileItems.map(item => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                  style={{ background: item.complete ? 'rgba(45,212,191,0.10)' : 'rgba(255,255,255,0.03)' }}
-                >
-                  <item.icon size={10} strokeWidth={1.8} style={{ color: item.complete ? C.emerald : C.textMeta }} />
-                  <span className="text-[10px] font-medium" style={{ color: item.complete ? C.textSub : C.textDim }}>
-                    {item.label}
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -679,9 +678,16 @@ export default function DashboardPage() {
 
             {/* Chart — reduzierte Höhe (sekundärer Wert) */}
             {weekTotal === 0 ? (
-              <div className="flex items-center justify-center rounded-xl" style={{ height: '64px', background: C.bgCard, border: `1px dashed rgba(255,255,255,0.07)` }}>
-                <span className="text-[11px]" style={{ color: C.textMeta }}>Noch keine Aktivität diese Woche</span>
-              </div>
+              <button
+                onClick={() => navigate('/jobs')}
+                className="flex w-full items-center justify-center gap-2 rounded-xl transition-colors hover:bg-white/[0.04]"
+                style={{ height: '64px', background: C.bgCard, border: `1px dashed rgba(255,255,255,0.07)` }}
+              >
+                <Plus size={12} strokeWidth={2} style={{ color: C.textMeta }} />
+                <span className="text-[11px]" style={{ color: C.textMeta }}>
+                  Erste Stelle analysieren, um deine Aktivität hier zu sehen
+                </span>
+              </button>
             ) : (
               <div style={{ height: '90px', clipPath: 'inset(0)' }}>
                 <ActivityChart data={dailyActivity} />
@@ -705,9 +711,9 @@ export default function DashboardPage() {
             </div>
           </Widget>
 
-          {/* Wochenmissionen */}
+          {/* Diese Woche — factual counters, not "missions" */}
           <Widget className="p-4">
-            <Label className="mb-3">Wochenmissionen</Label>
+            <Label className="mb-3">Diese Woche</Label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {weeklyGoals.map((goal) => (
                 <div

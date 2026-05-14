@@ -51,7 +51,7 @@ export default function CookieConsentBanner() {
       role="dialog"
       aria-modal="false"
       aria-label="Cookie-Einstellungen"
-      className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:max-w-md z-[60]
+      className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-md z-[60]
                  rounded-2xl border border-slate-700/60 bg-slate-900/95 backdrop-blur
                  shadow-2xl shadow-black/30 p-5 sm:p-6
                  text-slate-200"

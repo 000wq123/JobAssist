@@ -371,14 +371,17 @@ export default function SavedJobsSection({ jobs = [], loading = false, onRefresh
               Gespeicherte Stellen
             </h2>
           </div>
+          <label className="sr-only" htmlFor="saved-jobs-sort">Stellen sortieren nach</label>
           <select
+            id="saved-jobs-sort"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="text-[0.625rem] tracking-[0.14em] uppercase px-3 py-1.5 rounded-lg bg-transparent text-[#505058] focus:outline-none appearance-none cursor-pointer"
+            title="Sortierung der Stellenliste"
+            className="text-[0.625rem] tracking-[0.14em] uppercase px-3 py-1.5 rounded-lg bg-transparent text-slate-400 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 appearance-none cursor-pointer"
           >
-            <option value="score">Match ↓</option>
-            <option value="date">Datum</option>
-            <option value="status">Status</option>
+            <option value="score">Sortieren: Match ↓</option>
+            <option value="date">Sortieren: Datum ↓</option>
+            <option value="status">Sortieren: Status</option>
           </select>
         </div>
 
@@ -493,27 +496,37 @@ export default function SavedJobsSection({ jobs = [], loading = false, onRefresh
                     <p className="text-[0.8125rem] font-medium text-white truncate leading-tight">
                       {job.role}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-[0.6875rem] text-[#505058] truncate">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[0.75rem] text-slate-300 truncate">
                         {job.company}
                       </span>
                       <span
-                        className="flex-shrink-0 h-1 w-1 rounded-full"
+                        className="flex-shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.5625rem] font-semibold tracking-[0.14em] uppercase"
                         style={{
-                          background: statusCfg.color,
-                          boxShadow: `0 0 4px ${statusCfg.color}40`,
+                          color: statusCfg.color,
+                          background: `${statusCfg.color}14`,
+                          border: `1px solid ${statusCfg.color}33`,
                         }}
-                      />
-                      <span className="text-[0.5625rem] tracking-[0.14em] uppercase text-[#3a3a42] flex-shrink-0">
+                        title={`Status: ${statusCfg.label}`}
+                      >
+                        <span
+                          className="h-1 w-1 rounded-full"
+                          style={{ background: statusCfg.color, boxShadow: `0 0 4px ${statusCfg.color}80` }}
+                        />
                         {statusCfg.label}
                       </span>
                       {job.location && (
-                        <span className="text-[0.625rem] text-[#3a3a42] truncate max-w-[100px]">
+                        <span className="text-[0.6875rem] text-slate-500 truncate max-w-[140px]" title={job.location}>
                           {job.location}
                         </span>
                       )}
+                      {job.salary && (
+                        <span className="text-[0.6875rem] text-emerald-400/80 truncate max-w-[120px]" title={job.salary}>
+                          {job.salary}
+                        </span>
+                      )}
                       {dateLabel && (
-                        <span className="text-[0.625rem] text-[#2a2a32] tabular-nums">
+                        <span className="text-[0.6875rem] text-slate-600 tabular-nums">
                           {dateLabel}
                         </span>
                       )}

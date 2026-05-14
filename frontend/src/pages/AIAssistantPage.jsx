@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
-  Bot, Send, Sparkles, FileText, Briefcase, GraduationCap,
+  Bot, Send, Sparkles, FileText, Briefcase,
   Euro, Lightbulb, Trash2, Lock, Plus, MessageSquare, Clock,
   ClipboardList, Search, ChevronDown, ChevronUp, Shield, X,
   Wand2, Zap, ArrowRight,
@@ -60,12 +60,10 @@ function loadStoredJobs() {
 // ─── Schnell-Aktionen ─────────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
-  { icon: FileText,      label: "Lebenslauf verbessern",  sub: "Stärken und Entwicklungspotenzial erkennen",  prompt: "Wie kann ich meinen Lebenslauf verbessern? generate_document (Erstellt dein Dokument).", requiresResume: true, iconCls: "text-indigo-300",  iconBg: "bg-indigo-500/15",  cardBorder: "border-indigo-500/20",  cardBg: "bg-indigo-500/[0.07] hover:bg-indigo-500/[0.14]",  textCls: "text-indigo-200",  arrowCls: "text-indigo-500/40 group-hover:text-indigo-400",  glow: "0 0 18px rgba(99,102,241,0.15)" },
-  { icon: Briefcase,     label: "Bewerbungsstrategie",    sub: "Gezielt und wirksam bewerben",       prompt: "Wie entwickle ich eine starke Bewerbungsstrategie?",                                             iconCls: "text-violet-300",  iconBg: "bg-violet-500/15",  cardBorder: "border-violet-500/20",  cardBg: "bg-violet-500/[0.07] hover:bg-violet-500/[0.14]",  textCls: "text-violet-200",  arrowCls: "text-violet-500/40 group-hover:text-violet-400",  glow: "0 0 18px rgba(139,92,246,0.15)" },
-  { icon: GraduationCap, label: "Praktikum finden",       sub: "Als Student gezielt starten",         prompt: "Wie kann ich als Student ein gutes Praktikum finden?",                                           iconCls: "text-cyan-300",    iconBg: "bg-cyan-500/15",    cardBorder: "border-cyan-500/20",    cardBg: "bg-cyan-500/[0.07] hover:bg-cyan-500/[0.14]",    textCls: "text-cyan-200",    arrowCls: "text-cyan-500/40 group-hover:text-cyan-400",    glow: "0 0 18px rgba(6,182,212,0.15)" },
-  { icon: Euro,          label: "Gehaltsauskunft",        sub: "Marktübliche Gehälter kennen",        prompt: "Was für ein Gehalt kann ich als Berufseinsteiger in Österreich erwarten?",                        iconCls: "text-emerald-300", iconBg: "bg-emerald-500/15", cardBorder: "border-emerald-500/20", cardBg: "bg-emerald-500/[0.07] hover:bg-emerald-500/[0.14]", textCls: "text-emerald-200", arrowCls: "text-emerald-500/40 group-hover:text-emerald-400", glow: "0 0 18px rgba(16,185,129,0.15)" },
-  { icon: Lightbulb,     label: "Gesprächsvorbereitung",  sub: "Souverän auftreten",                  prompt: "Wie bereite ich mich am besten auf ein Vorstellungsgespräch vor?",                               iconCls: "text-amber-300",   iconBg: "bg-amber-500/15",   cardBorder: "border-amber-500/20",   cardBg: "bg-amber-500/[0.07] hover:bg-amber-500/[0.14]",   textCls: "text-amber-200",   arrowCls: "text-amber-500/40 group-hover:text-amber-400",   glow: "0 0 18px rgba(245,158,11,0.15)" },
-  { icon: Wand2,         label: "Anschreiben erstellen",  sub: "Überzeugend und individuell",         prompt: "Kannst du mir ein überzeugendes Anschreiben erstellen? generate_document (Erstellt dein Dokument).", requiresResume: true, iconCls: "text-fuchsia-300", iconBg: "bg-fuchsia-500/15", cardBorder: "border-fuchsia-500/20", cardBg: "bg-fuchsia-500/[0.07] hover:bg-fuchsia-500/[0.14]", textCls: "text-fuchsia-200", arrowCls: "text-fuchsia-500/40 group-hover:text-fuchsia-400", glow: "0 0 18px rgba(217,70,239,0.15)" },
+  { icon: FileText,      label: "Lebenslauf analysieren",  sub: "Stärken und Lücken erkennen",                 prompt: "Analysiere meinen Lebenslauf und nenne mir die drei stärksten Punkte sowie zwei Schwächen.", requiresResume: true, iconCls: "text-indigo-300",  iconBg: "bg-indigo-500/15",  cardBorder: "border-indigo-500/20",  cardBg: "bg-indigo-500/[0.07] hover:bg-indigo-500/[0.14]",  textCls: "text-indigo-200",  arrowCls: "text-indigo-500/40 group-hover:text-indigo-400",  glow: "0 0 18px rgba(99,102,241,0.15)" },
+  { icon: Briefcase,     label: "Bewerbungsstrategie",     sub: "Gezielt und wirksam bewerben",                prompt: "Wie entwickle ich eine starke Bewerbungsstrategie?",                                          iconCls: "text-violet-300",  iconBg: "bg-violet-500/15",  cardBorder: "border-violet-500/20",  cardBg: "bg-violet-500/[0.07] hover:bg-violet-500/[0.14]",  textCls: "text-violet-200",  arrowCls: "text-violet-500/40 group-hover:text-violet-400",  glow: "0 0 18px rgba(139,92,246,0.15)" },
+  { icon: Euro,          label: "Gehaltsauskunft",         sub: "Marktübliche Gehälter kennen",                prompt: "Was kann ich als Berufseinsteiger in Österreich an Gehalt erwarten?",                          iconCls: "text-emerald-300", iconBg: "bg-emerald-500/15", cardBorder: "border-emerald-500/20", cardBg: "bg-emerald-500/[0.07] hover:bg-emerald-500/[0.14]", textCls: "text-emerald-200", arrowCls: "text-emerald-500/40 group-hover:text-emerald-400", glow: "0 0 18px rgba(16,185,129,0.15)" },
+  { icon: Lightbulb,     label: "Interview vorbereiten",   sub: "Übungsfragen für dein Gespräch",              prompt: "Stelle mir fünf typische Vorstellungsgesprächs-Fragen und gib mir Tipps für gute Antworten.", iconCls: "text-amber-300",   iconBg: "bg-amber-500/15",   cardBorder: "border-amber-500/20",   cardBg: "bg-amber-500/[0.07] hover:bg-amber-500/[0.14]",   textCls: "text-amber-200",   arrowCls: "text-amber-500/40 group-hover:text-amber-400",   glow: "0 0 18px rgba(245,158,11,0.15)" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -733,10 +731,10 @@ export default function AIAssistantPage() {
                 <span className="text-xs font-semibold tracking-wide text-indigo-300">KI-Karriere-Assistent</span>
               </div>
               <h1 className="text-3xl font-bold text-white leading-tight tracking-tight">
-                Wie kann ich dir helfen?
+                Womit kann ich heute helfen?
               </h1>
               <p className="text-sm text-slate-400 max-w-md leading-relaxed">
-                Wähle eine Mission oder schreib direkt — ich kenne deinen Bewerbungsstand.
+                Wähle einen Vorschlag oder stelle direkt deine Frage — ich kenne deine gespeicherten Stellen und Lebensläufe.
               </p>
             </div>
 
@@ -777,7 +775,7 @@ export default function AIAssistantPage() {
             )}
 
             {/* ── Suggestion card grid ──────────────────────────────────────── */}
-            <div className="col-span-12 grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-3">
               {SUGGESTIONS.map((s) => {
                 const locked = s.requiresResume && uploadedResumes.length === 0;
                 return (

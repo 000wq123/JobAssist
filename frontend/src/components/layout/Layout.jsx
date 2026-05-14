@@ -1,5 +1,5 @@
-import { useState, useEffect, Suspense } from "react";
-import { Outlet, NavLink, useNavigate, Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -12,8 +12,8 @@ import {
   Wand2,
   Bell,
   CreditCard,
-  PenLine,
   MoreHorizontal,
+  ChevronUp,
   X,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,8 +30,10 @@ const NAV_KEYS = [
   { to: "/resume", tKey: "navigation.myResumes", icon: FileText },
   { to: "/jobs", tKey: "navigation.jobs", icon: Briefcase },
   { to: "/ai-assistant", tKey: "navigation.aiAssistant", icon: Wand2 },
-  { to: "/cover-letter", tKey: "navigation.motivationsschreiben", icon: PenLine },
   { to: "/job-alerts", tKey: "navigation.jobAlerts", icon: Bell },
+];
+
+const USER_MENU_ITEMS = [
   { to: "/settings", tKey: "navigation.preferences", icon: Settings },
   { to: "/billing", tKey: "navigation.billing", icon: CreditCard },
 ];
@@ -46,6 +48,22 @@ const NAV_KEYS = [
  * @param {() => void} [props.onNavClick] - Called after a nav link is clicked (closes mobile drawer).
  */
 function SidebarContent({ me, profile, t, handleLogout, onNavClick }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const handler = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-6 py-6">
@@ -53,15 +71,11 @@ function SidebarContent({ me, profile, t, handleLogout, onNavClick }) {
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-accent-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <div>
-            <h1 className="text-base font-bold text-white leading-none">JobAssist</h1>
-            <p className="text-[10px] font-medium text-brand-300 tracking-wider uppercase mt-0.5">KI-gestützt</p>
-          </div>
+          <h1 className="text-base font-bold text-white leading-none">JobAssist</h1>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-        <p className="px-3 text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-3">Menü</p>
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto" aria-label="Hauptnavigation">
         {NAV_KEYS.map(({ to, tKey, icon: Icon }) => (
           <NavLink
             key={to}
@@ -95,15 +109,66 @@ function SidebarContent({ me, profile, t, handleLogout, onNavClick }) {
         ))}
       </nav>
 
-      <div className="px-3 pb-4">
-        <div className="border-t border-white/10 pt-4 space-y-1">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
+      <div className="px-3 pb-4 relative" ref={menuRef}>
+        {menuOpen && (
+          <div
+            role="menu"
+            className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-white/10 bg-[#111827] shadow-2xl shadow-black/60 p-1.5 z-50"
+          >
+            {USER_MENU_ITEMS.map(({ to, tKey, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                role="menuitem"
+                onClick={() => {
+                  closeMenu();
+                  onNavClick?.();
+                }}
+                className={({ isActive }) =>
+                  clsx(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive ? "bg-brand-500/15 text-brand-200" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  )
+                }
+              >
+                <Icon className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                {t(tKey)}
+              </NavLink>
+            ))}
+            <div className="my-1 h-px bg-white/10" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                closeMenu();
+                handleLogout();
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            >
+              <LogOut className="w-4 h-4" aria-hidden="true" />
+              {t("common.logout")}
+            </button>
+          </div>
+        )}
+
+        <div className="border-t border-white/10 pt-3">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label="Benutzermenü öffnen"
+            className={clsx(
+              "flex items-center gap-3 w-full px-2 py-2 rounded-xl transition-colors",
+              menuOpen ? "bg-white/[0.06]" : "hover:bg-white/[0.04]"
+            )}
+          >
             {me ? (
               <>
                 {profile?.avatar ? (
                   <img
                     src={profile.avatar}
-                    alt="Profile"
+                    alt=""
                     className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-brand-500/30"
                   />
                 ) : (
@@ -111,12 +176,16 @@ function SidebarContent({ me, profile, t, handleLogout, onNavClick }) {
                     <User className="w-4 h-4 text-white" />
                   </div>
                 )}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1 text-left">
                   <p className="text-sm font-semibold text-white truncate leading-tight">
                     {me.full_name || me.email?.split("@")[0]}
                   </p>
                   <p className="text-[10px] text-slate-500 truncate">{me.email}</p>
                 </div>
+                <ChevronUp
+                  className={clsx("w-4 h-4 text-slate-500 transition-transform", menuOpen ? "rotate-0" : "rotate-180")}
+                  aria-hidden="true"
+                />
               </>
             ) : (
               <>
@@ -127,16 +196,6 @@ function SidebarContent({ me, profile, t, handleLogout, onNavClick }) {
                 </div>
               </>
             )}
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
-          >
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-              <LogOut className="w-4 h-4" />
-            </div>
-            {t("common.logout")}
           </button>
         </div>
       </div>
@@ -290,14 +349,6 @@ export default function Layout() {
               </Suspense>
             </div>
           </div>
-          {!isAssistantRoute && <footer className="hidden md:block px-8 pb-6">
-            <div className="flex flex-wrap justify-center gap-4 text-xs text-slate-500 border-t border-[#171a21] pt-4">
-              <Link to="/terms" className="hover:text-slate-300 transition-colors">AGB</Link>
-              <Link to="/privacy" className="hover:text-slate-300 transition-colors">Datenschutz</Link>
-              <Link to="/impressum" className="hover:text-slate-300 transition-colors">Impressum</Link>
-              <Link to="/contact" className="hover:text-slate-300 transition-colors">Kontakt</Link>
-            </div>
-          </footer>}
         </main>
       </div>
 

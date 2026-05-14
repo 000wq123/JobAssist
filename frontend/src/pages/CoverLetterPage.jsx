@@ -197,7 +197,7 @@ export default function CoverLetterPage() {
 
       <AIDisclosureBanner feature="cover_letter" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid gap-6 ${(generatedText || generateMutation.isPending) ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 mx-auto w-full max-w-3xl"}`}>
         {/* Left: Input Form */}
         <div className="space-y-5">
           {/* Resume Selection */}
@@ -371,9 +371,10 @@ export default function CoverLetterPage() {
           </button>
         </div>
 
-        {/* Right: Generated Output */}
+        {/* Right: Generated Output — only rendered once generation begins */}
+        {(generatedText || generateMutation.isPending) && (
         <div className="space-y-4">
-          <div className="card min-h-[420px] sm:min-h-[520px] lg:min-h-[600px] flex flex-col">
+          <div className="card lg:sticky lg:top-6 min-h-[320px] sm:min-h-[420px] flex flex-col">
             <div className="p-5 border-b border-[#171a21] flex flex-wrap items-center justify-between gap-y-2">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-green-400" />
@@ -431,38 +432,25 @@ export default function CoverLetterPage() {
                   <div className="w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
                   <p className="text-sm text-slate-400">KI erstellt dein Motivationsschreiben...</p>
                 </div>
-              ) : generatedText ? (
-                isEditing ? (
-                  <textarea
-                    value={editedText}
-                    onChange={(e) => setEditedText(e.target.value)}
-                    className="input w-full h-full min-h-[320px] sm:min-h-[420px] lg:min-h-[500px] resize-none font-mono leading-relaxed"
-                  />
-                ) : (
-                  <div className="text-sm text-slate-300 leading-relaxed space-y-4">
-                    {editedText.split(/\n+/).filter((p) => p.trim()).map((para, i) => (
-                      <p key={i}>
-                        {para.trim()}
-                      </p>
-                    ))}
-                  </div>
-                )
+              ) : isEditing ? (
+                <textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="input w-full h-full min-h-[320px] sm:min-h-[420px] resize-none font-mono leading-relaxed"
+                />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-16">
-                  <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-brand-300" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-300">Noch kein Motivationsschreiben</p>
-                    <p className="text-sm text-slate-500 mt-1">
-                      Fülle die Felder links aus und klicke auf &quot;Generieren&quot;
+                <div className="text-sm text-slate-300 leading-relaxed space-y-4">
+                  {editedText.split(/\n+/).filter((p) => p.trim()).map((para, i) => (
+                    <p key={i}>
+                      {para.trim()}
                     </p>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
