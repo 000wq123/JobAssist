@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     ADMIN_SECRET: str = ""  # Set in Railway env to protect admin endpoints
 
     # CORS — comma-separated string, e.g. "https://app.vercel.app,http://localhost:5173"
-    ALLOWED_ORIGINS: str = "http://localhost:5173,https://jobassist.tech,https://www.jobassist.tech"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:4173,https://jobassist.tech,https://www.jobassist.tech"
     # Optional regex for dynamic origins like Vercel previews, e.g. "https://job-assist-.*\.vercel\.app"
     ALLOWED_ORIGIN_REGEX: str = ""
 
