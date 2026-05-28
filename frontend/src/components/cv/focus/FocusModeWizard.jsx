@@ -3,81 +3,6 @@ import { ArrowLeft, ArrowRight, Download } from "lucide-react";
 import { TemplatePreviewPanel } from "../../../cv/CVTemplatePicker";
 
 /**
- * Live data summary panel shown on the right column on desktop.
- * Stays within the app's dark design system — no white/navy PDF preview.
- *
- * @param {{ profile: any }} props
- */
-function CVSummaryPanel({ profile }) {
-  const name    = [profile.vorname, profile.nachname].filter(Boolean).join(" ");
-  const contact = [profile.email, profile.telefon ? `+43 ${profile.telefon}` : null].filter(Boolean);
-  const address = [[profile.plz, profile.ort].filter(Boolean).join(" "), profile.strasse].filter(Boolean).join(", ");
-  const school  = [profile.schultyp, profile.schulname].filter(Boolean).join(" · ");
-  const jobs    = (profile.jobs || []).filter((j) => j.firma).slice(0, 3);
-  const langs   = (profile.sprachkenntnisse || []).filter((s) => s.sprache).slice(0, 5);
-  const skills  = (profile.skills || []).slice(0, 8);
-
-  const Row = ({ label, children, empty }) => (
-    <div className="flex flex-col gap-1">
-      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-faint)]">{label}</p>
-      {empty
-        ? <p className="text-[11px] text-[var(--color-fg-faint)] italic">—</p>
-        : children}
-    </div>
-  );
-
-  return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] flex flex-col h-full overflow-hidden">
-      {/* Name + contact */}
-      <div className="px-5 pt-5 pb-4 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[17px] font-semibold text-[var(--color-fg)] leading-tight">
-          {name || <span className="text-[var(--color-fg-faint)] font-normal italic">Name noch nicht eingegeben</span>}
-        </p>
-        {contact.map((c, i) => <p key={i} className="text-[11px] text-[var(--color-fg-dim)] mt-1">{c}</p>)}
-        {address && <p className="text-[11px] text-[var(--color-fg-dim)] mt-0.5">{address}</p>}
-      </div>
-
-      {/* Sections */}
-      <div className="flex-1 px-5 py-4 flex flex-col gap-4 overflow-y-auto">
-        <Row label="Ausbildung" empty={!school}>
-          <p className="text-[12px] text-[var(--color-fg-muted)]">{school}</p>
-        </Row>
-
-        <Row label="Berufserfahrung" empty={jobs.length === 0}>
-          {jobs.map((j, i) => (
-            <p key={i} className="text-[12px] text-[var(--color-fg-muted)]">
-              {j.firma}{j.titel ? ` · ${j.titel}` : ""}
-            </p>
-          ))}
-        </Row>
-
-        <Row label="Sprachen" empty={langs.length === 0}>
-          {langs.map((l, i) => (
-            <p key={i} className="text-[12px] text-[var(--color-fg-muted)]">
-              {l.sprache}{l.niveau ? ` — ${l.niveau}` : ""}
-            </p>
-          ))}
-        </Row>
-
-        {skills.length > 0 && (
-          <Row label="Kenntnisse">
-            <div className="flex flex-wrap gap-1">
-              {skills.map((s, i) => (
-                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)] text-[var(--color-fg-muted)]">{s}</span>
-              ))}
-            </div>
-          </Row>
-        )}
-      </div>
-
-      <div className="px-5 py-3 border-t border-[var(--color-border-subtle)]">
-        <p className="text-[9px] text-[var(--color-fg-faint)]">Wird mit deinen Antworten befüllt</p>
-      </div>
-    </div>
-  );
-}
-
-/**
  * @typedef {Object} SceneCtx
  * @property {() => void} next
  * @property {() => void} back
@@ -297,11 +222,12 @@ export default function FocusModeWizard({ scenes, profile, onChange, onComplete,
           )}
         </div>
 
-        {/* Right: live data summary */}
+        {/* Right: template preview — always visible, shows Wechseln link on non-vorlage steps */}
         <aside className="col-span-5 pt-8 flex flex-col overflow-y-auto">
-          {scene.id === "vorlage"
-            ? <TemplatePreviewPanel profile={profile} />
-            : <CVSummaryPanel profile={profile} />}
+          <TemplatePreviewPanel
+            profile={profile}
+            onJumpToTemplate={scene.id !== "vorlage" ? () => jumpTo("vorlage") : undefined}
+          />
         </aside>
       </div>
     </div>

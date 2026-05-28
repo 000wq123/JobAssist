@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import SceneShell from "../components/cv/focus/SceneShell";
 
 /**
@@ -220,8 +221,8 @@ function TextCard({ tmpl, selected, onSelect }) {
  * Shows the currently selected template at full-panel width.
  * Replaces CVSummaryPanel on the “vorlage” wizard step.
  */
-export function TemplatePreviewPanel({ profile }) {
-  const id = profile?.templateId || "tabellarisch";
+export function TemplatePreviewPanel({ profile, templateId, onJumpToTemplate }) {
+  const id = templateId || profile?.templateId || "tabellarisch";
   const tmpl = TEMPLATES.find((t) => t.id === id) || TEMPLATES[2];
   const Render = CV_RENDERS[id];
   const [scale, setScale] = useState(0.5);
@@ -233,10 +234,21 @@ export function TemplatePreviewPanel({ profile }) {
   if (!Render) return null;
 
   return (
-    <div className="flex flex-col gap-3 h-full">
-      <p className="text-[11px] text-[var(--color-fg-faint)]">
-        Vorschau: <span className="text-[var(--color-fg-muted)] font-medium">{tmpl.label}</span>
-      </p>
+    <div className="flex flex-col gap-4 h-full">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-fg-faint)]">
+          Vorlage &mdash; <span className="text-[var(--color-fg-muted)]">{tmpl.label}</span>
+        </p>
+        {onJumpToTemplate && (
+          <button
+            type="button"
+            onClick={onJumpToTemplate}
+            className="text-[11px] text-[var(--color-fg-faint)] hover:text-[var(--color-accent-400)] transition-colors"
+          >
+            Wechseln &rarr;
+          </button>
+        )}
+      </div>
       <div
         ref={measuredRef}
         style={{
@@ -252,70 +264,192 @@ export function TemplatePreviewPanel({ profile }) {
           <Render p={profile} />
         </div>
       </div>
+      <div className="flex flex-col gap-2">
+        {["\u00d6sterreichischer Standard", "ATS-kompatibel", "Jederzeit \u00e4nderbar"].map((hint) => (
+          <div key={hint} className="flex items-center gap-2 text-[11px] text-[var(--color-fg-faint)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-ok,#34d399)] flex-shrink-0" />
+            {hint}
+          </div>
+        ))}
+      </div>
     </div>
+  );
+}
+
+// ─── Lightbox portal ──────────────────────────────────────────────────────────
+/** Full-size preview modal — bottom sheet on mobile, centered dialog on desktop. */
+function TemplateLightbox({ templateId, profile, onClose, onSelect }) {
+  const startIdx = TEMPLATES.findIndex((t) => t.id === templateId);
+  const [activeIdx, setActiveIdx] = useState(startIdx < 0 ? 0 : startIdx);
+  const activeId = TEMPLATES[activeIdx]?.id;
+  const Render = CV_RENDERS[activeId];
+  const [scale, setScale] = useState(0.48);
+
+  const previewRef = useCallback((node) => {
+    if (node) setScale(node.offsetWidth / INNER_W);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") setActiveIdx((i) => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setActiveIdx((i) => Math.min(TEMPLATES.length - 1, i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/85"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-t-[20px] sm:rounded-[16px] w-full sm:max-w-[460px] overflow-hidden flex flex-col"
+        style={{ maxHeight: "92dvh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Nav bar */}
+        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-200 bg-white/95 backdrop-blur-sm flex-shrink-0">
+          <div className="flex gap-1">
+            <button type="button" onClick={() => setActiveIdx((i) => Math.max(0, i - 1))} disabled={activeIdx === 0}
+              className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 disabled:opacity-30 text-sm hover:bg-gray-200 transition-colors">
+              ←
+            </button>
+            <button type="button" onClick={() => setActiveIdx((i) => Math.min(TEMPLATES.length - 1, i + 1))} disabled={activeIdx === TEMPLATES.length - 1}
+              className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 disabled:opacity-30 text-sm hover:bg-gray-200 transition-colors">
+              →
+            </button>
+          </div>
+          <span className="flex-1 text-[13px] font-semibold text-gray-700 text-center">{TEMPLATES[activeIdx]?.label}</span>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={onClose}
+              className="h-8 px-3 rounded-lg bg-gray-100 text-gray-600 text-[12px] font-medium hover:bg-gray-200 transition-colors">
+              ✕
+            </button>
+            <button type="button" onClick={() => { onSelect(activeId); onClose(); }}
+              className="h-8 px-3 rounded-lg text-[12px] font-semibold text-[#0b0b14] transition-colors"
+              style={{ background: "var(--color-accent-500)" }}>
+              Auswählen
+            </button>
+          </div>
+        </div>
+
+        {/* Template render */}
+        <div className="overflow-y-auto flex-1 p-4">
+          <div ref={previewRef}
+            style={{ width: "100%", aspectRatio: `${INNER_W}/${INNER_H}`, overflow: "hidden", borderRadius: 8, boxShadow: "0 4px 24px rgba(0,0,0,0.18)" }}>
+            {Render && (
+              <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: INNER_W, height: INNER_H, background: "#fff" }}>
+                <Render p={profile} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Dot indicators */}
+        <div className="flex justify-center gap-2 py-3 flex-shrink-0">
+          {TEMPLATES.map((t, i) => (
+            <button key={t.id} type="button" onClick={() => setActiveIdx(i)}
+              className="w-2 h-2 rounded-full transition-all"
+              style={{ background: i === activeIdx ? "var(--color-accent-500)" : "#d1d5db" }} />
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
 // ─── Public scene component ───────────────────────────────────────────────────
 /**
- * Template picker scene — shown before "Fertig" in the wizard.
- * Left: text-list of template choices. Right panel handles the full preview.
- * On mobile a compact header-strip preview is shown below the list.
+ * Template picker scene — 2×2 visual grid with expand-to-lightbox.
+ * Desktop right panel shows the live template preview (handled by FocusModeWizard).
  *
  * @param {{ profile: any, onChange: (patch: any) => void }} props
  */
 export function CVTemplatePicker({ profile, onChange }) {
   const selected = profile.templateId || "tabellarisch";
+  const [lightboxId, setLightboxId] = useState(null);
+  const [cardScale, setCardScale] = useState(0.26);
+
+  const gridRef = useCallback((node) => {
+    if (!node) return;
+    const measure = () => setCardScale((node.offsetWidth - 12) / 2 / INNER_W);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <SceneShell
       eyebrow="Vorlage"
       question="Welches Layout gefällt dir?"
-      hint="Tippe auf eine Vorlage. Die Vorschau aktualisiert sich sofort."
+      hint="Tippe zum Auswählen — Lupe für Vollbild-Vorschau."
     >
-      <div className="flex flex-col gap-2 pt-2">
-        {TEMPLATES.map((tmpl) => (
-          <TextCard
-            key={tmpl.id}
-            tmpl={tmpl}
-            selected={selected === tmpl.id}
-            onSelect={(id) => onChange({ templateId: id })}
-          />
-        ))}
-      </div>
-      {/* Mobile-only: horizontal scroll gallery of all 4 templates as mini cards */}
-      <div className="lg:hidden mt-5 flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
+      <div ref={gridRef} className="grid grid-cols-2 gap-3 pt-2">
         {TEMPLATES.map((tmpl) => {
           const Render = CV_RENDERS[tmpl.id];
           if (!Render) return null;
           const isSelected = selected === tmpl.id;
           return (
-            <button
+            <div
               key={tmpl.id}
-              type="button"
+              role="button"
+              tabIndex={0}
+              aria-pressed={isSelected}
               onClick={() => onChange({ templateId: tmpl.id })}
-              className={[
-                "flex-shrink-0 snap-start rounded-xl border overflow-hidden transition-all",
-                isSelected
-                  ? "border-[var(--color-accent-500)] ring-2 ring-[var(--color-accent-500)]/30"
-                  : "border-[var(--color-border-subtle)]",
-              ].join(" ")}
-              style={{ width: 140, aspectRatio: `${INNER_W}/${INNER_H}` }}
+              onKeyDown={(e) => e.key === "Enter" && onChange({ templateId: tmpl.id })}
+              className="relative rounded-xl overflow-hidden cursor-pointer transition-all select-none"
+              style={{
+                aspectRatio: `${INNER_W}/${INNER_H}`,
+                border: isSelected ? "2px solid var(--color-accent-500)" : "2px solid var(--color-border)",
+                boxShadow: isSelected ? "0 0 0 3px rgba(124,125,240,0.22)" : "none",
+              }}
             >
-              <div style={{ transform: "scale(0.24)", transformOrigin: "top left", width: INNER_W, height: INNER_H, background: "#fff" }}>
+              <div style={{ transform: `scale(${cardScale})`, transformOrigin: "top left", width: INNER_W, height: INNER_H, background: "#fff", pointerEvents: "none" }}>
                 <Render p={profile} />
               </div>
+
+              {/* Expand icon — always visible */}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxId(tmpl.id); }}
+                className="absolute top-1.5 left-1.5 w-6 h-6 rounded-lg flex items-center justify-center text-white"
+                style={{ background: "rgba(0,0,0,0.55)" }}
+                aria-label="Vollbild-Vorschau"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                </svg>
+              </button>
+
               {isSelected && (
-                <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-[var(--color-accent-500)] flex items-center justify-center">
-                  <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                    <path d="M1 4.5L4 7.5L11 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "var(--color-accent-500)" }}>
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               )}
-            </button>
+
+              <div className="absolute bottom-0 left-0 right-0 py-1.5 text-center text-[10px] font-medium"
+                style={{ background: "var(--color-bg-elev-1,#111113)", color: "var(--color-fg-muted)" }}>
+                {tmpl.label}
+              </div>
+            </div>
           );
         })}
       </div>
+
+      {lightboxId && (
+        <TemplateLightbox
+          templateId={lightboxId}
+          profile={profile}
+          onClose={() => setLightboxId(null)}
+          onSelect={(id) => onChange({ templateId: id })}
+        />
+      )}
     </SceneShell>
   );
 }
