@@ -1,12 +1,12 @@
 import { useState, useEffect, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Mail, LayoutDashboard, FileText, Briefcase, Bell, X, User, LogOut, Settings, CreditCard, Sparkles } from "lucide-react";
 import clsx from "clsx";
 
 import useAuthStore from "../../hooks/useAuthStore";
-import { initApi, authApi } from "../../services/api";
+import { initApi, authApi, jobApi, settingsApi } from "../../services/api";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 import TopNav from "./TopNav";
@@ -181,6 +181,32 @@ export default function AppShell() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const storedUser = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+
+  // Warm critical caches immediately so dashboard + jobs page are instant.
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ["jobs"],
+      queryFn: () => jobApi.list().then((r) => {
+        const items = r.data?.items ?? r.data ?? [];
+        try {
+          localStorage.setItem("jobs", JSON.stringify(items));
+          localStorage.setItem("jobs_ts", String(Date.now()));
+        } catch { /* quota */ }
+        return items;
+      }),
+      staleTime: 1000 * 60 * 2,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ["profile"],
+      queryFn: () => settingsApi.getProfile().then((r) => {
+        try { localStorage.setItem("profile", JSON.stringify(r.data)); } catch { /* quota */ }
+        return r.data;
+      }),
+      staleTime: 1000 * 60 * 2,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Hotkey: ⌘K / Ctrl+K
   useEffect(() => {

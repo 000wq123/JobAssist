@@ -331,10 +331,13 @@ export default function JobsPage() {
       jobApi.list().then((r) => {
         const items = r.data?.items ?? r.data ?? [];
         saveStored("jobs", items);
+        try { localStorage.setItem("jobs_ts", String(Date.now())); } catch { /* quota */ }
         return items;
       }),
     initialData: () => loadStored("jobs") || [],
-    initialDataUpdatedAt: 0,
+    initialDataUpdatedAt: () => {
+      try { return parseInt(localStorage.getItem("jobs_ts") || "0", 10); } catch { return 0; }
+    },
     staleTime: 0,
     retry: 2,
   });
