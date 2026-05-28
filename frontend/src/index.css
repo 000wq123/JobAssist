@@ -1,16 +1,170 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* ─────────────────────────────────────────────────────────────────
+     New design system — restrained, single accent, borders not shadows.
+     Old tokens (brand-*, surface-*, ink-*) retained as aliases so legacy
+     pages keep rendering during phased migration.
+     ───────────────────────────────────────────────────────────────── */
+
+  /* ── Accent (single brand color) ──────────────────────────────── */
+  --color-accent-50:  #F3F0FF;
+  --color-accent-100: #E5DEFF;
+  --color-accent-200: #C9BCFF;
+  --color-accent-300: #AC99FF;
+  --color-accent-400: #9077FF;
+  --color-accent-500: #7C5CFF;
+  --color-accent-600: #6644E6;
+  --color-accent-700: #5235BD;
+  --color-accent-800: #3F2890;
+  --color-accent-900: #2A1A66;
+
+  /* ── Neutrals (dark) ──────────────────────────────────────────── */
+  --color-bg:        #0B0B0F;
+  --color-bg-elev-1: #131318;
+  --color-bg-elev-2: #1B1B22;
+  --color-bg-elev-3: #24242C;
+  --color-bg-input:  #0F0F14;
+
+  --color-border:        #2A2A33;
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  --color-fg:       #ECECEF;
+  --color-fg-muted: #A1A1AA;
+  --color-fg-dim:   #71717A;
+  --color-fg-faint: #52525B;
+
+  /* ── Semantic (use sparingly) ─────────────────────────────────── */
+  --color-success:      #34D399;
+  --color-success-soft: rgba(52, 211, 153, 0.12);
+  --color-warning:      #FBBF24;
+  --color-warning-soft: rgba(251, 191, 36, 0.12);
+  --color-error:        #F87171;
+  --color-error-soft:   rgba(248, 113, 113, 0.12);
+  --color-info:         #60A5FA;
+  --color-info-soft:    rgba(96, 165, 250, 0.12);
+
+  /* ── Legacy aliases (for non-migrated pages) ──────────────────── */
+  --color-brand-50:  var(--color-accent-50);
+  --color-brand-100: var(--color-accent-100);
+  --color-brand-200: var(--color-accent-200);
+  --color-brand-300: var(--color-accent-300);
+  --color-brand-400: var(--color-accent-400);
+  --color-brand-500: var(--color-accent-500);
+  --color-brand-600: var(--color-accent-600);
+  --color-brand-700: var(--color-accent-700);
+  --color-brand-800: var(--color-accent-800);
+  --color-brand-900: var(--color-accent-900);
+
+  --color-surface-base:     var(--color-bg);
+  --color-surface-widget:   var(--color-bg-elev-1);
+  --color-surface-card:     var(--color-bg-elev-2);
+  --color-surface-elevated: var(--color-bg-elev-3);
+  --color-surface-input:    var(--color-bg-input);
+
+  --color-ink-primary: var(--color-fg);
+  --color-ink-sub:     var(--color-fg-muted);
+  --color-ink-dim:     var(--color-fg-dim);
+  --color-ink-meta:    var(--color-fg-faint);
+
+  /* Skill category colors retained for ResumePage radar (to be removed) */
+  --color-skill-tech: #A855F7;
+  --color-skill-exp:  #38BDF8;
+  --color-skill-edu:  #34D399;
+  --color-skill-soft: #FBBF24;
+  --color-skill-lang: #F472B6;
+
+  /* ── Light-mode tokens (used by alternating "white" sections) ─── */
+  /* Mirrors the dark palette so any component can opt into a light
+     surface by toggling the `.surface-light` utility on a wrapper. */
+  --color-light-bg:        #FAFAF7;
+  --color-light-bg-elev-1: #FFFFFF;
+  --color-light-bg-elev-2: #F4F4F0;
+  --color-light-bg-elev-3: #ECECE6;
+  --color-light-border:        #E5E5DF;
+  --color-light-border-subtle: rgba(10, 10, 15, 0.06);
+  --color-light-border-strong: rgba(10, 10, 15, 0.14);
+  --color-light-fg:       #0B0B0F;
+  --color-light-fg-muted: #46464D;
+  --color-light-fg-dim:   #6B6B72;
+  --color-light-fg-faint: #9A9AA0;
+
+  /* ── Pastel accents (for Arc/Dia-style soft sections) ─────────── */
+  --color-pastel-peach: #FBC8B5;
+  --color-pastel-sky:   #BFD9F2;
+  --color-pastel-mint:  #C8EFD9;
+  --color-pastel-lilac: #DCD2F7;
+  --color-pastel-cream: #F6EFD8;
+
+  /* ── Typography ───────────────────────────────────────────────── */
+  --font-family-sans:    "Inter", system-ui, -apple-system, "SF Pro Display", sans-serif;
+  --font-family-display: "Instrument Serif", "Iowan Old Style", "Times New Roman", Times, serif;
+  --font-family-mono:    "JetBrains Mono", ui-monospace, "Menlo", monospace;
+
+  /* ── Display type scale (hero + section headlines) ────────────── */
+  /* Used via .text-hero / .text-display / .text-section utilities. */
+  --text-hero:    clamp(2.75rem, 6.5vw, 5.5rem);   /*  44–88px */
+  --text-display: clamp(2.25rem, 5vw, 4rem);       /*  36–64px */
+  --text-section: clamp(1.75rem, 3.5vw, 3rem);     /*  28–48px */
+  --text-eyebrow: 0.6875rem;                        /*    11px */
+
+  /* ── In-app type scale (Linear-style) ─────────────────────────── */
+  /* The missing mid-tier between body (13px) and section title (26px).
+     `page-title` replaces the marketing hero on in-app pages.
+     `subhead` is for grouping inside a page (formerly card titles). */
+  --text-page-title: 1.5rem;        /* 24px — in-app page H1 */
+  --text-subhead-lg: 1.1875rem;     /* 19px — major sub-section */
+  --text-subhead:    1.0625rem;     /* 17px — section header inside a page */
+  --text-body-lg:    0.9375rem;     /* 15px — emphasized body */
+  --text-body:       0.8125rem;     /* 13px — default body (unchanged) */
+  --text-meta:       0.75rem;       /* 12px — meta / captions */
+  --text-micro:      0.6875rem;     /* 11px — uppercase eyebrow */
+
+  /* ── Radii (tighter scale) ────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* ── Shadows (legacy retained but unused in new components) ───── */
+  --shadow-card: 0 8px 40px rgba(0,0,0,0.70), 0 2px 8px rgba(0,0,0,0.50);
+  --shadow-tile: 0 4px 16px rgba(0,0,0,0.40);
+  --shadow-brand: 0 4px 22px rgba(124,92,255,0.30);
+  --shadow-glow-brand:   0 0 20px rgba(124,92,255,0.30);
+  --shadow-glow-success: 0 0 20px rgba(52,211,153,0.30);
+  --shadow-glow-warning: 0 0 20px rgba(251,191,36,0.30);
+  --shadow-glow-error:   0 0 20px rgba(248,113,113,0.30);
+
+  /* ── Motion ───────────────────────────────────────────────────── */
+  --animate-slide-up: slideUp 0.2s ease-out;
+  --animate-fade-in:  fadeIn 0.3s ease-out;
+
+  @keyframes slideUp {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+}
 
 @layer base {
   html {
-    background-color: #0A0A0A;
-    color: #F0F0F5;
-    font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-family-sans);
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background-color: #0A0A0A;
+    background-color: var(--color-bg);
     min-height: 100vh;
   }
 
@@ -18,63 +172,278 @@
     box-sizing: border-box;
   }
 
-  /* Scrollbar */
+  /* Scrollbar — refined */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: #0A0A0A;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
-    border-radius: 3px;
+    background: var(--color-border);
+    border-radius: 5px;
+    border: 2px solid var(--color-bg);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a3a;
+    background: var(--color-border-strong);
   }
 
-  /* Select elements dark styling */
+  /* Selection */
+  ::selection {
+    background-color: var(--color-accent-500);
+    color: white;
+  }
+
+  /* Native select option */
   select option {
-    background-color: #141414;
-    color: #F0F0F5;
+    background-color: var(--color-bg-elev-2);
+    color: var(--color-fg);
   }
 }
 
 @layer components {
+  /* ── Form labels (legacy) ──────────────────────────────────────── */
   .label {
-    @apply block text-sm font-medium text-slate-300 mb-1.5;
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-fg-muted);
   }
 
+  /* ── Input (legacy) — used by non-migrated pages ──────────────── */
   .input {
-    @apply block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500;
+    display: block;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-input);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--color-fg);
+    outline: none;
+    transition: border-color 0.15s var(--ease-standard, ease), background-color 0.15s var(--ease-standard, ease);
   }
 
+  .input::placeholder {
+    color: var(--color-fg-faint);
+  }
+
+  .input:focus {
+    border-color: var(--color-accent-500);
+    background-color: var(--color-bg-elev-1);
+  }
+
+  /* ── Button (legacy .btn-primary kept for old code paths) ─────── */
   .btn-primary {
-    @apply flex items-center justify-center rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500 hover:shadow-xl hover:shadow-brand-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-accent-500);
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #ffffff;
+    transition: background-color 0.15s ease;
+    outline: none;
+  }
+
+  .btn-primary:hover  { background-color: var(--color-accent-400); }
+  .btn-primary:active { background-color: var(--color-accent-600); }
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--color-accent-400);
+    outline-offset: 2px;
+  }
+  .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* ── Card (legacy .card kept for old code paths) ──────────────── */
+  .card {
+    background: var(--color-bg-elev-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .card-elevated {
+    background: var(--color-bg-elev-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* ── Badge (legacy classes) ───────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.02em;
+  }
+
+  .badge-success { background: var(--color-success-soft); color: var(--color-success); }
+  .badge-warning { background: var(--color-warning-soft); color: var(--color-warning); }
+  .badge-error   { background: var(--color-error-soft);   color: var(--color-error);   }
+  .badge-info    { background: var(--color-info-soft);    color: var(--color-info);    }
+  .badge-brand   { background: rgba(124,92,255,0.12);     color: var(--color-accent-300); }
+
+  /* ── Focus ring utility ───────────────────────────────────────── */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-accent-400);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Display typography (hero / section headlines) ────────────── */
+  /* Pair these with `font-display` (serif) or default sans for two
+     distinct emotive-vs-functional headline styles. */
+  .text-hero {
+    font-size: var(--text-hero);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+  }
+  .text-display {
+    font-size: var(--text-display);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .text-section {
+    font-size: var(--text-section);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+  .text-eyebrow {
+    font-size: var(--text-eyebrow);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+  }
+  .font-display {
+    font-family: var(--font-family-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Light surface wrapper ────────────────────────────────────── */
+  /* Apply on any section to flip into a Plain/Cluely-style white
+     section. All `--color-bg*`, `--color-fg*`, and `--color-border*`
+     tokens resolve to their light-mode equivalents inside. */
+  .surface-light {
+    background-color: var(--color-light-bg);
+    color: var(--color-light-fg);
+    --color-bg:            var(--color-light-bg);
+    --color-bg-elev-1:     var(--color-light-bg-elev-1);
+    --color-bg-elev-2:     var(--color-light-bg-elev-2);
+    --color-bg-elev-3:     var(--color-light-bg-elev-3);
+    --color-border:        var(--color-light-border);
+    --color-border-subtle: var(--color-light-border-subtle);
+    --color-border-strong: var(--color-light-border-strong);
+    --color-fg:            var(--color-light-fg);
+    --color-fg-muted:      var(--color-light-fg-muted);
+    --color-fg-dim:        var(--color-light-fg-dim);
+    --color-fg-faint:      var(--color-light-fg-faint);
+  }
+
+  /* ── Browser mockup chrome (Cluely / Arc / Plain pattern) ─────── */
+  /* Wraps any element in a realistic macOS browser frame. The traffic
+     lights are pure CSS via ::before, so consumers just supply content. */
+  .browser-mockup {
+    position: relative;
+    background-color: var(--color-bg-elev-1);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+      0 30px 80px rgba(0, 0, 0, 0.35),
+      0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  .browser-mockup::before {
+    content: "";
+    display: block;
+    height: 36px;
+    background-color: var(--color-bg-elev-2);
+    border-bottom: 1px solid var(--color-border-subtle);
+    background-image:
+      radial-gradient(circle at 16px 50%, #FF5F57 5px, transparent 5.5px),
+      radial-gradient(circle at 36px 50%, #FEBC2E 5px, transparent 5.5px),
+      radial-gradient(circle at 56px 50%, #28C840 5px, transparent 5.5px);
+  }
+
+  /* ── Sticky CTA pill (Arc/Dia "Try Dia", Cron banner pattern) ─── */
+  .pill-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem 0.375rem 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--color-bg-elev-2);
+    border: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-fg);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .pill-banner:hover {
+    background-color: var(--color-bg-elev-3);
+    border-color: var(--color-border-strong);
+  }
+
+  /* ── Marquee logo strip (press / customer logos band) ─────────── */
+  .logo-strip {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    animation: logoStripScroll 40s linear infinite;
+  }
+  @keyframes logoStripScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
 }
 
 @layer utilities {
   .animate-slide-up {
-    animation: slideUp 0.2s ease-out;
+    animation: var(--animate-slide-up);
   }
   .page-enter {
-    animation: slideUp 0.25s ease-out;
+    animation: var(--animate-slide-up);
+    animation-duration: 0.25s;
   }
   .page-ready {
     animation: none;
   }
-}
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+  /* ── Auth page card mount animation ────────────────────────────
+     Triggers on every mount, so navigating between Login / Register /
+     ForgotPassword feels like a smooth fade-in instead of a hard swap. */
+  .auth-card-enter {
+    animation: authCardEnter 360ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  @keyframes authCardEnter {
+    0%   { opacity: 0; transform: translateY(8px) scale(0.985); filter: blur(2px); }
+    100% { opacity: 1; transform: translateY(0)   scale(1);     filter: blur(0); }
+  }
+
+  /* ── CV wizard scene transition ────────────────────────────────
+     Fires each time a new scene mounts (key={activeId} on the main).
+     Subtle: just a soft fade + 6px upward slide, no scale. */
+  .scene-enter {
+    animation: sceneEnter 240ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+  @keyframes sceneEnter {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 }
 

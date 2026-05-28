@@ -12,6 +12,7 @@ import PageHeader from "../components/ui/PageHeader";
 import { billingApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
 import { getCleanBillingUrl, getPlanName, getUsageBarState } from "../utils/billingState";
+import { getCvGenState } from "../cv/storage";
 
 // ─── Plan definitions — sourced from pricing page screenshot ──────────────────
 // soon:true = grayed-out "coming soon" feature (shown muted, not crossed out)
@@ -23,9 +24,9 @@ const PLANS = [
     price: "Gratis",
     period: "",
     iconCls: "from-slate-400 to-slate-500",
-    borderCls: "border-slate-700",
+    borderCls: "border-white/10",
     badgeCls: "",
-    btnCls: "border border-[#1f2937] text-slate-500 cursor-default bg-[#0b1220]",
+    btnStyle: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-dim)', cursor: 'default' },
     Icon: Star,
     features: [
       { label: "5 Lebenslauf-Analysen / Monat" },
@@ -45,11 +46,11 @@ const PLANS = [
     price: "€4,99",
     period: "/ Monat",
     badge: "Beliebt",
-    iconCls: "from-brand-500 to-accent-600",
-    borderCls: "border-brand-400",
-    glowCls: "shadow-[0_0_28px_rgba(91,79,232,0.35)] hover:shadow-[0_0_40px_rgba(91,79,232,0.55)]",
-    badgeCls: "bg-gradient-to-r from-brand-500 to-accent-600 text-white",
-    btnCls: "bg-gradient-to-r from-brand-500 to-accent-600 text-white hover:from-brand-400 hover:to-accent-500 shadow-md shadow-brand-500/30",
+    iconCls: "",
+    borderCls: "border-[var(--color-accent-500)]/40",
+    glowStyle: { boxShadow: 'var(--shadow-glow-brand)' },
+    badgeStyle: { background: 'var(--color-accent-500)', color: 'white' },
+    btnStyle: { background: 'var(--color-accent-500)', color: 'white', boxShadow: 'var(--shadow-brand)' },
     Icon: Zap,
     features: [
       { label: "15 Lebenslauf-Analysen / Monat" },
@@ -68,11 +69,11 @@ const PLANS = [
     price: "€7,99",
     period: "/ Monat",
     badge: "Bestes Angebot",
-    iconCls: "from-brand-500 to-accent-600",
-    borderCls: "border-brand-400",
-    glowCls: "shadow-[0_0_28px_rgba(91,79,232,0.35)] hover:shadow-[0_0_40px_rgba(91,79,232,0.55)]",
-    badgeCls: "bg-gradient-to-r from-brand-500 to-accent-600 text-white",
-    btnCls: "bg-gradient-to-r from-brand-500 to-accent-600 text-white hover:from-brand-400 hover:to-accent-500 shadow-md shadow-brand-500/30",
+    iconCls: "",
+    borderCls: "border-[var(--color-accent-500)]/40",
+    glowStyle: { boxShadow: 'var(--shadow-glow-brand)' },
+    badgeStyle: { background: 'var(--color-accent-500)', color: 'white' },
+    btnStyle: { background: 'var(--color-accent-500)', color: 'white', boxShadow: 'var(--shadow-brand)' },
     Icon: Crown,
     features: [
       { label: "Unbegrenzt Lebenslauf-Analysen / Monat" },
@@ -92,9 +93,9 @@ const PLANS = [
     price: "Auf Anfrage",
     period: "",
     iconCls: "from-slate-500 to-slate-700",
-    borderCls: "border-[#374151]",
+    borderCls: "border-white/10",
     badgeCls: "",
-    btnCls: "bg-slate-900 text-white hover:bg-slate-800 shadow-sm",
+    btnStyle: { backgroundColor: 'var(--color-surface-elevated)', color: 'var(--color-ink-primary)', boxShadow: 'var(--shadow-tile)' },
     btnLabel: "Kontaktiere uns",
     Icon: Building2,
     features: [
@@ -117,6 +118,7 @@ const FEATURE_SHORT = {
   job_alerts:   "Alerts",
   ai_chat:      "KI-Bewerbungsassistent",
   job_search:   "Jobsuche",
+  cv_pdf:       "Lebenslauf-PDF",
 };
 
 // ─── SVG bar chart hero ───────────────────────────────────────────────────────
@@ -129,17 +131,17 @@ function UsageHeroChart({ usage }) {
   const items = usage.filter((u) => u.limit > 0 && u.limit !== -1);
   if (!items.length) return null;
 
-  const vw = 560, vh = 180;
-  const padL = 30, padR = 12, padT = 20, padB = 44;
+  const vw = 360, vh = 180;
+  const padL = 28, padR = 8, padT = 14, padB = 42;
   const chartW = vw - padL - padR;
   const chartH = vh - padT - padB;
   const n = items.length;
   const step = chartW / n;
-  const barW = Math.min(44, step * 0.48);
+  const barW = Math.min(58, step * 0.72);
 
   return (
-    <div className="rounded-xl border border-[#1C2333] bg-[#0D1117] px-2 pt-2 pb-1">
-      <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 pt-2 pb-1">
+      <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full" style={{ maxHeight: 220 }} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         {/* Dashed grid lines */}
         {[25, 50, 75, 100].map((pct) => {
           const y = padT + chartH * (1 - pct / 100);
@@ -157,52 +159,39 @@ function UsageHeroChart({ usage }) {
         {items.map((item, i) => {
           const { pct, unlimited } = getUsageBarState(item.feature, item.used, item.limit);
           const isAtLimit = !unlimited && pct >= 100;
-          const isWarn    = !unlimited && pct >= 80 && !isAtLimit;
+          const isHigh    = !unlimited && pct >= 80 && !isAtLimit;
           const fillPct   = Math.min(100, pct);
           const barH      = (fillPct / 100) * chartH;
           const cx        = padL + step * i + step / 2;
           const x         = cx - barW / 2;
           const barY      = padT + chartH - barH;
-          const gradId    = `hg-${item.feature}`;
 
-          const c1 = isAtLimit ? "#fcd34d" : isWarn ? "#93c5fd" : "#93c5fd";
-          const c2 = isAtLimit ? "#f59e0b" : isWarn ? "#3b82f6" : "#3b82f6";
-          const valColor = isAtLimit ? "#fbbf24" : isWarn ? "#60a5fa" : "#60a5fa";
+          const fillColor = isAtLimit ? "#f87171" : isHigh ? "#fb923c" : "#7c7df0";
+          const fillOpacity = 1;
+          const valColor = "#fafafa";
           const shortLabel = FEATURE_SHORT[item.feature] || item.feature;
           const labelY = padT + chartH + 14;
 
           return (
             <g key={item.feature}>
-              <defs>
-                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={c1} />
-                  <stop offset="100%" stopColor={c2} />
-                </linearGradient>
-              </defs>
               {/* Track */}
-              <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="#111827" />
+              <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="rgba(255,255,255,0.05)" />
               {/* Fill */}
               {!unlimited && barH > 1 && (
-                <rect x={x} y={barY} width={barW} height={barH} rx="6" fill={`url(#${gradId})`} />
+                <rect x={x} y={barY} width={barW} height={barH} rx="6" fill={fillColor} fillOpacity={fillOpacity} />
               )}
               {unlimited && (
-                <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill={`url(#${gradId})`} opacity="0.22" />
+                <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="#7c7df0" fillOpacity="0.25" />
               )}
               {/* Value + limit on same baseline */}
               <text
-                x={cx} y={Math.max(padT + 13, barY - 4)}
-                textAnchor="middle" fontSize="9" fontWeight="700" fill={isAtLimit ? "#111827" : valColor}
+                x={cx} y={Math.max(padT + 14, barY - 5)}
+                textAnchor="middle" fontSize="10" fontWeight="600" fill={valColor}
               >
-                {unlimited ? "∞" : `${item.used} / ${item.limit}`}
+                {unlimited ? "∞" : `${item.used}/${item.limit}`}
               </text>
               {/* Feature label */}
-              <text x={cx} y={labelY} textAnchor="middle" fontSize="9" fill="#94a3b8">{shortLabel}</text>
-              {/* Limit reached indicator — only shown at 100% */}
-              {isAtLimit && (
-                <text x={cx} y={labelY + 13} textAnchor="middle" fontSize="8" fontWeight="700" fill="#fbbf24">
-                  Aktion nötig
-                </text>
-              )}
+              <text x={cx} y={labelY} textAnchor="middle" fontSize="10" fill="#94a3b8">{shortLabel}</text>
             </g>
           );
         })}
@@ -219,7 +208,7 @@ function UsageHeroChart({ usage }) {
  * @param {number} props.used
  * @param {number} props.limit
  */
-function UsageRow({ feature, used, limit }) {
+function _UsageRow({ feature, used, limit }) {
   const { label, unlimited, pct, displayLimit } = getUsageBarState(feature, used, limit);
   const isAtLimit = !unlimited && pct >= 100;
   const isWarn    = !unlimited && pct >= 80 && !isAtLimit;
@@ -230,22 +219,18 @@ function UsageRow({ feature, used, limit }) {
     ? "linear-gradient(90deg,#93c5fd,#3b82f6)"
     : "linear-gradient(90deg,#60a5fa,#3b82f6)";
 
-  // Soft, neutral badges — color + label reflect usage level
-  const badgeText = unlimited ? "Unbegrenzt" : isAtLimit ? "Voll" : isWarn ? "Fast voll" : pct < 60 ? "Optimal" : `${Math.round(pct)}%`;
+  // Calm: state the fact, no value judgments. Color only signals limit reached.
+  const badgeText = unlimited ? "Unbegrenzt" : isAtLimit ? "Limit erreicht" : `${Math.round(pct)}%`;
   const badgeCls  = isAtLimit
-    ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
-    : isWarn
-    ? "bg-blue-500/10 text-blue-300 border border-blue-500/20"
-    : pct < 60
-    ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-    : "bg-[#111827] text-slate-300 border border-[#1C2333]";
+    ? "bg-[var(--color-warning-soft)] text-[var(--color-warning)] border border-[var(--color-warning)]/20"
+    : "bg-[var(--color-bg-elev-1)] text-[var(--color-fg-muted)] border border-[var(--color-border)]";
 
   const shortName = label.split(" (")[0];
 
   return (
     <div className="flex items-center gap-3">
-      <span className="w-36 sm:w-44 flex-shrink-0 truncate text-xs text-slate-300">{shortName}</span>
-      <div className="relative flex-1 h-2.5 rounded-full bg-[#111827] overflow-hidden border border-[#1C2333]">
+      <span className="w-36 sm:w-44 flex-shrink-0 truncate text-xs text-[var(--color-fg-muted)]">{shortName}</span>
+      <div className="relative flex-1 h-2.5 rounded-full bg-[var(--color-bg-elev-1)] overflow-hidden border border-[var(--color-border)]">
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
           style={{
@@ -256,7 +241,7 @@ function UsageRow({ feature, used, limit }) {
           }}
         />
       </div>
-      <span className="w-14 flex-shrink-0 text-right text-[10px] tabular-nums text-slate-400">
+      <span className="w-14 flex-shrink-0 text-right text-[10px] tabular-nums text-[var(--color-fg-muted)]">
         {unlimited ? "∞" : `${used} / ${displayLimit}`}
       </span>
       <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeCls}`}>
@@ -275,7 +260,7 @@ export default function BillingPage() {
   useEffect(() => {
     let didToast = false;
     if (params.get("success") === "true") {
-      toast.success("Upgrade erfolgreich! Willkommen bei deinem neuen Plan.");
+      toast.success("Plan aktiviert. Willkommen.");
       didToast = true;
     }
     if (params.get("canceled") === "true") {
@@ -305,14 +290,14 @@ export default function BillingPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: initData } = useQuery({ queryKey: ["init"] });
+  const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
 
   const handleManage = async () => {
     try {
       const res = await billingApi.createPortal();
       window.location.href = res.data.portal_url;
     } catch (err) {
-      toast.error(getApiErrorMessage(err, "Fehler beim Öffnen der Abonnement-Verwaltung"));
+      toast.error(getApiErrorMessage(err, "Abonnement-Verwaltung konnte nicht geöffnet werden"));
     }
   };
 
@@ -320,8 +305,8 @@ export default function BillingPage() {
     return (
       <div className="space-y-6 animate-slide-up">
         <div>
-          <div className="mb-2 h-7 w-40 animate-pulse rounded bg-[#1f2937]" />
-          <div className="h-4 w-64 animate-pulse rounded bg-[#1a2235]" />
+          <div className="mb-2 h-7 w-40 animate-pulse rounded bg-[var(--color-bg-elev-2)]" />
+          <div className="h-4 w-64 animate-pulse rounded bg-[var(--color-bg-elev-2)]" />
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <CardSkeleton lines={3} />
@@ -338,8 +323,9 @@ export default function BillingPage() {
   const planName = getPlanName(planKey);
   const isPaid   = planKey && planKey !== "basic";
   const isMax    = planKey === "max" || planKey === "enterprise";
+  const cvGenState = getCvGenState(planKey);
 
-  const currentPlan = PLANS.find((p) => p.key === planKey) || PLANS[0];
+  const _currentPlan = PLANS.find((p) => p.key === planKey) || PLANS[0];
 
   const periodEnd = sub?.current_period_end
     ? new Date(sub.current_period_end).toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric" })
@@ -350,8 +336,9 @@ export default function BillingPage() {
   const avgUsagePct  = limitedItems.length
     ? Math.round(limitedItems.reduce((s, u) => s + Math.min(100, (u.used / u.limit) * 100), 0) / limitedItems.length)
     : 0;
-  const healthColor  = avgUsagePct >= 80 ? "text-amber-300" : avgUsagePct >= 60 ? "text-blue-300" : "text-emerald-300";
-  const healthLabel  = avgUsagePct >= 80 ? "Aktion nötig" : avgUsagePct >= 60 ? "Hohe Nutzung" : "Optimal";
+  const healthColor  = avgUsagePct >= 80 ? "text-[#ef4444]" : "text-[#7c7df0]";
+  const healthBarColor = avgUsagePct >= 80 ? "#ef4444" : "#7c7df0";
+  const healthLabel  = `${avgUsagePct}% belegt`;
   const _comparisonRows = [
     { row: "Lebenslauf-Analysen / Monat", vals: ["5", "15", "Unbegrenzt", "Unbegrenzt"] },
     { row: "Motivationsschreiben / Monat", vals: ["5", "25", "Unbegrenzt", "Unbegrenzt"] },
@@ -361,47 +348,41 @@ export default function BillingPage() {
   ];
 
   return (
-    <div className={`space-y-8 animate-slide-up ${!isMax ? "pb-20 sm:pb-0" : ""}`}>
+    <div className={`space-y-5 animate-slide-up ${!isMax ? "pb-20 sm:pb-0" : ""}`}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <PageHeader
-        eyebrow="Konto"
-        title="Abrechnung"
+        title="Abrechnung & Plan"
         description="Verwalte deinen Plan, deine Nutzung und den Ausbau deiner KI-Leistung."
       />
 
       {/* ── Plan hero card ───────────────────────────────────────────────────── */}
-      <div className={`relative overflow-hidden rounded-2xl border bg-[radial-gradient(circle_at_top_right,rgba(91,79,232,0.10),transparent_30%),linear-gradient(180deg,rgba(17,24,39,0.55)_0%,rgba(0,0,0,0.55)_100%)] p-5 sm:p-6 backdrop-blur-sm ${currentPlan.borderCls}`}>
-        {/* Gradient glow */}
-        <div className={`pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br ${currentPlan.iconCls} opacity-10 blur-3xl`} />
-
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]/60 p-5 sm:p-6">
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
-            <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${currentPlan.iconCls} shadow-md`}>
-              <currentPlan.Icon className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Aktiver Plan</p>
-              <h2 className="mt-0.5 text-2xl sm:text-3xl font-bold text-white">{planName}</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                {isPaid && periodEnd
-                  ? `Verlängert automatisch am ${periodEnd}`
-                  : "Kostenloses Konto mit sicherem Einstieg. Keine Karte erforderlich."}
-              </p>
-              {usage.length > 0 && (
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Gesamtnutzung:</span>
-                  <span className={`text-sm font-bold ${healthColor}`}>{avgUsagePct}% — {healthLabel}</span>
-                </div>
-              )}
-            </div>
+          <div className="min-w-0">
+            <p className="text-[12px] text-[var(--color-fg-dim)]">Aktiver Plan</p>
+            <h2
+              className="mt-1 text-[28px] sm:text-[34px] font-semibold tracking-tight text-[var(--color-fg)] leading-none"
+              style={{ letterSpacing: "-0.025em" }}
+            >{planName}</h2>
+            <p className="mt-3 text-[13.5px] text-[var(--color-fg-muted)]">
+              {isPaid && periodEnd
+                ? `Verlängert automatisch am ${periodEnd}`
+                : "Kostenloses Konto mit sicherem Einstieg. Keine Karte erforderlich."}
+            </p>
+            {usage.length > 0 && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-[12.5px] text-[var(--color-fg-dim)]">Gesamtnutzung</span>
+                <span className={`text-[13px] font-semibold ${healthColor}`}>{healthLabel}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2 sm:items-end">
             {isPaid && (
               <button
                 onClick={handleManage}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[#1C2333] bg-[#111827] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-[#0f172a] whitespace-normal sm:whitespace-nowrap text-center leading-snug"
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-4 py-2.5 text-sm font-medium text-[var(--color-fg)] transition-colors hover:bg-[var(--color-bg-elev-1)] whitespace-normal sm:whitespace-nowrap text-center leading-snug"
               >
                 <ExternalLink className="h-4 w-4" />
                 Abo verwalten
@@ -410,7 +391,7 @@ export default function BillingPage() {
             {!isMax && (
               <button
                 onClick={() => navigate("/pricing")}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500 hover:shadow-xl hover:shadow-brand-500/40 whitespace-normal sm:whitespace-nowrap text-center leading-snug"
+                className="flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-400)] whitespace-normal sm:whitespace-nowrap text-center leading-snug"
               >
                 <Zap className="h-4 w-4" />
                 {planKey === "pro" ? "Auf Max upgraden" : "Auf Pro upgraden"}
@@ -418,10 +399,10 @@ export default function BillingPage() {
               </button>
             )}
             {isPaid && sub?.last4 && (
-              <div className="flex items-center gap-2 rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-2">
-                <CreditCard className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                <span className="text-sm text-slate-300">•••• {sub.last4}</span>
-                <button onClick={handleManage} className="text-xs font-semibold text-brand-300 hover:text-brand-200 ml-1">Ändern</button>
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 py-2">
+                <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)] flex-shrink-0" />
+                <span className="text-sm text-[var(--color-fg-muted)]">•••• {sub.last4}</span>
+                <button onClick={handleManage} className="text-xs font-semibold text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] ml-1 transition-colors">Ändern</button>
               </div>
             )}
           </div>
@@ -430,71 +411,60 @@ export default function BillingPage() {
 
       {/* ── Usage: donut gauges ───────────────────────────────────────────────── */}
       {usage.length > 0 && (
-        <div className="rounded-2xl border border-[#1C2333] bg-[#0D1117]/60 backdrop-blur-sm shadow-[0_20px_60px_rgba(0,0,0,0.28)] overflow-hidden">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)]/60 backdrop-blur-sm shadow-[0_20px_60px_rgba(0,0,0,0.28)] overflow-hidden">
           {/* Section header with health bar */}
-          <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-[#1C2333]">
+          <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-[var(--color-border)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-white">Deine Nutzung</h3>
-                <p className="mt-0.5 text-xs text-slate-400">Verbrauch im aktuellen Abrechnungszeitraum</p>
+                <p className="mt-0.5 text-xs text-[var(--color-fg-muted)]">Verbrauch im aktuellen Abrechnungszeitraum</p>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
-                  avgUsagePct >= 80 ? "bg-amber-500/10 text-amber-300 border border-amber-500/20" :
-                  avgUsagePct >= 60 ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" :
-                  "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-                }`}>
+                <span className={`whitespace-nowrap text-xs font-semibold ${healthColor}`}>
                   {healthLabel}
                 </span>
-                <span className="text-[10px] text-slate-400">{avgUsagePct}% belegt</span>
               </div>
             </div>
-            {/* Overall health bar */}
-            <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#111827] border border-[#1C2333]">
+            {/* Overall progress bar — single neutral fg colour, opacity reflects intensity */}
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
               <div
-                className="h-full rounded-full transition-all duration-1000"
-                style={{
-                  width: `${avgUsagePct}%`,
-                  background: avgUsagePct >= 80
-                    ? "linear-gradient(90deg,#fcd34d,#f59e0b)"
-                    : avgUsagePct >= 60
-                    ? "linear-gradient(90deg,#93c5fd,#3b82f6)"
-                    : "linear-gradient(90deg,#6ee7b7,#10b981)",
-                  boxShadow: avgUsagePct >= 60 ? "0 0 16px rgba(59,130,246,0.24)" : "0 0 16px rgba(16,185,129,0.18)",
-                }}
+                className="h-full rounded-full transition-[width] duration-1000"
+                style={{ width: `${avgUsagePct}%`, backgroundColor: healthBarColor }}
               />
             </div>
           </div>
 
           <div className="p-5 sm:p-6">
-          {/* Hero bar chart — scrollable on mobile so SVG renders at native size */}
-          <div className="overflow-x-auto -mx-2 px-2">
-            <div className="min-w-[420px] sm:min-w-[560px]">
-              <UsageHeroChart usage={usage} />
-            </div>
-          </div>
-
-          {/* Slim detail rows */}
-          <div className="mt-5 space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Detail-Übersicht</p>
-            {usage.map((item) => (
-              <UsageRow key={item.feature} {...item} />
-            ))}
-          </div>
+          {/* Hero bar chart — includes locally-tracked cv_pdf */}
+          <UsageHeroChart usage={[
+            ...usage,
+            { feature: "cv_pdf", used: cvGenState.count, limit: cvGenState.unlimited ? -1 : cvGenState.limit },
+          ]} />
 
           {!isMax && (
-            <div className="mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl bg-brand-500/10 border border-brand-500/20 px-4 py-3">
-              <div className="flex items-center gap-2.5">
-                <Rocket className="h-4 w-4 text-brand-300 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-brand-100 font-medium">
-                  Upgrade für mehr Kapazität und unbegrenzte KI-Nutzung.
-                </p>
+            <div
+              className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl px-5 py-4"
+              style={{
+                background: "linear-gradient(135deg, rgba(124,125,240,0.18) 0%, rgba(167,139,250,0.12) 100%)",
+                border: "1px solid rgba(124,125,240,0.40)",
+                boxShadow: "0 0 24px rgba(124,125,240,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg grid place-items-center" style={{ background: "rgba(124,125,240,0.20)" }}>
+                  <Rocket className="h-4 w-4 text-[var(--color-accent-300)]" />
+                </div>
+                <div>
+                  <p className="text-[13.5px] font-semibold text-[var(--color-fg)]">Mehr aus JobAssist herausholen</p>
+                  <p className="text-[12px] text-[var(--color-accent-300)]">Unbegrenzte KI-Nutzung, mehr Alerts und PDF-Exporte.</p>
+                </div>
               </div>
               <button
                 onClick={() => navigate("/pricing")}
-                className="flex-shrink-0 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500"
+                className="flex-shrink-0 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all hover:brightness-110 active:scale-[0.98]"
+                style={{ background: "var(--color-accent-500)", color: "#fff", boxShadow: "0 2px 12px rgba(124,125,240,0.35)" }}
               >
-                Mehr erfahren
+                Auf Pro upgraden →
               </button>
             </div>
           )}
@@ -508,20 +478,20 @@ export default function BillingPage() {
           a fresh checkout, or a temporary Stripe outage). */}
       {isPaid && sub?.last4 && (
         <div className="grid grid-cols-1 gap-4">
-          <div className="rounded-2xl border border-[#1C2333] bg-[#0D1117] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)]">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)]">
             <div className="mb-3 flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-slate-400" />
+              <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)]" />
               <p className="text-sm font-bold text-white">Zahlungsmethode</p>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-[#1C2333] bg-[#111827] px-3 py-3">
+            <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-3 py-3">
               <div className="flex items-center gap-2.5">
-                <span className="rounded-lg border border-[#273244] bg-black px-2 py-1 text-[10px] font-bold text-slate-300 tracking-wider">VISA</span>
+                <span className="rounded-lg border border-[var(--color-border)] bg-black px-2 py-1 text-[10px] font-bold text-[var(--color-fg-muted)] tracking-wider">VISA</span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-100">•••• •••• •••• {sub.last4}</p>
-                  <p className="text-[11px] text-slate-400">Standardzahlungsmethode</p>
+                  <p className="text-sm font-semibold text-[var(--color-fg)]">•••• •••• •••• {sub.last4}</p>
+                  <p className="text-[11px] text-[var(--color-fg-muted)]">Standardzahlungsmethode</p>
                 </div>
               </div>
-              <button onClick={handleManage} className="text-xs font-semibold text-brand-300 hover:text-brand-200 transition-colors">
+              <button onClick={handleManage} className="text-xs font-semibold text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors">
                 Bearbeiten
               </button>
             </div>
@@ -534,28 +504,28 @@ export default function BillingPage() {
         {/* Payment method */}
         <div className="card p-5">
           <div className="mb-3 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-slate-400" />
-            <p className="text-sm font-bold text-slate-100">Zahlungsmethode</p>
+            <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)]" />
+            <p className="text-sm font-bold text-[var(--color-fg)]">Zahlungsmethode</p>
           </div>
           {isPaid && sub?.last4 ? (
-            <div className="flex items-center justify-between rounded-xl border border-[#1f2937] bg-[#050608] px-3 py-3">
+            <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-3">
               <div className="flex items-center gap-2.5">
-                <span className="rounded-lg border border-[#1f2937] bg-[#08090c] px-2 py-1 text-[10px] font-bold text-slate-400 tracking-wider">VISA</span>
+                <span className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 py-1 text-[10px] font-bold text-[var(--color-fg-muted)] tracking-wider">VISA</span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-200">•••• •••• •••• {sub.last4}</p>
-                  <p className="text-[11px] text-slate-400">Standardzahlungsmethode</p>
+                  <p className="text-sm font-semibold text-[var(--color-fg)]">•••• •••• •••• {sub.last4}</p>
+                  <p className="text-[11px] text-[var(--color-fg-muted)]">Standardzahlungsmethode</p>
                 </div>
               </div>
-              <button onClick={handleManage} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+              <button onClick={handleManage} className="text-xs font-semibold text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors">
                 Bearbeiten
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 rounded-xl border border-dashed border-[#1f2937] bg-[#050608] px-4 py-4">
-              <CreditCard className="h-5 w-5 text-slate-300" />
+            <div className="flex items-center gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-4">
+              <CreditCard className="h-5 w-5 text-[var(--color-fg-muted)]" />
               <div>
-                <p className="text-sm font-medium text-slate-500">Keine Zahlungsmethode</p>
-                <p className="text-xs text-slate-400">Kostenloser Plan — keine Karte erforderlich.</p>
+                <p className="text-sm font-medium text-[var(--color-fg-dim)]">Keine Zahlungsmethode</p>
+                <p className="text-xs text-[var(--color-fg-muted)]">Kostenloser Plan — keine Karte erforderlich.</p>
               </div>
             </div>
           )}
@@ -564,31 +534,31 @@ export default function BillingPage() {
         {/* Billing summary */}
         <div className="card p-5">
           <div className="mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-slate-400" />
-            <p className="text-sm font-bold text-slate-100">Zusammenfassung</p>
+            <Zap className="h-4 w-4 text-[var(--color-fg-muted)]" />
+            <p className="text-sm font-bold text-[var(--color-fg)]">Zusammenfassung</p>
           </div>
           <dl className="space-y-2.5">
             <div className="flex justify-between text-sm">
-              <dt className="text-slate-500">Plan</dt>
-              <dd className="font-semibold text-slate-100">{planName}</dd>
+              <dt className="text-[var(--color-fg-dim)]">Plan</dt>
+              <dd className="font-semibold text-[var(--color-fg)]">{planName}</dd>
             </div>
             <div className="flex justify-between text-sm">
-              <dt className="text-slate-500">Status</dt>
-              <dd className={`font-semibold ${isPaid ? "text-emerald-400" : "text-slate-500"}`}>
+              <dt className="text-[var(--color-fg-dim)]">Status</dt>
+              <dd className={`font-semibold ${isPaid ? "text-emerald-400" : "text-[var(--color-fg-dim)]"}`}>
                 {isPaid ? "Aktiv" : "Kostenlos"}
               </dd>
             </div>
             {periodEnd && (
               <div className="flex justify-between text-sm">
-                <dt className="text-slate-500">Nächste Verlängerung</dt>
-                <dd className="font-semibold text-slate-100">{periodEnd}</dd>
+                <dt className="text-[var(--color-fg-dim)]">Nächste Verlängerung</dt>
+                <dd className="font-semibold text-[var(--color-fg)]">{periodEnd}</dd>
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <dt className="text-slate-500">Monatlicher Betrag</dt>
-              <dd className="font-semibold text-slate-100">
+              <dt className="text-[var(--color-fg-dim)]">Monatlicher Betrag</dt>
+              <dd className="font-semibold text-[var(--color-fg)]">
                 {PLANS.find((p) => p.key === planKey)?.price || "0"}{" "}
-                <span className="font-normal text-slate-400">{isPaid ? "/ Monat" : ""}</span>
+                <span className="font-normal text-[var(--color-fg-muted)]">{isPaid ? "/ Monat" : ""}</span>
               </dd>
             </div>
           </dl>
@@ -604,19 +574,6 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Sticky upgrade footer — mobile only */}
-      {!isMax && (
-        <div className="sm:hidden fixed left-0 right-0 z-30 bg-black/95 backdrop-blur-sm border-t border-[#1C2333] px-3 py-2.5 shadow-lg" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}>
-          <button
-            onClick={() => navigate("/pricing")}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500 hover:shadow-xl hover:shadow-brand-500/40 min-h-[44px]"
-          >
-            <Zap className="h-4 w-4" />
-            Jetzt auf Pro upgraden
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

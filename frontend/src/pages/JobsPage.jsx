@@ -1,948 +1,650 @@
-import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+/**
+ * JobsPage — Meine Stellen / Liste.
+ *
+ * v5b synthesis (see /demo/v5b/index.html). Three zoom levels on one screen:
+ *   1. Heute-Karte — the single most urgent action, highlighted purple.
+ *   2. Urgency sections — Diese Woche, Bereit zu bewerben, Geparkt, Abgeschlossen.
+ *   3. Thread-style rows — logo + name + last activity preview + time + indicator.
+ *
+ * The discovery surface (search) was extracted into FindenPage.jsx and lives
+ * at /finden.
+ */
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Briefcase, Search, MapPin, ExternalLink, ChevronDown, Sparkles, SearchCheck, Bookmark } from "lucide-react";
-import { jobApi, aiAssistantApi, researchApi } from "../services/api";
-import SavedJobsSection from "../components/SavedJobsSection";
+import { Search, Sparkles, VolumeX, ChevronDown, MoreHorizontal, Plus, ArrowUpDown } from "lucide-react";
 
-/**
- * Premium tile wrapper — ultra-dark gradient with 1px inner glow at top.
- * @param {object} props
- * @param {React.ReactNode} props.children
- * @param {string} [props.className]
- */
-function Tile({ children, className = '' }) {
-  return (
-    <div
-      className={`rounded-2xl p-5 sm:p-6 ${className}`}
-      style={{
-        background: 'linear-gradient(180deg, #080808 0%, #030303 100%)',
-        boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.04)',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
- * Small label in ALL-CAPS with wide tracking.
- * @param {object} props
- * @param {React.ReactNode} props.children
- * @param {string} [props.className]
- */
-function TileLabel({ children, className = '' }) {
-  return (
-    <span
-      className={`block text-[10px] font-medium tracking-[0.18em] uppercase text-[#505058] ${className}`}
-    >
-      {children}
-    </span>
-  );
-}
-
-const SAVED_STATUS_CFG = {
-  bookmarked:   { label: "Gespeichert",  color: "#94a3b8" },
-  applied:      { label: "Beworben",     color: "#10b981" },
-  interviewing: { label: "Gespräch",     color: "#3b82f6" },
-  offered:      { label: "Angebot",      color: "#fbbf24" },
-  rejected:     { label: "Abgelehnt",    color: "#ef4444" },
-};
-function _StatusBadge({ status }) {
-  const cfg = SAVED_STATUS_CFG[status] || SAVED_STATUS_CFG.bookmarked;
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: cfg.color, boxShadow: `0 0 6px ${cfg.color}40` }} />
-      <span className="text-[10px] font-medium tracking-[0.14em] uppercase text-[#505058]">{cfg.label}</span>
-    </span>
-  );
-}
-
-/**
- * Minimalist match-score ring (32px) — Apple Wallet style.
- * @param {object} props
- * @param {number|null} props.score
- */
-function MiniMatchRing({ score }) {
-  const normalized = Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null;
-  const radius = 12;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = normalized == null ? circumference * 0.35 : circumference - (normalized / 100) * circumference;
-  const color = normalized == null ? '#3a3a42' : normalized >= 60 ? '#10b981' : normalized >= 40 ? '#f59e0b' : '#ef4444';
-
-  return (
-    <div className="relative w-8 h-8 flex-shrink-0">
-      <svg viewBox="0 0 32 32" className="-rotate-90 w-8 h-8">
-        <circle cx="16" cy="16" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
-        <circle
-          cx="16" cy="16" r={radius} fill="none"
-          stroke={color} strokeWidth="2.5" strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashOffset}
-          className="transition-all duration-500"
-          style={{ filter: `drop-shadow(0 0 4px ${color}40)` }}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[8px] font-semibold tabular-nums" style={{ color }}>
-        {normalized != null ? normalized : '—'}
-      </span>
-    </div>
-  );
-}
-
-import ViennaMap from "../components/ViennaMap";
-import CityMap from "../components/CityMap";
-import ResearchModal from "../components/ResearchModal";
-import useUsageGuard from "../hooks/useUsageGuard";
+import { jobApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
+import Button from "../components/ui/Button";
+import EmptyState from "../components/ui/EmptyState";
+import Skeleton from "../components/ui/Skeleton";
+import BottomSheet from "../components/ui/BottomSheet";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MUTED_KEY = "muted-jobs";
+
+const STATUS_BUCKETS = [
+  { key: "bookmarked",   label: "Gemerkt" },
+  { key: "applied",      label: "Beworben" },
+  { key: "interviewing", label: "Im Gespräch" },
+  { key: "offered",      label: "Angebot" },
+  { key: "rejected",     label: "Erledigt" },
+];
+
+const STATUS_GROUPS = [
+  { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0" },
+  { key: "offered",      label: "Angebot",     dot: "#4ade80" },
+  { key: "applied",      label: "Beworben",    dot: "#60a5fa" },
+  { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b" },
+];
+
+const C = {
+  surface1:   "#111113",
+  surface2:   "#18181b",
+  surface3:   "#27272a",
+  line:       "rgba(255,255,255,0.10)",
+  lineSubtle: "rgba(255,255,255,0.06)",
+  ink:        "#fafafa",
+  inkMuted:   "#a1a1aa",
+  inkDim:     "#71717a",
+  inkFaint:   "#52525b",
+};
+
+const FILTER_CHIPS = [
+  { key: "alle",         label: "Alle",        dot: "#71717a", activeBg: "#18181b",                    activeBorder: "rgba(255,255,255,0.10)" },
+  { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0", activeBg: "rgba(124,125,240,0.10)",    activeBorder: "rgba(124,125,240,0.30)" },
+  { key: "offered",      label: "Angebot",     dot: "#4ade80", activeBg: "rgba(74,222,128,0.08)",     activeBorder: "rgba(74,222,128,0.25)" },
+  { key: "applied",      label: "Beworben",    dot: "#60a5fa", activeBg: "rgba(96,165,250,0.08)",     activeBorder: "rgba(96,165,250,0.25)" },
+  { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b", activeBg: "rgba(245,158,11,0.08)",     activeBorder: "rgba(245,158,11,0.30)" },
+];
 
 const loadStored = (key) => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : undefined;
-  } catch {
-    return undefined;
-  }
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : undefined; } catch { return undefined; }
 };
-
 const saveStored = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* quota */ }
 };
 
-const CITY_DISTRICTS = {
-  "graz": [
-    { value: "8010", label: "1. Bezirk – Innere Stadt" },
-    { value: "8010", label: "2. Bezirk – St. Leonhard" },
-    { value: "8010", label: "3. Bezirk – Geidorf" },
-    { value: "8020", label: "4. Bezirk – Lend" },
-    { value: "8020", label: "5. Bezirk – Gries" },
-    { value: "8010", label: "6. Bezirk – Jakomini" },
-    { value: "8041", label: "7. Bezirk – Liebenau" },
-    { value: "8042", label: "8. Bezirk – St. Peter" },
-    { value: "8010", label: "9. Bezirk – Waltendorf" },
-    { value: "8047", label: "10. Bezirk – Ries" },
-    { value: "8044", label: "11. Bezirk – Mariatrost" },
-    { value: "8051", label: "12. Bezirk – Andritz" },
-    { value: "8052", label: "13. Bezirk – Gösting" },
-    { value: "8020", label: "14. Bezirk – Eggenberg" },
-    { value: "8054", label: "15. Bezirk – Wetzelsdorf" },
-    { value: "8054", label: "16. Bezirk – Straßgang" },
-    { value: "8055", label: "17. Bezirk – Puntigam" },
-  ],
-  "linz": [
-    { value: "4020", label: "Innenstadt" },
-    { value: "4020", label: "Bulgariplatz" },
-    { value: "4020", label: "Franckviertel" },
-    { value: "4020", label: "Kaplanhof" },
-    { value: "4020", label: "Neue Heimat" },
-    { value: "4020", label: "Bindermichl" },
-    { value: "4020", label: "Spallerhof" },
-    { value: "4040", label: "Urfahr" },
-    { value: "4040", label: "Dornach-Auhof" },
-    { value: "4030", label: "Ebelsberg" },
-    { value: "4030", label: "Pichling" },
-  ],
-  "salzburg": [
-    { value: "5020", label: "Altstadt" },
-    { value: "5020", label: "Mülln" },
-    { value: "5020", label: "Nonntal" },
-    { value: "5020", label: "Elisabeth-Vorstadt" },
-    { value: "5020", label: "Schallmoos" },
-    { value: "5020", label: "Lehen" },
-    { value: "5020", label: "Maxglan" },
-    { value: "5020", label: "Gneis" },
-    { value: "5020", label: "Leopoldskron-Moos" },
-    { value: "5026", label: "Aigen" },
-    { value: "5026", label: "Gnigl" },
-    { value: "5023", label: "Itzling" },
-    { value: "5023", label: "Liefering" },
-  ],
-  "innsbruck": [
-    { value: "6020", label: "Innere Stadt" },
-    { value: "6020", label: "Wilten" },
-    { value: "6020", label: "Pradl" },
-    { value: "6020", label: "Saggen" },
-    { value: "6020", label: "Dreiheiligen" },
-    { value: "6020", label: "Hötting" },
-    { value: "6020", label: "Mariahilf–St. Nikolaus" },
-    { value: "6020", label: "St. Nikolaus" },
-    { value: "6020", label: "Hötting West" },
-    { value: "6020", label: "Sieglanger–Mentlberg" },
-    { value: "6020", label: "Amras" },
-    { value: "6020", label: "Arzl" },
-    { value: "6020", label: "Mühlau" },
-    { value: "6020", label: "Rum" },
-  ],
-  "klagenfurt": [
-    { value: "9020", label: "Innere Stadt" },
-    { value: "9020", label: "Völkendorf" },
-    { value: "9020", label: "Waidmannsdorf" },
-    { value: "9020", label: "St. Ruprecht" },
-    { value: "9020", label: "Annabichl" },
-    { value: "9020", label: "Viktring" },
-  ],
-  "st. pölten": [
-    { value: "3100", label: "Innenstadt" },
-    { value: "3100", label: "Harland" },
-    { value: "3100", label: "Pottenbrunn" },
-    { value: "3100", label: "Spratzern" },
-  ],
-  "wels": [
-    { value: "4600", label: "Innenstadt" },
-    { value: "4600", label: "Neustadt" },
-    { value: "4600", label: "Lichtenegg" },
-  ],
-  "villach": [
-    { value: "9500", label: "Innere Stadt" },
-    { value: "9500", label: "Völkendorf" },
-    { value: "9500", label: "Perau" },
-  ],
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Job search page: live search with filters, match scoring, and inline job-add flow. */
-export default function JobsPage() {
-  const [_searchParams] = useSearchParams();
-  const _navigate = useNavigate();
-  const qc = useQueryClient();
-  const [searchTab, setSearchTab] = useState("recommended");
+/**
+ * Days from now until the given date. Negative if already past. Null if no date.
+ * @param {string | Date | null | undefined} input
+ * @returns {number | null}
+ */
+function daysUntil(input) {
+  if (!input) return null;
+  const target = new Date(input);
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.ceil((target.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
 
-const [savingJobId, setSavingJobId] = useState(null);
-  const [savedJobIds, setSavedJobIds] = useState(new Set());
-  const [expandedJob, setExpandedJob] = useState(null);
-  const [jobAnalyses, setJobAnalyses] = useState({});
-  const [_analyzingJobId, setAnalyzingJobId] = useState(null);
-  const [researchModal, setResearchModal] = useState(null); // { companyName, jobDescription }
-  const [researchData, setResearchData] = useState(null);
-  const [researchCache, setResearchCache] = useState(() => loadStored("job-search-research") || {});
-  const [researchLoading, setResearchLoading] = useState(false);
-  const [sortBy, setSortBy] = useState("date");
-  const [visibleCount, setVisibleCount] = useState(5);
-  const [_savedFilter, _setSavedFilter] = useState("all");
-  const [_savedSort, _setSavedSort] = useState("score");
-  const [customSearchParams, setCustomSearchParams] = useState({
-    keywords: "",
-    location: "",
-    jobType: "",
-    bezirk: "",
-  });
-  // Tracks what was last submitted — drives the query key so cache is reused for identical searches
-  const [submittedCustomParams, setSubmittedCustomParams] = useState(null);
-  const [recommendedEnabled, setRecommendedEnabled] = useState(false);
-  const { data: _initData } = useQuery({ queryKey: ["init"] });
-  const loadMoreSentinelRef = useRef(null);
+/**
+ * Whole days elapsed since the given date. 0 if today.
+ * @param {string | Date | null | undefined} input
+ * @returns {number | null}
+ */
+function daysSince(input) {
+  if (!input) return null;
+  const since = new Date(input);
+  if (Number.isNaN(since.getTime())) return null;
+  return Math.floor((Date.now() - since.getTime()) / (1000 * 60 * 60 * 24));
+}
 
-  // Restore scroll position on mount; save it on unmount
-  useEffect(() => {
-    const savedY = sessionStorage.getItem("jobsPageScrollY");
-    if (savedY) {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: parseInt(savedY, 10), behavior: "instant" });
-      });
-    }
-    return () => {
-      sessionStorage.setItem("jobsPageScrollY", String(window.scrollY));
+/**
+ * Compact German relative-time label (heute, gestern, vor 3T, vor 2Wo.).
+ * @param {string | Date | null | undefined} input
+ * @returns {string | null}
+ */
+function timeAgoShort(input) {
+  const d = daysSince(input);
+  if (d === null) return null;
+  if (d <= 0) return "heute";
+  if (d === 1) return "gestern";
+  if (d < 7) return `vor ${d}T`;
+  if (d < 30) {
+    const w = Math.floor(d / 7);
+    return `vor ${w}Wo.`;
+  }
+  const m = Math.floor(d / 30);
+  return `vor ${m}M`;
+}
+
+
+/**
+ * Pick the single most urgent saved job to render as the Heute-Karte.
+ * Priority: overdue/near deadline → applied 10+ days no response → interview.
+ *
+ * @param {Array<object>} jobs
+ * @param {Set<number>} mutedIds
+ * @returns {{ job: object, action: string, sub: string } | null}
+ */
+function pickHeuteAction(jobs, mutedIds) {
+  const candidates = jobs.filter((j) =>
+    !mutedIds.has(j.id) && j.status !== "offered" && j.status !== "rejected",
+  );
+
+  const byDeadline = candidates
+    .map((j) => ({ j, d: daysUntil(j.deadline || j.expires_at) }))
+    .filter((x) => x.d !== null && x.d <= 3)
+    .sort((a, b) => a.d - b.d);
+  if (byDeadline.length) {
+    const { j, d } = byDeadline[0];
+    return {
+      job: j,
+      action: j.status === "bookmarked" ? "Bewerbung schreiben." : "Schritt erledigen.",
+      sub: d < 0
+        ? `Frist vor ${Math.abs(d)} Tagen abgelaufen.`
+        : d === 0 ? "Frist heute." : `Frist in ${d} ${d === 1 ? "Tag" : "Tagen"}.`,
     };
-  }, []);
+  }
 
-  const { data: savedJobs = [], isError: jobsError, error: jobsErrorObj, isFetching: jobsFetching } = useQuery({
+  const stale = candidates
+    .filter((j) => j.status === "applied")
+    .map((j) => ({ j, days: daysSince(j.updated_at || j.created_at) }))
+    .filter((x) => x.days !== null && x.days >= 10)
+    .sort((a, b) => b.days - a.days);
+  if (stale.length) {
+    const { j, days } = stale[0];
+    return {
+      job: j,
+      action: "Nachfragen.",
+      sub: `${days} Tage seit deiner Bewerbung.`,
+    };
+  }
+
+  const interviews = candidates.filter((j) => j.status === "interviewing");
+  if (interviews.length) {
+    const best = [...interviews].sort((a, b) => (b.match_score ?? -1) - (a.match_score ?? -1))[0];
+    return {
+      job: best,
+      action: "Vorstellung vorbereiten.",
+      sub: best.match_score != null ? `${Math.round(best.match_score)} % Passung` : null,
+    };
+  }
+
+  return null;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/**
+ * HeuteCard — prominent serif action card at the top of the list.
+ */
+function HeuteCard({ heute, onOpen }) {
+  const { job, action, sub } = heute;
+  const company = job.company || job.role || "Stelle";
+  const roleName = company !== (job.role || "") ? (job.role || "") : "";
+  const meta = [company, roleName].filter(Boolean).join(" \u00b7 ");
+  return (
+    <div
+      className="overflow-hidden"
+      style={{ background: C.surface1, border: `1px solid ${C.line}`, borderRadius: 12, display: "grid", gridTemplateColumns: "3px 1fr" }}
+    >
+      <div style={{ background: "#fbbf24" }} />
+      <div className="flex flex-col gap-3 px-5 py-[18px]">
+        <div className="min-w-0">
+          <p className="text-[11.5px] mb-1.5 truncate" style={{ color: C.inkDim }}>
+            <strong style={{ color: C.inkMuted, fontWeight: 500 }}>{meta}</strong>
+            {sub ? ` \u2014 ${sub}` : ""}
+          </p>
+          <p className="text-[19px] sm:text-[22px] leading-[1.2]" style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: C.ink, letterSpacing: "-0.015em" }}>
+            {action}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onOpen(job.id)}
+          className="self-start text-[12.5px] font-bold px-4 py-2 rounded-lg transition-all hover:-translate-y-px"
+          style={{ background: "#fbbf24", color: "#000", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+        >
+          Stelle öffnen →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * SectionLabel — minimal flat section header: dot · LABEL · count badge · hairline.
+ */
+function SectionLabel({ label, count, dot, collapsible, collapsed, onToggle }) {
+  const inner = (
+    <>
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dot }} />
+      <span className="text-[11px] font-semibold tracking-[0.07em] uppercase" style={{ color: C.inkMuted }}>{label}</span>
+      <span className="ml-auto text-[10.5px] font-medium tabular-nums px-1.5 py-px rounded" style={{ background: C.surface2, color: C.inkFaint }}>{count}</span>
+    </>
+  );
+  const shared = { borderBottom: `1px solid ${C.lineSubtle}` };
+  if (collapsible) {
+    return (
+      <button type="button" onClick={onToggle}
+        className="w-full flex items-center gap-1.5 pb-1.5 mb-0.5" style={shared}>
+        <ChevronDown className="w-2.5 h-2.5 flex-shrink-0 transition-transform"
+          style={{ color: C.inkDim, transform: collapsed ? "rotate(-90deg)" : "none" }} />
+        {inner}
+      </button>
+    );
+  }
+  return <div className="flex items-center gap-1.5 pb-1.5 mb-0.5" style={shared}>{inner}</div>;
+}
+
+/**
+ * ThreadRow — flat grid row: 2px accent bar · content · meta+⋯.
+ * No urgency pills; urgency is surfaced in HeuteCard instead.
+ */
+function ThreadRow({ job, muted = false, isFirst = false, onOpen, onChangeStatus }) {
+  const role     = job.role || job.title || "Stelle";
+  const company  = job.company || "";
+  const location = job.location ? job.location.split(",")[0] : null;
+  const meta     = [company, location].filter(Boolean).join(" \u00b7 ");
+  const timeLabel = timeAgoShort(job.updated_at || job.created_at);
+
+  const statusDot = STATUS_GROUPS.find((g) => g.key === job.status)?.dot ?? C.inkDim;
+
+  const rawScore   = Number.isFinite(job.match_score) ? Math.round(job.match_score) : null;
+  const matchScore = (rawScore !== null && job.match_feedback) ? rawScore : null;
+  const matchColor = matchScore !== null
+    ? (matchScore >= 80 ? "#34d399" : matchScore >= 65 ? "#2dd4bf" : matchScore >= 45 ? "#94a3b8" : "#52525b") : null;
+  const matchBg = matchScore !== null
+    ? (matchScore >= 80 ? "rgba(52,211,153,0.13)" : matchScore >= 65 ? "rgba(45,212,191,0.11)" : matchScore >= 45 ? "rgba(148,163,184,0.09)" : "rgba(82,82,91,0.06)") : null;
+
+  return (
+    <div
+      className={`group grid cursor-pointer transition-colors hover:bg-white/[0.03] ${muted ? "opacity-40" : ""}`}
+      style={{ gridTemplateColumns: "2px minmax(0, 1fr) auto", borderTop: isFirst ? "none" : `1px solid ${C.lineSubtle}` }}
+    >
+      <div
+        className="self-stretch transition-opacity opacity-[0.22] group-hover:opacity-90"
+        style={{ background: statusDot }}
+      />
+      <button
+        type="button"
+        onClick={onOpen}
+        className="min-w-0 text-left px-3 py-3 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent-400)] rounded-sm"
+      >
+        <p className="text-[13.5px] font-semibold leading-snug truncate" style={{ color: C.ink }}>{role}</p>
+        {meta && <p className="mt-0.5 text-[11.5px] truncate" style={{ color: C.inkMuted }}>{meta}</p>}
+      </button>
+      <div className="flex items-center gap-1.5 pr-3 flex-shrink-0">
+        {matchScore !== null && (
+          <span className="text-[10.5px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+            style={{ color: matchColor, background: matchBg }}>{matchScore}%</span>
+        )}
+        {timeLabel && (
+          <span className="text-[11px] tabular-nums" style={{ color: C.inkFaint, minWidth: 36, textAlign: "right" }}>{timeLabel}</span>
+        )}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onChangeStatus(); }}
+          aria-label={`Optionen für ${role}`}
+          className="w-[22px] h-[22px] rounded flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex-shrink-0"
+          style={{ color: C.inkDim }}
+        >
+          <MoreHorizontal className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Loading skeleton — flat section + rows style. */
+function RowSkeleton() {
+  return (
+    <div className="flex flex-col gap-5">
+      {[0, 1].map((s) => (
+        <div key={s}>
+          <div className="flex items-center gap-1.5 pb-1.5 mb-0.5" style={{ borderBottom: `1px solid ${C.lineSubtle}` }}>
+            <Skeleton className="w-1.5 h-1.5 rounded-full" />
+            <Skeleton className="h-2.5 w-20" />
+          </div>
+          {[0, 1, 2].map((r) => (
+            <div key={r} className="px-3 py-3" style={{ borderTop: r > 0 ? `1px solid ${C.lineSubtle}` : "none" }}>
+              <Skeleton className="h-3 w-2/3 mb-1.5" />
+              <Skeleton className="h-2.5 w-1/2" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+/**
+ * JobsPage — Meine Stellen.
+ * Grouped by status: Im Gespräch → Angebot → Beworben → Gemerkt → Erledigt (collapsible).
+ */
+export default function JobsPage() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  const { data: savedJobs = [], isFetching: savedFetching } = useQuery({
     queryKey: ["jobs"],
-    queryFn: () => {
-      return jobApi.list().then(r => {
+    queryFn: () =>
+      jobApi.list().then((r) => {
         const items = r.data?.items ?? r.data ?? [];
         saveStored("jobs", items);
         return items;
-      }).catch(err => {
-        console.error("[JobsPage] API error:", err.response?.status, err.message);
-        throw err;
-      });
-    },
-    initialData: () => {
-      const cached = loadStored("jobs");
-      return cached || [];
-    },
+      }),
+    initialData: () => loadStored("jobs") || [],
     initialDataUpdatedAt: 0,
     staleTime: 0,
     retry: 2,
   });
-  if (jobsError) console.error("[JobsPage] Failed to load saved jobs:", jobsErrorObj);
-  const { guardedRun: guardSearch } = useUsageGuard("job_search");
 
-  // Recommended search (based on preferences)
-  const {
-    data: recommendedResults = [],
-    isFetching: recommendedLoading,
-  } = useQuery({
-    queryKey: ["search", "recommended"],
-    queryFn: () => jobApi.searchRecommended(1).then(r => r.data.jobs || []),
-    enabled: recommendedEnabled,
-    placeholderData: () => qc.getQueryData(["search", "recommended"]),
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
-
-  // Custom search — query key includes submitted params so identical searches reuse cache
-  const {
-    data: customResults = [],
-    isFetching: customLoading,
-  } = useQuery({
-    queryKey: ["search", "custom", submittedCustomParams],
-    retry: 1,
-    queryFn: () => {
-      if (!submittedCustomParams) return [];
-      const loc = submittedCustomParams.bezirk || submittedCustomParams.location || "";
-      return jobApi.searchCustom(
-        submittedCustomParams.keywords,
-        loc,
-        submittedCustomParams.jobType,
-        1
-      ).then(r => r.data.jobs || []);
-    },
-    enabled: !!submittedCustomParams,
-    placeholderData: (previousData) => previousData,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // Save job from search results
-  const saveJobMutation = useMutation({
-    mutationFn: jobApi.create,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["jobs"] });
-      toast.success("Die Stelle wurde sicher hinterlegt");
-      setSavedJobIds((prev) => new Set([...prev, savingJobId]));
-      setSavingJobId(null);
-    },
-    onError: () => {
-      toast.error("Die Stelle konnte nicht sicher hinterlegt werden");
-      setSavingJobId(null);
-    },
-  });
-
-  // Re-run search automatically when bezirk changes (only if a search was already submitted)
+  const [mutedIds, setMutedIds] = useState(() => new Set(loadStored(MUTED_KEY) || []));
   useEffect(() => {
-    if (
-      searchTab === "custom" &&
-      submittedCustomParams &&
-      customSearchParams.bezirk &&
-      customSearchParams.keywords
-    ) {
-      setSubmittedCustomParams({ ...customSearchParams });
-    }
-  }, [customSearchParams, searchTab, submittedCustomParams]);
+    saveStored(MUTED_KEY, Array.from(mutedIds));
+  }, [mutedIds]);
 
-  const handleRecommendedSearch = () => {
-    guardSearch(() => {
-      if (recommendedEnabled) {
-        qc.invalidateQueries({ queryKey: ["search", "recommended"] });
-      } else {
-        setRecommendedEnabled(true);
-      }
-    });
-  };
-
-  const handleCustomSearch = (e) => {
-    e.preventDefault();
-    guardSearch(() => { setVisibleCount(5); setSubmittedCustomParams({ ...customSearchParams }); });
-  };
-
-  const handleSaveSearchResult = (result) => {
-    setSavingJobId(result.source_id);
-    saveJobMutation.mutate({
-      company: result.company,
-      role: result.title,
-      description: result.description || `${result.title} bei ${result.company} in ${result.location}`,
-      url: result.full_url || null,
-    });
-  };
-
-  const _handleAnalyzeJob = async (result, idx) => {
-    setAnalyzingJobId(idx);
-    try {
-      const res = await aiAssistantApi.analyzeJob({
-        title: result.title,
-        company: result.company,
-        description: result.description,
-        location: result.location,
-      });
-      setJobAnalyses((prev) => ({ ...prev, [idx]: res.data }));
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, "Die Stellen-Analyse konnte nicht erstellt werden"));
-    } finally {
-      setAnalyzingJobId(null);
-    }
-  };
-
-  const handleResearch = async (result) => {
-    const cachedResearch = researchCache[result.source_id];
-    if (cachedResearch) {
-      setResearchData(cachedResearch);
-      setResearchModal({ companyName: result.company, jobDescription: result.description || "", sourceId: result.source_id });
-      return;
-    }
-    setResearchData(null);
-    setResearchModal({ companyName: result.company, jobDescription: result.description || "", sourceId: result.source_id });
-    setResearchLoading(true);
-    try {
-      const res = await researchApi.research(result.company, result.description || "");
-      setResearchData(res.data);
-      setResearchCache((prev) => {
-        const next = { ...prev, [result.source_id]: res.data };
-        saveStored("job-search-research", next);
-        return next;
-      });
-    } catch (err) {
-      if (err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") { setResearchModal(null); return; }
-      if (err.response?.status === 429) { setResearchModal(null); return; }
-      toast.error(getApiErrorMessage(err, "Recherche fehlgeschlagen"));
-      setResearchModal(null);
-    } finally {
-      setResearchLoading(false);
-    }
-  };
-
-  // Time ago formatter
-  const _timeAgo = (date) => {
-    if (!date) return null;
-    const diff = Date.now() - new Date(date).getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days === 0) return "Heute";
-    if (days === 1) return "Gestern";
-    return `Vor ${days} Tagen`;
-  };
-
-  const handleRefreshResearch = async () => {
-    if (!researchModal) return;
-    setResearchLoading(true);
-    try {
-      const res = await researchApi.research(researchModal.companyName || "", researchModal.jobDescription || "");
-      setResearchData(res.data);
-      if (researchModal.sourceId) {
-        setResearchCache((prev) => {
-          const next = { ...prev, [researchModal.sourceId]: res.data };
-          saveStored("job-search-research", next);
-          return next;
-        });
-      }
-    } catch (err) {
-      if (err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") return;
-      if (err.response?.status === 429) return;
-      toast.error(getApiErrorMessage(err, "Recherche fehlgeschlagen"));
-    } finally {
-      setResearchLoading(false);
-    }
-  };
-
-  const rawSearchResults = searchTab === "recommended" ? recommendedResults : customResults;
-  const searchLoading = searchTab === "recommended" ? recommendedLoading : customLoading;
-
-  const activeBezirk = searchTab === "custom" ? customSearchParams.bezirk : "";
-
-  // Adzuna returns district names in location.display_name (e.g. "Wien, Meidling"), not postal codes
-  const BEZIRK_NAMES = {
-    "1010": "innere stadt", "1020": "leopoldstadt", "1030": "landstraße",
-    "1040": "wieden",       "1050": "margareten",   "1060": "mariahilf",
-    "1070": "neubau",       "1080": "josefstadt",   "1090": "alsergrund",
-    "1100": "favoriten",    "1110": "simmering",    "1120": "meidling",
-    "1130": "hietzing",     "1140": "penzing",      "1150": "rudolfsheim",
-    "1160": "ottakring",    "1170": "hernals",      "1180": "währing",
-    "1190": "döbling",      "1200": "brigittenau",  "1210": "floridsdorf",
-    "1220": "donaustadt",   "1230": "liesing",
-  };
-
-  const filteredResults = activeBezirk
-    ? rawSearchResults.filter((r) => {
-        const loc  = (r.location    || "").toLowerCase();
-        const desc = (r.description || "").toLowerCase();
-        const districtName = BEZIRK_NAMES[activeBezirk];
-        const districtNum  = parseInt(activeBezirk.slice(1, 3), 10); // "1230" → 23
-
-        // 1. Location field explicitly matches the selected district
-        if (districtName && loc.includes(districtName)) return true;
-        if (loc.includes(activeBezirk)) return true;
-
-        // 2. Description mentions the postal code, district name, or number pattern
-        if (desc.includes(activeBezirk)) return true;
-        if (districtName && desc.includes(districtName)) return true;
-        if (desc.includes(`${districtNum}. bezirk`)) return true;
-        if (desc.includes(`${districtNum}. wiener`)) return true;
-
-        // 3. Location is generic Wien (no specific district) — keep as ambiguous
-        const isGenericWien = (loc === "wien" || loc === "vienna" || loc === "" || loc === "österreich");
-        if (isGenericWien) return true;
-
-        // 4. Everything else (Korneuburg, Graz, specific wrong district) — exclude
-        return false;
-      })
-    : rawSearchResults;
-
-  const searchResults = [...filteredResults].sort((a, b) => {
-    if (sortBy === "date") return new Date(b.updated || 0) - new Date(a.updated || 0);
-    if (sortBy === "title") return (a.title || "").localeCompare(b.title || "", "de");
-    if (sortBy === "company") return (a.company || "").localeCompare(b.company || "", "de");
-    if (sortBy === "salary") return (b.salary ? 1 : 0) - (a.salary ? 1 : 0);
-    return 0;
-  });
-
-  // IntersectionObserver for search results infinite scroll
   useEffect(() => {
-    const sentinel = loadMoreSentinelRef.current;
-    if (!sentinel || visibleCount >= searchResults.length) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setVisibleCount((c) => c + 5);
-      },
-      { rootMargin: "300px" }
+    if (mutedIds.size === 0) return;
+    const liveIds = new Set(savedJobs.map((j) => j.id));
+    let dirty = false;
+    const next = new Set();
+    mutedIds.forEach((id) => {
+      if (liveIds.has(id)) next.add(id);
+      else dirty = true;
+    });
+    if (dirty) setMutedIds(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedJobs]);
+
+  // ── Auto-remove expired bookmarked jobs ─────────────────────────────────────
+  // Runs once per mount after the first real API fetch resolves.
+  // Only removes "bookmarked" jobs (user has not yet acted) whose expires_at /
+  // deadline is in the past. Applied / Gespräch / Angebot / Erledigt are
+  // intentionally kept so the user can track their application outcomes.
+  const expiredCleanupRef = useRef(false);
+  useEffect(() => {
+    if (savedFetching || savedJobs.length === 0 || expiredCleanupRef.current) return;
+    expiredCleanupRef.current = true;
+
+    const now = Date.now();
+    const expired = savedJobs.filter((j) => {
+      if (j.status !== "bookmarked") return false;
+      const raw = j.expires_at || j.deadline;
+      if (!raw) return false;
+      const t = new Date(raw).getTime();
+      return Number.isFinite(t) && t < now;
+    });
+    if (!expired.length) return;
+
+    const ids = new Set(expired.map((e) => e.id));
+    qc.setQueryData(["jobs"], (old = []) => old.filter((j) => !ids.has(j.id)));
+
+    Promise.allSettled(expired.map((j) => jobApi.delete(j.id))).then(() => {
+      const fresh = qc.getQueryData(["jobs"]) || [];
+      saveStored("jobs", fresh);
+    });
+
+    const companies = [...new Set(expired.map((j) => j.company).filter(Boolean))].slice(0, 3);
+    const noun = expired.length === 1 ? "Stelle" : "Stellen";
+    const coStr = companies.length ? ` — ${companies.join(", ")}` : "";
+    toast(`${expired.length} abgelaufene ${noun} entfernt${coStr}. Frist bereits vorbei.`, { duration: 7000 });
+  }, [savedJobs, savedFetching, qc]);
+
+  // Group by status, sorted by most recently updated
+  const [sortBy, setSortBy] = useState("date");
+
+  const grouped = useMemo(() => {
+    const out = { interviewing: [], offered: [], applied: [], bookmarked: [], rejected: [] };
+    savedJobs.forEach((j) => {
+      const key = j.status in out ? j.status : "bookmarked";
+      out[key].push(j);
+    });
+    Object.values(out).forEach((arr) =>
+      arr.sort((a, b) => {
+        if (sortBy === "score") {
+          const sa = b.match_score ?? -1;
+          const sb = a.match_score ?? -1;
+          return sa - sb;
+        }
+        const da = new Date(a.updated_at || a.created_at).getTime() || 0;
+        const db = new Date(b.updated_at || b.created_at).getTime() || 0;
+        return db - da;
+      }),
     );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [visibleCount, searchResults.length]);
+    return out;
+  }, [savedJobs, sortBy]);
 
-  const handleRefreshJobs = () => qc.invalidateQueries({ queryKey: ["jobs"] });
+  const heute = useMemo(() => pickHeuteAction(savedJobs, mutedIds), [savedJobs, mutedIds]);
+
+  const [searchParams] = useSearchParams();
+  const [activeFilter, setActiveFilter] = useState(() => {
+    const s = searchParams.get("status");
+    return FILTER_CHIPS.some((c) => c.key === s) ? s : "alle";
+  });
+  const [sheetJob, setSheetJob] = useState(null);
+  const closeSheet = () => setSheetJob(null);
+
+  const statusMutation = useMutation({
+    mutationFn: ({ jobId, status }) => jobApi.updateStatus(jobId, status),
+    onMutate: async ({ jobId, status }) => {
+      await qc.cancelQueries({ queryKey: ["jobs"] });
+      const prev = qc.getQueryData(["jobs"]);
+      qc.setQueryData(["jobs"], (old = []) =>
+        old.map((j) => (j.id === jobId ? { ...j, status, updated_at: new Date().toISOString() } : j)),
+      );
+      return { prev };
+    },
+    onError: (err, _vars, ctx) => {
+      qc.setQueryData(["jobs"], ctx?.prev);
+      toast.error(getApiErrorMessage(err, "Status konnte nicht geändert werden"));
+    },
+    onSuccess: () => toast.success("Status aktualisiert"),
+  });
+
+  const handleStatusPick = (status) => {
+    if (!sheetJob) return;
+    if (status !== sheetJob.status) statusMutation.mutate({ jobId: sheetJob.id, status });
+    closeSheet();
+  };
+
+  const handleToggleMute = () => {
+    if (!sheetJob) return;
+    setMutedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sheetJob.id)) next.delete(sheetJob.id);
+      else next.add(sheetJob.id);
+      return next;
+    });
+    closeSheet();
+  };
+
+  const scrollSaveRef = useRef(false);
+  useEffect(() => {
+    const savedY = sessionStorage.getItem("jobsPageScrollY");
+    if (savedY) requestAnimationFrame(() => window.scrollTo({ top: parseInt(savedY, 10), behavior: "instant" }));
+    return () => {
+      if (scrollSaveRef.current) sessionStorage.setItem("jobsPageScrollY", String(window.scrollY));
+    };
+  }, []);
+
+  const openJob = (jobId) => { scrollSaveRef.current = true; navigate(`/jobs/${jobId}`); };
+
+  const total = savedJobs.length;
+  const [showDone, setShowDone] = useState(false);
+
+  const visibleGroups = activeFilter === "alle"
+    ? STATUS_GROUPS
+    : STATUS_GROUPS.filter((g) => g.key === activeFilter);
 
   return (
-    <div className="animate-slide-up font-sans">
-      {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-[1.75rem] sm:text-[2rem] font-semibold tracking-tight text-white leading-none">
-          Stellen-Zentrale
-        </h1>
-        <p className="mt-2 text-[0.6875rem] tracking-[0.18em] uppercase text-[#3a3a42]">
-          Kuratiert · Bewertet · Vorbereitet
-        </p>
-      </div>
+    <div className="flex flex-col gap-5 animate-slide-up">
 
-      <div className="grid grid-cols-12 gap-3 sm:gap-4">
-        {/* === Saved Jobs — Premium curated section === */}
-        <SavedJobsSection
-          jobs={savedJobs}
-          loading={jobsFetching}
-          onRefresh={handleRefreshJobs}
-        />
-
-        {/* === Search Section === */}
-        <div className="col-span-12 mt-1">
-          <Tile>
-            {/* Tab Navigation — enlarged hitboxes for usability */}
-            <div className="flex flex-wrap gap-1 mb-6">
-              <button
-                onClick={() => setSearchTab("recommended")}
-                className="px-4 py-2.5 rounded-lg transition-colors focus:outline-none"
-                style={searchTab === "recommended"
-                  ? { background: 'rgba(91,79,232,0.12)', borderBottom: '2px solid #5B4FE8' }
-                  : { borderBottom: '2px solid transparent' }}
-              >
-                <span className={`text-[12px] font-semibold tracking-[0.12em] uppercase ${
-                  searchTab === "recommended" ? "text-white" : "text-[#606070] hover:text-[#909098]"
-                }`}>
-                  Empfohlen
-                </span>
-              </button>
-              <button
-                onClick={() => setSearchTab("custom")}
-                className="px-4 py-2.5 rounded-lg transition-colors focus:outline-none"
-                style={searchTab === "custom"
-                  ? { background: 'rgba(91,79,232,0.12)', borderBottom: '2px solid #5B4FE8' }
-                  : { borderBottom: '2px solid transparent' }}
-              >
-                <span className={`text-[12px] font-semibold tracking-[0.12em] uppercase ${
-                  searchTab === "custom" ? "text-white" : "text-[#606070] hover:text-[#909098]"
-                }`}>
-                  Eigene Suche
-                </span>
-              </button>
-            </div>
-
-            {/* Recommended Tab */}
-            {searchTab === "recommended" && (
-              <div>
-                <p className="text-[11px] text-[#505058] mb-4">
-                  Basierend auf deinen Präferenzen und Fähigkeiten
-                </p>
-                <button
-                  onClick={handleRecommendedSearch}
-                  disabled={recommendedLoading}
-                  className="flex items-center justify-center gap-2.5 rounded-xl py-3 px-5 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 w-full font-semibold text-[13px] text-white"
-                  style={{
-                    background: recommendedLoading
-                      ? 'rgba(91,79,232,0.4)'
-                      : 'linear-gradient(135deg, #5B4FE8 0%, #7C3AED 100%)',
-                    boxShadow: recommendedLoading ? 'none' : '0 4px 18px rgba(91,79,232,0.35)',
-                  }}
-                >
-                  {recommendedLoading ? (
-                    <div className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Sparkles size={15} />
-                  )}
-                  {recommendedLoading ? "Suche läuft…" : "Neue Chancen entdecken"}
-                </button>
-              </div>
-            )}
-
-            {/* Custom Search Tab */}
-            {searchTab === "custom" && (
-              <form onSubmit={handleCustomSearch} className="space-y-4">
-                <div className="space-y-1.5">
-                  <TileLabel>Suchbegriffe</TileLabel>
-                  <input
-                    type="text"
-                    placeholder="z.B. Verkauf, Gastro, IT, Praktikum"
-                    value={customSearchParams.keywords}
-                    onChange={(e) =>
-                      setCustomSearchParams({ ...customSearchParams, keywords: e.target.value })
-                    }
-                    className="w-full appearance-none rounded-xl bg-[#0c0c0e] px-4 py-2.5 text-[13px] text-white placeholder-[#3a3a42] focus:outline-none min-h-[44px]"
-                    style={{ boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.03)' }}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <TileLabel>Ort</TileLabel>
-                  <input
-                    type="text"
-                    placeholder="z.B. Wien, Graz, Linz, Salzburg"
-                    value={customSearchParams.location}
-                    onChange={(e) =>
-                      setCustomSearchParams({ ...customSearchParams, location: e.target.value })
-                    }
-                    className="w-full appearance-none rounded-xl bg-[#0c0c0e] px-4 py-2.5 text-[13px] text-white placeholder-[#3a3a42] focus:outline-none min-h-[44px]"
-                    style={{ boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.03)' }}
-                  />
-                </div>
-                {/wien|vienna/i.test(customSearchParams.location) && (
-                  <ViennaMap
-                    value={customSearchParams.bezirk}
-                    onChange={(val) => setCustomSearchParams({ ...customSearchParams, bezirk: val })}
-                  />
-                )}
-                {customSearchParams.location && !(/wien|vienna/i.test(customSearchParams.location)) && (() => {
-                  const cityKey = customSearchParams.location.trim().toLowerCase();
-                  const MAP_CITIES = ["graz", "linz", "salzburg", "innsbruck"];
-                  if (MAP_CITIES.includes(cityKey)) {
-                    return (
-                      <CityMap
-                        cityKey={cityKey}
-                        selected={customSearchParams.bezirk}
-                        onSelect={(val) => setCustomSearchParams({ ...customSearchParams, bezirk: val || "" })}
-                      />
-                    );
-                  }
-                  if (CITY_DISTRICTS[cityKey]) {
-                    return (
-                      <div className="space-y-1.5">
-                        <TileLabel>Bezirk</TileLabel>
-                        <select
-                          value={customSearchParams.bezirk}
-                          onChange={(e) => setCustomSearchParams({ ...customSearchParams, bezirk: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-[#0c0c0e] text-[13px] text-white rounded-xl focus:outline-none appearance-none min-h-[44px]"
-                          style={{ boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.03)' }}
-                        >
-                          <option value="">Alle Bezirke</option>
-                          {CITY_DISTRICTS[cityKey].map((d) => (
-                            <option key={d.value} value={d.value}>{d.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-                <div className="space-y-1.5">
-                  <TileLabel>Stellenart</TileLabel>
-                  <select
-                    value={customSearchParams.jobType}
-                    onChange={(e) =>
-                      setCustomSearchParams({ ...customSearchParams, jobType: e.target.value })
-                    }
-                    className="w-full appearance-none rounded-xl bg-[#0c0c0e] px-4 py-2.5 text-[13px] text-white focus:outline-none min-h-[44px]"
-                    style={{ boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.03)' }}
-                  >
-                    <option value="">Alle Stellenarten</option>
-                    <option value="Vollzeit">Vollzeit</option>
-                    <option value="Teilzeit">Teilzeit</option>
-                    <option value="Praktikum">Praktikum</option>
-                    <option value="Samstagsjob">Samstagsjob</option>
-                    <option value="Ferialjob">Ferialjob</option>
-                    <option value="Geringfügig">Geringfügig</option>
-                    <option value="Freiberuflich">Freiberuflich</option>
-                    <option value="Lehre">Lehre</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  disabled={customLoading || !customSearchParams.keywords}
-                  className="flex items-center justify-center gap-2.5 rounded-xl py-3 px-5 w-full transition-all duration-200 active:scale-[0.98] disabled:opacity-50 font-semibold text-[13px] text-white"
-                  style={{
-                    background: (customLoading || !customSearchParams.keywords)
-                      ? 'rgba(91,79,232,0.25)'
-                      : 'linear-gradient(135deg, #5B4FE8 0%, #7C3AED 100%)',
-                    boxShadow: (!customLoading && customSearchParams.keywords) ? '0 4px 18px rgba(91,79,232,0.35)' : 'none',
-                  }}
-                >
-                  {customLoading ? (
-                    <div className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Search size={15} />
-                  )}
-                  {customLoading ? "Suche läuft…" : "Stellen suchen"}
-                </button>
-              </form>
-            )}
-          </Tile>
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <header className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-[28px] sm:text-[34px] font-semibold leading-[1.1] text-[var(--color-fg)]" style={{ letterSpacing: "-0.025em" }}>
+            Stellen
+          </h1>
+          <p className="mt-1.5 text-[13px] text-[var(--color-fg-muted)]">
+            {total === 0 ? "Speichere deine erste Stelle." : `${total} gespeichert`}
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => navigate("/finden")}
+          className="inline-flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[12.5px] font-semibold transition-all hover:-translate-y-px"
+          style={{ background: "#7c7df0", color: "#fff", boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.25)" }}
+        >
+          <Plus className="w-3 h-3" />
+          Neue Stelle
+        </button>
+      </header>
 
-        {/* === Search Results skeleton while loading === */}
-        {searchLoading && searchResults.length === 0 && (
-          <div className="col-span-12 mt-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-xl p-4 animate-pulse"
-                  style={{
-                    background: 'linear-gradient(180deg, #0c0c0e 0%, #080808 100%)',
-                    boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.04)',
-                  }}
+      {/* ── Filter chips + sort toggle ───────────────────────────── */}
+      {total > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-1.5 flex-1">
+            {FILTER_CHIPS.map(({ key, label, dot, activeBg, activeBorder }) => {
+              const count = key === "alle" ? total : (grouped[key]?.length ?? 0);
+              const isActive = activeFilter === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveFilter(key)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-all"
+                  style={isActive
+                    ? { background: activeBg, border: `1px solid ${activeBorder}`, color: C.ink }
+                    : { background: "transparent", border: `1px solid ${C.lineSubtle}`, color: C.inkDim }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white/[0.05] flex-shrink-0" />
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="h-3 bg-white/[0.07] rounded-md w-4/5" />
-                      <div className="h-2.5 bg-white/[0.04] rounded-md w-2/5" />
-                      <div className="h-2 bg-white/[0.03] rounded-md w-3/5" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: dot }} />
+                  {label}
+                  <span
+                    className="text-[10.5px] font-semibold tabular-nums px-1 rounded"
+                    style={{ background: isActive ? "rgba(255,255,255,0.08)" : C.surface3, color: isActive ? C.inkMuted : C.inkFaint }}
+                  >{count}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
-
-        {/* === Search Results === */}
-        {searchResults.length > 0 && (
-          <div className="col-span-12 mt-1">
-            <Tile>
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-baseline gap-3">
-                  <TileLabel>Ergebnisse</TileLabel>
-                  <span className="text-[22px] font-semibold text-white leading-none">{searchResults.length}</span>
-                  {activeBezirk && (
-                    <span className="flex items-center gap-1 text-[10px] text-[#505058]">
-                      <MapPin size={10} /> {activeBezirk}
-                    </span>
-                  )}
-                </div>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="text-xs tracking-[0.14em] uppercase px-3 py-2 min-h-[44px] rounded-lg bg-transparent text-[#505058] focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value="date">Neueste</option>
-                  <option value="title">Titel</option>
-                  <option value="company">Firma</option>
-                  <option value="salary">Gehalt</option>
-                </select>
-              </div>
-
-              {/* Results grid — 2 per row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {searchResults.map((result, index) => {
-                  const isExpanded = expandedJob === index;
-                  const analysis = jobAnalyses[index];
-                  const matchScore = analysis?.match_score ?? analysis?.matching_score ?? analysis?.score ?? null;
-
-                  return (
-                    <div
-                      key={`${result.source_id}-${index}`}
-                      className="rounded-xl overflow-hidden"
-                      style={{
-                        background: 'linear-gradient(180deg, #0c0c0e 0%, #080808 100%)',
-                        boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.04)',
-                      }}
-                    >
-                      {/* Card header — always visible */}
-                      <button
-                        className={`w-full p-4 text-left transition-colors hover:bg-white/[0.02] ${isExpanded ? 'bg-white/[0.01]' : ''}`}
-                        onClick={() => {
-                          const newExpanded = isExpanded ? null : index;
-                          if (newExpanded !== null && expandedJob !== null && expandedJob !== newExpanded) {
-                            setJobAnalyses((prev) => { const next = { ...prev }; delete next[expandedJob]; return next; });
-                          }
-                          setExpandedJob(newExpanded);
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <MiniMatchRing score={matchScore} />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[13px] font-semibold text-white leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                              {result.title || "Ohne Titel"}
-                            </p>
-                            <p className="text-[11px] text-[#505058] truncate mt-0.5">
-                              {result.company || "Unbekannt"}
-                            </p>
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              {result.location && (
-                                <span className="text-[10px] text-[#3a3a42]">{result.location}</span>
-                              )}
-                              {result.updated && (
-                                <span className="text-[10px] text-[#3a3a42] tabular-nums">
-                                  {new Date(result.updated).toLocaleDateString("de-AT")}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronDown size={14} className={`text-[#2a2a32] transition-transform duration-200 flex-shrink-0 mt-0.5 ${isExpanded ? 'rotate-180' : ''}`} />
-                        </div>
-                      </button>
-
-                      {/* Expanded detail panel */}
-                      {isExpanded && (
-                        <div
-                          className="px-4 pb-4 space-y-4"
-                          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-                        >
-                          {/* Description */}
-                          {result.description && (
-                            <div>
-                              <TileLabel className="mb-2">Beschreibung</TileLabel>
-                              <p className="text-[12px] text-[#808088] leading-relaxed">{result.description}</p>
-                            </div>
-                          )}
-
-                          {result.salary && (
-                            <div className="flex items-baseline gap-2">
-                              <TileLabel>Gehalt</TileLabel>
-                              <span className="text-[13px] font-medium text-emerald-400">{result.salary}</span>
-                            </div>
-                          )}
-
-                          {/* Flat action-links with subtle icons */}
-                          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '12px' }}>
-                            {result.full_url && (
-                              <a
-                                href={result.full_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 text-[11px] font-medium text-[#505058] hover:text-brand-300 transition-colors"
-                              >
-                                <ExternalLink size={12} />
-                                Anzeige öffnen
-                              </a>
-                            )}
-                            <button
-                              onClick={() => handleSaveSearchResult(result)}
-                              disabled={savingJobId === result.source_id}
-                              className="flex items-center gap-1.5 text-[11px] font-medium text-[#505058] hover:text-brand-300 transition-colors disabled:opacity-50"
-                            >
-                              {savingJobId === result.source_id ? (
-                                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <Bookmark size={12} className={savedJobIds.has(result.source_id) ? "fill-brand-300 text-brand-300" : ""} />
-                              )}
-                              {savedJobIds.has(result.source_id) ? "Gespeichert" : "Speichern"}
-                            </button>
-                            <button
-                              onClick={() => handleResearch(result)}
-                              className="flex items-center gap-1.5 text-[11px] font-medium text-[#505058] hover:text-emerald-400 transition-colors"
-                            >
-                              <SearchCheck size={12} />
-                              Recherche
-                            </button>
-                          </div>
-
-                          {/* AI Analysis */}
-                          {analysis && (
-                            <div className="space-y-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '12px' }}>
-                              <div className="flex items-center gap-1.5">
-                                <Sparkles size={11} className="text-brand-300" aria-hidden="true" />
-                                <TileLabel>Stellen-Analyse</TileLabel>
-                              </div>
-
-                              {analysis.what_to_expect && (
-                                <div>
-                                  <TileLabel className="mb-1">Was dich erwartet</TileLabel>
-                                  <p className="text-[12px] text-[#808088] leading-relaxed">{analysis.what_to_expect}</p>
-                                </div>
-                              )}
-
-                              {analysis.requirements?.length > 0 && (
-                                <div>
-                                  <TileLabel className="mb-1">Anforderungen</TileLabel>
-                                  <ul className="space-y-1">
-                                    {analysis.requirements.map((r, i) => (
-                                      <li key={i} className="text-[12px] text-[#808088] flex gap-2">
-                                        <span className="text-brand-500/60 flex-shrink-0">·</span>{r}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {analysis.nice_to_have?.length > 0 && (
-                                <div>
-                                  <TileLabel className="mb-1">Von Vorteil</TileLabel>
-                                  <ul className="space-y-1">
-                                    {analysis.nice_to_have.map((r, i) => (
-                                      <li key={i} className="text-[12px] text-[#808088] flex gap-2">
-                                        <span className="text-emerald-500/60 flex-shrink-0">+</span>{r}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {analysis.tips?.length > 0 && (
-                                <div className="rounded-xl p-3" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.04) 0%, rgba(251,191,36,0.01) 100%)' }}>
-                                  <TileLabel className="mb-1 !text-amber-500/70">Bewerbungstipps</TileLabel>
-                                  <ul className="space-y-1">
-                                    {analysis.tips.map((t, i) => (
-                                      <li key={i} className="text-[12px] text-amber-400/60 flex gap-2">
-                                        <span className="flex-shrink-0 text-amber-500/40">{i + 1}.</span>{t}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-            </Tile>
-          </div>
-        )}
-
-        {/* No Results */}
-        {!searchLoading &&
-          searchResults.length === 0 &&
-          (searchTab === "recommended" ? recommendedResults : customResults) !==
-            undefined &&
-          (searchTab === "custom" &&
-            submittedCustomParams?.keywords) && (
-            <div className="col-span-12 mt-1">
-              <Tile className="text-center py-10">
-                <Briefcase size={20} className="text-[#3a3a42] mx-auto mb-3" />
-                <p className="text-[12px] text-[#505058]">Keine Stellen gefunden</p>
-              </Tile>
-            </div>
-          )}
-      </div>
-
-      {researchModal && (
-        <ResearchModal
-          companyName={researchModal.companyName}
-          data={researchData}
-          loading={researchLoading}
-          onRefresh={handleRefreshResearch}
-          onClose={() => { setResearchModal(null); setResearchData(null); }}
-        />
+          <button
+            type="button"
+            onClick={() => setSortBy((s) => s === "date" ? "score" : "date")}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all flex-shrink-0"
+            style={sortBy === "score"
+              ? { background: "rgba(124,125,240,0.14)", border: "1px solid rgba(124,125,240,0.35)", color: "#a5b4fc" }
+              : { background: "transparent", border: `1px solid ${C.lineSubtle}`, color: C.inkDim }}
+          >
+            <ArrowUpDown className="w-3 h-3" />
+            {sortBy === "score" ? "Passung" : "Datum"}
+          </button>
+        </div>
       )}
 
+      {/* ── Urgent card ─────────────────────────────────────────────── */}
+      {heute ? <HeuteCard heute={heute} onOpen={openJob} /> : null}
+
+      {/* ── Loading / Empty / Lists ─────────────────────────────────── */}
+      {savedFetching && total === 0 ? (
+        <RowSkeleton />
+      ) : total === 0 ? (
+        <EmptyState
+          tone="subtle"
+          title="Noch keine Stellen gespeichert"
+          description="Starte mit Empfehlungen oder einer eigenen Suche."
+          icon={Sparkles}
+          action={<Button onClick={() => navigate("/finden")}><Search className="w-3.5 h-3.5" />Stelle finden</Button>}
+        />
+      ) : (
+        <div className="flex flex-col gap-5">
+
+          {visibleGroups.map(({ key, label, dot }) => {
+            const jobs = grouped[key];
+            if (!jobs || jobs.length === 0) return null;
+            return (
+              <div key={key}>
+                <SectionLabel label={label} count={jobs.length} dot={dot} />
+                {jobs.map((job, i) => (
+                  <ThreadRow
+                    key={job.id}
+                    job={job}
+                    isFirst={i === 0}
+                    muted={mutedIds.has(job.id)}
+                    onOpen={() => openJob(job.id)}
+                    onChangeStatus={() => setSheetJob(job)}
+                  />
+                ))}
+              </div>
+            );
+          })}
+
+          {activeFilter === "alle" && grouped.rejected.length > 0 && (
+            <div>
+              <SectionLabel
+                label="Erledigt"
+                count={grouped.rejected.length}
+                dot={C.inkFaint}
+                collapsible
+                collapsed={!showDone}
+                onToggle={() => setShowDone((v) => !v)}
+              />
+              {showDone && grouped.rejected.map((job, i) => (
+                <ThreadRow
+                  key={job.id}
+                  job={job}
+                  isFirst={i === 0}
+                  muted
+                  onOpen={() => openJob(job.id)}
+                  onChangeStatus={() => setSheetJob(job)}
+                />
+              ))}
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ── Bottom sheet: status changer ────────────────────────────── */}
+      <BottomSheet open={!!sheetJob} onClose={closeSheet} title="Status ändern">
+        {sheetJob && (
+          <>
+            <p className="text-[14px] font-medium text-[var(--color-fg)] truncate">{sheetJob.company || "Stelle"}</p>
+            <p className="text-[12.5px] text-[var(--color-fg-muted)] truncate mt-0.5">{sheetJob.role || "-"}</p>
+            <ul className="mt-4 flex flex-col">
+              {STATUS_BUCKETS.map((b, i) => {
+                const isCurrent = sheetJob.status === b.key;
+                return (
+                  <li key={b.key} className={i > 0 ? "border-t border-[var(--color-border-subtle)]" : ""}>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusPick(b.key)}
+                      className="w-full flex items-center justify-between py-3.5 text-left hover:text-[var(--color-fg)] transition-colors"
+                    >
+                      <span className={`text-[14.5px] ${isCurrent ? "text-[var(--color-fg)] font-medium" : "text-[var(--color-fg-muted)]"}`}>
+                        {b.label}
+                      </span>
+                      {isCurrent && <span className="text-[12px] text-[var(--color-fg-faint)]">aktuell</span>}
+                    </button>
+                  </li>
+                );
+              })}
+              <li className="border-t border-[var(--color-border-subtle)]">
+                <button
+                  type="button"
+                  onClick={handleToggleMute}
+                  className="w-full flex items-center justify-between py-3.5 text-left hover:text-[var(--color-fg)] transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-[14.5px] text-[var(--color-fg-muted)]">
+                    <VolumeX className="w-3.5 h-3.5" />
+                    {mutedIds.has(sheetJob.id) ? "Wiederaufnehmen" : "Parken"}
+                  </span>
+                </button>
+              </li>
+            </ul>
+          </>
+        )}
+      </BottomSheet>
     </div>
   );
 }

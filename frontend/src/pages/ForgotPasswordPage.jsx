@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { authApi } from "../services/api";
 import AuthLayout from "../components/ui/AuthLayout";
-import Button from "../components/ui/Button";
-import { ArrowLeft, Loader2, Mail } from "lucide-react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
 
 /** Forgot-password page — submits an email and shows a confirmation screen. */
 export default function ForgotPasswordPage() {
@@ -21,55 +20,84 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  return (
-    <AuthLayout>
-      <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors mb-6">
-        <ArrowLeft className="w-4 h-4" /> Zurück zum Login
-      </Link>
-
-      {sent ? (
-        <div className="text-center py-8">
-          <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-7 h-7 text-green-400" />
+  if (sent) {
+    return (
+      <AuthLayout backTo="/login" backLabel="Zurück zum Login">
+        <div className="text-center py-4">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-success-soft)] mx-auto mb-5">
+            <Mail className="h-7 w-7 text-[var(--color-success)]" />
           </div>
-          <h2 className="text-xl font-bold text-slate-100 mb-2">E-Mail gesendet</h2>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto">
-            Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir dir einen Link zum Zurücksetzen deines Passworts gesendet.
+          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)]">
+            Check deine{" "}
+            <span className="font-display italic text-[var(--color-accent-300)]">Inbox</span>.
+          </h1>
+          <p className="mt-3 max-w-[44ch] mx-auto text-[14px] text-[var(--color-fg-muted)]">
+            Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir dir einen Link zum Zurücksetzen
+            deines Passworts gesendet.
           </p>
-          <Link to="/login" className="btn-primary inline-block mt-6">Zurück zum Login</Link>
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+          >
+            Zum Login
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
-      ) : (
-        <>
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-100 mb-1">Passwort vergessen?</h2>
-            <p className="text-slate-400 text-sm">Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen.</p>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <AuthLayout backTo="/login" backLabel="Zurück zum Login">
+      <div className="mb-7 text-center">
+        <h1 className="text-[28px] sm:text-[36px] font-semibold tracking-tight leading-[1.1] text-[var(--color-fg)]">
+          Passwort{" "}
+          <span className="font-display italic text-[var(--color-accent-300)]">vergessen?</span>
+        </h1>
+        <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
+          Gib deine E-Mail-Adresse ein — wir senden dir einen Link.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-12 gap-y-4">
+        <div className="col-span-12">
+          <label className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]" htmlFor="email">
+            E-Mail-Adresse
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-dim)]" />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="du@beispiel.at"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] pl-10 pr-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors"
+              {...register("email", { required: "E-Mail ist erforderlich" })}
+            />
           </div>
+          {errors.email && (
+            <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.email.message}</p>
+          )}
+        </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div>
-              <label className="label">E-Mail-Adresse</label>
-              <input
-                className="input"
-                type="email"
-                placeholder="du@beispiel.at"
-                {...register("email", { required: "E-Mail ist erforderlich" })}
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email.message}</p>}
-            </div>
-
-            <Button type="submit" size="lg" fullWidth disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  <span>Wird gesendet…</span>
-                </>
-              ) : (
-                "Link senden"
-              )}
-            </Button>
-          </form>
-        </>
-      )}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="col-span-12 mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              <span>Wird gesendet…</span>
+            </>
+          ) : (
+            <>
+              <span>Link senden</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </button>
+      </form>
     </AuthLayout>
   );
 }

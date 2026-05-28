@@ -1,6 +1,6 @@
-export function getApiErrorMessage(err, fallback = "Ein Fehler ist aufgetreten") {
+export function getApiErrorMessage(err, fallback = "Etwas ist schiefgelaufen") {
   if (!err?.response) {
-    return "Server nicht erreichbar. Bitte prüfe API-URL, Domain und CORS-Konfiguration.";
+    return "Server nicht erreichbar. Bitte versuche es in einer Minute erneut.";
   }
 
   const detail = err?.response?.data?.detail;

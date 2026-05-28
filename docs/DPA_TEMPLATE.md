@@ -1,9 +1,20 @@
 # Data Processing Agreement (DPA) — Template
 
-> **Template — replace every `{{PLACEHOLDER}}` before signing.**
-> Use this when a customer (especially B2B / enterprise) asks us to act
-> as a data processor under GDPR Art. 28. Have counsel review any
-> deviation from this baseline.
+> ⚠️ **This is a working template, not legal advice.**
+>
+> - Replace every `{{PLACEHOLDER}}` with the negotiated values.
+> - Have **qualified counsel** in both parties' establishment
+>   jurisdictions review and approve the final text before signing.
+> - Do **not** distribute this file as a "signed DPA" to a customer; the
+>   signature block at the bottom is illustrative only.
+> - Use this baseline when a customer (especially B2B / enterprise) asks
+>   us to act as a data processor under GDPR Art. 28. The structure is
+>   GDPR + EU SCC-aware; UK, Swiss, and non-EEA customers will require
+>   addenda.
+> - Keep this file in sync with `docs/PRIVACY_POLICY.md` (subprocessor
+>   list, retention, security measures) and with
+>   `docs/SECURITY_THREAT_MODEL.md` (technical & organisational
+>   measures).
 
 ---
 

@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Heute · Feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#09090b;
+    --surface:#111113;
+    --surface-2:#18181b;
+    --surface-3:#1f1f23;
+    --line:rgba(255,255,255,0.06);
+    --line-2:rgba(255,255,255,0.10);
+    --line-3:rgba(255,255,255,0.16);
+    --ink:#fafafa;
+    --mute:#a1a1aa;
+    --dim:#71717a;
+    --faint:#52525b;
+    --accent:#7c7df0;
+    --accent-soft:rgba(124,125,240,0.14);
+    --hot:#f97366;
+    --hot-soft:rgba(249,115,102,0.12);
+    --ok:#86efac;
+    --ok-soft:rgba(134,239,172,0.10);
+  }
+  html, body { background:var(--bg); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--ink); }
+  .ff-serif { font-family:'Instrument Serif', ui-serif, Georgia, serif; letter-spacing:-0.02em; }
+  .ff-mono { font-family:'JetBrains Mono', ui-monospace, monospace; font-feature-settings:"tnum","ss01"; }
+  .tnum { font-variant-numeric:tabular-nums; }
+  .frame { width:100%; max-width:760px; margin:0 auto; }
+  .eyebrow { font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--mute); font-weight:500; }
+  .label { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; font-weight:600; }
+  .divider { height:1px; background:var(--line); }
+  .sparkline { stroke:var(--accent); stroke-width:1.5; fill:none; }
+  .sparkline-faint { stroke:var(--faint); stroke-width:1; fill:none; }
+  /* Job card */
+  .job { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px 24px; transition:border 0.15s; }
+  .job:hover { border-color:var(--line-2); }
+  .job.now { background:linear-gradient(180deg, #14141a 0%, var(--surface) 100%); border:1px solid var(--line-2); padding:28px 28px 24px; }
+  .chip { display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:3px 9px; border-radius:999px; line-height:1; font-weight:500; }
+  .chip-hot { background:var(--hot-soft); color:var(--hot); }
+  .chip-accent { background:var(--accent-soft); color:var(--accent); }
+  .chip-ok { background:var(--ok-soft); color:var(--ok); }
+  .chip-mute { background:rgba(255,255,255,0.04); color:var(--mute); border:1px solid var(--line); }
+  .btn-primary { background:var(--ink); color:#000; padding:9px 16px; border-radius:8px; font-size:12.5px; font-weight:600; transition:transform 0.08s; }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .btn-ghost { background:transparent; color:var(--ink); padding:9px 14px; border-radius:8px; font-size:12.5px; font-weight:500; border:1px solid var(--line-2); }
+  .btn-ghost:hover { border-color:var(--line-3); }
+  .meta-row { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--mute); }
+  .meta-row b { color:var(--ink); font-weight:500; }
+  .kpi-cell { display:flex; flex-direction:column; gap:3px; padding:0 18px; border-right:1px solid var(--line); }
+  .kpi-cell:last-child { border-right:0; }
+  .kpi-cell .l { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); font-weight:500; }
+  .kpi-cell .v { font-size:14px; color:var(--ink); font-weight:600; }
+  .kpi-cell .d { font-size:10.5px; color:var(--faint); }
+</style>
+</head>
+<body>
+
+<nav class="sticky top-0 z-30" style="background:rgba(9,9,11,0.85); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);">
+  <div class="max-w-[760px] mx-auto px-6 py-3 flex items-center gap-x-5 text-[12.5px]">
+    <span class="font-semibold tracking-wide" style="color:var(--ink);">Heute · Feed</span>
+    <span style="color:var(--faint);">|</span>
+    <span style="color:var(--mute);">Now Playing card + vertical feed · Stripe KPI strip · Cron deep palette</span>
+  </div>
+</nav>
+
+<section class="px-6 pt-14 pb-8 max-w-[760px] mx-auto">
+  <p class="eyebrow">Demo · v final</p>
+  <h1 class="mt-3 ff-serif" style="font-size:42px; line-height:1.05; color:var(--ink);">Jobs sind die Seite.</h1>
+  <p class="mt-4" style="font-size:14px; color:var(--mute); line-height:1.65; max-width:560px;">
+    Kein Dashboard. Kein Vorschläge-Block, kein Kanban-Block, kein Stats-Block. Oben die Stelle, die jetzt zählt — wie ein „now playing".
+    Darunter ein Feed. KPIs als dünner Mono-Streifen im Header — sichtbar, nicht laut.
+  </p>
+</section>
+
+<div class="frame px-6 pb-24">
+
+  <!-- ─────────────── STRIPE-STYLE KPI STRIP ─────────────── -->
+  <div style="background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 0; display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; padding-left:18px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="width:6px; height:6px; border-radius:999px; background:var(--hot);"></span>
+        <span class="ff-mono" style="font-size:11.5px; color:var(--mute);">2 neu · 1 Frist nähert sich</span>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center;">
+      <div class="kpi-cell">
+        <span class="l">Antwortrate</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="v ff-mono">33%</span>
+          <svg width="36" height="14" viewBox="0 0 36 14"><polyline class="sparkline" points="0,10 6,8 12,9 18,5 24,7 30,4 36,3"/></svg>
+        </div>
+        <span class="d ff-mono">⌀ 28% · ▲</span>
+      </div>
+      <div class="kpi-cell">
+        <span class="l">⌀ Antwort</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="v ff-mono">6T</span>
+          <svg width="36" height="14" viewBox="0 0 36 14"><polyline class="sparkline-faint" points="0,5 6,6 12,4 18,6 24,5 30,7 36,6"/></svg>
+        </div>
+        <span class="d ff-mono">Plattf. 8T</span>
+      </div>
+      <div class="kpi-cell">
+        <span class="l">Woche</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="v ff-mono">7</span>
+          <svg width="44" height="14" viewBox="0 0 44 14">
+            <rect x="0" y="10" width="4" height="4" fill="var(--faint)"/>
+            <rect x="7" y="6" width="4" height="8" fill="var(--mute)"/>
+            <rect x="14" y="3" width="4" height="11" fill="var(--mute)"/>
+            <rect x="21" y="11" width="4" height="3" fill="var(--faint)"/>
+            <rect x="28" y="1" width="4" height="13" fill="var(--mute)"/>
+            <rect x="35" y="8" width="4" height="6" fill="var(--accent)"/>
+          </svg>
+        </div>
+        <span class="d ff-mono">heute · 2</span>
+      </div>
+      <div class="kpi-cell" style="padding-right:18px;">
+        <span class="l">Pipeline</span>
+        <span class="v ff-mono">11 → 3 → 1 → 0</span>
+        <span class="d ff-mono">Quote 27%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── NOW PLAYING ─────────────── -->
+  <div style="margin-top:24px;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px;">
+      <p class="eyebrow"><span style="color:var(--hot);">●</span> &nbsp; Jetzt dran · Frist in 2 Tagen</p>
+      <p class="ff-mono" style="font-size:11px; color:var(--dim);">17.05 · 21:34</p>
+    </div>
+
+    <article class="job now">
+      <!-- top row: company + chips -->
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:48px; height:48px; border-radius:12px; background:var(--surface-3); border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:16px;">B</div>
+          <div>
+            <p style="font-size:11px; color:var(--dim); letter-spacing:0.06em;">BITPANDA · Wien</p>
+            <p class="ff-serif" style="font-size:30px; line-height:1.1; color:var(--ink); margin-top:2px;">Frontend-Praktikum</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <span class="chip chip-hot">● Frist 2T</span>
+          <span class="chip chip-accent">95% Match</span>
+        </div>
+      </div>
+
+      <!-- meta -->
+      <div class="meta-row" style="margin-top:20px;">
+        <span><b class="ff-mono">€ 1.200</b> /Monat</span>
+        <span style="color:var(--line-3);">·</span>
+        <span>Wien <b>1010</b></span>
+        <span style="color:var(--line-3);">·</span>
+        <span>Vor <b>3 Tagen</b> beworben</span>
+        <span style="color:var(--line-3);">·</span>
+        <span>Frist: <b>19.05.</b></span>
+      </div>
+
+      <!-- why this matters -->
+      <div style="margin-top:18px; padding:14px 16px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px;">
+        <p style="font-size:11px; color:var(--dim); letter-spacing:0.1em; text-transform:uppercase;">Warum jetzt</p>
+        <p style="margin-top:6px; font-size:13px; color:var(--mute); line-height:1.55;">
+          Frist in <b style="color:var(--ink);">2 Tagen</b>. Mo morgens läuft erfahrungsgemäß <span style="color:var(--accent);">+18 %</span> besser als Fr abends — aber heute geht auch.
+        </p>
+      </div>
+
+      <!-- actions -->
+      <div style="margin-top:18px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary">Stelle öffnen</button>
+          <button class="btn-ghost">Anschreiben verfassen</button>
+        </div>
+        <button style="background:transparent; color:var(--dim); font-size:12px; padding:8px 4px;">überspringen ›</button>
+      </div>
+    </article>
+  </div>
+
+  <!-- ─────────────── FEED LABEL ─────────────── -->
+  <div style="margin-top:36px; margin-bottom:12px; display:flex; align-items:baseline; justify-content:space-between;">
+    <p class="eyebrow">Deine Liste · 14 weitere</p>
+    <a style="font-size:12px; color:var(--mute); text-decoration:underline; text-underline-offset:3px;">filtern · sortieren</a>
+  </div>
+
+  <!-- ─────────────── FEED ─────────────── -->
+  <div style="display:flex; flex-direction:column; gap:10px;">
+
+    <!-- A1 Telekom — Beworben, waiting -->
+    <article class="job">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--surface-3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:14px;">A1</div>
+          <div style="min-width:0;">
+            <p style="font-size:10.5px; color:var(--dim); letter-spacing:0.06em;">A1 TELEKOM · Wien</p>
+            <p class="ff-serif" style="font-size:20px; line-height:1.15; color:var(--ink); margin-top:1px;">Junior Network Engineer</p>
+            <div class="meta-row" style="margin-top:8px; gap:14px; font-size:11.5px;">
+              <span><b class="ff-mono">€ 2.400</b> /M</span>
+              <span style="color:var(--line-3);">·</span>
+              <span>vor <b>11 d</b> beworben</span>
+              <span style="color:var(--line-3);">·</span>
+              <span style="color:var(--accent);">Mail wäre okay</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+          <span class="chip chip-mute">● Beworben</span>
+          <button class="btn-ghost" style="padding:6px 12px; font-size:11.5px;">Nachfragen</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Volksbank — interview scheduled -->
+    <article class="job">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--surface-3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:14px;">V</div>
+          <div style="min-width:0;">
+            <p style="font-size:10.5px; color:var(--dim); letter-spacing:0.06em;">VOLKSBANK · Linz</p>
+            <p class="ff-serif" style="font-size:20px; line-height:1.15; color:var(--ink); margin-top:1px;">Werkstudent Data</p>
+            <div class="meta-row" style="margin-top:8px; gap:14px; font-size:11.5px;">
+              <span><b class="ff-mono">€ 14</b> /h</span>
+              <span style="color:var(--line-3);">·</span>
+              <span>Termin <b>20.05.</b> · 14:00</span>
+              <span style="color:var(--line-3);">·</span>
+              <span style="color:var(--ok);">Gespräch nächste Woche</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+          <span class="chip chip-ok">● Im Gespräch</span>
+          <button class="btn-ghost" style="padding:6px 12px; font-size:11.5px;">Vorbereiten</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- GMS Gourmet — new, high match -->
+    <article class="job">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--surface-3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:13px;">GM</div>
+          <div style="min-width:0;">
+            <p style="font-size:10.5px; color:var(--dim); letter-spacing:0.06em;">GMS GOURMET · Wien</p>
+            <p class="ff-serif" style="font-size:20px; line-height:1.15; color:var(--ink); margin-top:1px;">Samstagsjob Service</p>
+            <div class="meta-row" style="margin-top:8px; gap:14px; font-size:11.5px;">
+              <span><b class="ff-mono">€ 12,50</b> /h</span>
+              <span style="color:var(--line-3);">·</span>
+              <span>seit <b>gestern</b> online</span>
+              <span style="color:var(--line-3);">·</span>
+              <span style="color:var(--accent);">passt zu deinem Profil</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+          <span class="chip chip-accent">● Neu · 95%</span>
+          <button class="btn-primary" style="padding:6px 12px; font-size:11.5px;">Speichern</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- THEMATIK -->
+    <article class="job">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--surface-3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:13px;">TH</div>
+          <div style="min-width:0;">
+            <p style="font-size:10.5px; color:var(--dim); letter-spacing:0.06em;">THEMATIK · Graz</p>
+            <p class="ff-serif" style="font-size:20px; line-height:1.15; color:var(--ink); margin-top:1px;">UI Designer Praktikum</p>
+            <div class="meta-row" style="margin-top:8px; gap:14px; font-size:11.5px;">
+              <span><b class="ff-mono">€ 950</b> /M</span>
+              <span style="color:var(--line-3);">·</span>
+              <span>seit <b>2 Tagen</b> online</span>
+              <span style="color:var(--line-3);">·</span>
+              <span style="color:var(--dim);">3 Monate · Sommer</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+          <span class="chip chip-accent">● Neu · 80%</span>
+          <button class="btn-primary" style="padding:6px 12px; font-size:11.5px;">Speichern</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- MOOONS -->
+    <article class="job">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--surface-3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:13px;">MO</div>
+          <div style="min-width:0;">
+            <p style="font-size:10.5px; color:var(--dim); letter-spacing:0.06em;">MOOONS · Wien</p>
+            <p class="ff-serif" style="font-size:20px; line-height:1.15; color:var(--ink); margin-top:1px;">Concierge Teilzeit</p>
+            <div class="meta-row" style="margin-top:8px; gap:14px; font-size:11.5px;">
+              <span><b class="ff-mono">€ 11,20</b> /h</span>
+              <span style="color:var(--line-3);">·</span>
+              <span>vor <b>4 d</b> beworben</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+          <span class="chip chip-mute">● Beworben</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Moonshot Labs — saved -->
+    <article class="job">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--surface-3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--ink); font-size:13px;">ML</div>
+          <div style="min-width:0;">
+            <p style="font-size:10.5px; color:var(--dim); letter-spacing:0.06em;">MOONSHOT LABS · Wien</p>
+            <p class="ff-serif" style="font-size:20px; line-height:1.15; color:var(--ink); margin-top:1px;">Werkstudent Backend</p>
+            <div class="meta-row" style="margin-top:8px; gap:14px; font-size:11.5px;">
+              <span><b class="ff-mono">€ 16</b> /h</span>
+              <span style="color:var(--line-3);">·</span>
+              <span>gespeichert vor <b>5 d</b></span>
+              <span style="color:var(--line-3);">·</span>
+              <span style="color:var(--dim);">noch nicht beworben</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+          <span class="chip chip-mute">● 76%</span>
+          <button class="btn-ghost" style="padding:6px 12px; font-size:11.5px;">Öffnen</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Footer / load more -->
+    <button style="margin-top:8px; padding:14px; border:1px dashed var(--line-2); background:transparent; color:var(--mute); border-radius:12px; font-size:12.5px;">
+      8 weitere anzeigen ↓
+    </button>
+  </div>
+
+  <!-- Quiet footnote — closes the loop with a human note -->
+  <p style="margin-top:48px; padding-top:24px; border-top:1px solid var(--line); font-size:12px; color:var(--dim); text-align:center; line-height:1.6;">
+    Sieben Aktionen diese Woche. Das ist solide.<br/>
+    <span style="color:var(--faint); font-size:11px;">— Schnitt auf der Plattform: 5.</span>
+  </p>
+</div>
+
+<footer style="padding:32px 24px 80px; max-width:760px; margin:0 auto; color:var(--faint); font-size:12.5px; line-height:1.7;">
+  <p><strong style="color:var(--mute);">Was hier passiert ist:</strong></p>
+  <ul style="margin-top:8px; padding-left:18px; list-style:disc; color:var(--dim);">
+    <li><strong style="color:var(--mute);">Stripe-KPI-Strip</strong> oben: Antwortrate · ⌀Antwort · Woche · Pipeline. Mit Mini-Sparklines, Mono-Ziffern. Sichtbar, nicht laut.</li>
+    <li><strong style="color:var(--mute);">Now-Playing-Karte</strong>: Bitpanda groß. Logo · Rolle · Match · Frist · Gehalt · Ort · „Warum jetzt"-Begründung · primärer Button. Spotify-Energie.</li>
+    <li><strong style="color:var(--mute);">Feed darunter</strong>: alle anderen Stellen als 60–80 px hohe Karten. Status-Chip + Quick-Action rechts. Status liegt am Job, nicht in einer Spalte.</li>
+    <li><strong style="color:var(--mute);">Keine Sektionen</strong>. Kein „Vorschläge", kein „Statistiken", kein „Kanban", kein „Tipps". Die Jobs <em>sind</em> die Seite. Stats sind Ornament.</li>
+    <li><strong style="color:var(--mute);">Schmaler Container</strong> (760px max) — Feed-Apps sind narrow. Mobile-portierbar ohne Layout-Bruch.</li>
+  </ul>
+</footer>
+
+</body>
+</html>

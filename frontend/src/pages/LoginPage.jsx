@@ -2,15 +2,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowRight, Mail, Lock } from "lucide-react";
 import { authApi, initApi } from "../services/api";
 import useAuthStore from "../hooks/useAuthStore";
 import AuthLayout from "../components/ui/AuthLayout";
-import Button from "../components/ui/Button";
 import queryClient from "../queryClient";
 import { getApiErrorMessage } from "../utils/apiError";
 
-/** Login page with email/password form and persistent session handling. */
+/** Login page — email/password sign-in flow. */
 export default function LoginPage() {
   const {
     register,
@@ -47,87 +46,102 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      <div className="mb-6 sm:mb-8">
-        <h2 className="text-2xl font-bold text-slate-100 mb-1">Willkommen zurück</h2>
-        <p className="text-slate-400 text-sm sm:text-base">
-          Melde dich bei deinem JobAssist-Konto an
+      <div className="mb-7 text-center">
+        <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight leading-[1.1] text-[var(--color-fg)]">
+          Willkommen{" "}
+          <span className="font-display italic text-[var(--color-accent-300)]">zurück</span>.
+        </h1>
+        <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
+          Setze deine Bewerbung fort.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div>
-          <label className="label">E-Mail-Adresse</label>
-          <input
-            className="input"
-            type="email"
-            placeholder="du@beispiel.at"
-            {...register("email", { required: "E-Mail ist erforderlich" })}
-          />
-          {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email.message}</p>}
+      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-12 gap-y-4">
+        <div className="col-span-12">
+          <label className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]" htmlFor="email">
+            E-Mail-Adresse
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-dim)]" />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="du@beispiel.at"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] pl-10 pr-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors"
+              {...register("email", { required: "E-Mail ist erforderlich" })}
+            />
+          </div>
+          {errors.email && (
+            <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.email.message}</p>
+          )}
         </div>
 
-        <div>
-          <label className="label">Passwort</label>
+        <div className="col-span-12">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-[12px] font-semibold text-[var(--color-fg-muted)]" htmlFor="password">
+              Passwort
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-[12px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+            >
+              Vergessen?
+            </Link>
+          </div>
           <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-dim)]" />
             <input
-              className="input pr-10"
+              id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Dein Passwort eingeben"
+              autoComplete="current-password"
+              placeholder="Dein Passwort"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] pl-10 pr-10 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors"
               {...register("password", { required: "Passwort ist erforderlich" })}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-300 transition-colors"
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] transition-colors"
               tabIndex={-1}
               aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-xs mt-1.5">{errors.password.message}</p>
+            <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.password.message}</p>
           )}
-          <div className="text-right mt-1">
-            <Link
-              to="/forgot-password"
-              className="text-xs text-brand-300 hover:text-brand-200 transition-colors"
-            >
-              Passwort vergessen?
-            </Link>
-          </div>
         </div>
 
-        <Button type="submit" size="lg" fullWidth disabled={isSubmitting}>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="col-span-12 mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               <span>Anmeldung läuft…</span>
             </>
           ) : (
-            "Anmelden"
+            <>
+              <span>Anmelden</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
           )}
-        </Button>
+        </button>
       </form>
 
-      <p className="text-sm text-center text-slate-400 mt-6">
+      <p className="mt-7 text-center text-[13px] text-[var(--color-fg-muted)]">
         Noch kein Konto?{" "}
-        <Link to="/register" className="text-brand-300 font-semibold hover:text-brand-200 transition-colors">
+        <Link
+          to="/register"
+          className="font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+        >
           Jetzt registrieren
         </Link>
       </p>
-
-      <div className="flex justify-center gap-4 mt-6 text-xs text-slate-500">
-        <Link to="/terms" className="hover:text-slate-300 transition-colors">
-          AGB
-        </Link>
-        <Link to="/privacy" className="hover:text-slate-300 transition-colors">
-          Datenschutz
-        </Link>
-        <Link to="/impressum" className="hover:text-slate-300 transition-colors">
-          Impressum
-        </Link>
-      </div>
     </AuthLayout>
   );
 }

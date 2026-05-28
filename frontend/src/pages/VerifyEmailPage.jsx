@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle, ArrowRight } from "lucide-react";
 
 import AuthLayout from "../components/ui/AuthLayout";
 import useAuthStore from "../hooks/useAuthStore";
@@ -61,39 +61,63 @@ export default function VerifyEmailPage() {
   }, [hasSession, setUser, storedUser, token]);
 
   return (
-    <AuthLayout>
-      <div className="text-center py-8">
+    <AuthLayout backTo={hasSession ? "/dashboard" : "/login"} backLabel={hasSession ? "Zum Dashboard" : "Zum Login"}>
+      <div className="text-center py-4">
         {status === "loading" && (
           <>
-            <Loader2 className="w-10 h-10 text-brand-400 animate-spin mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-slate-100">E-Mail wird bestätigt...</h2>
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-accent-500)]/10 mx-auto mb-5">
+              <Loader2 className="h-7 w-7 text-[var(--color-accent-300)] animate-spin" />
+            </div>
+            <h1 className="text-[24px] font-semibold tracking-tight text-[var(--color-fg)]">
+              E-Mail wird{" "}
+              <span className="font-display italic text-[var(--color-accent-300)]">bestätigt</span>…
+            </h1>
+            <p className="mt-3 text-[13px] text-[var(--color-fg-muted)]">
+              Einen Moment bitte.
+            </p>
           </>
         )}
 
         {status === "success" && (
           <>
-            <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-7 h-7 text-green-400" />
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-success-soft)] mx-auto mb-5">
+              <CheckCircle2 className="h-7 w-7 text-[var(--color-success)]" />
             </div>
-            <h2 className="text-xl font-bold text-slate-100 mb-2">E-Mail bestätigt</h2>
-            <p className="text-sm text-slate-400 mb-4">
+            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)]">
+              E-Mail{" "}
+              <span className="font-display italic text-[var(--color-accent-300)]">bestätigt</span>.
+            </h1>
+            <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
               Deine E-Mail-Adresse wurde erfolgreich bestätigt.
             </p>
-            <Link to={hasSession ? "/dashboard" : "/login"} className="btn-primary inline-block">
+            <Link
+              to={hasSession ? "/dashboard" : "/login"}
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+            >
               {hasSession ? "Zum Dashboard" : "Zum Login"}
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </>
         )}
 
         {status === "error" && (
           <>
-            <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-7 h-7 text-red-400" />
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-error-soft)] mx-auto mb-5">
+              <XCircle className="h-7 w-7 text-[var(--color-error)]" />
             </div>
-            <h2 className="text-xl font-bold text-slate-100 mb-2">Bestätigung fehlgeschlagen</h2>
-            <p className="text-sm text-slate-400 mb-4">Der Link ist ungültig oder abgelaufen.</p>
-            <Link to="/login" className="btn-primary inline-block">
+            <h1 className="text-[26px] font-semibold tracking-tight text-[var(--color-fg)]">
+              Bestätigung fehlgeschlagen
+            </h1>
+            <p className="mt-3 max-w-[40ch] mx-auto text-[14px] text-[var(--color-fg-muted)]">
+              Der Link ist ungültig oder abgelaufen. Bitte melde dich an und fordere eine neue
+              Bestätigungs-Mail an.
+            </p>
+            <Link
+              to="/login"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+            >
               Zum Login
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </>
         )}

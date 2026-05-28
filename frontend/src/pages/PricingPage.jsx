@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Star, Zap, Crown, Building2, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import {
+  Check, Star, Zap, Crown, Building2, ArrowRight, Loader2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import { billingApi } from "../services/api";
 import useAuthStore from "../hooks/useAuthStore";
 import { getApiErrorMessage } from "../utils/apiError";
+import LegalLayout from "../components/ui/LegalLayout";
 
 const FEATURE_LABELS = {
   cv_analysis: "Lebenslauf-Analysen / Monat",
@@ -16,16 +19,12 @@ const FEATURE_LABELS = {
   job_search: "Jobsuche / Tag",
 };
 
-/**
- * Formats a plan limit for display, converting -1 to "Unbegrenzt".
- * @param {number} value
- * @returns {string|number}
- */
+/** Formats a plan limit for display; -1 means unbegrenzt. */
 function formatLimit(value) {
   return value === -1 ? "Unbegrenzt" : value;
 }
 
-const plans = [
+const PLANS = [
   {
     key: "basic",
     name: "Basic",
@@ -33,7 +32,6 @@ const plans = [
     price: "0",
     period: "",
     icon: Star,
-    color: "gray",
     highlighted: false,
     badge: null,
     limits: { cv_analysis: 5, cover_letter: 5, job_alerts: 2, ai_chat: 15, job_search: 5 },
@@ -46,7 +44,6 @@ const plans = [
     price: "4,99",
     period: "/ Monat",
     icon: Zap,
-    color: "blue",
     highlighted: true,
     badge: "Beliebt",
     limits: { cv_analysis: 15, cover_letter: 25, job_alerts: 10, ai_chat: 200, job_search: 20 },
@@ -59,7 +56,6 @@ const plans = [
     price: "7,99",
     period: "/ Monat",
     icon: Crown,
-    color: "purple",
     highlighted: false,
     badge: "Bestes Angebot",
     limits: { cv_analysis: -1, cover_letter: -1, job_alerts: -1, ai_chat: -1, job_search: -1 },
@@ -72,7 +68,6 @@ const plans = [
     price: null,
     period: "",
     icon: Building2,
-    color: "slate",
     highlighted: false,
     badge: null,
     limits: { cv_analysis: -1, cover_letter: -1, job_alerts: -1, ai_chat: -1, job_search: -1 },
@@ -80,39 +75,13 @@ const plans = [
   },
 ];
 
-const cardBorder = {
-  gray: "border-[#1f2937] hover:border-slate-600",
-  blue: "border-brand-500/60 ring-1 ring-brand-500/20",
-  purple: "border-[#1f2937] hover:border-brand-500/40",
-  slate: "border-[#1f2937] hover:border-slate-500/50",
-};
-
-const iconBg = {
-  gray: "bg-slate-900",
-  blue: "bg-brand-500/15",
-  purple: "bg-brand-500/15",
-  slate: "bg-slate-800",
-};
-
-const iconFg = {
-  gray: "text-slate-300",
-  blue: "text-brand-300",
-  purple: "text-brand-300",
-  slate: "text-slate-300",
-};
-
-const ctaStyle = {
-  basic: "bg-slate-900 text-slate-500 cursor-default border border-[#1f2937]",
-  pro: "bg-gradient-to-r from-brand-500 to-accent-600 text-white hover:from-brand-400 hover:to-accent-500 shadow-lg shadow-brand-500/30 hover:shadow-xl hover:shadow-brand-500/40",
-  max: "bg-gradient-to-r from-brand-500 to-accent-600 text-white hover:from-brand-400 hover:to-accent-500 shadow-lg shadow-brand-500/30 hover:shadow-xl hover:shadow-brand-500/40",
-  enterprise: "bg-[#111827] text-slate-100 hover:bg-[#0f172a] border border-[#1f2937]",
-};
-
-/** Pricing page showing Free/Pro/Enterprise plan cards with upgrade CTAs. */
+/** Pricing page — 4 plan cards with upgrade CTAs through Stripe checkout. */
 export default function PricingPage() {
   const navigate = useNavigate();
   const token = useAuthStore((s) => s.token);
-  const { data: initData } = useQuery({ queryKey: ["init"] });
+  // Read the init cache populated by AppShell (no queryFn — cache-only).
+  // Only enable when authenticated; otherwise there's no AppShell to seed it.
+  const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
   const currentPlan = initData?.plan || "basic";
   const [loadingPlan, setLoadingPlan] = useState(null);
 
@@ -138,166 +107,159 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(91,79,232,0.18),transparent_28%),linear-gradient(180deg,#020617_0%,#000000_100%)] text-slate-100">
-      {token && (
-        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" /> Zurück
-          </button>
-        </div>
-      )}
+    <LegalLayout
+      wide
+      title={<>Starte kostenlos. <span className="font-display italic text-[var(--color-accent-300)]">Upgrade,</span> wann du willst.</>}
+      subtitle="Alle Pläne ohne MwSt. · Jederzeit kündbar · Keine versteckten Kosten"
+    >
+      <div className="grid grid-cols-12 gap-5">
+        {PLANS.map((plan) => {
+          const Icon = plan.icon;
+          const isCurrent = currentPlan === plan.key;
+          const isHighlighted = plan.highlighted;
 
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6">
-        <div className="mb-14 text-center animate-slide-up">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-200">
-            <Zap className="h-3.5 w-3.5" /> Preise
-          </div>
-          <h1 className="mb-4 text-3xl font-extrabold leading-tight text-slate-100 sm:text-4xl md:text-5xl">
-            Finde den passenden Plan
-          </h1>
-          <p className="mx-auto max-w-md text-base leading-relaxed text-slate-400 md:text-lg">
-            Starte kostenlos und upgrade jederzeit, wenn du mehr brauchst.
-          </p>
-        </div>
+          return (
+            <div
+              key={plan.key}
+              className={`group col-span-12 sm:col-span-6 lg:col-span-3 relative flex flex-col rounded-2xl border p-7 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_40px_-12px_rgba(124,92,255,0.45)] ${
+                isHighlighted
+                  ? "border-[var(--color-accent-500)]/50 bg-[var(--color-bg-elev-1)]"
+                  : "border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 hover:border-[var(--color-accent-500)]/40"
+              }`}
+            >
+              {plan.badge && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span
+                    className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-md ${
+                      isHighlighted
+                        ? "bg-[var(--color-accent-500)] text-white"
+                        : "bg-[var(--color-bg-elev-2)] text-[var(--color-accent-300)] border border-[var(--color-accent-500)]/30"
+                    }`}
+                  >
+                    {plan.badge}
+                  </span>
+                </div>
+              )}
 
-        <div
-          className="grid animate-slide-up grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-4"
-          style={{  }}
-        >
-          {plans.map((plan) => {
-            const isCurrent = currentPlan === plan.key;
-            const Icon = plan.icon;
-
-            return (
-              <div
-                key={plan.key}
-                className={`relative flex flex-col rounded-2xl border bg-[radial-gradient(circle_at_top,rgba(91,79,232,0.12),transparent_36%),linear-gradient(180deg,#111827_0%,#000000_100%)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-                  plan.highlighted
-                    ? `${cardBorder[plan.color]} shadow-xl shadow-brand-900/30`
-                    : `${cardBorder[plan.color]} shadow-sm`
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span
-                      className={`rounded-full px-3.5 py-1 text-[11px] font-bold text-white shadow-md ${
-                        plan.highlighted
-                          ? "bg-gradient-to-r from-brand-500 to-accent-600"
-                          : "bg-gradient-to-r from-brand-500 to-violet-500"
-                      }`}
-                    >
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex flex-1 flex-col p-6">
-                  <div className="mb-6 flex items-center gap-3">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconBg[plan.color]}`}>
-                      <Icon className={`h-5 w-5 ${iconFg[plan.color]}`} />
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-bold text-slate-100">{plan.name}</h3>
-                      <p className="mt-0.5 text-xs text-slate-400">{plan.subtitle}</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    {plan.price !== null ? (
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-[40px] font-extrabold leading-none tracking-tight text-slate-100">
-                          {plan.price === "0" ? "Gratis" : `€${plan.price}`}
-                        </span>
-                        {plan.period && <span className="text-sm font-medium text-slate-400">{plan.period}</span>}
-                      </div>
-                    ) : (
-                      <div className="flex items-baseline">
-                        <span className="text-2xl font-bold text-slate-100">Auf Anfrage</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mb-5 h-px bg-[#171a21]" />
-
-                  <ul className="mb-6 flex-1 space-y-3">
-                    {Object.entries(plan.limits).map(([feature, value]) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-[13px] leading-snug">
-                        <div className="mt-0.5 flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/12">
-                          <Check className="h-3 w-3 text-emerald-400" />
-                        </div>
-                        <span>
-                          <span className="font-semibold text-slate-200">{formatLimit(value)}</span>{" "}
-                          <span className="text-slate-400">{FEATURE_LABELS[feature]}</span>
-                        </span>
-                      </li>
-                    ))}
-                    {plan.extras.map((extra, index) => (
-                      <li key={extra} className={`flex items-start gap-2.5 text-[13px] leading-snug ${index === 0 ? "text-slate-300" : "text-slate-400"}`}>
-                        <div className="mt-0.5 flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-full bg-slate-900">
-                          <Check className="h-3 w-3 text-slate-500" />
-                        </div>
-                        {extra}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {isCurrent ? (
-                    <button
-                      disabled
-                      className="w-full cursor-not-allowed rounded-xl border border-brand-500/20 bg-brand-500/10 py-3 text-sm font-semibold text-brand-200"
-                    >
-                      Aktueller Plan
-                    </button>
-                  ) : plan.key === "basic" ? (
-                    <button disabled className="w-full rounded-xl border border-[#1f2937] bg-slate-900 py-3 text-sm font-semibold text-slate-500">
-                      Inklusive
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleUpgrade(plan.key)}
-                      disabled={loadingPlan === plan.key}
-                      className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all duration-200 disabled:opacity-70 ${ctaStyle[plan.key]}`}
-                    >
-                      {loadingPlan === plan.key ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" /> Wird geladen...
-                        </>
-                      ) : (
-                        <>
-                          {plan.key === "enterprise" ? "Kontakt aufnehmen" : "Plan wählen (Jetzt durchstarten)"}
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </button>
-                  )}
+              <div className="flex items-center gap-3 mb-5">
+                <div
+                  className={`grid h-10 w-10 place-items-center rounded-xl ${
+                    isHighlighted ? "bg-[var(--color-accent-500)]/15" : "bg-[var(--color-bg-elev-2)]"
+                  }`}
+                >
+                  <Icon
+                    className={`h-4.5 w-4.5 ${
+                      isHighlighted ? "text-[var(--color-accent-300)]" : "text-[var(--color-fg-muted)]"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-[16px] font-semibold text-[var(--color-fg)] leading-tight">{plan.name}</h3>
+                  <p className="text-[11px] text-[var(--color-fg-muted)]">{plan.subtitle}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        <p className="mt-10 text-center text-xs text-slate-500">
-          Keine MwSt. ausgewiesen. Jederzeit kündbar. Keine versteckten Kosten.
-        </p>
+              <div className="mb-5">
+                {plan.price !== null ? (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[34px] font-bold tracking-tight tabular-nums text-[var(--color-fg)] leading-none">
+                      {plan.price === "0" ? "Gratis" : `€${plan.price}`}
+                    </span>
+                    {plan.period && (
+                      <span className="text-[12px] font-medium text-[var(--color-fg-muted)]">{plan.period}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-[22px] font-semibold text-[var(--color-fg)]">Auf Anfrage</span>
+                )}
+              </div>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-slate-500">
-          <Link to="/terms" className="transition-colors hover:text-slate-200">
-            AGB
-          </Link>
-          <Link to="/privacy" className="transition-colors hover:text-slate-200">
-            Datenschutz
-          </Link>
-          <Link to="/impressum" className="transition-colors hover:text-slate-200">
-            Impressum
-          </Link>
-          <Link to="/contact" className="transition-colors hover:text-slate-200">
-            Kontakt
-          </Link>
-        </div>
+              <div className="h-px bg-[var(--color-border-subtle)] mb-4" />
+
+              <ul className="flex-1 space-y-3 mb-6">
+                {Object.entries(plan.limits).map(([feature, value]) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-[13px] leading-snug">
+                    <Check className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-[var(--color-accent-300)]" />
+                    <span className="min-w-0">
+                      <span className="font-semibold text-[var(--color-fg)]">{formatLimit(value)}</span>{" "}
+                      <span className="text-[var(--color-fg-muted)]">{FEATURE_LABELS[feature]}</span>
+                    </span>
+                  </li>
+                ))}
+                {plan.extras.map((extra) => (
+                  <li key={extra} className="flex items-start gap-2.5 text-[13px] leading-snug">
+                    <Check className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-[var(--color-fg-dim)]" />
+                    <span className="min-w-0 text-[var(--color-fg-muted)]">{extra}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {isCurrent ? (
+                <button
+                  disabled
+                  className="w-full cursor-not-allowed rounded-lg border border-[var(--color-accent-500)]/30 bg-[var(--color-accent-500)]/10 py-2.5 text-[13px] font-semibold text-[var(--color-accent-300)]"
+                >
+                  Aktueller Plan
+                </button>
+              ) : plan.key === "basic" ? (
+                <button
+                  disabled
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] py-2.5 text-[13px] font-semibold text-[var(--color-fg-dim)] cursor-not-allowed"
+                >
+                  Inklusive
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleUpgrade(plan.key)}
+                  disabled={loadingPlan === plan.key}
+                  className={`w-full inline-flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                    isHighlighted || plan.key === "max"
+                      ? "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-400)]"
+                      : "border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+                  }`}
+                >
+                  {loadingPlan === plan.key ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Wird geladen…
+                    </>
+                  ) : (
+                    <>
+                      {plan.key === "enterprise" ? "Kontakt aufnehmen" : "Plan wählen"}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
-    </div>
+
+      {/* Tiny reassurance + FAQ pointers */}
+      <div className="mt-6 grid grid-cols-12 gap-3">
+        {[
+          { t: "Jederzeit kündbar",   d: "Monatliche Abrechnung. Kein Lock-in, keine Vertragsbindung." },
+          { t: "Sichere Zahlung",     d: "Abwicklung über Stripe. Kreditkarte oder SEPA-Lastschrift." },
+          { t: "DSGVO-konform",       d: "EU-Server, keine Tracking-Cookies, jederzeit löschbar." },
+        ].map((p) => (
+          <div
+            key={p.t}
+            className="col-span-12 sm:col-span-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]/40 p-5"
+          >
+            <p className="text-[13px] font-semibold text-[var(--color-fg)] mb-1.5">{p.t}</p>
+            <p className="text-[12px] leading-relaxed text-[var(--color-fg-muted)]">{p.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-8 text-center text-[12px] text-[var(--color-fg-dim)]">
+        Fragen zur Abrechnung?{" "}
+        <a href="/contact" className="text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors underline-offset-2 hover:underline">
+          Schreib uns
+        </a>
+        .
+      </p>
+    </LegalLayout>
   );
 }

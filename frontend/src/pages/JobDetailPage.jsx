@@ -1,563 +1,1386 @@
 /**
- * JobDetailPage — EU AI Act compliant, fully responsive
- * Primary: #2D5BFF | Desktop: 40/60 split | Mobile: single-column stack
- * Touch targets: min 44×44px | Body: 16px / leading-relaxed
+ * JobDetailPage — pure v7 detail surface.
+ *
+ * Visual spec: see /demo/v7/index.html. The page reads as a single calm
+ * stack:
+ *
+ *   1. Sticky toolbar     — breadcrumb · Status menu · Mehr menu
+ *   2. Identity row       — logo · category · role · company/location
+ *   3. Story-hero         — Instrument Serif €X,XX/h headline (when known)
+ *   4. KPI tiles          — Standort · Typ · Frist on a 12-col grid
+ *   5. KV-benchmark bar   — collective-bargaining context (when known)
+ *   6. Match card         — score + AI strengths / gaps
+ *   7. Kontext footer     — calm baselines ("Antworten dauern im Schnitt …")
+ *   8. Beschreibung       — collapsed by default
+ *   9. Primary CTAs       — Bewerbung schreiben · Stellenanzeige öffnen
+ *
+ * All legacy features (Anschreiben generieren, Gespräch, Recherche, CV-Picker,
+ * Frist/Notizen edit, Stelle löschen) are reachable from the toolbar's
+ * "Mehr" menu — never inline. This matches the v7 demo and the calm-mode
+ * design memory.
+ *
+ * The previous (legacy) implementation lives at JobDetailPage.legacy.jsx.bak
+ * for reference and is not imported.
  */
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
-  ArrowLeft, Trash2, Zap, FileText, MessageSquare, Mail, X, TrendingUp,
-  Copy, Check, ChevronDown, ChevronUp, Download, SearchCheck,
-  Info, BookOpen, ExternalLink, Shield, Sparkles, ChevronRight, MoreHorizontal,
-  Users, Award, Heart, Cpu,
+  ChevronLeft, ChevronRight, ExternalLink, Trash2,
+  FileText, MessageSquare, SearchCheck, Check, Copy, Download, X, Mail,
+  Edit3, ChevronDown, Info, Play, ArrowLeft, ArrowRight, Loader2,
+  ThumbsUp, AlertCircle, MoreHorizontal, BarChart2, TrendingUp,
 } from "lucide-react";
-import { coverLetterApi, interviewApi, jobApi, researchApi, resumeApi } from "../services/api";
+
+import { coverLetterApi, coursesApi, interviewApi, jobApi, researchApi, resumeApi } from "../services/api";
 import ResearchModal from "../components/ResearchModal";
 import AIDisclosureBanner from "../components/AIDisclosureBanner";
 import { getApiErrorMessage } from "../utils/apiError";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Local storage helpers ───────────────────────────────────────────────────
 
 const loadStored = (key) => { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : undefined; } catch { return undefined; } };
-const saveStored = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} };
+const saveStored = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* quota */ } };
 const parseJson = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
 const escapeHtml = (v) => String(v || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/**
- * Triggers a browser download of `content` as a plain-text file.
- * @param {string} content
- * @param {string} filename
- */
-function downloadTxt(content, filename) {
-  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" })), download: filename });
-  a.click(); URL.revokeObjectURL(a.href);
-}
-/**
- * Triggers a browser download of `content` as a .doc (Word-compatible HTML) file.
- * @param {string} content
- * @param {string} filename
- */
+// ─── Download helpers (preserved from legacy) ────────────────────────────────
+
+/** Triggers a browser download of `content` as a Word-compatible HTML file. */
 function downloadDoc(content, filename) {
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><p style="font-family:Arial;font-size:12pt;">${escapeHtml(content).replace(/\n/g, "</p><p style='font-family:Arial;font-size:12pt;'>")}</p></body></html>`;
-  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff", html], { type: "application/msword" })), download: filename });
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(new Blob(["\ufeff", html], { type: "application/msword" })),
+    download: filename,
+  });
   a.click(); URL.revokeObjectURL(a.href);
 }
-/**
- * Opens a new window with print-optimised HTML and triggers the browser print dialog.
- * @param {string} title
- * @param {string} bodyHtml
- */
+/** Opens a print-optimised HTML window. */
 function printHtml(title, bodyHtml) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>@page{margin:2cm}body{font-family:Arial,sans-serif;font-size:12pt;line-height:1.6;color:#000}</style></head><body>${bodyHtml}</body></html>`;
   const win = window.open(URL.createObjectURL(new Blob([html], { type: "text/html" })));
   win?.addEventListener("load", () => { win.print(); });
 }
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-
-const PRIMARY = "#5B4FE8";
-
-const _STATUS_CONFIG = {
-  bookmarked:   { label: "Gespeichert",          cls: "bg-[#EEF2FF] text-[#2D5BFF] border border-[#C7D2FE]" },
-  applied:      { label: "Beworben",             cls: "bg-emerald-50 text-emerald-700 border border-emerald-200" },
-  interviewing: { label: "Vorstellungsgespräch", cls: "bg-violet-50 text-violet-700 border border-violet-200" },
-  offered:      { label: "Angebot erhalten",     cls: "bg-amber-50 text-amber-700 border border-amber-200" },
-  rejected:     { label: "Abgelehnt",            cls: "bg-red-50 text-red-600 border border-red-200" },
-};
-
-const TYPE_MAP = {
-  behavioral: "Verhalten", behaviour: "Verhalten", "behaviour-based": "Verhalten",
-  technical: "Fachlich", "technical knowledge": "Fachlich", fachwissen: "Fachlich",
-  situational: "Situativ", situation: "Situativ",
-  motivation: "Motivation", motivational: "Motivation",
-  competency: "Kompetenz", competence: "Kompetenz",
-  culture: "Kultur", "cultural fit": "Kultur",
-  leadership: "Führung", management: "Führung",
-  "problem-solving": "Problemlösung", analytical: "Problemlösung",
-  creativity: "Kreativität", creative: "Kreativität",
-  communication: "Kommunikation", interpersonal: "Kommunikation",
-  teamwork: "Teamarbeit", collaboration: "Teamarbeit", team: "Teamarbeit",
-  adaptability: "Anpassung", flexibility: "Anpassung",
-  stress: "Stressresistenz", "time management": "Zeitmanagement",
-  sales: "Vertrieb", customer: "Kundenorientierung", service: "Kundenorientierung",
-};
-const TAG_COLORS = {
-  Fachlich: "bg-blue-500/10 text-blue-400 border border-blue-500/20", Verhalten: "bg-violet-500/10 text-violet-400 border border-violet-500/20",
-  Situativ: "bg-amber-500/10 text-amber-400 border border-amber-500/20", Motivation: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-  Kompetenz: "bg-rose-500/10 text-rose-400 border border-rose-500/20", Kultur: "bg-teal-500/10 text-teal-400 border border-teal-500/20",
-  Führung: "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20", Problemlösung: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
-  Kreativität: "bg-pink-500/10 text-pink-400 border border-pink-500/20", Kommunikation: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20",
-  Teamarbeit: "bg-lime-500/10 text-lime-400 border border-lime-500/20", Anpassung: "bg-sky-500/10 text-sky-400 border border-sky-500/20",
-  Stressresistenz: "bg-red-500/10 text-red-400 border border-red-500/20", Zeitmanagement: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
-  Vertrieb: "bg-green-500/10 text-green-400 border border-green-500/20", Kundenorientierung: "bg-purple-500/10 text-purple-400 border border-purple-500/20",
-};
-
-// ─── EU AI Act: Qualifikations-Check ─────────────────────────────────────────
-// Derives three verifiable-data-only sub-scores from the AI match score.
-// NO personality trait inference — only skills, formal qualifications, experience.
+// ─── Domain helpers ──────────────────────────────────────────────────────────
 
 /**
- * Derives three verifiable sub-scores (hard skills, qualifications, experience) from the match score.
- * Uses only skills and formal data — no personality inference.
- * @param {number|null} s - Overall match score 0–100.
- * @returns {{ hardSkills: number, qualifications: number, experience: number }}
+ * Parses a free-form salary string into a structured value the hero can render.
+ *
+ * Returns `null` when nothing useful can be extracted; otherwise an object:
+ *   { unit: "hour" | "month" | "year",
+ *     amount: number,         // primary value (EUR)
+ *     max?: number,           // optional upper bound for ranges
+ *     hourly?: number }       // best-effort hourly equivalent for KV bar
+ *
+ * Handles three common shapes:
+ *   - hourly:  "€10,20/h", "9.50 pro Stunde", "€ 11/h"
+ *   - annual:  "€ 25,000 – 35,000", "ab € 30.000", "bis € 45000"
+ *   - monthly: "€ 2.500 brutto/Monat", "1.800/Monat"
+ *
+ * Hourly conversion assumes the Austrian full-time baseline of 38.5 h/week ×
+ * 52 weeks ≈ 2002 h/year. Good enough for the KV bar; never shown as a
+ * concrete number unless directly stated.
+ *
+ * @param {string | null | undefined} raw
+ * @returns {{unit: "hour"|"month"|"year", amount: number, max?: number, hourly?: number} | null}
  */
-function deriveSubScores(s) {
-  const n = Math.round(s ?? 0);
-  return {
-    hardSkills:  Math.min(100, Math.max(0, n + (n % 13) - 6)),
-    formalReq:   Math.min(100, Math.max(0, n + (n % 11) - 4)),
-    experience:  Math.min(100, Math.max(0, n + (n % 7)  - 3)),
-  };
+function parseSalary(raw) {
+  if (!raw) return null;
+  const s = String(raw).toLowerCase().replace(/\s+/g, " ").trim();
+
+  // Pull all numeric tokens (handles "€ 25,000 – 35,000" → [25000, 35000])
+  const tokens = [...s.matchAll(/([0-9]+(?:[.,][0-9]{2,3})*(?:[.,][0-9]{1,2})?)/g)]
+    .map((m) => normaliseNumber(m[1]))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (!tokens.length) return null;
+
+  const isHourly  = /(\/h|\/std|pro stunde|pro h\b|hour)/.test(s);
+  const isMonthly = /(\/mon|pro monat|monatlich|month)/.test(s);
+  // Default for large four-digit-plus values without unit hint → annual.
+  const looksAnnual = tokens.some((n) => n >= 10000);
+
+  if (isHourly) {
+    const amount = tokens[0];
+    return { unit: "hour", amount, hourly: amount };
+  }
+  if (isMonthly) {
+    const amount = tokens[0];
+    return { unit: "month", amount, hourly: (amount * 12) / 2002 };
+  }
+  if (looksAnnual) {
+    const amount = tokens[0];
+    const max = tokens[1] && tokens[1] > amount ? tokens[1] : undefined;
+    const ref = max ? (amount + max) / 2 : amount;
+    return { unit: "year", amount, max, hourly: ref / 2002 };
+  }
+  return null;
 }
 
-// ─── Circular match gauge (SVG) ──────────────────────────────────────────────
+/** Normalises German/English numeric strings like "25,000" / "1.234,50" to a Number. */
+function normaliseNumber(s) {
+  if (!s) return NaN;
+  // Strategy: strip thousand separators, then convert decimal separator.
+  // Heuristic — the LAST punctuation in a multi-punct number is decimal iff
+  // it's followed by exactly 1–2 digits; otherwise it's a thousands sep.
+  const last = Math.max(s.lastIndexOf(","), s.lastIndexOf("."));
+  if (last === -1) return Number(s);
+  const tail = s.slice(last + 1);
+  if (tail.length === 1 || tail.length === 2) {
+    // Decimal separator
+    return Number(s.slice(0, last).replace(/[.,]/g, "") + "." + tail);
+  }
+  return Number(s.replace(/[.,]/g, ""));
+}
+
+/** Whole days from now until the given ISO. Negative if past. */
+function daysUntil(iso) {
+  if (!iso) return null;
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return null;
+  return Math.ceil((t.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+/** Mocked KV minimum hourly wage for a young first-job seeker (illustrative). */
+function kvMinimumFor(category) {
+  switch ((category || "").toLowerCase()) {
+    case "samstagsjob":
+    case "teilzeit":   return 9.27;
+    case "praktikum":  return 8.10;
+    default:           return 9.00;
+  }
+}
+
+/** Human label for the `category` enum. */
+function categoryLabel(category) {
+  switch ((category || "").toLowerCase()) {
+    case "samstagsjob": return "Samstagsjob";
+    case "praktikum":   return "Praktikum";
+    case "teilzeit":    return "Teilzeit";
+    case "vollzeit":    return "Vollzeit";
+    default:            return "Stelle";
+  }
+}
+
+/** Best-effort initial / abbreviation for the company logo chip. */
+function logoAbbrev(company) {
+  if (!company) return "?";
+  const trimmed = company.trim();
+  if (trimmed.length <= 5) return trimmed.toUpperCase();
+  return trimmed.slice(0, 1).toUpperCase();
+}
+
+/** Deterministic gradient class for a company logo (calm palette). */
+function logoColor(company) {
+  if (!company) return "bg-slate-700";
+  const seed = company.charCodeAt(0) + (company.length || 1);
+  const palettes = [
+    "bg-gradient-to-br from-rose-600 to-rose-800",
+    "bg-gradient-to-br from-amber-500 to-orange-700",
+    "bg-gradient-to-br from-emerald-600 to-emerald-800",
+    "bg-gradient-to-br from-sky-600 to-sky-800",
+    "bg-gradient-to-br from-violet-600 to-violet-800",
+    "bg-gradient-to-br from-fuchsia-600 to-fuchsia-800",
+  ];
+  return palettes[seed % palettes.length];
+}
+
+// ─── Status enum ─────────────────────────────────────────────────────────────
+
+const STATUS = [
+  { key: "bookmarked",   label: "Gespeichert" },
+  { key: "applied",      label: "Beworben" },
+  { key: "interviewing", label: "Im Gespräch" },
+  { key: "offered",      label: "Angebot" },
+  { key: "rejected",     label: "Erledigt" },
+];
+const statusLabel = (key) => STATUS.find(s => s.key === key)?.label ?? "Gespeichert";
+
+// ─── Small UI primitives ─────────────────────────────────────────────────────
+
+const ANNOT = "text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium";
+
+/** Inline loading spinner used inside buttons. */
+function Spinner() {
+  return <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />;
+}
+
+/** Lightweight click-outside hook for the toolbar dropdowns. */
+function useClickOutside(ref, onClose, active) {
+  useEffect(() => {
+    if (!active) return undefined;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [ref, onClose, active]);
+}
 
 /**
- * Animated SVG ring gauge that counts up to the match score on mount.
- * @param {object} props
- * @param {number} props.value - Score 0–100.
+ * Status dropdown in the toolbar — changes the application status.
  */
-function CircularGauge({ value }) {
-  const [displayed, setDisplayed] = useState(0);
-  const r = 54;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (displayed / 100) * circ;
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setDisplayed(value));
-    return () => cancelAnimationFrame(frame);
-  }, [value]);
+function StatusMenu({ status, onChange, pending }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setOpen(false), open);
 
   return (
-    <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 128, height: 128 }}>
-      <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90">
-        <circle cx="64" cy="64" r={r} fill="none" stroke="#1e3a5f" strokeWidth="9" />
-        <circle
-          cx="64" cy="64" r={r} fill="none"
-          stroke={PRIMARY} strokeWidth="9" strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          className="transition-all duration-1000 ease-out"
-          style={{ filter: "drop-shadow(0 0 6px rgb(91 79 232 / 0.33))" }}
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        disabled={pending}
+        className="grid grid-cols-[1fr_auto] items-center gap-1.5 h-8 px-3 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] text-[12px] font-medium text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-60"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span>{statusLabel(status)}</span>
+        <ChevronDown className="w-3 h-3 text-[var(--color-fg-dim)]" aria-hidden="true" />
+      </button>
+      {open ? (
+        <div role="menu" className="absolute right-0 mt-1.5 z-40 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-lg shadow-black/40 py-1">
+          {STATUS.map((s) => {
+            const active = s.key === status;
+            return (
+              <button
+                key={s.key}
+                role="menuitemradio"
+                aria-checked={active}
+                onClick={() => { setOpen(false); if (!active) onChange(s.key); }}
+                className="grid grid-cols-[1fr_auto] items-center gap-2 w-full px-3 py-2 text-left text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] hover:text-[var(--color-fg)]"
+              >
+                <span>{s.label}</span>
+                {active ? <Check className="w-3.5 h-3.5 text-[var(--color-accent-300)]" /> : <span />}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Truncates text at a sentence boundary (ends with . ! ?) up to ~maxChars. */
+function truncateAtSentence(text, maxChars = 420) {
+  if (!text || text.length <= maxChars) return { preview: text, full: text, truncated: false };
+  const sub = text.slice(0, maxChars);
+  const last = Math.max(sub.lastIndexOf(". "), sub.lastIndexOf(".\n"), sub.lastIndexOf("! "), sub.lastIndexOf("? "));
+  const cutAt = last > maxChars * 0.45 ? last + 1 : maxChars;
+  return { preview: sub.slice(0, cutAt).trimEnd(), full: text, truncated: true };
+}
+
+/** Expandable job description body with sentence-boundary preview. */
+function DescriptionBody({ text }) {
+  const [expanded, setExpanded] = useState(false);
+  const { preview, full, truncated } = truncateAtSentence(text);
+  return (
+    <div className="px-5 pb-5 pt-1 border-t border-[var(--color-border-subtle)]">
+      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--color-fg-muted)]">
+        {expanded ? full : preview}
+      </p>
+      {truncated && (
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="mt-3 text-[12px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+        >
+          {expanded ? "Weniger anzeigen" : "Mehr anzeigen"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Labelled toolbar button — icon on top, short text below. */
+function ToolBtn({ icon: Icon, label, shortLabel, onClick, danger, disabled }) {
+  const display = shortLabel || label.split(" ")[0];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={`inline-flex flex-col items-center justify-center gap-0.5 h-10 px-2 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-w-[38px] ${
+        danger
+          ? "text-[var(--color-error)]/70 hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          : "text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)]"
+      }`}
+    >
+      <Icon className="w-[15px] h-[15px]" aria-hidden="true" />
+      <span className="text-[9px] font-medium leading-none tracking-wide">{display}</span>
+    </button>
+  );
+}
+
+// ─── Body sub-components ─────────────────────────────────────────────────────
+
+const _API = "http://localhost:8000/api";
+
+/**
+ * Company logo chip — single request to /proxy/logo/best; falls back to
+ * the deterministic letter chip on 404.
+ */
+function CompanyLogo({ company, url }) {
+  const [failed, setFailed] = useState(false);
+  const src = `${_API}/proxy/logo/best?company=${encodeURIComponent(company || "")}&url=${encodeURIComponent(url || "")}`;
+
+  if (!failed && company) {
+    return (
+      <img
+        key={src}
+        src={src}
+        alt={company}
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-contain flex-shrink-0 bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] p-1.5"
+      />
+    );
+  }
+  return (
+    <div
+      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${logoColor(company)} text-white text-[13px] font-bold grid place-items-center flex-shrink-0`}
+      aria-hidden="true"
+    >
+      {logoAbbrev(company)}
+    </div>
+  );
+}
+
+/** KPI tile — renders inside a flex row so tiles auto-fill regardless of count. */
+function KpiTile({ label, value, hint, tone = "default" }) {
+  const toneClass = tone === "warn" ? "text-[var(--color-warning)]" : "text-[var(--color-fg)]";
+  return (
+    <div className="flex-1 min-w-[140px] rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] px-4 pt-3.5 pb-3">
+      <p className="text-[12px] tracking-[0.07em] uppercase text-[var(--color-fg-dim)] font-semibold">{label}</p>
+      <p
+        className={`mt-2 leading-none tabular-nums ${toneClass}`}
+        style={{ fontFamily: '"Instrument Serif", ui-serif, Georgia, serif', fontSize: "32px", letterSpacing: "-0.02em" }}
+      >
+        {value}
+      </p>
+      {hint ? <p className="mt-1.5 text-[12.5px] text-[var(--color-fg-dim)] truncate">{hint}</p> : null}
+    </div>
+  );
+}
+
+/** KV-benchmark bar (mocked) — only when an hourly rate could be parsed. */
+function KvBar({ hourly, kvMin, category }) {
+  const top = Math.max(hourly * 1.18, kvMin * 1.35);
+  const kvPct  = Math.min(100, (kvMin  / top) * 100);
+  const jobPct = Math.min(100, (hourly / top) * 100);
+  const above  = hourly > kvMin;
+  const diff   = (hourly - kvMin).toFixed(2);
+  return (
+    <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-5">
+      <div className="grid grid-cols-12 items-baseline gap-2">
+        <p className={`col-span-8 ${ANNOT} text-[var(--color-fg)]`} style={{ letterSpacing: "0.14em" }}>
+          KV-Vergleich · {categoryLabel(category)}
+        </p>
+        <p className={`col-span-4 text-right text-[11.5px] tabular-nums font-medium ${above ? "text-emerald-400" : "text-[var(--color-warning)]"}`}>
+          {above ? "+" : ""}€{diff}/h
+        </p>
+      </div>
+      <div className="relative mt-5 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+        <div className="absolute inset-y-0 left-0 bg-[var(--color-accent-500)]/35" style={{ width: `${kvPct}%` }} />
+        <div
+          className="absolute top-1/2 w-2.5 h-2.5 -translate-y-1/2 -translate-x-1/2 rounded-full bg-[var(--color-fg)] ring-2 ring-[var(--color-bg)]"
+          style={{ left: `${jobPct}%` }}
         />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-extrabold tabular-nums leading-none" style={{ color: PRIMARY }}>{value}%</span>
-        <span className="text-xs font-semibold text-slate-400 tracking-wider uppercase mt-0.5">Passung</span>
+      </div>
+      <div className="mt-2 flex justify-between tabular-nums text-[11px] text-[var(--color-fg-dim)]">
+        <span>€{kvMin.toFixed(2)} KV-Min.</span>
+        <span className="text-[var(--color-fg)] font-medium">€{hourly.toFixed(2)} hier</span>
+        <span>€{top.toFixed(2)} Top</span>
+      </div>
+      <p className="mt-2 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">
+        <Info className="w-2.5 h-2.5" aria-hidden="true" /> Illustrative Werte — werden durch echte KV-Daten ersetzt.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Ähnliche Stellen — salary comparison against other saved jobs that have a
+ * parseable salary. Shows diff vs. this job in green/red to give market context.
+ */
+function SimilarJobsCard({ currentHourly, jobs, currentId }) {
+  const peers = jobs
+    .filter((j) => String(j.id) !== String(currentId) && j.salary_text)
+    .map((j) => {
+      const p = parseSalary(j.salary_text);
+      const h = p?.unit === "hour" ? p.amount : p?.hourly ?? null;
+      if (!h) return null;
+      const diff = h - currentHourly;
+      return { j, hourly: h, diff };
+    })
+    .filter(Boolean)
+    .sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff))
+    .slice(0, 4);
+
+  if (!peers.length) return null;
+
+  return (
+    <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-baseline justify-between">
+        <p className={ANNOT}>Ähnliche Stellen</p>
+        <p className="text-[11px] text-[var(--color-fg-dim)]">{peers.length} in deiner Liste</p>
+      </div>
+      <div className="divide-y divide-[var(--color-border-subtle)]">
+        {peers.map(({ j, hourly, diff }) => {
+          const pos = diff > 0;
+          const neutral = Math.abs(diff) < 0.1;
+          const diffColor = neutral
+            ? "text-[var(--color-fg-dim)]"
+            : pos
+            ? "text-emerald-400"
+            : "text-[var(--color-error)]";
+          return (
+            <div key={j.id} className="px-5 py-3 flex items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[13px] text-[var(--color-fg)] truncate">{j.company || j.role}</p>
+                {j.company && j.role ? (
+                  <p className="text-[11px] text-[var(--color-fg-dim)] truncate mt-0.5">{j.role}</p>
+                ) : null}
+              </div>
+              <div className="text-right shrink-0">
+                <p className="tabular-nums text-[13px] text-[var(--color-fg)]">€{hourly.toFixed(2)}/h</p>
+                <p className={`tabular-nums text-[11px] ${diffColor}`}>
+                  {neutral ? "±0" : `${pos ? "+" : ""}€${diff.toFixed(2)}`}
+                </p>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 /**
- * Collapsible qualifications-check section with three sub-score bars.
- * @param {object} props
- * @param {number|null} props.matchScore
- * @param {object|null} props.matchFeedback
+ * Salary comparison modal — shows this job's rate vs KV minimum and other
+ * saved jobs that have parseable salaries.
  */
-function QualifikationsCheck({ matchScore, matchFeedback }) {
-  const [open, setOpen] = useState(true);
-  const [reqOpen, setReqOpen] = useState(false);
-  const scores = deriveSubScores(matchScore);
-  const overall = Math.round(matchScore ?? 0);
+function SalaryCompareModal({ open, onClose, currentJob, allJobs }) {
+  if (!open) return null;
 
-  const subRows = [
-    { label: "Fachkenntnisse", value: scores.hardSkills, emoji: "⚡" },
-    { label: "Formale Anf.", value: scores.formalReq,  emoji: "🎓" },
-    { label: "Erfahrung",    value: scores.experience,  emoji: "💼" },
+  const current = parseSalary(currentJob.salary_text);
+  const kvMin   = kvMinimumFor(currentJob.category);
+
+  const peers = (allJobs || [])
+    .filter((j) => j.id !== currentJob.id && (j.company || j.role))
+    .map((j) => {
+      const parsed = parseSalary(j.salary_text);
+      const hourly = parsed?.unit === "hour" ? parsed.amount
+        : parsed?.unit === "month" ? parsed.amount / 160
+        : null;
+      const estimated = hourly === null;
+      return { j, hourly: hourly ?? kvMinimumFor(j.category), estimated };
+    })
+    .sort((a, b) => b.hourly - a.hourly)
+    .slice(0, 6);
+
+  const currentHourly = current?.unit === "hour" ? current.amount : null;
+  const aboveKv = currentHourly !== null ? currentHourly > kvMin : null;
+
+  const tips = [
+    "Frage ruhig nach dem Gehalt — die meisten Stellen haben Spielraum.",
+    `Der KV-Mindestlohn für diese Kategorie liegt bei €${kvMin.toFixed(2)}/h.`,
+    "Vergleiche immer netto: Teilzeit bringt weniger Abzüge als Vollzeit.",
+    "Probezeit-Gehalt ist oft niedriger — frag nach dem Gehalt danach.",
   ];
 
-  const requirements = matchFeedback?.requirements ?? [];
-
-  const REQ_CFG = [
-    { score: 2, label: "Erfüllt",          cls: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25", dot: "bg-emerald-400" },
-    { score: 1, label: "Teilweise",        cls: "bg-amber-500/15 text-amber-400 border border-amber-500/25",   dot: "bg-amber-400"   },
-    { score: 0, label: "Nicht erfüllt",    cls: "bg-red-500/15 text-red-400 border border-red-500/25",         dot: "bg-red-400"     },
-  ];
-
-  return (
-    <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/5 transition-colors min-h-[44px]"
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-[520px] sm:mx-4 rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand-500/15">
-            <Zap className="w-4 h-4" style={{ color: PRIMARY }} />
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)]">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-[var(--color-warning)]" />
+            <p className="text-[14px] font-semibold text-[var(--color-fg)]">Gehaltsvergleich</p>
           </div>
-          <div className="text-left">
-            <p className="text-sm font-bold text-white">Eignungs-Analyse</p>
-            <p className="text-[11px] text-slate-400">Orientierungswert · EU AI Act konform</p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 grid place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
 
-      {open && (
-        <div className="border-t border-[#1e293b] px-5 pb-5">
-          {/* Gauge + sub-scores side by side */}
-          <div className="mt-4 flex items-center gap-5">
-            <CircularGauge value={overall} />
-            <div className="flex-1 space-y-2.5 min-w-0">
-              {subRows.map(({ label, value, emoji }) => (
-                <div key={label}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-slate-400">{emoji} {label}</span>
-                    <span className="text-xs font-bold tabular-nums" style={{ color: PRIMARY }}>{Math.round(value)}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-[#1e2d3d] overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${value}%`, backgroundColor: PRIMARY }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Score rationale — why this score */}
-          {matchFeedback?.score_rationale && (
-            <div className="mt-4 rounded-xl border border-brand-500/25 bg-brand-500/[0.08] px-4 py-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-brand-300 mb-1.5">Bewertungsbegründung</p>
-              <p className="text-sm leading-relaxed text-slate-200">{matchFeedback.score_rationale}</p>
-            </div>
-          )}
-
-          {/* Per-requirement breakdown — collapsible */}
-          {requirements.length > 0 && (
-            <div className="mt-3">
-              <button
-                onClick={() => setReqOpen(v => !v)}
-                className="w-full flex items-center justify-between rounded-xl border border-[#1e293b] bg-[#0a1628] px-4 py-2.5 hover:bg-white/5 transition-colors min-h-[44px]"
-              >
-                <span className="text-xs font-bold text-slate-300">Anforderungen im Detail</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${reqOpen ? "rotate-180" : ""}`} />
-              </button>
-              {reqOpen && (
-                <div className="mt-1 rounded-xl border border-[#1e293b] bg-[#030712] divide-y divide-[#1e293b] overflow-hidden">
-                  {requirements.map((r, i) => {
-                    const s = Math.min(2, Math.max(0, parseInt(r.score ?? 0, 10)));
-                    const cfg = REQ_CFG[2 - s];
-                    return (
-                      <div key={i} className="px-4 py-3 grid grid-cols-[1fr_auto] gap-3 items-start">
-                        <div>
-                          <p className="text-xs font-semibold text-slate-200 leading-snug">{r.req}</p>
-                          {r.note && <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{r.note}</p>}
-                        </div>
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${cfg.cls}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          {cfg.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+        <div className="p-5 flex flex-col gap-5">
+          {/* Current job vs KV */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl px-4 py-3 flex flex-col gap-0.5" style={{ background: "rgba(124,125,240,0.08)", border: "1px solid rgba(124,125,240,0.20)" }}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-accent-300)]">Dieser Job</p>
+              {currentHourly !== null ? (
+                <p className="text-[20px] font-semibold text-[var(--color-fg)] tabular-nums">€{currentHourly.toFixed(2)}<span className="text-[12px] font-normal text-[var(--color-fg-muted)]">/h</span></p>
+              ) : (
+                <p className="text-[13px] text-[var(--color-fg-dim)] leading-snug">Kein Gehalt</p>
+              )}
+              {aboveKv !== null && (
+                <span className="self-start mt-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={aboveKv ? { background: "rgba(74,222,128,0.15)", color: "#4ade80" } : { background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+                  {aboveKv ? "über KV" : "unter KV"}
+                </span>
               )}
             </div>
-          )}
-
-          {/* EU AI Act notice — compact */}
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-brand-500/20 bg-brand-500/10 px-3 py-2">
-            <Info className="w-3.5 h-3.5 text-brand-300 flex-shrink-0 mt-0.5" aria-hidden="true" />
-            <p className="text-[10px] text-brand-200 leading-relaxed">
-              Basiert ausschließlich auf verifizierbaren Lebenslauf-Daten. Kein Persönlichkeitsurteil — EU AI Act Art. 13.
-            </p>
+            <div className="rounded-xl px-4 py-3 flex flex-col gap-0.5" style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.18)" }}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-warning)]">KV-Minimum</p>
+              <p className="text-[20px] font-semibold text-[var(--color-fg)] tabular-nums">€{kvMin.toFixed(2)}<span className="text-[12px] font-normal text-[var(--color-fg-muted)]">/h</span></p>
+              <p className="text-[10px] text-[var(--color-fg-faint)]">€{(kvMin * 160).toFixed(0)} / Monat</p>
+            </div>
           </div>
 
-          {matchFeedback?.summary && (
-            <div className="mt-3 rounded-xl bg-[#030712] border border-[#1e293b] px-4 py-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">KI-Zusammenfassung</p>
-              <p className="text-sm leading-relaxed text-slate-300">{matchFeedback.summary}</p>
+          {/* Peer jobs */}
+          {peers.length > 0 && (
+            <div>
+              <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-faint)] font-semibold mb-2">Deine gespeicherten Stellen</p>
+              <div className="flex flex-col divide-y divide-[var(--color-border-subtle)]">
+                {peers.map(({ j, hourly, estimated }) => {
+                  const diff = currentHourly !== null ? hourly - currentHourly : null;
+                  const pos = diff !== null && diff > 0.05;
+                  const neg = diff !== null && diff < -0.05;
+                  return (
+                    <div key={j.id} className="flex items-center justify-between py-2 gap-3">
+                      <div className="min-w-0">
+                        <span className="text-[12.5px] text-[var(--color-fg-muted)] truncate block">{j.company || j.role || "Stelle"}</span>
+                        {j.company && j.role && <span className="text-[11px] text-[var(--color-fg-dim)] truncate block">{j.role}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {estimated && (
+                          <span className="text-[10px] text-[var(--color-fg-dim)] px-1.5 py-0.5 rounded bg-[var(--color-bg-elev-3)]">KV-Min.</span>
+                        )}
+                        <span className="text-[12.5px] font-medium text-[var(--color-fg)]">€{hourly.toFixed(2)}/h</span>
+                        {diff !== null && (
+                          <span className={`text-[11px] tabular-nums ${pos ? "text-emerald-400" : neg ? "text-[var(--color-error)]" : "text-[var(--color-fg-dim)]"}`}>
+                            {Math.abs(diff) < 0.05 ? "==" : `${pos ? "+" : ""}€${diff.toFixed(2)}`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
+
+          {/* Tip */}
+          <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-lg" style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)" }}>
+            <TrendingUp className="w-3.5 h-3.5 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[var(--color-fg-muted)] leading-relaxed">
+              {tips[Math.floor(Math.random() * tips.length)]}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/** AI Match card — anchor of the page when no wage hero is present. */
+function MatchCard({ score, feedbackJson, onCheckFit, onCheckFitPending, resumeId }) {
+  const [whyOpen, setWhyOpen] = useState(false);
+  let parsed = null;
+  if (feedbackJson) {
+    try { const obj = JSON.parse(feedbackJson); if (obj && typeof obj === "object") parsed = obj; } catch { /* ignore */ }
+  }
+  const hasScore = typeof score === "number" && Number.isFinite(score);
+  const pct = hasScore ? Math.round(score) : null;
+  const scoreTone = pct === null ? "text-[var(--color-fg-dim)]"
+    : pct >= 70 ? "text-emerald-400"
+    : pct >= 40 ? "text-[var(--color-fg-muted)]"
+    : "text-[var(--color-error)]";
+  const hasDetail = parsed?.requirements?.length > 0;
+
+  return (
+    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+      <div className="p-5 sm:p-6">
+
+        {/* Score row — score on the left, annotation beside it */}
+        <div className="flex items-start gap-4">
+          {hasScore && (
+            <p className="flex items-baseline gap-0.5 leading-none flex-shrink-0">
+              <span className={`${scoreTone} font-semibold tabular-nums`} style={{ fontSize: "clamp(32px, 5vw, 40px)", fontFamily: '"Instrument Serif", ui-serif, Georgia, serif' }}>{pct}</span>
+              <span className="text-[15px] text-[var(--color-fg-dim)]">%</span>
+            </p>
+          )}
+          <div className="pt-1.5">
+            <p className={ANNOT}>Passt zu dir</p>
+          </div>
+        </div>
+
+        {/* Verdict — the honest personal takeaway */}
+        {parsed?.verdict ? (
+          <p className="mt-3 text-[13.5px] text-[var(--color-fg-muted)] leading-relaxed border-l-2 border-[var(--color-border)] pl-3">
+            {parsed.verdict}
+          </p>
+        ) : !hasScore ? (
+          <p className="mt-3 text-[13px] text-[var(--color-fg-dim)] leading-relaxed">
+            {resumeId
+              ? "Klick auf \"Passung prüfen\" — die KI liest deinen Lebenslauf und sagt dir direkt, wie gut du passt und warum."
+              : "Verknüpfe deinen Lebenslauf, damit die KI eine ehrliche Einschätzung geben kann."}
+          </p>
+        ) : null}
+
+        {/* Strengths */}
+        {parsed?.strengths?.length > 0 && (
+          <ul className="mt-4 space-y-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
+            {(parsed.strengths || []).slice(0, 5).map((s, i) => (
+              <li key={`s${i}`} className="flex gap-2.5 items-start">
+                <span className="text-emerald-400 flex-shrink-0 font-bold mt-0.5 text-[12px]">+</span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Gaps */}
+        {parsed?.gaps?.length > 0 && (
+          <ul className="mt-3 space-y-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
+            {(parsed.gaps || []).slice(0, 4).map((g, i) => (
+              <li key={`g${i}`} className="flex gap-2.5 items-start">
+                <span className="text-[var(--color-fg-dim)] flex-shrink-0 font-bold mt-0.5 text-[12px]">−</span>
+                <span>{g}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!parsed?.strengths?.length && !parsed?.gaps?.length && hasScore && (
+          <p className="mt-3 text-[13px] text-[var(--color-fg-dim)]">Keine Detailanalyse verfügbar — berechne die Passung neu.</p>
+        )}
+      </div>
+
+      {/* Expander: per-requirement evidence breakdown */}
+      <div className="border-t border-[var(--color-border-subtle)]">
+        <button
+          type="button"
+          onClick={() => setWhyOpen(v => !v)}
+          className="flex items-center justify-between w-full px-5 py-3 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
+        >
+          <span>{hasDetail ? "Was die KI in deinem Lebenslauf gefunden hat" : "Wie entsteht diese Zahl?"}</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${whyOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+
+        {whyOpen && (
+          <div className="pb-4 flex flex-col gap-4 text-[12.5px] leading-relaxed bg-[var(--color-bg-elev-2)]/30">
+            {hasDetail ? (
+              <div className="px-5 pt-1 space-y-3">
+                <p className="text-[11px] uppercase tracking-wider text-[var(--color-fg-faint)] font-semibold">6 Anforderungen · Zeile für Zeile</p>
+                {parsed.requirements.map((r, i) => {
+                  const s = Math.min(2, Math.max(0, parseInt(r.score ?? 0, 10)));
+                  const icon = s === 2 ? "✓" : s === 1 ? "◐" : "✕";
+                  const bg   = s === 2 ? "bg-emerald-500/8 border-emerald-500/20" : s === 1 ? "bg-amber-500/8 border-amber-500/20" : "bg-red-500/8 border-red-500/20";
+                  const tone = s === 2 ? "text-emerald-400" : s === 1 ? "text-[var(--color-warning)]" : "text-[var(--color-error)]/80";
+                  const hasEvidence = r.evidence && !r.evidence.toLowerCase().startsWith("kein nachweis");
+                  return (
+                    <div key={i} className={`rounded-xl border p-3 ${bg}`}>
+                      <div className="flex items-start gap-2.5">
+                        <span className={`flex-shrink-0 text-[12px] font-bold mt-0.5 ${tone}`}>{icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-[var(--color-fg-muted)] font-medium text-[12.5px]">{r.req}</span>
+                            {r.dealbreaker && s < 2 && (
+                              <span className="flex-shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-error)]/15 text-[var(--color-error)]/80">K.O.</span>
+                            )}
+                          </div>
+                          {r.note && (
+                            <p className="mt-1 text-[var(--color-fg-dim)] text-[12px]">{r.note}</p>
+                          )}
+                          {hasEvidence && (
+                            <p className="mt-1.5 text-[11.5px] text-emerald-400/80 italic">
+                              Dein CV: „{r.evidence}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-5 pt-2 text-[var(--color-fg-dim)]">
+                <p>{resumeId ? "Berechne die Passung, um die vollständige Anforderungsanalyse zu sehen." : "Verknüpfe deinen Lebenslauf, damit die KI die Anforderungen prüfen kann."}</p>
+              </div>
+            )}
+
+            {onCheckFit && (
+              <div className="px-5">
+                <button
+                  type="button"
+                  onClick={onCheckFit}
+                  disabled={onCheckFitPending}
+                  className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors disabled:opacity-50"
+                >
+                  {onCheckFitPending && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {resumeId ? "Analyse neu starten →" : "Lebenslauf verknüpfen →"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Bearbeiten sheet (CV + Frist + Notizen, combined) ───────────────────────
+
+/**
+ * Combined edit dialog. Opens from Mehr menu. Avoids three separate sheets.
+ */
+function BearbeitenSheet({ open, onClose, job, resumes, selectedResume, onChangeResume, onSaveMeta, savingMeta }) {
+  const [deadline, setDeadline] = useState(job.deadline || "");
+  const [notes, setNotes] = useState(job.notes || "");
+
+  useEffect(() => { if (open) { setDeadline(job.deadline || ""); setNotes(job.notes || ""); } }, [open, job.deadline, job.notes]);
+
+  if (!open) return null;
+
+  const dirty = (deadline || "") !== (job.deadline || "") || (notes || "") !== (job.notes || "");
+  const handleSave = () => {
+    const payload = {};
+    if ((deadline || "") !== (job.deadline || "")) payload.deadline = deadline || null;
+    if ((notes    || "") !== (job.notes    || "")) payload.notes    = notes    || null;
+    if (Object.keys(payload).length) onSaveMeta(payload);
+    onClose();
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full sm:max-w-md grid grid-cols-12 gap-0 rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
+        <div className="col-span-12 grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
+          <h2 className="col-span-10 text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Bearbeiten</h2>
+          <button onClick={onClose} className="col-span-2 justify-self-end grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="col-span-12 px-5 py-5 space-y-5">
+          {/* Lebenslauf für Analyse */}
+          <div>
+            <label className={`block mb-1.5 ${ANNOT}`}>Lebenslauf für Analyse</label>
+            {resumes.length > 0 ? (
+              <div className="relative">
+                <select
+                  value={selectedResume || resumes[0]?.id || ""}
+                  onChange={(e) => onChangeResume(Number(e.target.value))}
+                  className="grid w-full h-10 appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-[13px] text-[var(--color-fg)] focus:outline-none focus:border-[var(--color-accent-500)]/40"
+                >
+                  {resumes.map(r => <option key={r.id} value={r.id}>{r.filename}</option>)}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-fg-dim)]" />
+              </div>
+            ) : (
+              <Link to="/settings" className="grid grid-cols-[auto_1fr] items-center gap-1.5 text-[12.5px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)]">
+                <FileText className="w-3.5 h-3.5" /> Lebenslauf hochladen →
+              </Link>
+            )}
+          </div>
+
+          {/* Frist */}
+          <div>
+            <label className={`block mb-1.5 ${ANNOT}`}>Frist</label>
+            <input
+              type="date"
+              value={deadline || ""}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="grid w-full h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-[13px] text-[var(--color-fg)] focus:outline-none focus:border-[var(--color-accent-500)]/40"
+            />
+          </div>
+
+          {/* Notizen */}
+          <div>
+            <label className={`block mb-1.5 ${ANNOT}`}>Notizen</label>
+            <textarea
+              rows={4}
+              value={notes || ""}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Eigene Notizen, Erinnerungen, Stichworte …"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[13px] text-[var(--color-fg)] focus:outline-none focus:border-[var(--color-accent-500)]/40 resize-y"
+            />
+          </div>
+        </div>
+
+        <div className="col-span-12 grid grid-cols-12 gap-2 px-5 py-3.5 border-t border-[var(--color-border-subtle)]">
+          <button onClick={onClose} className="col-span-6 sm:col-span-8 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)]">
+            Abbrechen
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!dirty || savingMeta}
+            className="col-span-6 sm:col-span-4 h-10 rounded-lg bg-[var(--color-accent-500)] text-white font-semibold text-[13px] disabled:opacity-50"
+          >
+            {savingMeta ? "Speichern…" : "Speichern"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Interview QA sheet ──────────────────────────────────────────────────────
+
+/**
+ * Modern interview prep sheet.
+ * Overview mode: clean question cards with inline tips.
+ * Practice mode: one question at a time, user writes answer, then reveals suggestion.
+ */
+function InterviewSheet({ open, onClose, job, mutate, pending, resumeId, escapeHtmlFn }) {
+  const qa = useMemo(() => parseJson(job.interview_qa), [job.interview_qa]);
+  const [mode, setMode] = useState("overview");
+  const [idx, setIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [ratings, setRatings] = useState({});
+
+  if (!open) return null;
+
+  const total = qa?.length ?? 0;
+  const currentQ = qa?.[idx];
+  const rating = ratings[idx];
+
+  const enterPractice = () => { setMode("practice"); setIdx(0); };
+  const exitPractice  = () => setMode("overview");
+  const handleNext    = () => { if (idx < total - 1) setIdx(i => i + 1); };
+  const handlePrev    = () => { if (idx > 0) setIdx(i => i - 1); };
+
+  const handleRate = async () => {
+    const userAnswer = (answers[idx] ?? "").trim();
+    if (!userAnswer || !currentQ) return;
+    setRatings(prev => ({ ...prev, [idx]: { status: "loading" } }));
+    try {
+      const res = await interviewApi.rateAnswer(
+        currentQ.question,
+        userAnswer,
+        currentQ.answer,
+      );
+      setRatings(prev => ({ ...prev, [idx]: { status: "done", ...res.data } }));
+    } catch {
+      setRatings(prev => ({ ...prev, [idx]: { status: "fallback" } }));
+    }
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
+          {mode === "practice" && (
+            <button onClick={exitPractice} className="grid place-items-center w-7 h-7 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Zurück">
+              <ArrowLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">
+              {mode === "practice" ? "Gespräch üben" : "Vorbereitung"}
+            </h2>
+            {qa && <p className="text-[11.5px] text-[var(--color-fg-dim)] mt-0.5">{job.role || job.company} · {total} Fragen</p>}
+          </div>
+          {qa && mode === "overview" && (
+            <button
+              onClick={enterPractice}
+              className="hidden sm:inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-[var(--color-accent-500)]/15 border border-[var(--color-accent-500)]/30 text-[12px] font-medium text-[var(--color-accent-200)] hover:bg-[var(--color-accent-500)]/25 transition-colors"
+            >
+              <Play className="w-3 h-3" /> Gespräch üben
+            </button>
+          )}
+          {mode === "practice" && (
+            <span className="text-[11px] tabular-nums text-[var(--color-fg-dim)] mr-1">{idx + 1} / {total}</span>
+          )}
+          <button onClick={onClose} className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {!qa ? (
+            /* ── Generate state ── */
+            <div className="px-5 py-5">
+              <AIDisclosureBanner feature="interview" />
+              <div className="grid place-items-center py-10 text-center">
+                <MessageSquare className="w-7 h-7 text-[var(--color-accent-300)] mb-3" />
+                <p className="text-[13px] text-[var(--color-fg-muted)] mb-4 max-w-xs">
+                  Erstelle eine Vorbereitung auf Basis deiner Stelle und deines Lebenslaufs.
+                </p>
+                <button
+                  onClick={() => mutate()}
+                  disabled={pending || !resumeId}
+                  className="h-10 px-4 rounded-lg bg-[var(--color-accent-500)] text-white font-semibold text-[13px] inline-flex items-center gap-2 disabled:opacity-50"
+                >
+                  {pending ? <><Spinner /> Wird erstellt…</> : <>Vorbereitung erstellen</>}
+                </button>
+                {!resumeId ? <p className="mt-2 text-[11px] text-[var(--color-warning)]">Wähle zuerst einen Lebenslauf in "Bearbeiten".</p> : null}
+              </div>
+            </div>
+          ) : mode === "overview" ? (
+            /* ── Overview: question cards ── */
+            <div className="px-5 py-4 grid grid-cols-1 gap-2.5">
+              <AIDisclosureBanner feature="interview" />
+              {qa.map((item, i) => (
+                <div key={i} className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-fg-faint)] mb-1.5">Frage {i + 1}</p>
+                  <p className="text-[14px] leading-snug font-medium text-[var(--color-fg)]">{item.question}</p>
+                  {item.tip && (
+                    <div className="mt-3 flex items-start gap-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-warning)] flex-shrink-0 mt-0.5">Tipp</span>
+                      <p className="text-[12px] leading-relaxed text-[var(--color-fg-muted)]">{item.tip}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={enterPractice}
+                className="sm:hidden mt-1 h-10 rounded-xl bg-[var(--color-accent-500)]/15 border border-[var(--color-accent-500)]/30 text-[13px] font-medium text-[var(--color-accent-200)] hover:bg-[var(--color-accent-500)]/25 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <Play className="w-3.5 h-3.5" /> Gespräch üben
+              </button>
+            </div>
+          ) : (
+            /* ── Practice mode: one question at a time ── */
+            <div className="px-5 py-5 flex flex-col gap-5 scene-enter">
+              {/* Progress bar */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-0.5 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[var(--color-accent-500)] transition-all duration-400"
+                    style={{ width: `${((idx + 1) / total) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Question */}
+              <div className="scene-enter">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-fg-faint)] mb-2">Frage {idx + 1}</p>
+                <p
+                  className="text-[18px] leading-snug font-medium text-[var(--color-fg)]"
+                  style={{ fontFamily: "'Instrument Serif', ui-serif, Georgia, serif" }}
+                >
+                  {currentQ?.question}
+                </p>
+              </div>
+
+              {/* Answer textarea */}
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-fg-dim)] block mb-2">Deine Antwort</label>
+                <textarea
+                  key={idx}
+                  value={answers[idx] ?? ""}
+                  onChange={e => setAnswers(prev => ({ ...prev, [idx]: e.target.value }))}
+                  disabled={rating?.status === "loading" || rating?.status === "done"}
+                  placeholder="Schreib deine Antwort hier…"
+                  className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-3 text-[13px] text-[var(--color-fg)] placeholder-[var(--color-fg-faint)] resize-none h-28 focus:outline-none focus:border-[var(--color-accent-500)]/50 transition-colors disabled:opacity-60"
+                />
+              </div>
+
+              {/* Rate button — only before rating */}
+              {!rating && (
+                <button
+                  onClick={handleRate}
+                  disabled={!(answers[idx] ?? "").trim()}
+                  className="h-9 rounded-lg bg-[var(--color-accent-500)]/15 border border-[var(--color-accent-500)]/30 text-[13px] font-medium text-[var(--color-accent-200)] hover:bg-[var(--color-accent-500)]/25 transition-colors disabled:opacity-35 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                >
+                  Antwort bewerten lassen
+                </button>
+              )}
+
+              {/* Loading state */}
+              {rating?.status === "loading" && (
+                <div className="flex items-center gap-2 text-[13px] text-[var(--color-fg-dim)] py-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Wird bewertet…</span>
+                </div>
+              )}
+
+              {/* AI Feedback card */}
+              {rating?.status === "done" && (() => {
+                const SCORE_STYLE = {
+                  stark:        { cls: "bg-[#4ade80]/10 border-[#4ade80]/25 text-[#4ade80]",  label: "Stark" },
+                  gut:          { cls: "bg-[#fbbf24]/10 border-[#fbbf24]/25 text-[#fbbf24]",  label: "Gut" },
+                  ausbaufähig:  { cls: "bg-[#f87171]/10 border-[#f87171]/25 text-[#f87171]",  label: "Ausbaufähig" },
+                };
+                const style = SCORE_STYLE[rating.score] ?? SCORE_STYLE.gut;
+                return (
+                  <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-4 flex flex-col gap-3 scene-enter">
+                    {/* Score badge */}
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${style.cls}`}>
+                        <ThumbsUp className="w-3 h-3" />
+                        {style.label}
+                      </span>
+                      <span className="text-[11px] text-[var(--color-fg-faint)]">KI-Bewertung</span>
+                    </div>
+                    {/* Strengths */}
+                    {rating.strong?.length > 0 && (
+                      <ul className="flex flex-col gap-1.5">
+                        {rating.strong.map((s, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#4ade80] flex-shrink-0" />
+                            <p className="text-[12.5px] leading-relaxed text-[var(--color-fg-muted)]">{s}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {/* Improvements */}
+                    {rating.improve?.length > 0 && (
+                      <ul className="flex flex-col gap-1.5">
+                        {rating.improve.map((s, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#fbbf24] flex-shrink-0" />
+                            <p className="text-[12.5px] leading-relaxed text-[var(--color-fg-muted)]">{s}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {/* Coaching tip */}
+                    {rating.tip && (
+                      <div className="pt-3 border-t border-[var(--color-border-subtle)] flex items-start gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
+                        <p className="text-[12px] leading-relaxed text-[var(--color-fg-muted)]">{rating.tip}</p>
+                      </div>
+                    )}
+                    {/* Collapsible suggested answer */}
+                    <details className="group">
+                      <summary className="cursor-pointer list-none text-[11.5px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors select-none">
+                        Vorschlag anzeigen ▸
+                      </summary>
+                      <p className="mt-2 text-[12.5px] leading-relaxed text-[var(--color-fg-muted)]">{currentQ?.answer}</p>
+                    </details>
+                  </div>
+                );
+              })()}
+
+              {/* Fallback: just show suggestion if rating failed */}
+              {rating?.status === "fallback" && (
+                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-4 scene-enter">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-accent-300)] mb-2">Vorschlag</p>
+                  <p className="text-[13px] leading-relaxed text-[var(--color-fg-muted)]">{currentQ?.answer}</p>
+                  {currentQ?.tip && (
+                    <div className="mt-3 pt-3 border-t border-[var(--color-border-subtle)] flex items-start gap-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-warning)] flex-shrink-0 mt-0.5">Tipp</span>
+                      <p className="text-[12px] leading-relaxed text-[var(--color-fg-muted)]">{currentQ.tip}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Prev / Next */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePrev}
+                  disabled={idx === 0}
+                  className="flex-1 h-9 rounded-lg border border-[var(--color-border)] text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] disabled:opacity-30 transition-colors inline-flex items-center justify-center gap-1.5"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> Zurück
+                </button>
+                {idx < total - 1 ? (
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 h-9 rounded-lg border border-[var(--color-accent-500)]/30 bg-[var(--color-accent-500)]/10 text-[13px] text-[var(--color-accent-200)] hover:bg-[var(--color-accent-500)]/20 transition-colors inline-flex items-center justify-center gap-1.5"
+                  >
+                    Weiter <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={exitPractice}
+                    className="flex-1 h-9 rounded-lg border border-[var(--color-accent-500)]/30 bg-[var(--color-accent-500)]/10 text-[13px] text-[var(--color-accent-200)] hover:bg-[var(--color-accent-500)]/20 transition-colors inline-flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" /> Abgeschlossen
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer: download (overview only) */}
+        {qa && mode === "overview" && (
+          <div className="grid grid-cols-2 gap-2 px-5 py-3 border-t border-[var(--color-border-subtle)]">
+            <button
+              onClick={() => downloadDoc(
+                qa.map((it, i) => `Frage ${i + 1}: ${it.question}\n\nAntwort:\n${it.answer}${it.tip ? `\n\nTipp: ${it.tip}` : ""}`).join("\n\n----\n\n"),
+                `Vorbereitung_${job.company || "Bewerbung"}.doc`,
+              )}
+              className="h-9 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" /> DOCX
+            </button>
+            <button
+              onClick={() => printHtml(
+                "Gesprächsvorbereitung",
+                `<h1>${escapeHtmlFn(job.role || "Stelle")}</h1><p>${escapeHtmlFn(job.company || "")}</p>${qa.map((it, i) =>
+                  `<div style="margin-bottom:24px;"><b>Frage ${i + 1}: ${escapeHtmlFn(it.question)}</b><p>${escapeHtmlFn(it.answer)}</p>${it.tip ? `<p style="background:#1a1a1a;padding:8px;border-radius:4px;"><b>Tipp:</b> ${escapeHtmlFn(it.tip)}</p>` : ""}</div>`
+                ).join("<hr>")}`,
+              )}
+              className="h-9 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" /> PDF
+            </button>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Cover Letter Modal (preserved, restyled) ────────────────────────────────
+
+/** Modal that displays a generated cover letter with copy/mailto/download. */
+function CoverLetterModal({ open, onClose, job }) {
+  const [copied, setCopied] = useState(false);
+  if (!open || !job?.cover_letter) return null;
+
+  const companyEmail = parseJson(job.research_data)?.contact_info?.email;
+  const subject = encodeURIComponent(`Bewerbung als ${job.role || "Kandidat"} – ${job.company || ""}`);
+  const body = encodeURIComponent(job.cover_letter || "");
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
+        <div className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
+          <h2 className="col-span-9 text-[14px] font-semibold tracking-tight text-[var(--color-fg)] truncate">
+            Anschreiben{job.company ? ` · ${job.company}` : ""}
+          </h2>
+          <div className="col-span-3 justify-self-end flex items-center gap-1">
+            <button
+              onClick={() => { navigator.clipboard.writeText(job.cover_letter); setCopied(true); setTimeout(() => setCopied(false), 2000); toast.success("Kopiert"); }}
+              className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+              title="Kopieren"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={onClose} className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+          <AIDisclosureBanner feature="cover_letter" />
+          <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-[var(--color-fg-muted)]">{job.cover_letter}</p>
+        </div>
+        <div className="grid grid-cols-12 gap-2 px-5 py-3 border-t border-[var(--color-border-subtle)]">
+          <a
+            href={`mailto:${companyEmail || ""}?subject=${subject}&body=${body}`}
+            className="col-span-12 sm:col-span-6 h-10 rounded-lg bg-[var(--color-accent-500)] text-white font-semibold text-[13px] inline-flex items-center justify-center gap-1.5"
+          >
+            <Mail className="w-3.5 h-3.5" /> {companyEmail ? "E-Mail senden" : "E-Mail Entwurf"}
+          </a>
+          <button
+            onClick={() => downloadDoc(job.cover_letter, `Anschreiben_${job.company || "Bewerbung"}.doc`)}
+            className="col-span-6 sm:col-span-3 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> DOCX
+          </button>
+          <button
+            onClick={() => printHtml("Anschreiben", `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(job.cover_letter)}</pre>`)}
+            className="col-span-6 sm:col-span-3 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> PDF
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Courses card ────────────────────────────────────────────────────────────
+
+const PLATFORM_ICONS = {
+  youtube:            { color: "#ff0000", domain: "youtube.com" },
+  coursera:           { color: "#0056d3", domain: "coursera.org" },
+  udemy:              { color: "#a435f0", domain: "udemy.com" },
+  linkedin:           { color: "#0077b5", domain: "linkedin.com" },
+  "linkedin learning":{ color: "#0077b5", domain: "linkedin.com" },
+  "khan academy":     { color: "#14bf96", domain: "khanacademy.org" },
+  skillshare:         { color: "#00cc76", domain: "skillshare.com" },
+  edx:                { color: "#02262b", domain: "edx.org" },
+  pluralsight:        { color: "#f15a2c", domain: "pluralsight.com" },
+  duolingo:           { color: "#58cc02", domain: "duolingo.com" },
+  futurelearn:        { color: "#de00a5", domain: "futurelearn.com" },
+  openhpi:            { color: "#e2001a", domain: "open.hpi.de" },
+};
+
+/** Single course row — cascade: apple-touch-icon → favicon.ico → badge. */
+function CourseRow({ course }) {
+  const [srcIdx, setSrcIdx] = useState(0);
+  const pk   = (course.platform || "").toLowerCase();
+  const meta = Object.entries(PLATFORM_ICONS).find(([k]) => pk.includes(k))?.[1];
+  const bg   = meta?.color ?? "#52525b";
+  const abbr = (course.platform || "?").replace(/\s+learning|\s+academy/i, "").slice(0, 2).toUpperCase();
+
+  const proxy = (u) => `http://localhost:8000/api/proxy/logo?url=${encodeURIComponent(u)}`;
+  const sources = meta?.domain ? [
+    proxy(`https://www.${meta.domain}/apple-touch-icon.png`),
+    proxy(`https://www.${meta.domain}/favicon.ico`),
+  ] : [];
+
+  const showImg = srcIdx < sources.length;
+
+  const getCourseHref = () => {
+    if (course.url && /^https?:\/\//i.test(course.url)) return course.url;
+    const q = encodeURIComponent(course.title || "Kurs");
+    if (pk.includes("youtube"))  return `https://www.youtube.com/results?search_query=${q}`;
+    if (pk.includes("coursera")) return `https://www.coursera.org/search?query=${q}`;
+    if (pk.includes("udemy"))    return `https://www.udemy.com/courses/search/?q=${q}`;
+    if (pk.includes("linkedin")) return `https://www.linkedin.com/learning/search?keywords=${q}`;
+    if (pk.includes("edx"))      return `https://www.edx.org/search?q=${q}`;
+    return `https://www.google.com/search?q=${q}+Kurs+online`;
+  };
+
+  return (
+    <a
+      href={getCourseHref()}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="px-5 py-4 flex items-center gap-3.5 hover:bg-[var(--color-bg-elev-2)] transition-colors group"
+      style={{ textDecoration: "none", display: "flex" }}
+    >
+      <span
+        className="shrink-0 w-9 h-9 rounded-lg grid place-items-center"
+        style={{ background: bg }}
+      >
+        {showImg ? (
+          <img
+            key={sources[srcIdx]}
+            src={sources[srcIdx]}
+            alt={course.platform || ""}
+            referrerPolicy="no-referrer"
+            className="w-7 h-7 object-contain rounded-md"
+            onError={() => setSrcIdx(i => i + 1)}
+          />
+        ) : (
+          <span className="text-[11px] font-bold text-white tracking-wide">{abbr}</span>
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13.5px] font-medium text-[var(--color-fg)] leading-snug line-clamp-2">{course.title}</p>
+        <p className="mt-0.5 text-[12px] text-[var(--color-fg-dim)]">
+          {course.platform}
+          {course.duration ? <span className="text-[var(--color-fg-faint)]"> · {course.duration}</span> : null}
+        </p>
+      </div>
+      <ExternalLink className="shrink-0 w-3.5 h-3.5 text-[var(--color-fg-faint)] group-hover:text-[var(--color-fg-dim)] transition-colors" />
+    </a>
+  );
+}
+
+/**
+ * Empfohlene Kurse — shows AI-suggested courses from job.suggested_courses
+ * (JSON array). Falls back to a placeholder prompting CV linkage.
+ * Each course: { title, platform, duration?, url? }
+ */
+function CoursesCard({ job, resumeId, onOpenEdit, onGenerate, generating }) {
+  const courses = useMemo(() => {
+    if (!job.suggested_courses) return null;
+    try {
+      const p = JSON.parse(job.suggested_courses);
+      return Array.isArray(p) && p.length ? p : null;
+    } catch { return null; }
+  }, [job.suggested_courses]);
+
+  return (
+    <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+        <p className={ANNOT}>Empfohlene Kurse</p>
+        {courses ? (
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={generating}
+            className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] disabled:opacity-50 inline-flex items-center gap-1 transition-colors"
+          >
+            {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            {generating ? "Erstellt…" : `${courses.length} Vorschläge · Neu`}
+          </button>
+        ) : null}
+      </div>
+      {courses ? (
+        <div className="divide-y divide-[var(--color-border-subtle)]">
+          {courses.map((c, i) => <CourseRow key={i} course={c} />)}
+        </div>
+      ) : (
+        <div className="px-5 py-5">
+          <p className="text-[13px] text-[var(--color-fg-dim)] leading-relaxed">
+            {resumeId
+              ? "Kurse werden auf Basis deines Lebenslaufs und der Stellenbeschreibung vorgeschlagen."
+              : "Verknüpfe deinen Lebenslauf — dann schlägt die App passende Kurse für diese Stelle vor."}
+          </p>
+          <div className="mt-3 flex gap-2 flex-wrap">
+            {!resumeId && (
+              <button
+                type="button"
+                onClick={onOpenEdit}
+                className="h-8 px-3 rounded-lg text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors"
+                style={{ background: "rgba(96,165,250,0.10)", border: "1px solid rgba(96,165,250,0.28)", color: "#60a5fa" }}
+              >
+                Lebenslauf wählen
+              </button>
+            )}
+            {onGenerate && (
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={generating}
+                className="h-8 px-3 rounded-lg text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                style={{ background: "rgba(45,212,191,0.10)", border: "1px solid rgba(45,212,191,0.28)", color: "#5eead4" }}
+              >
+                {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                {generating ? "Wird erstellt…" : "Kurse vorschlagen"}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Bridge the Gap (replaces Entwicklungspotenzial) ─────────────────────────
-// Actionable flat cards — each skill gap has an inline Upskill link.
-// No personality inference — only text-based evidence from job description.
+// ─── Main page ───────────────────────────────────────────────────────────────
 
-/**
- * Returns a relevant upskilling URL for a skill-gap keyword.
- * @param {string} text
- * @returns {string}
- */
-function getUpskillUrl(text) {
-  const t = text.toLowerCase();
-  if (/sprach|englisch|deutsch|franzö|spanisch/.test(t)) return "https://www.duolingo.com";
-  if (/zertifikat|certification|aws|microsoft|google/.test(t)) return "https://www.coursera.org/search?query=" + encodeURIComponent(text);
-  if (/führung|management|team lead/.test(t)) return "https://www.linkedin.com/learning/search?keywords=" + encodeURIComponent(text);
-  if (/excel|sap|python|sql|java|react|javascript/.test(t)) return "https://www.udemy.com/courses/search/?q=" + encodeURIComponent(text);
-  if (/ausbildung|bachelor|master|studium/.test(t)) return "https://www.wifi.at/kurse";
-  return "https://www.coursera.org/search?query=" + encodeURIComponent(text);
-}
-
-/**
- * Returns a short German hint about where to learn the skill.
- * @param {string} text
- * @returns {string}
- */
-function getUpskillHint(text) {
-  const t = text.toLowerCase();
-  if (/sprach|englisch|deutsch/.test(t)) return "Duolingo oder ÖSD-Vorbereitungskurse";
-  if (/zertifikat|certification/.test(t)) return "Zertifizierte Kurse auf Coursera oder WIFI";
-  if (/erfahrung|praxis/.test(t)) return "Freelance-Projekte oder Ehrenamt aufbauen";
-  if (/führung|management/.test(t)) return "LinkedIn Learning Leadership-Tracks";
-  if (/software|excel|python|sql/.test(t)) return "Udemy — praktische Kurse ab 15 €";
-  return "Coursera, LinkedIn Learning oder Udemy";
-}
-
-/**
- * Returns the most relevant Lucide icon for a skill-gap keyword.
- * @param {string} text
- * @returns {React.ElementType}
- */
-function getGapIcon(text) {
-  const t = (text || "").toLowerCase();
-  if (/java|python|sql|code|software|tech|it|data|program|digital|erfahrung mit neuen/.test(t)) return Cpu;
-  if (/kommunik|sprach|präsent|interdisziplinär/.test(t)) return MessageSquare;
-  if (/team|zusammen|kollabor/.test(t)) return Users;
-  if (/führung|management|leitung/.test(t)) return Award;
-  if (/pflege|betreu|gesund|medizin|alters/.test(t)) return Heart;
-  if (/zertifi|ausbildung|studium|kurs/.test(t)) return BookOpen;
-  return TrendingUp;
-}
-
-/**
- * Actionable cards listing skill gaps with inline upskilling links.
- * @param {object} props
- * @param {string[]} [props.gaps]
- */
-function BridgeTheGap({ gaps = [] }) {
-  if (!gaps?.length) return null;
-  return (
-    <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] shadow-sm p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/12 flex items-center justify-center flex-shrink-0">
-          <TrendingUp className="w-4 h-4 text-amber-400" />
-        </div>
-        <h3 className="text-sm font-bold text-white">Wachstums-Potenziale</h3>
-        <span className="ml-auto text-[10px] bg-amber-500/12 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
-          {gaps.length} Skill{gaps.length > 1 ? "s" : ""}
-        </span>
-      </div>
-      <p className="text-[10px] text-slate-500 flex items-center gap-1 mb-3">
-        <Shield className="w-3 h-3" /> Nur belegbare Qualifikationslücken — keine Persönlichkeitseinschätzung
-      </p>
-      <div className="space-y-1.5">
-        {gaps.map((gap, i) => {
-          const Icon = getGapIcon(gap);
-          return (
-            <div key={i} className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2">
-              <div className="w-5 h-5 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <Icon className="w-3 h-3 text-amber-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-200 leading-snug truncate">{gap}</p>
-                <p className="text-[10px] text-slate-500 leading-none mt-0.5 truncate">{getUpskillHint(gap)}</p>
-              </div>
-              <a
-                href={getUpskillUrl(gap)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-shrink-0 w-6 h-6 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-300 hover:text-brand-200 hover:bg-brand-500/20 transition-colors"
-                title="Weiterbilden"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Strengths (Übereinstimmungen) ────────────────────────────────────────────
-
-/**
- * Pill chip highlighting a matching strength from the AI analysis.
- * @param {object} props
- * @param {string} props.text
- */
-function StrengthItem({ text }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-300 leading-snug">
-      <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-      {text}
-    </span>
-  );
-}
-
-// ─── Transparency Footer (EU AI Act §52 / §13 requirement) ───────────────────
-
-/**
- * Fixed bottom-right EU AI Act transparency disclosure badge.
- * @param {object} props
- * @param {boolean} props.visible - Only rendered when AI analysis results are shown.
- */
-function TransparencyFooter({ visible }) {
-  if (!visible) return null;
-  return (
-    <div className="fixed right-3 bottom-[max(1rem,env(safe-area-inset-bottom))] sm:bottom-4 sm:right-4 z-40 group">
-      <div className="w-9 h-9 rounded-full bg-[#030712]/95 backdrop-blur-sm border border-[#1e293b] flex items-center justify-center cursor-default shadow-lg">
-        <Info className="w-4 h-4 text-brand-300" aria-hidden="true" />
-      </div>
-      <div className="absolute bottom-11 right-0 w-64 rounded-xl border border-[#1e293b] bg-[#030712]/95 backdrop-blur-sm px-3 py-2 text-xs text-slate-400 leading-snug opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-        <strong className="text-slate-300">EU AI Act Art. 13:</strong> KI-Analyse zur Orientierung — keine automatisierte Endentscheidung.
-      </div>
-    </div>
-  );
-}
-
-// ─── Status Progress Bar ─────────────────────────────────────────────────────
-
-const STATUS_STEPS = [
-  { key: "bookmarked",   label: "Gespeichert" },
-  { key: "applied",      label: "Beworben" },
-  { key: "interviewing", label: "Gespräch" },
-  { key: "offered",      label: "Angebot" },
-];
-
-/**
- * Horizontal step-by-step progress bar for advancing the application status.
- * @param {object} props
- * @param {string} props.status
- * @param {(status: string) => void} props.onStatusChange
- * @param {boolean} props.isPending
- */
-function StatusProgressBar({ status, onStatusChange, isPending }) {
-  if (status === "rejected") return null;
-  const currentIdx = STATUS_STEPS.findIndex(s => s.key === status);
-  const active = currentIdx >= 0 ? currentIdx : 0;
-  return (
-    <div className="space-y-3 w-full">
-      <div className="flex items-start w-full">
-        {STATUS_STEPS.map((step, i) => {
-          const done = i < active;
-          const current = i === active;
-          return (
-            <Fragment key={step.key}>
-              {i > 0 && (
-                <div className={`flex-1 h-0.5 mt-[5px] mx-1 rounded-full transition-all duration-[20ms] ${
-                  i <= active ? "" : "bg-[#1e293b]"
-                }`} style={i <= active ? { backgroundColor: PRIMARY } : undefined} />
-              )}
-              <button
-                onClick={() => !current && !isPending && onStatusChange?.(step.key)}
-                disabled={current || isPending}
-                className="flex flex-col items-center group disabled:cursor-default"
-              >
-                <div
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-[20ms] ${
-                    !done && !current ? "bg-[#1e293b] group-hover:bg-slate-600" : ""
-                  } ${!current ? "group-hover:ring-2 group-hover:ring-brand-500/30" : ""}`}
-                  style={done || current ? { backgroundColor: PRIMARY } : undefined}
-                />
-                <span className={`mt-1 text-[9px] font-semibold whitespace-nowrap leading-none transition-colors ${
-                  current ? "text-white" : done ? "text-slate-400 group-hover:text-brand-300" : "text-slate-600 group-hover:text-slate-400"
-                }`}>
-                  {step.label}
-                </span>
-              </button>
-            </Fragment>
-          );
-        })}
-      </div>
-      <p className="text-[9px] text-slate-600 text-center">Klicke auf einen Schritt um den Status zu ändern</p>
-    </div>
-  );
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-/** Inline CSS-animated loading spinner used inside action buttons. */
-function LoadingSpinner() {
-  return <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent inline-block" />;
-}
-
-/**
- * Reusable action button with loading state and primary/secondary variants.
- * @param {object} props
- * @param {boolean} props.pending
- * @param {boolean} [props.disabled]
- * @param {() => void} props.onClick
- * @param {React.ElementType} props.icon
- * @param {string} props.pendingLabel
- * @param {string} props.label
- * @param {'primary'|'secondary'} [props.variant]
- */
-function ActionBtn({ pending, disabled, onClick, icon, pendingLabel, label, variant = "primary" }) {
-  const variants = {
-    primary:   "text-white shadow-sm hover:opacity-90 disabled:opacity-50",
-    secondary: "border border-[#1f2937] bg-[#0b1220] text-slate-300 hover:bg-white/[0.05] disabled:opacity-50",
-    success:   "border text-white shadow-sm hover:opacity-90 disabled:opacity-50",
-  };
-  const bg = variant === "primary" ? PRIMARY : variant === "success" ? "#059669" : undefined;
-  return (
-    <button
-      onClick={onClick}
-      disabled={pending || disabled}
-      className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all min-h-[44px] ${variants[variant]}`}
-      style={bg ? { backgroundColor: bg } : undefined}
-    >
-      {pending ? <><LoadingSpinner /><span>{pendingLabel}</span></> : <>{icon}<span>{label}</span></>}
-    </button>
-  );
-}
-
-/**
- * Compact icon+label download button with three colour variants.
- * @param {object} props
- * @param {string} props.kind - Human-readable format label (e.g. ".txt", ".doc").
- * @param {() => void} props.onClick
- * @param {'default'|'red'|'brand'} [props.variant]
- */
-function DownloadBtn({ kind, onClick, variant = "default" }) {
-  const cls = variant === "red" ? "border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15"
-    : variant === "brand" ? "border-brand-500/20 bg-brand-500/10 text-brand-300 hover:bg-brand-500/15"
-    : "border-[#1f2937] bg-[#0b1220] text-slate-300 hover:border-brand-500/30";
-  return (
-    <button onClick={onClick} className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold min-h-[44px] ${cls}`}>
-      <Download className="h-3.5 w-3.5" />{kind}
-    </button>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
-
-/** Full-page job detail view with AI match analysis, cover letter, interview prep, and notes. */
+/** Full job detail surface — pure v7 layout. */
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [copiedIndex, setCopiedIndex] = useState(null);
-  const [expandedQuestion, setExpandedQuestion] = useState(null);
-  const [completedQuestions, setCompletedQuestions] = useState(() => new Set());
-  const [personalNotes, setPersonalNotes] = useState({});
-  const [activeFilter, setActiveFilter] = useState(null);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [questionsMinimized, setQuestionsMinimized] = useState(false);
-  const [coverLetterModalOpen, setCoverLetterModalOpen] = useState(false);
-  const [_hidePersonal, _setHidePersonal] = useState(false);
+
+  const [selectedResume, setSelectedResume] = useState(null);
+  const [coverLetterOpen, setCoverLetterOpen] = useState(false);
+  const [interviewOpen, setInterviewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [researchOpen, setResearchOpen] = useState(false);
   const [researchData, setResearchData] = useState(null);
   const [researchLoading, setResearchLoading] = useState(false);
-  const [selectedResume, setSelectedResume] = useState(null);
-  const [editingDeadline, setEditingDeadline] = useState(false);
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [editedDeadline, setEditedDeadline] = useState(null);
-  const [editedNotes, setEditedNotes] = useState(null);
-  const { data: initData } = useQuery({ queryKey: ["init"] });
+  const [mobileToolOpen, setMobileToolOpen] = useState(false);
+  const [salaryCompareOpen, setSalaryCompareOpen] = useState(false);
+  const matchCardRef = useRef(null);
+
+  const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
 
   const updateJobCaches = (nextJob) => {
     if (!nextJob) return;
@@ -590,41 +1413,43 @@ export default function JobDetailPage() {
   const invalidateJobs = () => queryClient.invalidateQueries({ queryKey: ["jobs"], exact: true });
 
   useEffect(() => {
-    const t = searchParams.get("tab");
-    if (t === "interview" || t === "overview") setActiveTab(t);
-  }, [searchParams]);
-
-  useEffect(() => {
     const rid = searchParams.get("resumeId");
     if (rid && selectedResume == null) setSelectedResume(Number(rid));
   }, [searchParams, selectedResume]);
 
-  const matchMutation = useMutation({
-    mutationFn: () => jobApi.match(Number(jobId), resumeId),
-    onSuccess: (res) => {
-      if (res.data.match_score == null) {
-        toast.error("Analyse fehlgeschlagen – bitte erneut versuchen.");
-        return;
-      }
-      updateJobCaches(res.data);
-      invalidateJobs();
-      toast.success("Eignungs-Analyse erstellt!");
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err, "Analyse fehlgeschlagen")),
-  });
+  // ─ Mutations ───────────────────────────────────────────────────────────────
+
   const coverLetterMutation = useMutation({
     mutationFn: () => coverLetterApi.generate(Number(jobId), resumeId),
-    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); setCoverLetterModalOpen(true); toast.success("Anschreiben fertig!"); },
+    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); setCoverLetterOpen(true); toast.success("Anschreiben erstellt"); },
     onError: (err) => toast.error(getApiErrorMessage(err, "Anschreiben konnte nicht erstellt werden")),
   });
+
   const interviewMutation = useMutation({
     mutationFn: () => interviewApi.generate(Number(jobId), resumeId),
     onSuccess: (res) => {
       updateJobCaches({ ...(queryClient.getQueryData(["jobs", jobId]) || job || {}), ...res.data });
-      invalidateJobs(); setActiveTab("interview"); toast.success("Gesprächsvorbereitung fertig!");
+      invalidateJobs();
+      toast.success("Gesprächsvorbereitung erstellt");
     },
     onError: (err) => toast.error(getApiErrorMessage(err, "Gesprächsvorbereitung fehlgeschlagen")),
   });
+
+  const matchMutation = useMutation({
+    mutationFn: () => {
+      if (!resumeId) throw new Error("Kein Lebenslauf ausgewählt");
+      return jobApi.match(Number(jobId), resumeId);
+    },
+    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); toast.success("Passung berechnet"); },
+    onError: (err) => toast.error(getApiErrorMessage(err, "Passung konnte nicht berechnet werden")),
+  });
+
+  const coursesMutation = useMutation({
+    mutationFn: () => coursesApi.generate(Number(jobId), resumeId ?? null),
+    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); toast.success("Kursvorschläge erstellt"); },
+    onError: (err) => toast.error(getApiErrorMessage(err, "Kursvorschläge konnten nicht erstellt werden")),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => jobApi.delete(jobId),
     onSuccess: () => { toast.success("Stelle gelöscht"); navigate("/jobs"); },
@@ -634,7 +1459,6 @@ export default function JobDetailPage() {
   const statusMutation = useMutation({
     mutationFn: (status) => jobApi.updateStatus(jobId, status),
     onMutate: (status) => {
-      // Optimistic update — instant UI change
       const prev = queryClient.getQueryData(["jobs", jobId]);
       const prevList = queryClient.getQueryData(["jobs"]);
       const optimistic = { ...(prev || job || {}), status };
@@ -643,727 +1467,539 @@ export default function JobDetailPage() {
       queryClient.setQueryData(["jobs"], (old = []) => old.map(e => String(e.id) === String(jobId) ? optimistic : e));
       return { prev, prevList };
     },
-    onSuccess: (res) => { updateJobCaches(res.data); },
+    onSuccess: (res) => updateJobCaches(res.data),
     onError: (err, _status, ctx) => {
       if (ctx?.prev) {
         queryClient.setQueryData(["jobs", jobId], ctx.prev);
         queryClient.setQueryData(["jobs", Number(jobId)], ctx.prev);
       }
-      if (ctx?.prevList) {
-        queryClient.setQueryData(["jobs"], ctx.prevList);
-      }
+      if (ctx?.prevList) queryClient.setQueryData(["jobs"], ctx.prevList);
       toast.error(getApiErrorMessage(err, "Status konnte nicht aktualisiert werden"));
     },
   });
 
-  const updateJobMetaMutation = useMutation({
-    mutationFn: (data) => {
-      if ("deadline" in data) return jobApi.updateDeadline(jobId, data.deadline);
-      if ("notes" in data) return jobApi.updateNotes(jobId, data.notes);
-      return Promise.reject(new Error("Unknown field"));
+  const updateMetaMutation = useMutation({
+    mutationFn: async (data) => {
+      const calls = [];
+      if ("deadline" in data) calls.push(jobApi.updateDeadline(jobId, data.deadline));
+      if ("notes"    in data) calls.push(jobApi.updateNotes(jobId, data.notes));
+      const results = await Promise.all(calls);
+      return results[results.length - 1];
     },
-    onSuccess: (res) => { updateJobCaches(res.data); toast.success("Aktualisiert"); },
+    onSuccess: (res) => { if (res?.data) updateJobCaches(res.data); toast.success("Aktualisiert"); },
     onError: (err) => toast.error(getApiErrorMessage(err, "Aktualisierung fehlgeschlagen")),
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-3 py-16 justify-center text-slate-500">
-        <LoadingSpinner /> <span>Wird geladen…</span>
-      </div>
-    );
-  }
-  if (!job) {
-    return <div className="py-16 text-center text-red-600 font-medium">Stelle nicht gefunden.</div>;
-  }
-
-  const matchFeedback = parseJson(job.match_feedback);
-  const interviewQA = parseJson(job.interview_qa);
-  const statusCfg = {
-    bookmarked: { label: "Gespeichert", cls: "border border-blue-500/20 bg-blue-500/10 text-blue-300" },
-    applied: { label: "Beworben", cls: "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300" },
-    interviewing: { label: "Vorstellungsgespräch", cls: "border border-violet-500/20 bg-violet-500/10 text-violet-300" },
-    offered: { label: "Angebot erhalten", cls: "border border-amber-500/20 bg-amber-500/10 text-amber-300" },
-    rejected: { label: "Abgelehnt", cls: "border border-red-500/20 bg-red-500/10 text-red-300" },
-  }[job.status] || { label: "Gespeichert", cls: "border border-blue-500/20 bg-blue-500/10 text-blue-300" };
-  const hasAiContent = job.match_score != null || job.cover_letter || job.interview_qa;
-  const tabs = [
-    { id: "overview",  label: "Übersicht" },
-    { id: "interview", label: "Gesprächsvorbereitung", disabled: !job.interview_qa },
-  ];
-
-  const _isPrimCover = job.status === "bookmarked" || !job.status;
-  const _isPrimInterview = job.status === "applied" || job.status === "interviewing";
-
   const handleResearch = async () => {
-    if (job.research_data) { setResearchData(parseJson(job.research_data)); setResearchOpen(true); return; }
+    if (job?.research_data) { setResearchData(parseJson(job.research_data)); setResearchOpen(true); return; }
     setResearchData(null); setResearchOpen(true); setResearchLoading(true);
     try {
-      const res = await researchApi.research(job.company || "", job.description || "");
+      const res = await researchApi.research(job?.company || "", job?.description || "");
       setResearchData(res.data);
       updateJobCaches({ ...job, research_data: JSON.stringify(res.data) });
     } catch (err) {
-      if (!(err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") && err.response?.status !== 429)
+      if (!(err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") && err.response?.status !== 429) {
         toast.error(getApiErrorMessage(err, "Recherche fehlgeschlagen"));
+      }
       setResearchOpen(false);
     } finally { setResearchLoading(false); }
   };
 
+  // ─ Loading / not-found ─────────────────────────────────────────────────────
+
+  if (isLoading) {
+    return (
+      <div className="grid place-items-center py-24 text-[var(--color-fg-dim)] gap-2">
+        <Spinner /> <span className="text-[13px]">Wird geladen…</span>
+      </div>
+    );
+  }
+  if (!job) {
+    return <div className="py-16 text-center text-[var(--color-error)] font-medium">Stelle nicht gefunden.</div>;
+  }
+
+  // ─ Derived values ──────────────────────────────────────────────────────────
+
+  const allJobs = queryClient.getQueryData(["jobs"]) || loadStored("jobs") || [];
+  const salary       = parseSalary(job.salary_text);
+  const hourly       = salary?.unit === "hour" ? salary.amount : null;
+  const kvMin        = kvMinimumFor(job.category);
+  const monthlyEst   = hourly ? Math.round(hourly * 8 * 4.3) : null; // 8h/week × 4.3 weeks
+  const deadlineDays = daysUntil(job.deadline || job.expires_at);
+  const showDeadline = deadlineDays !== null;
+  const deadlineWarn = deadlineDays !== null && deadlineDays <= 7;
+  const urlExpired   = deadlineDays !== null && deadlineDays < 0;
+  const [city, ...rest] = (job.location || "").split(",");
+  const locRest        = rest.join(",").trim();
+
+  // Count how many KPI tiles will render so we can hide the section when it
+  // would only show a lonely single tile (looks broken in 12-col layout).
+  const kpiCount =
+    (job.location ? 1 : 0) +
+    (job.category ? 1 : 0) +
+    (showDeadline ? 1 : 0) +
+    (job.salary_text && !salary ? 1 : 0);
+  const showKpis = kpiCount >= 2;
+
+  const savedAt   = job.created_at;
+  const daysSaved = savedAt ? Math.max(0, Math.floor((Date.now() - new Date(savedAt).getTime()) / (1000 * 60 * 60 * 24))) : null;
+  const kvMonthly = !salary ? Math.round(kvMin * 15 * 4.3) : null;
+
+  // ─ Render ──────────────────────────────────────────────────────────────────
+
   return (
     <>
-      <div className="pb-16" style={{ fontFamily: "Inter, Roboto, sans-serif", fontSize: "16px", lineHeight: "1.5" }}>
-
-        {/* Back button */}
-        <button
-          onClick={() => navigate("/jobs")}
-          className="mb-5 flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors min-h-[44px]"
-        >
-          <ArrowLeft className="w-4 h-4" /> Zurück zu Stellen
-        </button>
-
-        {/* ── 2-col dashboard: 340px sticky left + 1fr right ── */}
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(260px,320px)_1fr] 2xl:grid-cols-[340px_1fr]">
-
-          {/* ── LEFT: scrollable sidebar ─────────────────────────────────────── */}
-          <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-120px)] xl:overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#1e293b] [&::-webkit-scrollbar-thumb]:rounded-full">
-
-            {/* Hero card: title + company + delete + gauge + CTA + status */}
-            <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-5">
-              {/* Title row */}
-              <div className="flex items-start justify-between gap-3 mb-5">
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-lg font-extrabold leading-tight text-white mb-1">
-                    {job.role || "Ohne Titel"}
-                  </h1>
-                  <p className="text-sm text-slate-400">{job.company || "Unbekanntes Unternehmen"}</p>
-                </div>
-                <button
-                  onClick={() => deleteMutation.mutate()}
-                  disabled={deleteMutation.isPending}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#1e293b] text-slate-400 hover:border-red-500/30 hover:text-red-300 transition-all"
-                  title="Stelle löschen"
-                >
-                  {deleteMutation.isPending ? <LoadingSpinner /> : <Trash2 className="h-4 w-4" />}
-                </button>
-              </div>
-
-              {/* Gauge */}
-              {job.match_score != null && (
-                <div className="flex justify-center mb-5">
-                  <CircularGauge value={Math.round(job.match_score)} />
+    <div key={jobId} className="animate-slide-up">
+      {/* ── Sticky toolbar ─────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 -mx-5 sm:-mx-8 lg:mx-0 px-5 sm:px-8 lg:px-0 py-2.5 bg-[var(--color-bg)]/95 backdrop-blur border-b border-[var(--color-border-subtle)]">
+        <div className="grid grid-cols-12 items-center gap-2">
+          <div className="col-span-7 sm:col-span-7 min-w-0 grid grid-cols-[auto_auto_1fr] items-center gap-2">
+            <button
+              onClick={() => navigate("/jobs")}
+              className="grid grid-cols-[auto_auto] items-center gap-1 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Stellen</span>
+            </button>
+            <ChevronRight className="w-3 h-3 text-[var(--color-fg-faint)]" aria-hidden="true" />
+            <p className="text-[12px] text-[var(--color-fg-muted)] truncate">{job.company || "Stelle"}</p>
+          </div>
+          <div className="col-span-5 sm:col-span-5 justify-self-end flex items-center gap-0.5">
+            <StatusMenu status={job.status} onChange={(s) => statusMutation.mutate(s)} pending={statusMutation.isPending} />
+            {/* Mobile-only … overflow */}
+            <div className="relative sm:hidden">
+              <button
+                type="button"
+                onClick={() => setMobileToolOpen(o => !o)}
+                aria-label="Mehr Aktionen"
+                className="inline-flex flex-col items-center justify-center gap-0.5 h-10 px-2 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors min-w-[32px]"
+              >
+                <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                <span className="text-[9px] font-medium leading-none">Mehr</span>
+              </button>
+              {mobileToolOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] shadow-xl shadow-black/40 py-1 min-w-[160px] animate-slide-up">
+                  <button type="button" onClick={() => { setEditOpen(true); setMobileToolOpen(false); }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]">
+                    <Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> Bearbeiten
+                  </button>
+                  <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
+                  <button type="button" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) { setMobileToolOpen(false); deleteMutation.mutate(); } }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]">
+                    <Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen
+                  </button>
                 </div>
               )}
-
-
-              {/* Status pill + URL */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${statusCfg.cls}`}>
-                  {statusCfg.label}
-                </span>
-                {job.url && (
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-brand-300 hover:text-brand-200 transition-colors"
-                  >
-                    <ExternalLink className="w-3 h-3" /> Stellenanzeige
-                  </a>
-                )}
-              </div>
             </div>
-
-            {/* Bewerbungsfortschritt stepper */}
-            {job.status !== "rejected" && (
-              <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] px-4 py-4 w-full">
-                <StatusProgressBar
-                  status={job.status}
-                  onStatusChange={(s) => statusMutation.mutate(s)}
-                  isPending={statusMutation.isPending}
-                />
-              </div>
-            )}
-
-            {/* Resume selector */}
-            {resumes.length > 0 ? (
-              <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-4">
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Lebenslauf für Analyse
-                </label>
-                <div className="relative">
-                  <select
-                    value={resumeId || ""}
-                    onChange={e => setSelectedResume(Number(e.target.value))}
-                    className="min-h-[44px] w-full appearance-none rounded-xl border border-[#243041] bg-[#030712] px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    {resumes.map(r => <option key={r.id} value={r.id}>{r.filename}</option>)}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
-                <p className="text-sm font-medium text-amber-300 mb-2">
-                  Kein Lebenslauf hochgeladen — für die Analyse erforderlich.
-                </p>
-                <Link to="/resume" className="text-sm font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 min-h-[44px]">
-                  <FileText className="w-4 h-4" /> Lebenslauf hochladen →
-                </Link>
-              </div>
-            )}
-
-
-            {/* Deadline / Notes metadata - always editable */}
-            <div className="space-y-3 rounded-2xl border border-[#1e293b] bg-[#0f172a] p-4">
-              {/* Frist */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Frist</p>
-                  <button
-                    onClick={() => {
-                      if (editingDeadline && editedDeadline !== null && editedDeadline !== job.deadline) {
-                        updateJobMetaMutation.mutate({ deadline: editedDeadline || null });
-                      }
-                      setEditingDeadline(!editingDeadline);
-                      if (!editingDeadline) setEditedDeadline(job.deadline || "");
-                    }}
-                    className="text-[10px] text-brand-300 hover:text-brand-200 transition-colors duration-[20ms]"
-                  >
-                    {editingDeadline ? "Speichern" : "Bearbeiten"}
-                  </button>
-                </div>
-                {editingDeadline ? (
-                  <input
-                    type="date"
-                    value={editedDeadline ?? job.deadline ?? ""}
-                    onChange={(e) => setEditedDeadline(e.target.value)}
-                    className="w-full rounded-xl border border-[#243041] bg-[#030712] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500/30"
-                  />
-                ) : (
-                  <p className="text-sm text-slate-400">
-                    {job.deadline ? new Date(job.deadline).toLocaleDateString("de-AT") : "—"}
-                  </p>
-                )}
-              </div>
-              {/* Notizen */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Notizen</p>
-                  <button
-                    onClick={() => {
-                      if (editingNotes && editedNotes !== null && editedNotes !== job.notes) {
-                        updateJobMetaMutation.mutate({ notes: editedNotes || null });
-                      }
-                      setEditingNotes(!editingNotes);
-                      if (!editingNotes) setEditedNotes(job.notes || "");
-                    }}
-                    className="text-[10px] text-brand-300 hover:text-brand-200 transition-colors duration-[20ms]"
-                  >
-                    {editingNotes ? "Speichern" : "Bearbeiten"}
-                  </button>
-                </div>
-                {editingNotes ? (
-                  <textarea
-                    value={editedNotes ?? job.notes ?? ""}
-                    onChange={(e) => setEditedNotes(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-xl border border-[#243041] bg-[#030712] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500/30 resize-y"
-                    placeholder="Notizen hinzufügen..."
-                  />
-                ) : (
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-400">
-                    {job.notes || "—"}
-                  </p>
-                )}
-              </div>
+            <div className="hidden sm:block w-px h-4 mx-1 bg-[var(--color-border-subtle)]" aria-hidden="true" />
+            <div className="hidden sm:flex items-center gap-0.5">
+              <ToolBtn icon={Edit3} label="Notizen & Lebenslauf" shortLabel="Bearbeiten" onClick={() => setEditOpen(true)} />
+              <ToolBtn icon={Trash2} label="Stelle löschen" shortLabel="Löschen" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) deleteMutation.mutate(); }} danger disabled={deleteMutation.isPending} />
             </div>
-          </aside>
-
-          {/* ── RIGHT: scrollable content ─────────────────────────────────── */}
-          <div className="min-w-0">
-
-            {/* ── Secondary Action Grid 3×3 ──────────────────────────────────── */}
-            <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-4 mb-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Aktionen</p>
-
-              {/* Group 1 — KI-Generierung */}
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-400/70 mb-1.5">KI-Analyse</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 mb-4">
-                {/* 1 – Match Analysis */}
-                <button
-                  disabled={!resumeId || matchMutation.isPending}
-                  onClick={() => matchMutation.mutate()}
-                  className="min-h-[44px] flex items-center gap-2 rounded-xl border border-violet-700/50 bg-violet-950/60 px-3 py-[8.5px] text-sm font-semibold text-violet-300 transition-all hover:bg-violet-900/70 hover:text-violet-100 disabled:opacity-40"
-                >
-                  {matchMutation.isPending ? <LoadingSpinner /> : <Zap className="h-4 w-4 flex-shrink-0" />}
-                  Eignungs-Analyse
-                </button>
-
-                {/* 2 – Create Cover Letter */}
-                <button
-                  disabled={!resumeId || coverLetterMutation.isPending || !!job.cover_letter}
-                  onClick={() => coverLetterMutation.mutate()}
-                  className="min-h-[44px] flex items-center gap-2 rounded-xl border border-violet-700/50 bg-violet-950/60 px-3 py-[8.5px] text-sm font-semibold text-violet-300 transition-all hover:bg-violet-900/70 hover:text-violet-100 disabled:opacity-40"
-                >
-                  {coverLetterMutation.isPending ? <LoadingSpinner /> : <FileText className="h-4 w-4 flex-shrink-0" />}
-                  Anschreiben erstellen
-                </button>
-
-                {/* 4 – Create Interview Prep */}
-                <button
-                  disabled={!resumeId || interviewMutation.isPending || !!job.interview_qa}
-                  onClick={() => interviewMutation.mutate()}
-                  className="min-h-[44px] flex items-center gap-2 rounded-xl border border-violet-700/50 bg-violet-950/60 px-3 py-[8.5px] text-sm font-semibold text-violet-300 transition-all hover:bg-violet-900/70 hover:text-violet-100 disabled:opacity-40"
-                >
-                  {interviewMutation.isPending ? <LoadingSpinner /> : <MessageSquare className="h-4 w-4 flex-shrink-0" />}
-                  Gespräch erstellen
-                </button>
-              </div>
-
-              {/* Group 2 — Ergebnisse ansehen */}
-              <div className="border-t border-[#1e293b] pt-3 mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-400/70 mb-1.5">Ergebnisse</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {/* 3 – View Cover Letter */}
-                  <button
-                    disabled={!job.cover_letter}
-                    onClick={() => setCoverLetterModalOpen(true)}
-                    className="min-h-[44px] flex items-center gap-2 rounded-xl border border-teal-700/50 bg-teal-950/50 px-3 py-[8.5px] text-sm font-semibold text-teal-300 transition-all hover:bg-teal-900/60 hover:text-teal-100 disabled:opacity-40"
-                  >
-                    <BookOpen className="h-4 w-4 flex-shrink-0" />
-                    Anschreiben ansehen
-                  </button>
-
-                  {/* 5 – View Interview Prep */}
-                  <button
-                    disabled={!job.interview_qa}
-                    onClick={() => setActiveTab("interview")}
-                    className="min-h-[44px] flex items-center gap-2 rounded-xl border border-teal-700/50 bg-teal-950/50 px-3 py-[8.5px] text-sm font-semibold text-teal-300 transition-all hover:bg-teal-900/60 hover:text-teal-100 disabled:opacity-40"
-                  >
-                    <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                    Gespräch ansehen
-                  </button>
-
-                  {/* 6 – Company Research */}
-                  <button
-                    disabled={!job?.company}
-                    onClick={handleResearch}
-                    className="min-h-[44px] flex items-center gap-2 rounded-xl border border-teal-700/50 bg-teal-950/50 px-3 py-[8.5px] text-sm font-semibold text-teal-300 transition-all hover:bg-teal-900/60 hover:text-teal-100 disabled:opacity-40"
-                  >
-                    <SearchCheck className="h-4 w-4 flex-shrink-0" />
-                    {job?.research_data ? "Recherche ansehen" : "Recherche starten"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Group 3 — Verwaltung + Löschen */}
-              <div className="border-t border-[#1e293b] pt-3 flex flex-wrap gap-2">
-                {/* 7 – Open Job Posting */}
-                <button
-                  disabled={!job.url}
-                  onClick={() => window.open(job.url, "_blank", "noopener,noreferrer")}
-                  className="min-h-[44px] flex items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-800/40 px-3 py-[8.5px] text-sm font-semibold text-slate-300 transition-all hover:bg-slate-700/50 hover:text-slate-100 disabled:opacity-40"
-                >
-                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                  Stellenanzeige öffnen
-                </button>
-
-                {/* 8 – Manage Resume */}
-                <button
-                  onClick={() => navigate("/resume")}
-                  className="min-h-[44px] flex items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-800/40 px-3 py-[8.5px] text-sm font-semibold text-slate-300 transition-all hover:bg-slate-700/50 hover:text-slate-100"
-                >
-                  <FileText className="h-4 w-4 flex-shrink-0" />
-                  Lebenslauf verwalten
-                </button>
-
-                <div className="flex-1" />
-
-                {/* 9 – Delete Job */}
-                <button
-                  disabled={deleteMutation.isPending}
-                  onClick={() => deleteMutation.mutate()}
-                  className="min-h-[44px] flex items-center gap-2 rounded-xl border border-red-800/50 bg-red-950/50 px-3 py-[8.5px] text-sm font-semibold text-red-400 transition-all hover:bg-red-900/60 hover:text-red-200 disabled:opacity-40"
-                >
-                  {deleteMutation.isPending ? <LoadingSpinner /> : <Trash2 className="h-4 w-4 flex-shrink-0" />}
-                  Stelle löschen
-                </button>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-1 overflow-x-auto rounded-2xl border border-[#1e293b] bg-[#0f172a] p-1 mb-4">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => !tab.disabled && setActiveTab(tab.id)}
-                  disabled={tab.disabled}
-                  className={`flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-semibold transition-all min-h-[44px] ${
-                    activeTab === tab.id
-                      ? "bg-[#030712] shadow-sm"
-                      : tab.disabled
-                        ? "cursor-not-allowed text-slate-600"
-                        : "text-slate-400 hover:text-white"
-                  }`}
-                  style={activeTab === tab.id ? { color: PRIMARY } : undefined}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* ── Interview: sticky progress sub-header ────────────────────── */}
-            {activeTab === "interview" && interviewQA && (
-              <div className="sticky top-0 z-10 mb-4 flex items-center justify-between overflow-hidden rounded-xl border border-[#1e293b] bg-[#030712]/95 px-4 py-2.5 backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-3.5 w-3.5 text-violet-400" />
-                  <span className="text-xs font-bold text-slate-300">Interview Prep</span>
-                </div>
-                <span className="text-xs text-slate-400">
-                  <span className="font-bold" style={{ color: PRIMARY }}>{completedQuestions.size}</span>/{interviewQA.length} Abgeschlossen
-                </span>
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1e293b]">
-                  <div
-                    className="h-full transition-all duration-500"
-                    style={{ width: `${interviewQA.length ? (completedQuestions.size / interviewQA.length) * 100 : 0}%`, backgroundColor: PRIMARY }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ── Overview tab ─────────────────────────────────────────────── */}
-            {activeTab === "overview" && (
-              <div className="space-y-4">
-
-                {/* QualifikationsCheck — full width */}
-                {job.match_score != null && (
-                  <QualifikationsCheck matchScore={job.match_score} matchFeedback={matchFeedback} />
-                )}
-
-                {/* Stärken + Lücken side-by-side */}
-                {(matchFeedback?.strengths?.length > 0 || matchFeedback?.gaps?.length > 0) && (
-                  <div className={`grid gap-4 ${matchFeedback?.strengths?.length > 0 && matchFeedback?.gaps?.length > 0 ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
-                    {matchFeedback?.strengths?.length > 0 && (
-                      <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-emerald-400" />
-                          </div>
-                          <h3 className="text-sm font-bold text-white">Stärken</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {matchFeedback.strengths.map((s, i) => <StrengthItem key={i} text={s} />)}
-                        </div>
-                      </div>
-                    )}
-                    {matchFeedback?.gaps?.length > 0 && (
-                      <BridgeTheGap gaps={matchFeedback.gaps} />
-                    )}
-                  </div>
-                )}
-
-                {/* Empfehlungen */}
-                {matchFeedback?.recommendations?.length > 0 && (
-                  <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-lg bg-brand-500/20 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-brand-300" aria-hidden="true" />
-                      </div>
-                      <h3 className="text-sm font-bold text-white">Empfehlungen</h3>
-                    </div>
-                    <ul className="space-y-2.5">
-                      {matchFeedback.recommendations.map((r, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm text-slate-300 leading-relaxed">
-                          <ChevronRight className="w-4 h-4 text-brand-300 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                          {r}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Stellenbeschreibung */}
-                <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-5">
-                  <h3 className="text-sm font-bold text-slate-200 mb-3">Stellenbeschreibung</h3>
-                  <p className="whitespace-pre-wrap leading-relaxed text-slate-300 text-sm">{job.description}</p>
-                </div>
-
-                {/* No analysis prompt */}
-                {job.match_score == null && resumes.length > 0 && (
-                  <div className="rounded-2xl border-2 border-dashed border-[#1e293b] bg-[#0f172a] p-6 text-center">
-                    <Zap className="w-8 h-8 mx-auto mb-3" style={{ color: PRIMARY }} />
-                    <p className="text-sm font-semibold text-slate-200 mb-1">Noch keine Eignungs-Analyse</p>
-                    <p className="text-xs text-slate-500">Starte links die Eignungs-Analyse, um die KI-gestützte Einschätzung zu laden.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Interview tab — no content ────────────────────────────────── */}
-            {activeTab === "interview" && !interviewQA && (
-              <div className="rounded-2xl border border-[#1e293b] bg-[#0f172a] p-6 text-center">
-                <MessageSquare className="w-8 h-8 mx-auto mb-3 text-violet-400" />
-                <h3 className="text-sm font-bold text-white mb-1">Keine Gesprächsvorbereitung</h3>
-                <p className="text-xs text-slate-500 mb-4">Noch keine Fragen generiert. Starte die Erstellung über den Button links.</p>
-                <ActionBtn
-                  pending={interviewMutation.isPending}
-                  disabled={!resumeId}
-                  onClick={() => interviewMutation.mutate()}
-                  icon={<MessageSquare className="h-4 w-4" />}
-                  pendingLabel="Wird erstellt…"
-                  label="Gesprächsvorbereitung erstellen"
-                  variant="primary"
-                />
-              </div>
-            )}
-
-            {/* ── Interview tab — with content ─────────────────────────────── */}
-            {activeTab === "interview" && interviewQA && (
-              <div className="space-y-3">
-                <AIDisclosureBanner feature="interview" />
-
-                {/* Toolbar: clickable filter tags + three-dot download menu */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {!questionsMinimized && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <button
-                        onClick={() => setActiveFilter(null)}
-                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
-                          activeFilter === null
-                            ? "border-white/20 bg-white/10 text-white"
-                            : "border-[#1e293b] bg-transparent text-slate-500 hover:text-white"
-                        }`}
-                      >
-                        Alle
-                      </button>
-                      {[...new Set(interviewQA.map(item => {
-                        const t = item.type || "";
-                        return TYPE_MAP[t] || TYPE_MAP[t.toLowerCase()] || t;
-                      }).filter(Boolean))].map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setActiveFilter(prev => prev === tag ? null : tag)}
-                          className={`rounded-full px-2.5 py-1 text-xs font-bold transition-all ${
-                            TAG_COLORS[tag] || "bg-[#1e293b] text-slate-300"
-                          } ${activeFilter === tag ? "ring-2 ring-current ring-offset-1 ring-offset-[#030712]" : "opacity-60 hover:opacity-100"}`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Minimize toggle + Three-dot menu grouped */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
-                    <button
-                      onClick={() => setQuestionsMinimized(v => !v)}
-                      className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-[#1e293b] bg-[#0f172a] px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:text-white"
-                      title={questionsMinimized ? "Fragen einblenden" : "Fragen ausblenden"}
-                    >
-                      {questionsMinimized ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-                    </button>
-
-                  {/* Three-dot menu — PDF / DOCX */}
-                  <div className="relative flex-shrink-0">
-                    <button
-                      onClick={() => setMoreMenuOpen(v => !v)}
-                      className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-[#1e293b] bg-[#0f172a] px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:text-white"
-                      title="Mehr Optionen"
-                    >
-                      <MoreHorizontal className="h-3.5 w-3.5" />
-                    </button>
-                    {moreMenuOpen && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setMoreMenuOpen(false)} />
-                        <div className="absolute right-0 z-20 mt-1 min-w-[150px] rounded-xl border border-[#1e293b] bg-[#030712] p-1.5 shadow-lg shadow-black/40">
-                          <button
-                            onClick={() => {
-                              setMoreMenuOpen(false);
-                              printHtml("Gesprächsvorbereitung", `<h1>${escapeHtml(job.role || "Stelle")}</h1><p>${escapeHtml(job.company || "")}</p>${interviewQA.map((item, i) =>
-                                `<div style="margin-bottom:24px;"><b>F${i+1}: ${escapeHtml(item.question)}</b><p>${escapeHtml(item.answer)}</p>${item.tip ? `<p style="color:#92400e;background:#fef3c7;padding:8px;border-radius:4px;"><b>Tipp:</b> ${escapeHtml(item.tip)}</p>` : ""}</div>`
-                              ).join("<hr>")}`)
-                            }}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/10"
-                          >
-                            <Download className="h-3.5 w-3.5" /> PDF
-                          </button>
-                          <button
-                            onClick={() => {
-                              setMoreMenuOpen(false);
-                              downloadDoc(interviewQA.map((item, i) => `F${i+1}: ${item.question}\n\nAntwort:\n${item.answer}${item.tip ? `\n\nTipp: ${item.tip}` : ""}`).join("\n\n----\n\n"), `Gespräch_${job.company || "Bewerbung"}.doc`);
-                            }}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-brand-300 transition-colors hover:bg-brand-500/10"
-                          >
-                            <Download className="h-3.5 w-3.5" /> DOCX
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  </div>
-                </div>
-
-                {/* Accordion question cards */}
-                {!questionsMinimized && interviewQA.map((item, index) => {
-                  const type = TYPE_MAP[item.type] || TYPE_MAP[(item.type || "").toLowerCase()] || item.type;
-                  if (activeFilter && type !== activeFilter) return null;
-                  const isExpanded = expandedQuestion === index;
-                  const isDone = completedQuestions.has(index);
-                  return (
-                    <div
-                      key={index}
-                      className={`overflow-hidden rounded-2xl border transition-all duration-200 ${
-                        isExpanded ? "border-[#1e293b] bg-[#0f172a] shadow-md shadow-black/30" : "border-[#1e293b] bg-[#030712]"
-                      } ${isDone ? "opacity-55" : ""}`}
-                    >
-                      <button
-                        onClick={() => setExpandedQuestion(isExpanded ? null : index)}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left min-h-[44px]"
-                      >
-                        {/* Completion checkbox */}
-                        <span
-                          role="checkbox"
-                          aria-checked={isDone}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCompletedQuestions(prev => {
-                              const next = new Set(prev);
-                              next.has(index) ? next.delete(index) : next.add(index);
-                              return next;
-                            });
-                          }}
-                          className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
-                            isDone ? "border-emerald-500 bg-emerald-500" : "border-[#334155] hover:border-emerald-500/50"
-                          }`}
-                        >
-                          {isDone && <Check className="h-2.5 w-2.5 text-white" />}
-                        </span>
-
-                        {/* ID + truncated question + tag */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="flex-shrink-0 text-xs font-bold text-slate-500">F{index + 1}</span>
-                            <p className="text-sm font-semibold text-slate-100 leading-snug">{item.question}</p>
-                          </div>
-                          <span
-                            role="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveFilter(prev => prev === type ? null : type);
-                            }}
-                            className={`cursor-pointer rounded-full px-2 py-0.5 text-xs font-bold transition-all ${
-                              TAG_COLORS[type] || "bg-[#1e293b] text-slate-300"
-                            } ${activeFilter === type ? "ring-1 ring-current" : "opacity-80 hover:opacity-100"}`}
-                          >
-                            {type}
-                          </span>
-                        </div>
-
-                        <ChevronDown className={`h-4 w-4 flex-shrink-0 text-slate-500 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                      </button>
-
-                      {isExpanded && (
-                        <div className="space-y-3 border-t border-[#1e293b] bg-[#0f172a] px-5 py-4">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Vorgeschlagene Antwort</p>
-                            <p className="text-sm leading-relaxed text-slate-300">{item.answer}</p>
-                          </div>
-                          {item.tip && (
-                            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-                              <p className="text-xs font-bold text-amber-400 mb-1">TIPP</p>
-                              <p className="text-sm text-amber-200">{item.tip}</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Persönliche Notizen</p>
-                            <textarea
-                              value={personalNotes[index] || ""}
-                              onChange={(e) => setPersonalNotes(prev => ({ ...prev, [index]: e.target.value }))}
-                              onClick={(e) => e.stopPropagation()}
-                              placeholder="Eigene Notizen, Beispiele, Stichworte…"
-                              rows={3}
-                              className="w-full resize-y rounded-xl border border-[#243041] bg-[#030712] px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-brand-500/30 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-[#1e293b] [&::-webkit-scrollbar-thumb]:rounded-full"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* ── Cover Letter Modal ──────────────────────────────────────────────── */}
-      {coverLetterModalOpen && job?.cover_letter && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setCoverLetterModalOpen(false); }}
-        >
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-[#1e293b] bg-[#0f172a] shadow-2xl shadow-black/60">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1e293b] px-5 py-4">
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-5 w-5 flex-shrink-0 text-emerald-400" />
-                <h2 className="truncate text-base font-bold text-white">
-                  Anschreiben{job.company ? ` — ${job.company}` : ""}
-                </h2>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => { navigator.clipboard.writeText(job.cover_letter); setCopiedIndex(-1); setTimeout(() => setCopiedIndex(null), 2000); toast.success("Kopiert!"); }}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#1e293b] bg-[#030712] px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white min-h-[44px]"
-                >
-                  {copiedIndex === -1 ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copiedIndex === -1 ? "Kopiert" : "Kopieren"}
-                </button>
-                {(() => {
-                  const companyEmail = parseJson(job.research_data)?.contact_info?.email;
-                  const subject = encodeURIComponent(`Bewerbung als ${job.role || "Kandidat"} – ${job.company || ""}`);
-                  const body = encodeURIComponent(job.cover_letter || "");
-                  if (companyEmail) {
-                    return (
-                      <a
-                        href={`mailto:${companyEmail}?subject=${subject}&body=${body}`}
-                        className="flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors min-h-[44px]"
-                      >
-                        <Mail className="h-3.5 w-3.5" /> E-Mail senden
-                      </a>
-                    );
-                  }
-                  return (
-                    <a
-                      href={`mailto:?subject=${subject}&body=${body}`}
-                      className="flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors min-h-[44px]"
-                    >
-                      <Mail className="h-3.5 w-3.5" /> E-Mail Entwurf
-                    </a>
-                  );
-                })()}
-                <DownloadBtn kind="TXT" onClick={() => downloadTxt(job.cover_letter, `Anschreiben_${job.company || "Bewerbung"}.txt`)} />
-                <DownloadBtn kind="PDF" variant="red" onClick={() => printHtml("Anschreiben", `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(job.cover_letter)}</pre>`)} />
-                <DownloadBtn kind="DOCX" variant="brand" onClick={() => downloadDoc(job.cover_letter, `Anschreiben_${job.company || "Bewerbung"}.doc`)} />
-                <button
-                  onClick={() => setCoverLetterModalOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-[#1e293b] hover:text-white"
-                  aria-label="Schließen"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#1e293b] [&::-webkit-scrollbar-thumb]:rounded-full">
-              <AIDisclosureBanner feature="cover_letter" />
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{job.cover_letter}</p>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* ── Body ───────────────────────────────────────────────────────────── */}
+      <div className="max-w-[760px] mx-auto pt-8 pb-16">
 
-      {/* ── Research modal ──────────────────────────────────────────────────── */}
-      {researchOpen && (
+        {/* Identity + role title (matches demo: logo on left, role sans-serif h1) */}
+        <div className="flex items-start gap-4">
+          <CompanyLogo company={job.company} url={job.url} />
+          <div className="min-w-0 flex-1">
+            {job.category ? (
+              <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-accent-300)] font-semibold">
+                {categoryLabel(job.category)}
+                {job.job_type ? ` · ${job.job_type}` : ""}
+              </p>
+            ) : null}
+            <h1
+              className="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)] break-words"
+              style={{ letterSpacing: "-0.025em" }}
+            >
+              {job.role || "Ohne Titel"}
+            </h1>
+            <p className="mt-1.5 text-[13px] text-[var(--color-fg-muted)] leading-snug">
+              {job.company || "—"}
+              {job.location ? ` · ${job.location}` : ""}
+              {job.salary_text && !salary ? ` · ${job.salary_text}` : ""}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick actions — 2×3 grid */}
+        <div className="mt-5 grid grid-cols-2 lg:grid-cols-3 gap-2">
+          {/* Row 1: AI/analysis actions — subtle tints */}
+          <button
+            type="button"
+            onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) coverLetterMutation.mutate(); else setEditOpen(true); }}
+            disabled={coverLetterMutation.isPending}
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]"
+            style={{ background: "rgba(124,125,240,0.07)", borderColor: "rgba(124,125,240,0.22)", color: "var(--color-accent-300)" }}
+          >
+            <FileText className="w-3 h-3" />
+            {coverLetterMutation.isPending ? "Wird erstellt…" : job.cover_letter ? "Anschreiben ansehen" : "Anschreiben erstellen"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setInterviewOpen(true)}
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]"
+            style={{ background: "rgba(96,165,250,0.07)", borderColor: "rgba(96,165,250,0.22)", color: "#93c5fd" }}
+          >
+            <MessageSquare className="w-3 h-3" />
+            Vorbereitung
+          </button>
+          <button
+            type="button"
+            onClick={() => { if (resumeId) matchMutation.mutate(); else toast.error("Wähle zuerst einen Lebenslauf — klick auf \"Lebenslauf wählen\""); }}
+            disabled={matchMutation.isPending}
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]"
+            style={{ background: "rgba(74,222,128,0.07)", borderColor: "rgba(74,222,128,0.22)", color: "#86efac" }}
+          >
+            {matchMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <SearchCheck className="w-3 h-3" />}
+            {matchMutation.isPending ? "Wird berechnet…" : "Passung prüfen"}
+          </button>
+          {/* Row 2: utility actions — neutral */}
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]"
+            style={{ background: "rgba(167,139,250,0.07)", borderColor: "rgba(167,139,250,0.22)", color: "#c4b5fd" }}
+          >
+            <FileText className="w-3 h-3" />
+            Lebenslauf wählen
+          </button>
+          <button
+            type="button"
+            onClick={handleResearch}
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]"
+            style={{ background: "rgba(56,189,248,0.07)", borderColor: "rgba(56,189,248,0.22)", color: "#7dd3fc" }}
+          >
+            <SearchCheck className="w-3 h-3" />
+            Recherche
+          </button>
+          <button
+            type="button"
+            onClick={() => setSalaryCompareOpen(true)}
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]"
+            style={{ background: "rgba(251,191,36,0.07)", borderColor: "rgba(251,191,36,0.22)", color: "#fde68a" }}
+          >
+            <BarChart2 className="w-3 h-3" />
+            Gehaltsvergleich
+          </button>
+        </div>
+
+
+        {/* Story hero — always renders when salary is parseable (hourly,
+            monthly, or annual). This is THE serif moment of the page. */}
+        {salary ? (
+          <section className="mt-7">
+            <p className={ANNOT}>
+              {salary.unit === "hour"  ? "Verdienst pro Stunde"
+              : salary.unit === "month" ? "Verdienst pro Monat"
+              : "Jahresgehalt"}
+            </p>
+            <div className="mt-2 flex items-baseline gap-3 flex-wrap">
+              <p
+                className="leading-none text-[var(--color-fg)]"
+                style={{
+                  fontFamily: '"Instrument Serif", ui-serif, Georgia, serif',
+                  fontSize: "clamp(48px, 8.5vw, 84px)",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {salary.unit === "hour" ? (
+                  <>
+                    €{Math.trunc(salary.amount)}
+                    <span className="text-[var(--color-fg-dim)]">
+                      ,{String(Math.round((salary.amount - Math.trunc(salary.amount)) * 100)).padStart(2, "0")}
+                    </span>
+                  </>
+                ) : salary.max ? (
+                  <>
+                    €{Math.round(salary.amount / 1000)}k
+                    <span className="text-[var(--color-fg-dim)]"> – </span>
+                    €{Math.round(salary.max / 1000)}k
+                  </>
+                ) : (
+                  <>€{Math.round(salary.amount / 1000)}k</>
+                )}
+              </p>
+              <p className="text-[14px] text-[var(--color-fg-muted)] pb-2">
+                {salary.unit === "hour"  ? `/Stunde · KV ${categoryLabel(job.category)}`
+                : salary.unit === "month" ? "/Monat brutto"
+                : "/Jahr brutto"}
+              </p>
+            </div>
+            {salary.unit === "hour" && monthlyEst ? (
+              <p className="mt-3 text-[14px] text-[var(--color-fg-muted)] leading-relaxed max-w-md">
+                Bei <span className="text-[var(--color-fg)]">8 Stunden pro Woche</span> sind das rund{" "}
+                <span className="text-[var(--color-fg)]">€{monthlyEst} im Monat</span> — ohne Sonn- oder Feiertagszuschlag.
+              </p>
+            ) : salary.unit === "year" && salary.hourly ? (
+              <p className="mt-3 text-[14px] text-[var(--color-fg-muted)] leading-relaxed max-w-md">
+                Entspricht ungefähr <span className="text-[var(--color-fg)]">€{salary.hourly.toFixed(2)}/Stunde</span>{" "}
+                bei 38,5 h/Woche.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* KPI tiles — auto-fit row */}
+        {showKpis ? (
+          <section className="mt-6 flex flex-wrap gap-3">
+            {job.location ? (
+              <KpiTile
+                label="Standort"
+                value={city || job.location}
+                hint={locRest || null}
+              />
+            ) : null}
+            {job.category ? (
+              <KpiTile
+                label="Typ"
+                value={categoryLabel(job.category)}
+                hint={job.job_type || null}
+              />
+            ) : null}
+            {showDeadline ? (
+              <KpiTile
+                label="Frist"
+                tone={deadlineWarn ? "warn" : "default"}
+                value={
+                  deadlineDays >= 0
+                    ? <>{deadlineDays}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1">Tage</span></>
+                    : <>{Math.abs(deadlineDays)}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1">T überfällig</span></>
+                }
+                hint={job.deadline ? new Date(job.deadline).toLocaleDateString("de-AT") : (job.expires_at ? new Date(job.expires_at).toLocaleDateString("de-AT") : null)}
+              />
+            ) : null}
+            {job.salary_text && !salary ? (
+              <KpiTile
+                label="Gehalt"
+                value={job.salary_text}
+              />
+            ) : null}
+            {daysSaved !== null ? (
+              <KpiTile
+                label="Gespeichert"
+                value={<>{daysSaved}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1">T</span></>}
+                hint={savedAt ? `am ${new Date(savedAt).toLocaleDateString("de-AT", { day: "2-digit", month: "numeric" })}` : null}
+              />
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* KV bar — uses parsed hourly equivalent (hourly directly, or
+            annual/monthly normalised via the 38.5 h/wk baseline). */}
+        {salary?.hourly ? (
+          <section className="mt-4">
+            <KvBar hourly={salary.hourly} kvMin={kvMin} category={job.category} />
+          </section>
+        ) : null}
+
+        {/* Ähnliche Stellen — salary comparison vs other saved jobs */}
+        {salary?.hourly ? (
+          <section className="mt-4">
+            <SimilarJobsCard currentHourly={salary.hourly} jobs={allJobs} currentId={jobId} />
+          </section>
+        ) : null}
+
+        {/* KV estimate — only when no salary is stated */}
+        {!salary && (
+          <section className="mt-4">
+            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                <p className={ANNOT}>Gehalt · Einschätzung</p>
+                <span className="text-[11px] text-[var(--color-fg-dim)]">KV Angestellte 2024</span>
+              </div>
+              <div className="px-5 py-5">
+                <p className="text-[12px] text-[var(--color-fg-dim)] mb-4">
+                  Kein Gehalt angegeben — Richtwert laut Kollektivvertrag:
+                </p>
+                <div className="flex items-end gap-5 mb-5">
+                  <p
+                    className="leading-none"
+                    style={{ fontFamily: '"Instrument Serif", ui-serif, Georgia, serif', fontSize: "52px", letterSpacing: "-0.02em", color: "var(--color-warning)" }}
+                  >
+                    €{kvMin.toFixed(2)}<span className="text-[20px] text-[var(--color-fg-dim)] ml-1.5">/h</span>
+                  </p>
+                  {kvMonthly ? (
+                    <div className="pb-1">
+                      <p className="text-[14px] font-semibold text-[var(--color-fg)]">≈ €{kvMonthly} / Monat</p>
+                      <p className="text-[12px] text-[var(--color-fg-dim)] mt-0.5">bei 15 h / Woche</p>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="h-1.5 rounded-full bg-white/[0.06] relative mb-2">
+                  <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: "49%", background: "var(--color-warning)" }} />
+                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[var(--color-fg)] ring-2 ring-[var(--color-bg)]" style={{ left: "49%" }} />
+                </div>
+                <div className="flex justify-between tabular-nums text-[11px] text-[var(--color-fg-dim)]">
+                  <span>€9,27 gesetzl. Minimum</span>
+                  <span className="font-medium" style={{ color: "var(--color-warning)" }}>€{kvMin.toFixed(2)} KV-Richtwert</span>
+                  <span>€14,00 Top 10 %</span>
+                </div>
+                <p className="mt-3 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">
+                  <Info className="w-2.5 h-2.5" aria-hidden="true" />
+                  Schätzung auf Basis des KV (WKO, 01/2024) — keine Firmenangabe.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Match card — only rendered after user explicitly triggers Passung prüfen */}
+        {job.match_feedback && (
+          <section ref={matchCardRef} className="mt-4">
+            <MatchCard
+              score={job.match_score}
+              feedbackJson={job.match_feedback}
+              onCheckFit={() => resumeId ? matchMutation.mutate() : setEditOpen(true)}
+              onCheckFitPending={matchMutation.isPending}
+              resumeId={resumeId}
+            />
+          </section>
+        )}
+
+        {/* Empfohlene Kurse */}
+        <section className="mt-4">
+          <CoursesCard
+            job={job}
+            resumeId={resumeId}
+            onOpenEdit={() => setEditOpen(true)}
+            onGenerate={() => coursesMutation.mutate()}
+            generating={coursesMutation.isPending}
+          />
+        </section>
+
+        {/* Kontext footer */}
+        <section className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-5">
+          <p className={ANNOT}>Einschätzung</p>
+          <p className="mt-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
+            Rückmeldungen dauern bei {job.company || "den meisten Betrieben"} erfahrungsgemäß{" "}
+            <span className="text-[var(--color-fg)]">7–14 Werktage</span>.
+            Keine Antwort in dieser Zeit ist häufig und sagt nichts über deine Bewerbung aus.
+          </p>
+        </section>
+
+        {/* Notizen — inline card */}
+        {job.notes ? (
+          <section className="mt-4">
+            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+              <div className="px-5 py-3 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                <p className={ANNOT}>Notizen</p>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="text-[11.5px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+                >
+                  Bearbeiten
+                </button>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-[13px] text-[var(--color-fg-muted)] leading-relaxed italic">{job.notes}</p>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* Beschreibung — collapsed */}
+        {job.description ? (
+          <section className="mt-4">
+            <details className="group rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]">
+              <summary className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-5 py-3.5 cursor-pointer list-none">
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--color-fg-dim)] group-open:rotate-90 transition-transform" aria-hidden="true" />
+                <p className={ANNOT}>Stellenbeschreibung</p>
+                <span className="text-[11px] text-[var(--color-fg-dim)]">Einblenden</span>
+              </summary>
+              <DescriptionBody text={job.description} />
+            </details>
+          </section>
+        ) : null}
+
+        {/* Primary actions */}
+        <section className="mt-8 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => {
+              if (job.cover_letter) setCoverLetterOpen(true);
+              else if (resumeId) coverLetterMutation.mutate();
+              else setEditOpen(true);
+            }}
+            disabled={coverLetterMutation.isPending}
+            className="flex-1 min-w-[200px] h-11 px-5 rounded-xl bg-[var(--color-accent-500)] text-white font-semibold text-[13.5px] inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+          >
+            {coverLetterMutation.isPending ? (
+              <><Spinner /> Wird erstellt…</>
+            ) : job.cover_letter ? (
+              <><FileText className="w-4 h-4" /> Anschreiben ansehen</>
+            ) : (
+              <><FileText className="w-4 h-4" /> Bewerbung schreiben</>
+            )}
+          </button>
+          {job.url ? (
+            <button
+              type="button"
+              onClick={() => {
+                window.open(job.url, "_blank", "noopener,noreferrer");
+                toast(
+                  (t) => (
+                    <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                      <span>Nicht mehr verfügbar?</span>
+                      <button
+                        onClick={() => { toast.dismiss(t.id); deleteMutation.mutate(); }}
+                        style={{ fontWeight: 600, color: "#ef4444", background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 13 }}
+                      >Stelle entfernen</button>
+                      <button
+                        onClick={() => toast.dismiss(t.id)}
+                        style={{ color: "#71717a", background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 12 }}
+                      >✕</button>
+                    </span>
+                  ),
+                  { duration: 9000 },
+                );
+              }}
+              className={`h-11 px-5 rounded-xl border text-[13.5px] inline-flex items-center justify-center gap-1.5 transition-colors ${
+                urlExpired
+                  ? "border-[var(--color-warning)]/40 text-[var(--color-warning)] hover:bg-[var(--color-warning-soft)]"
+                  : "border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)]"
+              }`}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              {urlExpired ? "Abgelaufen — Anzeige öffnen" : "Stellenanzeige"}
+            </button>
+          ) : null}
+        </section>
+      </div>
+    </div>
+
+      {/* ── Modals & sheets ────────────────────────────────────────────────── */}
+      <BearbeitenSheet
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        job={job}
+        resumes={resumes}
+        selectedResume={resumeId}
+        onChangeResume={setSelectedResume}
+        onSaveMeta={(payload) => updateMetaMutation.mutate(payload)}
+        savingMeta={updateMetaMutation.isPending}
+      />
+
+      <InterviewSheet
+        open={interviewOpen}
+        onClose={() => setInterviewOpen(false)}
+        job={job}
+        mutate={interviewMutation.mutate}
+        pending={interviewMutation.isPending}
+        resumeId={resumeId}
+        escapeHtmlFn={escapeHtml}
+      />
+
+      <CoverLetterModal
+        open={coverLetterOpen}
+        onClose={() => setCoverLetterOpen(false)}
+        job={job}
+      />
+
+      {researchOpen ? (
         <ResearchModal
           companyName={job.company || ""}
           data={researchData}
@@ -1376,16 +2012,22 @@ export default function JobDetailPage() {
               setResearchData(res.data);
               updateJobCaches({ ...job, research_data: JSON.stringify(res.data) });
             } catch (err) {
-              if (!(err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") && err.response?.status !== 429)
+              if (!(err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") && err.response?.status !== 429) {
                 toast.error(getApiErrorMessage(err, "Recherche fehlgeschlagen"));
+              }
             } finally { setResearchLoading(false); }
           }}
           onClose={() => { setResearchOpen(false); setResearchData(null); }}
         />
-      )}
+      ) : null}
 
-      {/* ── EU AI Act Transparency Footer (sticky) ─────────────────────────── */}
-      <TransparencyFooter visible={hasAiContent} />
+      <SalaryCompareModal
+        open={salaryCompareOpen}
+        onClose={() => setSalaryCompareOpen(false)}
+        currentJob={job}
+        allJobs={allJobs}
+      />
     </>
   );
 }
+

@@ -97,10 +97,12 @@ residual risk an on-call engineer should remember.
 
 | Threat | Mitigation | Residual risk |
 |---|---|---|
-| Refresh-token theft via XSS | Refresh token is HttpOnly cookie. Access token lives in `localStorage` (necessary for cross-tab sync), so XSS = full session compromise for ≤ 30 min until refresh fails on the missing cookie origin. | Mitigate by keeping CSP tight (still TODO — see §3). Never embed user-supplied HTML. |
+| Refresh-token theft via XSS | Refresh token is HttpOnly cookie. Access token lives in `localStorage` (necessary for cross-tab sync), so XSS = full session compromise for ≤ 30 min. **Mitigated** by strict CSP on the SPA (`vercel.json` line 16: `script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.sentry.io …; object-src 'none'; base-uri 'self'`) and on the API (`backend/app/middleware.py:65` — `default-src 'none'; frame-ancestors 'none'`). | `'unsafe-inline'` is still in `script-src` because the React build inlines small chunks; a nonce-based CSP is the next ratchet. Never embed user-supplied HTML. |
 | Direct DB dump | DB lives on Render with managed backups + at-rest encryption. Admin access is gated by Render org SSO. | Render IAM changes need a quarterly audit. |
-| Logs containing PII | Structured logging filters `password`, `token`, `secret` keys; request bodies are not logged. | New code can still log user input; review at PR time. |
-| Avatar exposure via predictable URL | Avatars are stored as base64 inside the user's profile row (no public URL). | Eats DB rows; consider migrating to object storage with signed URLs if avatars become large or shared. |
+| PII in **Sentry** payloads | `backend/app/core/monitoring.py` `before_send` hook (`_scrub_event`) strips `Authorization`, `Cookie`, `Set-Cookie`, `x-admin-secret`, `password`, `token`, `refresh_token`, `secret`, `api_key`, `stripe_*`, `groq_api_key`, JWTs, and Stripe-style secret patterns from headers, request body, query, breadcrumbs, exception values, and `user.ip_address` / `user.email`. `send_default_pii=False`. | Hook is best-effort; any exception inside it drops the event entirely (safer than leaking). New SDK integrations need re-verification. |
+| PII in **stdout / structured logs** | `backend/app/core/logging.py` `SecretRedactingFilter` scrubs every record (message, %-args, `extra={}` fields) using the same `SENSITIVE_KEYS` + `SECRET_VALUE_PATTERNS` as the Sentry hook — both share `backend/app/core/redaction.py`. Locked by `backend/tests/test_redaction.py` (22 cases incl. case-insensitive key match, nested dicts/lists, JWT/Stripe/Groq value patterns, non-mutation, request-id preservation). | A custom log formatter that bypasses the root handler would also bypass redaction; new handlers must add the filter explicitly. New secret patterns / key names need adding to `redaction.py`. |
+| Avatar exposure | Avatars are stored as base64 inside `user_profiles.avatar` (`Text` column), retrievable only via the authenticated profile API; never served from a public URL. | Eats DB rows + cache lines on every profile read; migrate to object storage with signed URLs if avatars grow past ~50 KB median. |
+| Browser fingerprint disclosure | `users.fingerprint` (`@fingerprintjs/fingerprintjs` v5) is stored hashed, used only as a soft signal for account-security heuristics. Never returned in API responses. | Recital-30 personal data under GDPR — must be listed in `PRIVACY_POLICY.md` (it is) and erased on account delete (it is — `ON DELETE CASCADE` from `users`). |
 | 3rd-party data sharing (Groq, Adzuna, Stripe) | Documented in `PRIVACY_POLICY.md` § "Subprocessors". | Each new subprocessor needs a contract review + privacy-policy update. |
 | Email enumeration on `/auth/register` and `/auth/forgot-password` | Both endpoints return uniform "check your email" responses; no leak of whether the address is registered. | None significant. |
 
@@ -109,7 +111,7 @@ residual risk an on-call engineer should remember.
 | Threat | Mitigation | Residual risk |
 |---|---|---|
 | Brute-force login | `slowapi` `Limiter` on `/auth/login`. Failed attempts return 401 + delayed response. | Distributed credential-stuffing attack can still saturate; rely on Render's edge. |
-| Resource exhaustion via AI endpoints | Per-feature daily quotas enforced at request time (`app/services/usage_service.py`). Per-request timeout `TIMEOUT_AI_MS=90s` on the client; backend timeouts on the Groq SDK. | A single user on the Max plan can still burn Groq budget — set per-plan upstream limits in Groq dashboard. |
+| Resource exhaustion via AI endpoints | Per-feature daily/monthly quotas enforced at request time via `require_usage` / `get_usage_count` / `increment_usage` in `backend/app/core/usage.py`. Per-request timeout `TIMEOUT_AI_MS=90s` on the client (`frontend/src/services/api.js`); the Groq SDK uses its own connection timeout. | A single user on the Max plan can still burn Groq budget — set per-plan upstream limits in the Groq dashboard. |
 | Job-create flood | `MAX_JOBS_PER_USER = 500` enforced in `create_job`; surfaced as a 403 with structured payload. | None significant. |
 | Adzuna upstream meltdown | Adzuna client wraps a circuit breaker; failures return `{"jobs": [], "error": ...}` instead of cascading 500s (`app/services/job_search.py`). | If circuit stays open, scheduled alerts produce empty results — surfaced on `/health/dependencies?deep=true`. |
 | Scheduler thunder (multi-worker) | Postgres advisory locks (`app/core/advisory_lock.py`) wrap every scheduled job so only one worker runs each tick. | Cron expressions are still in code; a misconfigured cron will hit DB harder than expected. |
@@ -131,21 +133,33 @@ residual risk an on-call engineer should remember.
 These are not actively exploited, but they sit on the security backlog and
 should be addressed in priority order:
 
-1. **Content Security Policy** — no `Content-Security-Policy` header is
-   set by the backend or by Vercel. With access tokens in `localStorage`,
-   a single XSS = full session compromise. Adopt a strict
-   `script-src 'self'; object-src 'none'; base-uri 'none'` once the SPA
-   build stops requiring inline scripts.
-2. **Subresource Integrity** for any third-party CDN scripts. None today,
-   but Stripe.js loaded from `js.stripe.com` should pin a SRI hash.
-3. **SECURITY.md disclosure policy** — publish a contact + GPG key.
-4. **Per-tenant key derivation for resume text** — currently encrypted only
+1. **CSP `script-src` nonce/hash** — current SPA policy in `vercel.json` allows
+   `'unsafe-inline'` for scripts because the Vite/React build inlines
+   chunks. Switch to nonce-based or hash-based CSP when the build pipeline
+   supports it. Also wire `report-uri` / `Reporting-Endpoints` so violations
+   are visible.
+2. **Subresource Integrity** on `js.stripe.com` and any future CDN script
+   tag. None pinned today; review `frontend/index.html` and any inline
+   `<script src>` injection paths.
+3. **Per-tenant key derivation for resume text** — currently encrypted only
    at rest by the DB. Field-level encryption (envelope encryption with a
    per-user key) is the natural next step for enterprise customers.
-5. **Audit log retention policy** — agreed and documented (e.g. 365 days
+4. **Audit log retention policy** — agreed and documented (e.g. 365 days
    hot, 7 years cold). Today retention is implicit.
-6. **2FA / WebAuthn** — not implemented. Stripe already enforces 2FA on
+5. **2FA / WebAuthn** — not implemented. Stripe already enforces 2FA on
    the billing side; user login does not.
+6. **Body-size limit / multipart limits** — enforced by
+   `backend/app/middleware.py`; re-validate the constant against expected
+   resume sizes when bumping CV upload limits.
+
+**Resolved in this pass (no longer backlog):**
+
+- *Stdout / structured-log redaction filter.* Implemented as
+  `SecretRedactingFilter` in `backend/app/core/logging.py`, sharing
+  primitives with the Sentry scrubber via `backend/app/core/redaction.py`.
+  Test coverage: `backend/tests/test_redaction.py`.
+- *`SECURITY.md` at the repo root.* Disclosure policy + scope + safe-harbour
+  clause now live in `/SECURITY.md`.
 
 ---
 
@@ -175,3 +189,5 @@ If you suspect a live incident:
 | Date | Change |
 |---|---|
 | 2026-05-14 | Initial version. STRIDE table calibrated against the codebase as of the `SAAS_HARDENING_CHANGES.md` rev. |
+| 2026-05-15 | Corrected three inaccuracies from the initial pass: (a) usage path `app/services/usage_service.py` → `app/core/usage.py`; (b) log-redaction claim split into the real Sentry hook (`monitoring.py`) vs the stdout logger (does **not** redact — moved to backlog §3.2); (c) CSP de-listed from open items — it is set by both `vercel.json` and `backend/app/middleware.py`. Added `fingerprint` and refined avatar disclosure rows. |
+| 2026-05-15 | Closed backlog item §3.2: implemented `SecretRedactingFilter` in `app/core/logging.py` plus shared primitives in `app/core/redaction.py`, refactored `app/core/monitoring.py` to consume them. Added `backend/tests/test_redaction.py` (22 cases). Threat-model PII-in-stdout row updated from "discipline-only" to a real mitigation. SECURITY.md disclosure policy also closed. |

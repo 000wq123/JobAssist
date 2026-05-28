@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lebenslauf · Focus-mode onboarding · Mobile demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#09090b;
+    --surface:#111113;
+    --surface-2:#18181b;
+    --surface-3:#1f1f23;
+    --line:rgba(255,255,255,0.06);
+    --line-2:rgba(255,255,255,0.10);
+    --line-3:rgba(255,255,255,0.16);
+    --ink:#fafafa;
+    --mute:#a1a1aa;
+    --dim:#71717a;
+    --faint:#52525b;
+    --accent:#7c7df0;
+    --accent-soft:rgba(124,125,240,0.14);
+    --accent-border:rgba(124,125,240,0.40);
+    --ok:#86efac;
+    --ok-soft:rgba(134,239,172,0.10);
+    --ok-border:rgba(134,239,172,0.30);
+    --hot:#f97366;
+    --hot-soft:rgba(249,115,102,0.12);
+    --hot-border:rgba(249,115,102,0.35);
+  }
+  html, body { background:#000; font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:#d4d4d8; }
+  .ff-serif { font-family:'Instrument Serif', ui-serif, Georgia, serif; letter-spacing:0.01em; }
+  .ff-mono { font-family:'JetBrains Mono', ui-monospace, monospace; font-feature-settings:"tnum","ss01"; }
+
+  /* Phone frame */
+  .phone {
+    width:390px; height:844px; background:var(--bg); border-radius:46px;
+    box-shadow:0 0 0 12px #1c1c1f, 0 0 0 13px #3a3a3d, 0 50px 100px -30px rgba(0,0,0,0.7);
+    overflow:hidden; position:relative; flex-shrink:0;
+  }
+  .phone-screen { width:100%; height:100%; overflow-y:auto; overflow-x:hidden; position:relative; }
+  .phone-screen::-webkit-scrollbar { width:0; }
+  .notch { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:128px; height:32px; background:#000; border-radius:20px; z-index:50; }
+  .status-bar { padding:14px 28px 4px; display:flex; justify-content:space-between; align-items:center; color:var(--ink); font-size:14px; font-weight:600; }
+  .status-bar .right { display:flex; align-items:center; gap:6px; font-size:13px; }
+
+  /* Header (back arrow + dot progress) */
+  .head { padding:14px 22px 10px; display:flex; align-items:center; gap:14px; }
+  .iconbtn { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; color:var(--mute); border:1px solid var(--line); background:transparent; }
+  .iconbtn:hover { color:var(--ink); border-color:var(--line-2); }
+  .iconbtn:disabled { opacity:0.3; cursor:not-allowed; }
+  .dots { flex:1; display:flex; align-items:center; gap:5px; }
+  .dot { flex:1; height:3px; border-radius:999px; background:rgba(255,255,255,0.08); transition:background .25s ease; }
+  .dot.past { background:rgba(255,255,255,0.30); }
+  .dot.now  { background:var(--accent); }
+  .step-num { font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dim); letter-spacing:0.02em; min-width:42px; text-align:right; }
+
+  /* Question typography */
+  .q-wrap { padding:32px 28px 0; }
+  .q { font-family:'Instrument Serif', ui-serif, Georgia, serif; font-size:34px; line-height:1.10; color:var(--ink); letter-spacing:0.005em; }
+  .q-hint { margin-top:12px; font-size:13.5px; color:var(--mute); line-height:1.5; max-width:32ch; }
+
+  /* Inputs */
+  .field { width:100%; height:54px; background:var(--surface); border:1px solid var(--line-2); color:var(--ink); border-radius:14px; padding:0 18px; font-size:16px; outline:none; transition:border-color .15s ease, background .15s ease; }
+  .field::placeholder { color:var(--faint); }
+  .field:focus { border-color:var(--accent-border); background:var(--surface-2); }
+  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .row-plz-ort { display:grid; grid-template-columns:110px 1fr; gap:10px; }
+
+  /* Chips */
+  .chip-grid { display:grid; gap:10px; }
+  .chip-grid.cols-2 { grid-template-columns:1fr 1fr; }
+  .chip-grid.cols-3 { grid-template-columns:repeat(3, 1fr); }
+  .chip-grid.flow { display:flex; flex-wrap:wrap; gap:8px; }
+  .opt {
+    min-height:52px; padding:0 18px; border-radius:14px;
+    background:var(--surface); border:1px solid var(--line-2); color:var(--ink);
+    font-size:14.5px; font-weight:500; letter-spacing:0.005em;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition:all .15s ease;
+    cursor:pointer;
+  }
+  .opt:hover { border-color:var(--line-3); background:var(--surface-2); }
+  .opt.selected {
+    background:var(--accent-soft);
+    border-color:var(--accent-border);
+    color:var(--ink);
+  }
+  .opt.flow-chip { min-height:38px; padding:0 14px; border-radius:999px; font-size:13.5px; }
+
+  /* Primary CTA bar */
+  .cta-bar {
+    position:absolute; left:0; right:0; bottom:0;
+    padding:18px 22px 28px;
+    background:linear-gradient(180deg, rgba(9,9,11,0) 0%, rgba(9,9,11,0.85) 30%, var(--bg) 70%);
+  }
+  .btn-primary {
+    width:100%; height:54px; border-radius:14px;
+    background:var(--ink); color:#0b0b10;
+    font-weight:600; font-size:15px; letter-spacing:0.02em;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:0; cursor:pointer; transition:transform .12s ease, opacity .15s ease;
+  }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .btn-primary:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+  .btn-primary.accent { background:var(--accent); color:#0b0b14; }
+  .btn-skip { display:block; margin:10px auto 0; background:transparent; border:0; color:var(--dim); font-size:12.5px; padding:6px 10px; cursor:pointer; }
+  .btn-skip:hover { color:var(--mute); }
+
+  /* Slide animation */
+  .scene { position:absolute; inset:0; display:flex; flex-direction:column; opacity:0; transform:translateX(24px); transition:opacity .28s ease, transform .28s ease; pointer-events:none; }
+  .scene.active { opacity:1; transform:translateX(0); pointer-events:auto; }
+  .scene.exit-left { transform:translateX(-24px); opacity:0; }
+  .body { flex:1; padding-bottom:130px; }
+  .body-pad { padding:0 28px; margin-top:28px; }
+
+  /* Eyebrow & misc */
+  .eyebrow { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--dim); font-weight:600; }
+  .pill-info { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; background:var(--surface); border:1px solid var(--line); border-radius:999px; font-size:11.5px; color:var(--mute); }
+  .pill-info .dot-info { width:6px; height:6px; border-radius:999px; background:var(--accent); }
+
+  /* Storyboard minis */
+  .frame-mini { width:230px; flex-shrink:0; }
+  .frame-mini .phone-mini {
+    width:230px; height:498px; background:var(--bg); border-radius:28px;
+    box-shadow:0 0 0 7px #1c1c1f, 0 0 0 8px #3a3a3d, 0 24px 48px -20px rgba(0,0,0,0.6);
+    overflow:hidden; position:relative;
+  }
+  .frame-cap { margin-top:14px; font-size:11px; color:var(--dim); letter-spacing:0.04em; text-align:center; }
+
+  /* Helpers */
+  .check-pill { display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border-radius:999px; background:var(--accent-soft); border:1px solid var(--accent-border); color:var(--ink); font-size:12px; font-weight:500; }
+
+  /* Cluster accordion */
+  .cluster + .cluster { margin-top:8px; }
+  .cluster-head {
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%; padding:14px 16px; border-radius:14px;
+    background:var(--surface); border:1px solid var(--line-2); color:var(--ink);
+    cursor:pointer; transition:background .15s ease;
+  }
+  .cluster-head:hover { background:var(--surface-2); }
+  .cluster-head .ch-eyebrow { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--dim); font-weight:600; }
+  .cluster-head .ch-count { font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--mute); margin-left:10px; }
+  .cluster-head .caret { color:var(--mute); transition:transform .2s ease; margin-left:auto; font-size:18px; line-height:1; }
+  .cluster.open .caret { transform:rotate(90deg); color:var(--ink); }
+  .cluster-body { padding:10px 0 4px; display:none; }
+  .cluster.open .cluster-body { display:block; }
+
+  /* Removable custom chip + dashed add-custom */
+  .opt.custom-tag { padding-right:10px; gap:8px; }
+  .opt.custom-tag .x {
+    display:inline-flex; width:18px; height:18px; align-items:center; justify-content:center;
+    border-radius:999px; background:rgba(255,255,255,0.10); color:var(--mute);
+    font-size:13px; line-height:1;
+  }
+  .opt.custom-tag:hover .x { color:var(--ink); background:rgba(255,255,255,0.18); }
+  .opt.add-custom {
+    border-style:dashed; color:var(--mute); background:transparent;
+  }
+  .opt.add-custom:hover { color:var(--ink); border-color:var(--line-3); }
+
+  /* Photo dropzone */
+  .dropzone {
+    width:170px; height:212px; margin:0 auto;
+    border:1.5px dashed var(--line-3); border-radius:16px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    color:var(--mute); cursor:pointer; transition:border-color .15s ease, color .15s ease, background .15s ease;
+    background:var(--surface);
+  }
+  .dropzone:hover { border-color:var(--accent-border); color:var(--ink); background:var(--surface-2); }
+  .dropzone-hint {
+    margin:18px auto 0; max-width:280px; padding:10px 14px; border-radius:12px;
+    background:var(--accent-soft); border:1px solid var(--accent-border);
+    color:var(--ink); font-size:12px; line-height:1.5;
+  }
+  .dropzone-hint .why { color:var(--mute); }
+
+  /* Audit list */
+  .audit-stat { font-family:'Instrument Serif', serif; font-size:30px; color:var(--ink); line-height:1.1; }
+  .audit-stat .num-ok { color:var(--ok); }
+  .audit-row {
+    display:flex; align-items:flex-start; gap:12px;
+    padding:11px 0; border-bottom:1px solid var(--line);
+    font-size:13.5px; color:var(--ink); line-height:1.45;
+  }
+  .audit-row:last-child { border-bottom:0; }
+  .audit-row .a-icon {
+    width:20px; height:20px; flex-shrink:0; margin-top:1px;
+    display:inline-flex; align-items:center; justify-content:center; border-radius:999px;
+  }
+  .audit-row .a-icon.ok { background:var(--ok-soft); color:var(--ok); border:1px solid var(--ok-border); }
+  .audit-row .a-icon.warn { background:var(--hot-soft); color:var(--hot); border:1px solid var(--hot-border); }
+  .audit-row .a-text { flex:1; }
+  .audit-row .a-sub { color:var(--mute); font-size:12px; margin-top:2px; }
+  .audit-row .a-fix { display:inline-block; margin-top:4px; color:var(--accent); font-size:12px; cursor:pointer; }
+  .audit-row .a-fix:hover { text-decoration:underline; }
+
+  /* Yes / No big choice rows */
+  .choice {
+    width:100%; padding:18px; border-radius:14px;
+    background:var(--surface); border:1px solid var(--line-2); color:var(--ink);
+    text-align:left; cursor:pointer; transition:all .15s ease;
+  }
+  .choice + .choice { margin-top:10px; }
+  .choice .ch-title { font-size:15px; font-weight:600; }
+  .choice .ch-sub { font-size:12.5px; color:var(--mute); margin-top:3px; line-height:1.45; }
+  .choice.selected { background:var(--accent-soft); border-color:var(--accent-border); }
+  .choice .summary {
+    margin-top:12px; padding:10px 12px; border-radius:10px;
+    background:rgba(0,0,0,0.25); border:1px solid var(--line);
+    color:var(--mute); font-size:12.5px; line-height:1.5;
+  }
+</style>
+</head>
+<body class="min-h-screen bg-black text-zinc-300">
+
+<!-- Page header -->
+<header class="max-w-[1100px] mx-auto px-6 pt-12 pb-8">
+  <p class="eyebrow" style="color:var(--dim)">JobAssist · Demo</p>
+  <h1 class="ff-serif text-white" style="font-size:42px; line-height:1.05; margin-top:6px;">
+    Lebenslauf — focus-mode onboarding.
+  </h1>
+  <p class="mt-3 text-[14px] max-w-[60ch]" style="color:var(--mute); line-height:1.55;">
+    Eine Frage pro Bildschirm. Große Tap-Targets, viel Luft, ruhiger Rhythmus.
+    Inspiriert von Cal AI, MacroFactor und Typeform — mit JobAssist-Tonfall:
+    sachlich, du-Form, kein Confetti, keine Streaks.
+  </p>
+  <div class="mt-5 flex flex-wrap items-center gap-2 text-[11px]" style="color:var(--dim)">
+    <span class="pill-info"><span class="dot-info"></span> 12 Schritte · ~3 Min.</span>
+    <span class="pill-info"><span class="dot-info"></span> Mobile-first · 390 × 844</span>
+    <span class="pill-info"><span class="dot-info"></span> Replaces /lebenslauf desktop form</span>
+  </div>
+</header>
+
+<!-- Interactive phone -->
+<section class="max-w-[1100px] mx-auto px-6 pb-20 grid lg:grid-cols-[auto_1fr] gap-12 items-start">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="phone-screen" id="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="right">
+          <span class="ff-mono" style="font-size:11px; color:var(--mute)">5G</span>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0.5" y="0.5" width="13" height="10" rx="2" stroke="white" opacity="0.85"/><rect x="2" y="2" width="10" height="7" rx="1" fill="white" opacity="0.85"/><rect x="14.5" y="3" width="1" height="5" rx="0.5" fill="white" opacity="0.6"/></svg>
+        </span>
+      </div>
+      <div id="scenes" style="position:relative; height:calc(100% - 36px);"></div>
+    </div>
+  </div>
+
+  <aside class="text-[14px] leading-[1.65] max-w-[44ch]" style="color:var(--mute)">
+    <h2 class="ff-serif text-white" style="font-size:24px; line-height:1.15; letter-spacing:0.005em">
+      Wie sich der Flow anfühlen soll.
+    </h2>
+    <p class="mt-3">
+      Klick die <span class="text-white">Weiter</span>-Taste rechts unten am Telefon.
+      Die Fragen rücken einzeln nach. Nichts blinkt, nichts feiert dich.
+    </p>
+
+    <div class="mt-6 grid gap-5">
+      <div>
+        <p class="eyebrow">Eine Frage</p>
+        <p class="mt-1.5">
+          Pro Screen genau ein Gedanke. Mehrere Felder nur wenn sie sich
+          gegenseitig erklären (Vorname + Nachname).
+        </p>
+      </div>
+      <div>
+        <p class="eyebrow">Tipp-Targets statt Eingaben</p>
+        <p class="mt-1.5">
+          Wo es geht: Chips. Tastatur erscheint nur für Name, Schule,
+          Adresse, E-Mail.
+        </p>
+      </div>
+      <div>
+        <p class="eyebrow">Stiller Fortschritt</p>
+        <p class="mt-1.5">
+          Punkt-Leiste oben. Keine Prozentzahlen, keine Crowns,
+          keine „Du bist großartig!"-Sprüche.
+        </p>
+      </div>
+      <div>
+        <p class="eyebrow">Tonfall</p>
+        <p class="mt-1.5">
+          Sachliche Frage, optionaler Hinweis darunter. Niemals Coaching,
+          niemals Therapeut.
+        </p>
+      </div>
+      <div>
+        <p class="eyebrow">Offene Listen</p>
+        <p class="mt-1.5">
+          Jeder Chip-Cluster hat ein <span class="text-white">+ Eigene</span>
+          am Ende. Geschlossene Listen wären eine Glasdecke — die echten
+          Stärken eines Teenagers stehen selten in einer HR-Liste.
+        </p>
+      </div>
+      <div>
+        <p class="eyebrow">Konformität = Inhalt, nicht Pixel</p>
+        <p class="mt-1.5">
+          Vor dem PDF läuft ein Check über E-Mail-Stil, CEFR-Niveau,
+          Telefonformat, Pflichtpraktikum bei HAK/HTL — nach
+          österreichischen Standards, nicht nach Schriftart.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t" style="border-color:var(--line)">
+      <p class="eyebrow">Alle 12 Screens auf einen Blick ↓</p>
+      <p class="mt-2 text-[13px]">
+        Scrolle weiter unten für die Storyboard-Ansicht.
+      </p>
+    </div>
+  </aside>
+</section>
+
+<!-- Storyboard -->
+<section class="max-w-[1500px] mx-auto px-6 pb-24">
+  <p class="eyebrow" style="color:var(--dim)">Storyboard</p>
+  <h2 class="ff-serif text-white mt-1" style="font-size:26px;">Alle 12 Beispiel-Screens</h2>
+  <div class="mt-8 flex gap-7 overflow-x-auto pb-6" id="storyboard"></div>
+</section>
+
+<script>
+const TOTAL = 12;
+
+function head(idx, totalLabel) {
+  const label = totalLabel || (idx + " / " + TOTAL);
+  const dots = Array.from({ length: TOTAL }, function (_, i) {
+    var cls = i + 1 < idx ? "past" : i + 1 === idx ? "now" : "";
+    return '<div class="dot ' + cls + '"></div>';
+  }).join("");
+  return ''
+    + '<div class="head">'
+    +   '<button class="iconbtn" data-back ' + (idx === 1 ? "disabled" : "") + ' aria-label="Zurück">'
+    +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +   '</button>'
+    +   '<div class="dots">' + dots + '</div>'
+    +   '<span class="step-num">' + label + '</span>'
+    + '</div>';
+}
+
+function cta(opts) {
+  opts = opts || {};
+  var label = opts.label || "Weiter";
+  var arrow = opts.arrow !== false;
+  var accent = !!opts.accent;
+  var skip = opts.skip || null;
+  var disabled = !!opts.disabled;
+  var arrowSvg = arrow
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : "";
+  return ''
+    + '<div class="cta-bar">'
+    +   '<button class="btn-primary ' + (accent ? "accent" : "") + '" data-next ' + (disabled ? "disabled" : "") + '>'
+    +     label + arrowSvg
+    +   '</button>'
+    +   (skip ? '<button class="btn-skip" data-next>' + skip + '</button>' : "")
+    + '</div>';
+}
+
+function auditRow(sev, label, sub, fix) {
+  var icon = sev === "ok"
+    ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var inlineSub = sub && sev === "ok"
+    ? '<span style="color:var(--mute); font-size:12px;"> · ' + sub + '</span>'
+    : "";
+  var blockSub = sub && sev !== "ok" ? '<div class="a-sub">' + sub + '</div>' : "";
+  var fixLink = fix ? '<span class="a-fix">Vorschläge ansehen →</span>' : "";
+  return ''
+    + '<div class="audit-row">'
+    +   '<span class="a-icon ' + sev + '">' + icon + '</span>'
+    +   '<div class="a-text">' + label + inlineSub + blockSub + fixLink + '</div>'
+    + '</div>';
+}
+
+var SCENES = [
+  // 1. Intro
+  {
+    title: "Intro",
+    html: ''
+      + head(1, "Start")
+      + '<div class="body">'
+      +   '<div class="q-wrap" style="padding-top:80px;">'
+      +     '<p class="eyebrow">Lebenslauf</p>'
+      +     '<h1 class="ff-serif" style="margin-top:14px; font-size:38px; line-height:1.08; color:var(--ink); letter-spacing:0.005em;">Ein paar Fragen.<br/>Danach hast du deinen<br/>Lebenslauf als PDF.</h1>'
+      +     '<p class="q-hint" style="margin-top:20px; max-width:34ch;">Etwa drei Minuten. Du kannst jederzeit aufhören — wir speichern automatisch.</p>'
+      +   '</div>'
+      + '</div>'
+      + cta({ label: "Los geht's", accent: true })
+  },
+
+  // 2. Name
+  {
+    title: "Name",
+    html: ''
+      + head(2)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Wie heißt du?</h2><p class="q-hint">So, wie es im Pass steht.</p></div>'
+      +   '<div class="body-pad"><div class="row-2">'
+      +     '<input class="field" placeholder="Vorname" value="Davor" />'
+      +     '<input class="field" placeholder="Nachname" value="Radeski" />'
+      +   '</div></div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 3. Geburtsdatum
+  {
+    title: "Geburtsdatum",
+    html: ''
+      + head(3)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Wann hast du Geburtstag?</h2><p class="q-hint">Auf österreichischen Lebensläufen üblich. Wenn du nicht möchtest, lass es offen.</p></div>'
+      +   '<div class="body-pad"><div class="row-2" style="grid-template-columns:1fr 1fr 1.4fr;">'
+      +     '<input class="field" inputmode="numeric" placeholder="TT" value="15" maxlength="2" style="text-align:center; font-size:20px;" />'
+      +     '<input class="field" inputmode="numeric" placeholder="MM" value="03" maxlength="2" style="text-align:center; font-size:20px;" />'
+      +     '<input class="field" inputmode="numeric" placeholder="JJJJ" value="2006" maxlength="4" style="text-align:center; font-size:20px;" />'
+      +   '</div></div>'
+      + '</div>'
+      + cta({ skip: "überspringen" })
+  },
+
+  // 4. Adresse
+  {
+    title: "Adresse",
+    html: ''
+      + head(4)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Wo wohnst du?</h2><p class="q-hint">Straße, PLZ, Ort.</p></div>'
+      +   '<div class="body-pad" style="display:flex; flex-direction:column; gap:10px;">'
+      +     '<input class="field" placeholder="Straße + Hausnummer" value="Hütteldorferstraße 7" />'
+      +     '<div class="row-plz-ort">'
+      +       '<input class="field" inputmode="numeric" maxlength="4" placeholder="PLZ" value="1150" />'
+      +       '<input class="field" placeholder="Ort" value="Wien" />'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 5. Schultyp
+  {
+    title: "Schultyp",
+    html: ''
+      + head(5)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Welche Schule besuchst du?</h2><p class="q-hint">Tipp einfach an, was passt.</p></div>'
+      +   '<div class="body-pad"><div class="chip-grid cols-3">'
+      +     '<button class="opt">AHS</button>'
+      +     '<button class="opt">HTL</button>'
+      +     '<button class="opt selected">HAK</button>'
+      +     '<button class="opt">BHS</button>'
+      +     '<button class="opt">NMS</button>'
+      +     '<button class="opt">PTS</button>'
+      +   '</div>'
+      +   '<button class="opt" style="margin-top:10px; width:100%; border-style:dashed; color:var(--mute);">Andere</button>'
+      +   '</div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 6. Pflichtpraktikum (NEW — first-class concept)
+  {
+    title: "Pflichtpraktikum",
+    html: ''
+      + head(6)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Pflichtpraktikum schon gemacht?</h2><p class="q-hint">HAK und HTL fordern eines ab der 3. Klasse — meist über den Sommer. Ohne wirken Bewerbungen oft unvollständig.</p></div>'
+      +   '<div class="body-pad">'
+      +     '<button class="choice selected">'
+      +       '<div class="ch-title">Ja, ist eingetragen</div>'
+      +       '<div class="ch-sub">Wir blenden es im Lebenslauf eigens aus.</div>'
+      +       '<div class="summary">Sommer 2024 · 4 Wochen<br/>BAWAG Filiale Mariahilf · Pflichtpraktikum</div>'
+      +     '</button>'
+      +     '<button class="choice">'
+      +       '<div class="ch-title">Noch nicht</div>'
+      +       '<div class="ch-sub">Wir markieren es als „geplant für Sommer 2026".</div>'
+      +     '</button>'
+      +   '</div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 7. Sprachen
+  {
+    title: "Sprachen",
+    html: ''
+      + head(7)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Welche Sprachen sprichst du?</h2><p class="q-hint">Mindestens eine. Tipp das Niveau an.</p></div>'
+      +   '<div class="body-pad" style="display:flex; flex-direction:column; gap:10px;">'
+      +     '<div class="field" style="display:flex; align-items:center; justify-content:space-between; padding-right:8px;"><span style="font-size:15px;">Deutsch</span><span class="check-pill">Muttersprache</span></div>'
+      +     '<div class="field" style="display:flex; align-items:center; justify-content:space-between; padding-right:8px;"><span style="font-size:15px;">Englisch</span><span class="check-pill">B2</span></div>'
+      +     '<button class="opt" style="border-style:dashed; color:var(--mute);">+ Sprache hinzufügen</button>'
+      +   '</div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 8. Stärken (Feature A: + Eigene + removable custom chip)
+  {
+    title: "Stärken",
+    html: ''
+      + head(8)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Was sind deine Stärken?</h2><p class="q-hint">Wähle bis zu fünf, die wirklich zu dir passen. Was nicht in der Liste steht, kannst du selbst hinzufügen.</p></div>'
+      +   '<div class="body-pad">'
+      +     '<div class="chip-grid flow">'
+      +       '<button class="opt flow-chip selected">Teamfähigkeit</button>'
+      +       '<button class="opt flow-chip">Zuverlässigkeit</button>'
+      +       '<button class="opt flow-chip selected">Kommunikation</button>'
+      +       '<button class="opt flow-chip">Pünktlichkeit</button>'
+      +       '<button class="opt flow-chip">Lernbereitschaft</button>'
+      +       '<button class="opt flow-chip selected">Selbstständigkeit</button>'
+      +       '<button class="opt flow-chip">Organisationstalent</button>'
+      +       '<button class="opt flow-chip">Belastbarkeit</button>'
+      +       '<button class="opt flow-chip">Kreativität</button>'
+      +       '<button class="opt flow-chip">Genauigkeit</button>'
+      +       '<button class="opt flow-chip selected custom-tag">Erste-Hilfe-Schein<span class="x" data-remove-chip>×</span></button>'
+      +       '<button class="opt flow-chip add-custom" data-add-custom>+ Eigene</button>'
+      +     '</div>'
+      +     '<p class="ff-mono" style="margin-top:18px; font-size:11px; color:var(--dim);">4 / 5 ausgewählt</p>'
+      +   '</div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 9. Job-Arten clustered (Feature B)
+  {
+    title: "Job-Arten",
+    html: ''
+      + head(9)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Was suchst du gerade?</h2><p class="q-hint">Tipp eine Gruppe an, um Optionen zu sehen. Mehreres möglich — auch über Gruppen hinweg.</p></div>'
+      +   '<div class="body-pad" style="display:flex; flex-direction:column; gap:0;">'
+      +     '<div class="cluster open">'
+      +       '<button class="cluster-head" data-cluster-toggle><div><span class="ch-eyebrow">Alltag</span><span class="ch-count">1 ausgewählt</span></div><span class="caret">›</span></button>'
+      +       '<div class="cluster-body"><div class="chip-grid flow">'
+      +         '<button class="opt flow-chip selected">Samstagsjob</button>'
+      +         '<button class="opt flow-chip">Aushilfe</button>'
+      +         '<button class="opt flow-chip">Geringfügig</button>'
+      +       '</div></div>'
+      +     '</div>'
+      +     '<div class="cluster open">'
+      +       '<button class="cluster-head" data-cluster-toggle><div><span class="ch-eyebrow">Praktikum</span><span class="ch-count">1 ausgewählt</span></div><span class="caret">›</span></button>'
+      +       '<div class="cluster-body"><div class="chip-grid flow">'
+      +         '<button class="opt flow-chip selected">Pflichtpraktikum</button>'
+      +         '<button class="opt flow-chip">Freiwilliges Praktikum</button>'
+      +         '<button class="opt flow-chip">Schnupperlehre</button>'
+      +       '</div></div>'
+      +     '</div>'
+      +     '<div class="cluster">'
+      +       '<button class="cluster-head" data-cluster-toggle><div><span class="ch-eyebrow">Länger</span><span class="ch-count">0 ausgewählt</span></div><span class="caret">›</span></button>'
+      +       '<div class="cluster-body"><div class="chip-grid flow">'
+      +         '<button class="opt flow-chip">Teilzeit</button>'
+      +         '<button class="opt flow-chip">Lehre</button>'
+      +         '<button class="opt flow-chip">Ferialjob</button>'
+      +         '<button class="opt flow-chip">Saisonarbeit</button>'
+      +       '</div></div>'
+      +     '</div>'
+      +     '<div class="cluster">'
+      +       '<button class="cluster-head" data-cluster-toggle><div><span class="ch-eyebrow">Nach der Schule</span><span class="ch-count">0 ausgewählt</span></div><span class="caret">›</span></button>'
+      +       '<div class="cluster-body"><div class="chip-grid flow">'
+      +         '<button class="opt flow-chip">Volontariat</button>'
+      +         '<button class="opt flow-chip">FSJ</button>'
+      +         '<button class="opt flow-chip">FUJ</button>'
+      +         '<button class="opt flow-chip">Au-Pair</button>'
+      +       '</div></div>'
+      +     '</div>'
+      +     '<button class="opt add-custom" style="margin-top:12px; width:100%;" data-add-custom>+ Eigene Job-Art</button>'
+      +   '</div>'
+      + '</div>'
+      + cta()
+  },
+
+  // 10. Foto (optional + contextual hint)
+  {
+    title: "Foto",
+    html: ''
+      + head(10)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Foto?</h2><p class="q-hint">In Österreich seit 2014 nicht mehr verpflichtend. Bei Gastro, Handel und Pflege wird es trotzdem oft erwartet.</p></div>'
+      +   '<div class="body-pad">'
+      +     '<div class="dropzone">'
+      +       '<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 012-2h2.5l1.5-2h6l1.5 2H19a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>'
+      +       '<span style="font-size:13px;">Foto wählen</span>'
+      +       '<span class="ff-mono" style="font-size:10px; color:var(--dim);">JPG · PNG · max 4 MB</span>'
+      +     '</div>'
+      +     '<div class="dropzone-hint">'
+      +       '<span style="color:var(--accent); font-weight:600;">Tipp.</span> Du suchst <span class="text-white">Samstagsjob im Handel</span> — Bewerbungen mit Foto bekommen dort öfter Antwort.'
+      +       '<div class="why" style="margin-top:4px;">Für Büro/IT brauchst du keines.</div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + cta({ skip: "ohne Foto fortfahren" })
+  },
+
+  // 11. Konformitäts-Check (Feature C)
+  {
+    title: "Check",
+    html: ''
+      + head(11)
+      + '<div class="body">'
+      +   '<div class="q-wrap"><h2 class="q">Letzter Check.</h2><p class="q-hint">Wir prüfen deinen Lebenslauf nach österreichischen Standards — Inhalt, nicht Schriftart.</p></div>'
+      +   '<div class="body-pad">'
+      +     '<p class="audit-stat"><span class="num-ok">9</span> von 10 Punkten ok.</p>'
+      +     '<div style="margin-top:18px;">'
+      +       auditRow("ok", "Daten reverse-chronologisch")
+      +       auditRow("ok", "E-Mail wirkt professionell", "davor.radeski@…")
+      +       auditRow("ok", "Telefon mit +43")
+      +       auditRow("ok", "PLZ vierstellig")
+      +       auditRow("ok", "Sprachen mit CEFR-Niveau")
+      +       auditRow("ok", "Pflichtpraktikum eingetragen")
+      +       auditRow("ok", "Datumsformat MM.JJJJ konsistent")
+      +       auditRow("ok", "CV passt auf eine Seite")
+      +       auditRow("ok", "Foto-Empfehlung passend zur Branche")
+      +       auditRow("warn", "Bullets aktivisch formulieren", "Zwei Einträge fangen mit „war zuständig für…\" an. „Beriet…\" oder „Organisierte…\" wirken stärker.", true)
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + cta({ label: "PDF herunterladen", arrow: false, accent: true })
+  },
+
+  // 12. Done
+  {
+    title: "Fertig",
+    html: ''
+      + head(12, "Fertig")
+      + '<div class="body">'
+      +   '<div class="q-wrap" style="padding-top:80px;">'
+      +     '<p class="eyebrow" style="color:var(--accent)">Lebenslauf</p>'
+      +     '<h1 class="ff-serif" style="margin-top:14px; font-size:46px; line-height:1.05; color:var(--ink);">Fertig.</h1>'
+      +     '<p class="q-hint" style="margin-top:18px; max-width:32ch;">Dein Lebenslauf ist bereit. Du kannst ihn jederzeit ändern — er speichert sich von selbst.</p>'
+      +   '</div>'
+      +   '<div class="body-pad" style="margin-top:36px; display:flex; flex-direction:column; gap:10px;">'
+      +     '<button class="btn-primary accent"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF herunterladen</button>'
+      +     '<button class="opt" style="background:transparent; border-color:var(--line); color:var(--mute);">Profil ansehen</button>'
+      +   '</div>'
+      + '</div>'
+  }
+];
+
+// ── Interactive phone ──
+var scenesEl = document.getElementById("scenes");
+var currentIdx = 0;
+
+function mountScenes() {
+  scenesEl.innerHTML = SCENES.map(function (s, i) {
+    return '<div class="scene ' + (i === 0 ? "active" : "") + '" data-idx="' + i + '">' + s.html + '</div>';
+  }).join("");
+  scenesEl.addEventListener("click", function (ev) {
+    // Remove a custom chip via its ×
+    var remove = ev.target.closest("[data-remove-chip]");
+    if (remove) {
+      ev.stopPropagation();
+      var p = remove.closest(".opt");
+      if (p) p.remove();
+      return;
+    }
+    // Add a custom chip via dashed "+ Eigene"
+    var addCustom = ev.target.closest("[data-add-custom]");
+    if (addCustom) {
+      ev.stopPropagation();
+      var label = window.prompt("Eigene Antwort hinzufügen");
+      if (label && label.trim()) {
+        var chip = document.createElement("button");
+        chip.className = "opt flow-chip selected custom-tag";
+        chip.innerHTML = label.trim().replace(/[<>&]/g, "") + '<span class="x" data-remove-chip>×</span>';
+        addCustom.parentElement.insertBefore(chip, addCustom);
+      }
+      return;
+    }
+    // Cluster accordion
+    var clusterToggle = ev.target.closest("[data-cluster-toggle]");
+    if (clusterToggle) {
+      var cl = clusterToggle.closest(".cluster");
+      if (cl) cl.classList.toggle("open");
+      return;
+    }
+    // Step navigation
+    var next = ev.target.closest("[data-next]");
+    var back = ev.target.closest("[data-back]");
+    if (next) { go(currentIdx + 1); return; }
+    if (back) { go(currentIdx - 1); return; }
+    // Default chip toggle
+    var opt = ev.target.closest(".opt");
+    if (opt && !opt.classList.contains("add-custom")) opt.classList.toggle("selected");
+  });
+}
+
+function go(idx) {
+  if (idx < 0 || idx >= SCENES.length) return;
+  var scenes = scenesEl.querySelectorAll(".scene");
+  var cur = scenes[currentIdx];
+  var nxt = scenes[idx];
+  cur.classList.remove("active");
+  cur.classList.add("exit-left");
+  nxt.classList.remove("exit-left");
+  nxt.classList.add("active");
+  currentIdx = idx;
+  scenesEl.parentElement.scrollTop = 0;
+}
+
+mountScenes();
+
+// ── Storyboard ──
+var sb = document.getElementById("storyboard");
+sb.innerHTML = SCENES.map(function (s, i) {
+  return ''
+    + '<div class="frame-mini">'
+    +   '<div class="phone-mini">'
+    +     '<div style="width:169.5%; height:169.5%; transform:scale(0.59); transform-origin:0 0; position:relative; background:var(--bg);">'
+    +       '<div class="status-bar" style="padding:14px 28px 4px;"><span style="font-size:14px; font-weight:600; color:var(--ink)">9:41</span><span style="font-size:11px; color:var(--mute);" class="ff-mono">5G</span></div>'
+    +       '<div style="position:relative; height:calc(100% - 36px);">' + s.html + '</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<p class="frame-cap">' + (i + 1) + ' · ' + s.title + '</p>'
+    + '</div>';
+}).join("");
+sb.querySelectorAll("button").forEach(function (b) { b.disabled = true; b.style.cursor = "default"; });
+</script>
+</body>
+</html>

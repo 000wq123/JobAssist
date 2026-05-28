@@ -29,7 +29,16 @@ class User(Base):
     location: Mapped[str] = mapped_column(String, default="United States", nullable=False)  # Country/City
     language: Mapped[str] = mapped_column(String, default="en", nullable=False)  # en, es, fr
 
+    # v1 additions
+    plan: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
+    notification_channel: Mapped[str] = mapped_column(String(20), default="email", nullable=False)
+    phone_e164: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+
     profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    profile_v2 = relationship("ProfileV2", back_populates="user", uselist=False, cascade="all, delete-orphan")
     resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
     jobs = relationship("Job", back_populates="user", cascade="all, delete-orphan")
     alerts = relationship("JobAlert", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    push_subscriptions = relationship("WebPushSubscription", back_populates="user", cascade="all, delete-orphan")
+    inbox_items = relationship("InboxItem", back_populates="user", cascade="all, delete-orphan")
+    deadlines = relationship("Deadline", back_populates="user", cascade="all, delete-orphan")

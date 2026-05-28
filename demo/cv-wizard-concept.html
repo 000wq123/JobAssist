@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CV Wizard — Konzept Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #09090b;
+    --s1: #111113;
+    --s2: #18181b;
+    --s3: #27272a;
+    --ink: #fafafa;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --faint: #52525b;
+    --border: rgba(255,255,255,0.08);
+    --accent: #7c7df0;
+    --accent-light: #a5b4fc;
+    --accent-soft: rgba(124,125,240,0.12);
+    --serif: 'Georgia', 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); min-height: 100vh; }
+
+  /* ─── Layout toggle tabs ─── */
+  .tabs { display: flex; gap: 8px; padding: 20px 24px 0; }
+  .tab { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--dim); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-light); }
+  .tab:hover:not(.active) { background: rgba(255,255,255,0.04); color: var(--muted); }
+
+  /* ─── CONCEPT A: Full-width steps (no right panel) ─── */
+  .concept { display: none; padding: 32px 24px; max-width: 680px; margin: 0 auto; }
+  .concept.active { display: block; }
+
+  /* ─── Concept A — Full-width focus ─── */
+  .wizard-a { display: flex; flex-direction: column; gap: 0; }
+  .progress-bar { height: 2px; background: var(--border); border-radius: 2px; margin-bottom: 40px; }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+  .scene-a { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .eyebrow-a { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); font-weight: 600; margin-bottom: 16px; }
+  .question-a { font-size: clamp(28px, 5vw, 40px); font-family: var(--serif); font-weight: 400; line-height: 1.15; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 10px; }
+  .hint-a { font-size: 13px; color: var(--dim); margin-bottom: 32px; line-height: 1.5; }
+  .input-a { width: 100%; height: 54px; border-radius: 14px; padding: 0 18px; font-size: 16px; background: var(--s2); border: 1px solid var(--border); color: var(--ink); outline: none; transition: border-color 0.15s; }
+  .input-a:focus { border-color: var(--accent); background: var(--s3); }
+  .input-a::placeholder { color: var(--faint); }
+  .btn-next { margin-top: 24px; height: 52px; padding: 0 32px; border-radius: 14px; background: var(--ink); color: #09090b; font-size: 15px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.15s; }
+  .btn-next:hover { opacity: 0.88; }
+
+  /* ─── Concept B: Template gallery first ─── */
+  .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 32px; }
+  @media (min-width: 480px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
+  .tmpl-card { border: 2px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.15s; aspect-ratio: 210/297; background: white; position: relative; }
+  .tmpl-card:hover { border-color: rgba(124,125,240,0.4); }
+  .tmpl-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,125,240,0.2); }
+  .tmpl-inner { transform-origin: top left; width: 595px; padding: 28px 24px; font-size: 8px; line-height: 1.4; font-family: var(--sans); color: #1a1a1a; }
+  .tmpl-name { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 8px; background: var(--s1); color: var(--muted); font-size: 10px; font-weight: 500; text-align: center; }
+  .tmpl-check { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); display: none; align-items: center; justify-content: center; }
+  .tmpl-card.selected .tmpl-check { display: flex; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim); margin-bottom: 12px; }
+
+  /* ─── Concept C: Split with mini-map ─── */
+  .split-c { display: grid; grid-template-columns: 1fr; gap: 24px; }
+  @media (min-width: 700px) { .split-c { grid-template-columns: 1fr 220px; align-items: start; gap: 32px; } }
+  .minimap { background: var(--s1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; position: sticky; top: 24px; }
+  .minimap-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--dim); margin-bottom: 14px; }
+  .minimap-field { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .minimap-field:last-child { border-bottom: none; }
+  .minimap-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .minimap-dot.done { background: #34d399; }
+  .minimap-dot.active { background: var(--accent); }
+  .minimap-dot.empty { background: var(--faint); }
+  .minimap-label { font-size: 11px; color: var(--muted); flex: 1; }
+  .minimap-val { font-size: 10px; color: var(--dim); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Common */
+  .tag { display: inline-block; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; color: var(--muted); cursor: pointer; transition: all 0.15s; margin: 4px; }
+  .tag:hover { border-color: var(--accent); color: var(--accent-light); background: var(--accent-soft); }
+  .tag.picked { border-color: var(--accent); color: var(--accent-light); background: var(--accent-soft); }
+  .note { font-size: 11px; color: var(--dim); background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 24px; line-height: 1.6; }
+  .note strong { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Tab selector -->
+<div class="tabs">
+  <button class="tab active" onclick="show('a')">A — Full-width (kein rechtes Panel)</button>
+  <button class="tab" onclick="show('b')">B — Vorlage zuerst, dann Fragen</button>
+  <button class="tab" onclick="show('c')">C — Split mit Mini-Map</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     CONCEPT A: Full-width focus, no right panel
+     Pro: Mobile-first, zero distraction
+     Con: User can't see output until end
+════════════════════════════════════════════════════════ -->
+<div id="concept-a" class="concept active">
+  <div style="margin-bottom:8px;color:var(--dim);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase">Konzept A — Fokus-Modus</div>
+  <div class="progress-bar"><div class="progress-fill" style="width: 28%"></div></div>
+
+  <div class="wizard-a">
+    <div class="scene-a">
+      <div class="eyebrow-a">Name · 2 von 7</div>
+      <h1 class="question-a">Wie heißt du?</h1>
+      <p class="hint-a">So, wie es im Pass steht.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <input class="input-a" placeholder="Vorname" value="Davor" />
+        <input class="input-a" placeholder="Nachname" value="Radeski" />
+      </div>
+      <button class="btn-next">Weiter →</button>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:40px">
+    <strong>Konzept A:</strong> Vollbild, kein rechtes Panel. Jede Frage nimmt den gesamten Platz ein.
+    Das Ergebnis (PDF) sieht der User erst am Ende. Mobile-first, kein Lärm.
+    <br><br>Gut für: einfache, schnelle Inputs. Problem: kein Feedback-Loop während der Eingabe.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     CONCEPT B: Template gallery first, then questions
+     Pro: User is invested in a template before answering
+     Con: One extra step
+════════════════════════════════════════════════════════ -->
+<div id="concept-b" class="concept">
+  <div style="margin-bottom:8px;color:var(--dim);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase">Konzept B — Vorlage zuerst</div>
+  <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+
+  <h1 class="question-a" style="margin-bottom:8px">Welches Layout willst du?</h1>
+  <p class="hint-a" style="margin-bottom:24px">Tippe auf eine Vorlage. Danach füllen wir gemeinsam die Inhalte aus.</p>
+
+  <div class="gallery-grid">
+    <div class="tmpl-card selected" onclick="selectTmpl(this)">
+      <div style="overflow:hidden;height:100%">
+        <div class="tmpl-inner" style="transform:scale(0.22);width:595px">
+          <div style="font-size:18px;font-weight:700;border-bottom:2px solid #1a1a1a;padding-bottom:6px;margin-bottom:10px">Max Mustermann</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:7px;color:#555;margin-bottom:10px">
+            <span>📧 max@mail.at</span><span>📱 +43 123 456</span>
+            <span>📍 Wien, 1010</span><span>🎂 01.01.2006</span>
+          </div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#888;margin-bottom:4px">Ausbildung</div>
+          <div style="font-size:7px;margin-bottom:8px">2020 – heute · HAK Wien I</div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#888;margin-bottom:4px">Erfahrung</div>
+          <div style="font-size:7px;margin-bottom:8px">2023 · Praktikum bei SPAR · Verkauf</div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#888;margin-bottom:4px">Sprachen</div>
+          <div style="font-size:7px">Deutsch — Muttersprache · Englisch — B2</div>
+        </div>
+      </div>
+      <div class="tmpl-check"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      <div class="tmpl-name">Tabellarisch</div>
+    </div>
+
+    <div class="tmpl-card" onclick="selectTmpl(this)">
+      <div style="overflow:hidden;height:100%">
+        <div class="tmpl-inner" style="transform:scale(0.22);width:595px;display:grid;grid-template-columns:170px 1fr;gap:0">
+          <div style="background:#f0f0f0;padding:20px 14px">
+            <div style="width:50px;height:50px;border-radius:50%;background:#ccc;margin:0 auto 12px"></div>
+            <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:4px">Kontakt</div>
+            <div style="font-size:6px;color:#666;line-height:1.6">max@mail.at<br/>+43 123 456<br/>Wien 1010</div>
+            <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:#555;margin:10px 0 4px">Sprachen</div>
+            <div style="font-size:6px;color:#666">Deutsch — C2<br/>Englisch — B2</div>
+          </div>
+          <div style="padding:20px 16px">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">Max Mustermann</div>
+            <div style="font-size:7px;color:#888;margin-bottom:12px">Bewerbung als Aushilfe</div>
+            <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:4px">Ausbildung</div>
+            <div style="font-size:6px;color:#444;margin-bottom:8px">2020 – heute · HAK Wien I</div>
+            <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:4px">Erfahrung</div>
+            <div style="font-size:6px;color:#444">2023 · Praktikum SPAR</div>
+          </div>
+        </div>
+      </div>
+      <div class="tmpl-check"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      <div class="tmpl-name">Schlanke Leiste</div>
+    </div>
+
+    <div class="tmpl-card" onclick="selectTmpl(this)">
+      <div style="overflow:hidden;height:100%">
+        <div class="tmpl-inner" style="transform:scale(0.22);width:595px">
+          <div style="background:#2d3748;color:white;padding:20px 24px;margin:-28px -24px 16px">
+            <div style="font-size:18px;font-weight:700;letter-spacing:-0.01em">Max Mustermann</div>
+            <div style="font-size:8px;color:#a0aec0;margin-top:4px">max@mail.at · +43 123 456 · Wien</div>
+          </div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#4a5568;border-bottom:1px solid #e2e8f0;padding-bottom:3px;margin-bottom:6px">Ausbildung</div>
+          <div style="font-size:7px;margin-bottom:10px">2020 – heute · HAK Wien I</div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#4a5568;border-bottom:1px solid #e2e8f0;padding-bottom:3px;margin-bottom:6px">Erfahrung</div>
+          <div style="font-size:7px">2023 · Praktikum SPAR · Verkauf</div>
+        </div>
+      </div>
+      <div class="tmpl-check"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      <div class="tmpl-name">Grau-Header</div>
+    </div>
+
+    <div class="tmpl-card" onclick="selectTmpl(this)">
+      <div style="overflow:hidden;height:100%">
+        <div class="tmpl-inner" style="transform:scale(0.22);width:595px;background:#1a1a2e;color:white">
+          <div style="border-left:4px solid #7c7df0;padding-left:12px;margin-bottom:14px">
+            <div style="font-size:18px;font-weight:700">Max Mustermann</div>
+            <div style="font-size:7px;color:#a5b4fc;margin-top:4px">max@mail.at · Wien</div>
+          </div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#7c7df0;margin-bottom:4px">Ausbildung</div>
+          <div style="font-size:7px;color:#d1d5db;margin-bottom:10px">2020 – heute · HAK Wien I</div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#7c7df0;margin-bottom:4px">Erfahrung</div>
+          <div style="font-size:7px;color:#d1d5db">2023 · Praktikum SPAR</div>
+        </div>
+      </div>
+      <div class="tmpl-check"><svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      <div class="tmpl-name">Dunkle Bänder</div>
+    </div>
+  </div>
+
+  <button class="btn-next">Weiter — Fragen beantworten →</button>
+
+  <div class="note" style="margin-top:32px">
+    <strong>Konzept B:</strong> Vorlage zuerst auswählen (wie EuroPass), dann erst Fragen.
+    Der User sieht das fertige Bild bevor er tippt → mehr Motivation.
+    Die Vorschaukarten sind echte Mini-Renders des Templates (wie wir es bereits auf Mobile umgesetzt haben).
+    <br><br>Gut für: Engagement, visuelle Entscheidung. Problem: ein Extra-Schritt vor den Fragen.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     CONCEPT C: Split with mini-map sidebar (no live CV)
+     Pro: Feedback of progress without a confusing half-filled CV
+     Con: Needs sidebar space
+════════════════════════════════════════════════════════ -->
+<div id="concept-c" class="concept">
+  <div style="margin-bottom:8px;color:var(--dim);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase">Konzept C — Mini-Map rechts (kein leerer CV)</div>
+  <div class="progress-bar"><div class="progress-fill" style="width: 42%"></div></div>
+
+  <div class="split-c">
+    <!-- Left: question -->
+    <div>
+      <div class="eyebrow-a">Erfahrung · 3 von 7</div>
+      <h1 class="question-a">Hast du schon Berufserfahrung?</h1>
+      <p class="hint-a">Auch Babysitten, Nachhilfe, Schulprojekte oder Sportverein-Funktionen zählen.</p>
+
+      <!-- Experience card example -->
+      <div style="border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--s2);margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-size:14px;font-weight:600">Verkauf Aushilfe · SPAR</div>
+            <div style="font-size:12px;color:var(--dim);margin-top:2px">Sept. 2023 – Feb. 2024</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <div style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);display:grid;place-items:center;cursor:pointer;color:var(--dim)">✏️</div>
+            <div style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);display:grid;place-items:center;cursor:pointer;color:var(--dim)">🗑️</div>
+          </div>
+        </div>
+      </div>
+
+      <button style="width:100%;height:50px;border-radius:14px;border:1px dashed var(--border);background:transparent;color:var(--dim);font-size:14px;cursor:pointer">+ Erfahrung hinzufügen</button>
+      <button class="btn-next" style="margin-top:16px">Weiter →</button>
+    </div>
+
+    <!-- Right: mini-map -->
+    <div class="minimap">
+      <div class="minimap-title">Dein Fortschritt</div>
+      <div class="minimap-field">
+        <div class="minimap-dot done"></div>
+        <div class="minimap-label">Name</div>
+        <div class="minimap-val" style="color:var(--accent-light)">Davor R.</div>
+      </div>
+      <div class="minimap-field">
+        <div class="minimap-dot done"></div>
+        <div class="minimap-label">Kontakt</div>
+        <div class="minimap-val" style="color:var(--accent-light)">davor@gmail.com</div>
+      </div>
+      <div class="minimap-field">
+        <div class="minimap-dot active"></div>
+        <div class="minimap-label" style="color:var(--ink);font-weight:500">Erfahrung</div>
+        <div class="minimap-val" style="color:var(--accent)">1 Eintrag</div>
+      </div>
+      <div class="minimap-field">
+        <div class="minimap-dot empty"></div>
+        <div class="minimap-label">Ausbildung</div>
+        <div class="minimap-val">—</div>
+      </div>
+      <div class="minimap-field">
+        <div class="minimap-dot empty"></div>
+        <div class="minimap-label">Sprachen</div>
+        <div class="minimap-val">—</div>
+      </div>
+      <div class="minimap-field">
+        <div class="minimap-dot empty"></div>
+        <div class="minimap-label">Skills</div>
+        <div class="minimap-val">—</div>
+      </div>
+      <div class="minimap-field">
+        <div class="minimap-dot empty"></div>
+        <div class="minimap-label">Vorlage</div>
+        <div class="minimap-val">—</div>
+      </div>
+      <div style="margin-top:16px;font-size:10px;color:var(--faint);line-height:1.5">
+        3 von 7 Schritten abgeschlossen.<br/>Ca. 2 Minuten noch.
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:32px">
+    <strong>Konzept C:</strong> Rechtes Panel zeigt eine Mini-Map statt eines halb-leeren CVs.
+    Grüne Punkte = ausgefüllt, blau = aktuell, grau = noch offen. Zeigt Fortschritt ohne verwirrende leere Felder.
+    <br><br>Gut für: Motivation durch Fortschritt, kein konfuses leeres CV. Funktioniert auf Desktop und Tablet gut.
+    Auf Mobile: Mini-Map fällt weg, bleibt der linke Teil als Vollbild.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.concept').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('concept-' + id).classList.add('active');
+    document.querySelectorAll('.tab')[id.charCodeAt(0) - 97].classList.add('active');
+  }
+  function selectTmpl(el) {
+    document.querySelectorAll('.tmpl-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+</script>
+</body>
+</html>

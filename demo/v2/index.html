@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JobAssist — Stellen-Detail: 3 Richtungen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+          serif: ['Instrument Serif', 'ui-serif', 'Georgia', 'serif'],
+        },
+        colors: {
+          page: '#09090b',
+          ink: { DEFAULT: '#fafafa', muted: '#a1a1aa', dim: '#71717a', faint: '#52525b' },
+          surface: { 1: '#111113', 2: '#18181b', 3: '#212124' },
+          line: { subtle: 'rgba(255,255,255,0.06)', DEFAULT: 'rgba(255,255,255,0.10)', strong: 'rgba(255,255,255,0.16)' },
+          accent: '#7c7df0',
+          ok: '#4ade80',
+          warn: '#fbbf24',
+          bad: '#f87171',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { background: #0a0a0c; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .hairline { border-color: rgba(255,255,255,0.06); }
+
+  /* Phone frame */
+  .phone {
+    width: 390px; height: 844px; border-radius: 44px;
+    background: #09090b;
+    box-shadow: 0 0 0 11px #1c1c1f, 0 0 0 12px #2a2a2e, 0 60px 100px -30px rgba(0,0,0,0.6);
+    overflow: hidden; position: relative;
+  }
+  .phone-notch { position: absolute; left: 50%; transform: translateX(-50%); top: 12px; width: 120px; height: 28px; border-radius: 999px; background: #000; z-index: 30; }
+  .phone-screen { position: absolute; inset: 0; overflow-y: auto; padding-top: 56px; }
+  .phone-screen::-webkit-scrollbar { display: none; }
+  .phone-screen { scrollbar-width: none; }
+  .status-bar { position: absolute; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 8px; z-index: 20; color: #fafafa; font-size: 14px; font-weight: 600; pointer-events: none; }
+
+  .annot { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #a1a1aa; }
+  .annot-strong { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #fafafa; font-weight: 600; }
+
+  /* Variant C "story" specifics */
+  .story-num { font-family: 'Instrument Serif', serif; font-weight: 400; letter-spacing: -0.02em; }
+
+  /* Subtle progress dot */
+  .dot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+</style>
+</head>
+<body class="text-ink">
+
+<!-- ─── Page header ────────────────────────────────────────────────── -->
+<header class="border-b border-line-subtle">
+  <div class="max-w-[1500px] mx-auto px-8 py-10">
+    <p class="text-[12px] text-ink-dim tracking-[0.14em] uppercase">JobAssist · Stellen-Detail · Richtungen</p>
+    <h1 class="mt-2 text-[36px] font-semibold tracking-tight leading-tight" style="letter-spacing:-0.025em">
+      Drei Designs für dieselbe Stelle.
+    </h1>
+    <p class="mt-3 text-[14.5px] text-ink-muted max-w-3xl leading-relaxed">
+      Verkaufsassistent:in <span class="text-ink">·</span> Samstagsjob <span class="text-ink">·</span> BILLA Wien Hütteldorf
+      <span class="text-ink-dim"> · </span>
+      Annahme: Lara, 17, HAK Wien, wohnt in Penzing, keine Handelserfahrung.
+    </p>
+    <p class="mt-2 text-[13px] text-ink-dim max-w-3xl">
+      Jede Variante zeigt dieselben Fakten <span class="text-ink-muted">(Gehalt, KV-Vergleich, Anfahrt, Frist, was du mitbringst, was fehlt)</span>
+      — nur Tonfall &amp; Layout unterscheiden sich. Rate von 1–10.
+    </p>
+  </div>
+</header>
+
+<main class="max-w-[1500px] mx-auto px-8 py-14">
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-x-10 gap-y-16 justify-items-center">
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- VARIANT A — DATENBLATT                                            -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-col gap-6 items-center w-full max-w-[420px]">
+    <div class="self-stretch">
+      <p class="annot-strong">A · Datenblatt</p>
+      <h2 class="mt-1 text-[22px] font-semibold tracking-tight">Zahlen zuerst.</h2>
+      <p class="mt-2 text-[13px] text-ink-muted leading-relaxed">
+        Stripe-Dashboard-Energie. Drei dicke Kennzahlen oben, KV-Vergleich als Mini-Balken,
+        ein nüchterner Match-Score mit „Warum"-Aufklappung. Akzentfarbe nur auf Zahlen.
+      </p>
+    </div>
+
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="status-bar"><span>9:41</span><span>●●● 5G</span></div>
+
+      <div class="phone-screen">
+        <!-- Top bar -->
+        <div class="px-5 pt-2 pb-3 flex items-center justify-between">
+          <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="flex gap-2">
+            <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            </button>
+            <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hero -->
+        <div class="px-5 pt-3 pb-5 border-b border-line-subtle">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-[#e60000] text-white font-bold flex items-center justify-center text-[13px]">BILLA</div>
+            <div>
+              <p class="text-[11px] tracking-[0.14em] uppercase text-ink-dim">Samstagsjob</p>
+              <p class="text-[12px] text-ink-muted">BILLA · Wien 14 Hütteldorf</p>
+            </div>
+          </div>
+          <h3 class="mt-3 text-[20px] font-semibold leading-tight">Verkaufsassistent:in</h3>
+          <p class="mt-1 text-[12.5px] text-ink-muted">8h · Samstag · ab 16 Jahren</p>
+        </div>
+
+        <!-- Three big tiles -->
+        <div class="px-5 pt-4 pb-4 grid grid-cols-3 gap-2">
+          <div class="rounded-lg border border-line bg-surface-1 p-3">
+            <p class="annot">Gehalt</p>
+            <p class="mt-1 tnum text-[20px] font-semibold text-ink">€10,20<span class="text-[12px] text-ink-dim">/h</span></p>
+            <p class="mt-0.5 tnum text-[11px] text-ok">+10% KV</p>
+          </div>
+          <div class="rounded-lg border border-line bg-surface-1 p-3">
+            <p class="annot">Anfahrt</p>
+            <p class="mt-1 tnum text-[20px] font-semibold text-ink">25<span class="text-[12px] text-ink-dim"> min</span></p>
+            <p class="mt-0.5 text-[11px] text-ink-dim">Penzing → 14</p>
+          </div>
+          <div class="rounded-lg border border-line bg-surface-1 p-3">
+            <p class="annot">Frist</p>
+            <p class="mt-1 tnum text-[20px] font-semibold text-warn">6<span class="text-[12px] text-ink-dim"> T</span></p>
+            <p class="mt-0.5 text-[11px] text-ink-dim">23.05.2026</p>
+          </div>
+        </div>
+
+        <!-- KV mini chart -->
+        <div class="mx-5 mb-4 rounded-lg border border-line bg-surface-1 p-4">
+          <div class="flex items-baseline justify-between">
+            <p class="annot">KV-Vergleich · Handel · 17J.</p>
+            <p class="tnum text-[12px] text-ok font-medium">+€0,93/h</p>
+          </div>
+          <div class="mt-3 relative h-2 rounded-full bg-surface-3 overflow-hidden">
+            <div class="absolute inset-y-0 left-0 bg-accent/30" style="width: 85%"></div>
+            <div class="absolute inset-y-0 left-0 bg-ok" style="width: 100%; clip-path: inset(0 0 0 85%)"></div>
+            <div class="absolute top-1/2 left-[85%] -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-ink"></div>
+          </div>
+          <div class="mt-2 flex justify-between tnum text-[11px] text-ink-dim">
+            <span>KV-Min €9,27</span>
+            <span class="text-ok font-medium">€10,20 · diese Stelle</span>
+            <span>Top 25% €11,80</span>
+          </div>
+        </div>
+
+        <!-- Match score -->
+        <div class="mx-5 mb-4 rounded-lg border border-line bg-surface-1 p-4">
+          <div class="flex items-center justify-between">
+            <p class="annot">So passt du</p>
+            <p class="tnum text-[26px] font-semibold text-ink">6<span class="text-[14px] text-ink-dim">/10</span></p>
+          </div>
+          <div class="mt-3 space-y-2">
+            <div class="flex items-start gap-2">
+              <span class="dot bg-ok mt-1.5"></span>
+              <p class="text-[12.5px] text-ink">Alter passt · 17 ≥ 16</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="dot bg-ok mt-1.5"></span>
+              <p class="text-[12.5px] text-ink">Deutsch · Muttersprache</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="dot bg-ok mt-1.5"></span>
+              <p class="text-[12.5px] text-ink">Erreichbar · 25 min</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="dot bg-warn mt-1.5"></span>
+              <p class="text-[12.5px] text-ink-muted">Keine Handelserfahrung · 71% der Bewerber haben auch keine</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="dot bg-warn mt-1.5"></span>
+              <p class="text-[12.5px] text-ink-muted">Wochenend-Verfügbarkeit nicht bestätigt</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparison -->
+        <div class="mx-5 mb-4 rounded-lg border border-line bg-surface-1 overflow-hidden">
+          <div class="px-4 py-3 border-b border-line-subtle flex items-baseline justify-between">
+            <p class="annot">Ähnliche Stellen</p>
+            <p class="text-[11px] text-ink-dim">3 in 5 km</p>
+          </div>
+          <div class="divide-y divide-line-subtle">
+            <div class="px-4 py-3 flex items-baseline justify-between">
+              <div>
+                <p class="text-[12.5px] text-ink">SPAR Penzing</p>
+                <p class="text-[11px] text-ink-dim">18 min · 16+</p>
+              </div>
+              <div class="text-right">
+                <p class="tnum text-[13px] text-ink">€9,80/h</p>
+                <p class="tnum text-[10.5px] text-ink-dim">−€0,40</p>
+              </div>
+            </div>
+            <div class="px-4 py-3 flex items-baseline justify-between">
+              <div>
+                <p class="text-[12.5px] text-ink">Hofer Hütteldorf</p>
+                <p class="text-[11px] text-ink-dim">30 min · 16+</p>
+              </div>
+              <div class="text-right">
+                <p class="tnum text-[13px] text-ok">€10,80/h</p>
+                <p class="tnum text-[10.5px] text-ok">+€0,60</p>
+              </div>
+            </div>
+            <div class="px-4 py-3 flex items-baseline justify-between">
+              <div>
+                <p class="text-[12.5px] text-ink">Penny Linzer Str.</p>
+                <p class="text-[11px] text-ink-dim">22 min · 16+</p>
+              </div>
+              <div class="text-right">
+                <p class="tnum text-[13px] text-ink">€10,20/h</p>
+                <p class="tnum text-[10.5px] text-ink-dim">±0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-24"></div>
+
+        <!-- Sticky CTA -->
+        <div class="sticky bottom-0 left-0 right-0 px-5 py-3 bg-page/95 backdrop-blur border-t border-line">
+          <div class="flex gap-2">
+            <button class="flex-1 h-11 rounded-lg bg-accent text-white font-semibold text-[14px]">Bewerben</button>
+            <button class="h-11 px-4 rounded-lg border border-line text-ink-muted text-[14px] font-medium">Speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="self-stretch text-[12.5px] text-ink-muted leading-relaxed">
+      <p><span class="text-ink-dim">Tonfall:</span> nüchtern, vermisst nichts. <span class="text-ink-dim">Stärke:</span> in 3 Sekunden weißt du Gehalt, Anfahrt, Frist. <span class="text-ink-dim">Schwäche:</span> wenig „menschlich", könnte sich technisch anfühlen.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- VARIANT B — COACH                                                  -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-col gap-6 items-center w-full max-w-[420px]">
+    <div class="self-stretch">
+      <p class="annot-strong">B · Coach</p>
+      <h2 class="mt-1 text-[22px] font-semibold tracking-tight">Beratung in Textform.</h2>
+      <p class="mt-2 text-[13px] text-ink-muted leading-relaxed">
+        Du-Form, ruhig, „ein Freund, der schon mal bewerbt hat". Drei Sektionen:
+        <span class="text-ink">was für dich spricht</span> · <span class="text-ink">was du beachten solltest</span> · <span class="text-ink">mein Tipp</span>.
+        Fakten unterstreichen, nicht dominieren.
+      </p>
+    </div>
+
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="status-bar"><span>9:41</span><span>●●● 5G</span></div>
+
+      <div class="phone-screen">
+        <!-- Top bar -->
+        <div class="px-5 pt-2 pb-3 flex items-center justify-between">
+          <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <p class="text-[12px] text-ink-dim">BILLA · Wien 14</p>
+          <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- Header -->
+        <div class="px-5 pt-3 pb-5">
+          <div class="flex items-baseline gap-2 flex-wrap">
+            <span class="text-[10.5px] tracking-[0.14em] uppercase text-accent font-semibold">Samstagsjob</span>
+            <span class="text-[10.5px] tracking-[0.14em] uppercase text-ink-dim">· ab 16</span>
+          </div>
+          <h3 class="mt-1.5 text-[24px] font-semibold leading-tight tracking-tight">
+            Verkaufsassistent:in<br><span class="text-ink-muted font-normal">bei BILLA Hütteldorf.</span>
+          </h3>
+          <p class="mt-3 text-[13px] text-ink-muted leading-relaxed">
+            8 Stunden pro Samstag, <span class="text-ink tnum">€10,20</span> pro Stunde.
+            Das macht <span class="text-ink tnum">€81,60</span> pro Samstag — netto rund <span class="text-ink tnum">€72</span>.
+          </p>
+        </div>
+
+        <!-- Coach intro card -->
+        <div class="mx-5 mb-4 rounded-xl border border-line bg-surface-1 p-4">
+          <div class="flex items-center gap-2">
+            <span class="dot bg-accent"></span>
+            <p class="annot">Meine Einschätzung</p>
+          </div>
+          <p class="mt-2 text-[13.5px] text-ink leading-relaxed">
+            Solide Stelle, gut bezahlt für deinen Bezirk. Ich würde mich diese Woche bewerben — die Frist endet in
+            <span class="text-warn font-medium">6 Tagen</span>, BILLA antwortet meistens innerhalb von <span class="text-ink-muted">8 Tagen</span>.
+          </p>
+        </div>
+
+        <!-- Pro -->
+        <div class="mx-5 mb-3">
+          <div class="flex items-center gap-2 mb-2.5">
+            <span class="dot bg-ok"></span>
+            <p class="annot text-ok">Was für dich spricht</p>
+          </div>
+          <ul class="space-y-2.5">
+            <li class="flex items-start gap-3 text-[13.5px] leading-relaxed">
+              <span class="text-ok mt-0.5">+</span>
+              <span>Mit <span class="tnum text-ink">€10,20/h</span> liegst du <span class="text-ok font-medium">€0,93</span> über dem KV-Mindestlohn für 17-Jährige im Handel.</span>
+            </li>
+            <li class="flex items-start gap-3 text-[13.5px] leading-relaxed">
+              <span class="text-ok mt-0.5">+</span>
+              <span>Von Penzing aus in <span class="text-ink">25 Minuten</span> mit der U4 — easy ohne Auto.</span>
+            </li>
+            <li class="flex items-start gap-3 text-[13.5px] leading-relaxed">
+              <span class="text-ok mt-0.5">+</span>
+              <span>BILLA stellt regelmäßig Schüler:innen ohne Vorerfahrung ein. Du bist nicht aussichtslos.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Con -->
+        <div class="mx-5 mb-3 mt-5">
+          <div class="flex items-center gap-2 mb-2.5">
+            <span class="dot bg-warn"></span>
+            <p class="annot text-warn">Was du beachten solltest</p>
+          </div>
+          <ul class="space-y-2.5">
+            <li class="flex items-start gap-3 text-[13.5px] leading-relaxed">
+              <span class="text-warn mt-0.5">·</span>
+              <span>Samstagsdienst heißt jeden Samstag <span class="text-ink">7–15 Uhr</span>. Plane Geburtstage, Sport &amp; co. ein.</span>
+            </li>
+            <li class="flex items-start gap-3 text-[13.5px] leading-relaxed">
+              <span class="text-warn mt-0.5">·</span>
+              <span>Du hast noch keine Handelserfahrung. <span class="text-ink-muted">71% der Bewerber:innen für diese Art Stelle auch nicht</span> — kein Beinbruch, aber im Anschreiben kurz darauf eingehen.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tip -->
+        <div class="mx-5 mb-5 mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="dot bg-accent"></span>
+            <p class="annot text-accent">Mein Tipp</p>
+          </div>
+          <p class="text-[13.5px] text-ink leading-relaxed">
+            Schreib im Anschreiben einen Satz zur <span class="text-ink font-medium">Pünktlichkeit</span> — das ist die Eigenschaft, die BILLA bei Samstagskräften nennt.
+            Wenn du Sportverein, Schule oder Babysitten regelmäßig machst, ist das ein guter Beleg.
+          </p>
+          <button class="mt-3 text-[12px] text-accent font-medium underline-offset-2 hover:underline">
+            Anschreiben-Entwurf öffnen →
+          </button>
+        </div>
+
+        <!-- Vergleich kurz -->
+        <div class="mx-5 mb-4">
+          <p class="annot mb-2">Im Vergleich</p>
+          <p class="text-[13px] text-ink-muted leading-relaxed">
+            Ähnliche Samstagsjobs in deiner Nähe zahlen <span class="text-ink">€9,80–€10,80/h</span>.
+            Hofer Hütteldorf zahlt mit <span class="text-ok">€10,80</span> sogar mehr — aber 5 Minuten weiter weg.
+            <button class="text-accent underline-offset-2 hover:underline">3 Alternativen ansehen</button>
+          </p>
+        </div>
+
+        <div class="h-24"></div>
+
+        <!-- Sticky CTA -->
+        <div class="sticky bottom-0 left-0 right-0 px-5 py-3 bg-page/95 backdrop-blur border-t border-line">
+          <button class="w-full h-12 rounded-lg bg-accent text-white font-semibold text-[14px] flex items-center justify-center gap-2">
+            Mit JobAssist bewerben
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+          <button class="mt-2 w-full h-10 text-[12.5px] text-ink-muted">Lieber selbst per E-Mail</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="self-stretch text-[12.5px] text-ink-muted leading-relaxed">
+      <p><span class="text-ink-dim">Tonfall:</span> beratend, warm, du. <span class="text-ink-dim">Stärke:</span> erklärt, lehrt, baut Selbstvertrauen. <span class="text-ink-dim">Schwäche:</span> mehr scrollen, längere Lesezeit, kann wie ein Newsletter wirken.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- VARIANT C — STORY                                                  -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-col gap-6 items-center w-full max-w-[420px]">
+    <div class="self-stretch">
+      <p class="annot-strong">C · Story</p>
+      <h2 class="mt-1 text-[22px] font-semibold tracking-tight">Scroll. Eine Fakt-pro-Bildschirm.</h2>
+      <p class="mt-2 text-[13px] text-ink-muted leading-relaxed">
+        Massive Typo, viel Weißraum, eine Aussage pro „Szene". Erinnert an NYT-Scrollytelling,
+        nicht Wrapped. Akzente in Farbe; Vergleich als Fließtext mit fetten Zahlen.
+      </p>
+    </div>
+
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="status-bar"><span>9:41</span><span>●●● 5G</span></div>
+
+      <div class="phone-screen">
+        <!-- Top bar -->
+        <div class="px-5 pt-2 pb-3 flex items-center justify-between">
+          <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink-muted">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- Scene 1 — title -->
+        <div class="px-5 pt-6 pb-10 border-b border-line-subtle">
+          <p class="text-[11px] tracking-[0.16em] uppercase text-ink-dim">Stelle 1 von 3</p>
+          <h3 class="mt-3 text-[34px] font-semibold leading-[1.05] tracking-tight" style="letter-spacing:-0.025em">
+            Samstags bei <span class="text-[#e60000]">BILLA</span> in Hütteldorf.
+          </h3>
+          <p class="mt-4 text-[14px] text-ink-muted leading-relaxed">
+            8 Stunden. Eine Schicht. Eine echte Lohnabrechnung.
+          </p>
+        </div>
+
+        <!-- Scene 2 — Lohn riesig -->
+        <div class="px-5 pt-10 pb-10 border-b border-line-subtle">
+          <p class="annot">Du verdienst</p>
+          <p class="mt-2 story-num text-[88px] leading-none text-ink">
+            €10<span class="text-ink-muted">,20</span>
+          </p>
+          <p class="mt-1 text-[14px] text-ink-muted">pro Stunde.</p>
+          <p class="mt-6 text-[14.5px] leading-relaxed">
+            Das sind <span class="story-num text-[22px] text-ink">€81,60</span> pro Samstag.<br>
+            Netto rund <span class="story-num text-[22px] text-ok">€72</span>.
+          </p>
+        </div>
+
+        <!-- Scene 3 — KV-Vergleich -->
+        <div class="px-5 pt-10 pb-10 border-b border-line-subtle">
+          <p class="annot">KV-Minimum für 17-Jährige</p>
+          <p class="mt-2 text-[14px] text-ink-muted">liegt bei <span class="text-ink tnum">€9,27/h</span>.</p>
+          <p class="mt-5 story-num text-[58px] leading-none text-ok">+10%</p>
+          <p class="mt-3 text-[14.5px] leading-relaxed text-ink-muted">
+            Diese Stelle zahlt über dem Minimum.<br>
+            Nicht selbstverständlich im Handel.
+          </p>
+        </div>
+
+        <!-- Scene 4 — Anfahrt -->
+        <div class="px-5 pt-10 pb-10 border-b border-line-subtle">
+          <p class="annot">Von dir zu BILLA</p>
+          <p class="mt-2 story-num text-[64px] leading-none text-ink">25<span class="text-[28px] text-ink-muted"> min</span></p>
+          <p class="mt-3 text-[14.5px] text-ink-muted leading-relaxed">
+            U4 ab Hütteldorf, eine Station.<br>
+            Du brauchst kein Auto.
+          </p>
+        </div>
+
+        <!-- Scene 5 — Match -->
+        <div class="px-5 pt-10 pb-10 border-b border-line-subtle">
+          <p class="annot">Du bringst mit</p>
+          <div class="mt-4 space-y-3">
+            <p class="text-[16px]"><span class="text-ok mr-2">✓</span>Du bist 17 — sie nehmen ab 16.</p>
+            <p class="text-[16px]"><span class="text-ok mr-2">✓</span>Deutsch Muttersprache.</p>
+            <p class="text-[16px]"><span class="text-ok mr-2">✓</span>Du wohnst in der Nähe.</p>
+          </div>
+          <p class="mt-6 annot">Was fehlt</p>
+          <p class="mt-3 text-[16px] text-ink-muted leading-relaxed">
+            Keine Handelserfahrung.<br>
+            <span class="text-ink-dim text-[13px]">Aber: <span class="story-num text-[20px] text-ink">71%</span> der Bewerber:innen für diese Art Stelle haben das auch nicht.</span>
+          </p>
+        </div>
+
+        <!-- Scene 6 — Vergleich -->
+        <div class="px-5 pt-10 pb-10 border-b border-line-subtle">
+          <p class="annot">In deiner Nähe</p>
+          <p class="mt-3 text-[15px] leading-relaxed text-ink-muted">
+            <span class="text-ink">SPAR Penzing</span> zahlt
+            <span class="story-num text-[22px] text-ink-muted">€9,80</span>,
+            <span class="text-ink">Hofer Hütteldorf</span>
+            <span class="story-num text-[22px] text-ok">€10,80</span> — aber 5 Minuten weiter.
+          </p>
+          <p class="mt-3 text-[13px] text-ink-dim">BILLA liegt im oberen Drittel.</p>
+        </div>
+
+        <!-- Scene 7 — Frist -->
+        <div class="px-5 pt-10 pb-12 border-b border-line-subtle">
+          <p class="annot text-warn">Frist</p>
+          <p class="mt-2 story-num text-[88px] leading-none text-warn">6<span class="text-[24px] text-ink-muted"> Tage</span></p>
+          <p class="mt-3 text-[14.5px] text-ink-muted leading-relaxed">
+            Bis Samstag, <span class="text-ink">23. Mai</span>.<br>
+            Bewirb dich diese Woche.
+          </p>
+        </div>
+
+        <!-- Scene 8 — CTA -->
+        <div class="px-5 pt-10 pb-14">
+          <p class="text-[18px] leading-relaxed">
+            Bereit?<br>
+            Wir haben deinen Lebenslauf schon vorbereitet.
+          </p>
+          <button class="mt-6 w-full h-12 rounded-lg bg-accent text-white font-semibold text-[15px] flex items-center justify-center gap-2">
+            Jetzt bewerben
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+          <button class="mt-3 w-full h-10 text-[13px] text-ink-muted">Erst noch CV checken</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="self-stretch text-[12.5px] text-ink-muted leading-relaxed">
+      <p><span class="text-ink-dim">Tonfall:</span> erzählerisch, „eine Aussage nach der anderen". <span class="text-ink-dim">Stärke:</span> jeder Fakt wirkt. Sehr modern, Gen-Z-tauglich. <span class="text-ink-dim">Schwäche:</span> viel Scrollen, bei 30 gespeicherten Jobs ermüdend.</p>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- ─── Rating prompt ─────────────────────────────────────────────── -->
+  <section class="mt-24 max-w-3xl mx-auto text-center">
+    <p class="annot-strong">Deine Wertung</p>
+    <h2 class="mt-2 text-[26px] font-semibold tracking-tight">Welche Richtung fühlt sich richtig an?</h2>
+    <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-[13px] text-ink-muted">
+      <div class="rounded-lg border border-line bg-surface-1 px-4 py-3">
+        <p class="annot-strong">A · Datenblatt</p>
+        <p class="mt-2">Stripe-Energie. Schnell, sachlich, dicht.</p>
+      </div>
+      <div class="rounded-lg border border-line bg-surface-1 px-4 py-3">
+        <p class="annot-strong">B · Coach</p>
+        <p class="mt-2">Beratungsgespräch. Warm, erklärt, baut Vertrauen.</p>
+      </div>
+      <div class="rounded-lg border border-line bg-surface-1 px-4 py-3">
+        <p class="annot-strong">C · Story</p>
+        <p class="mt-2">Erzählung. Bold, modern, eine Aussage pro Scroll.</p>
+      </div>
+    </div>
+    <p class="mt-6 text-[13px] text-ink-dim leading-relaxed">
+      Sag mir deinen Favoriten (oder ein Mischverhältnis, z. B. „A für Liste, C für Detail").<br>
+      Dann zerlegen wir den Sieger weiter und bauen ihn echt.
+    </p>
+  </section>
+
+</main>
+
+</body>
+</html>

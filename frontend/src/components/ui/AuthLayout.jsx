@@ -1,70 +1,79 @@
-import { Sparkles, Target, FileText, MessageSquare } from "lucide-react";
-
-const features = [
-  { icon: Target, title: "Intelligentes Matching", desc: "KI-gestützter Lebenslauf-Stellen-Abgleich" },
-  { icon: FileText, title: "Motivationsschreiben", desc: "Maßgeschneiderte Schreiben in Sekunden" },
-  { icon: MessageSquare, title: "Vorstellungsgespräch", desc: "Individuelle Fragen basierend auf deinem Profil" },
-];
+import { Link, useLocation } from "react-router-dom";
+import { Sparkles, ArrowLeft } from "lucide-react";
 
 /**
- * Two-panel auth shell: branding on the left, form slot on the right.
+ * Auth shell — Cron-style centered single column over the same page-level
+ * radial purple glows used by the landing page. Form lives in a soft elevated
+ * card. Top bar carries the back-to-home link and brand mark.
+ *
  * @param {object} props
- * @param {React.ReactNode} props.children
+ * @param {React.ReactNode} props.children  Form content (intro + form).
+ * @param {string} [props.backTo]           Override the back link (defaults to "/").
+ * @param {string} [props.backLabel]        Override the back link label.
  */
-export default function AuthLayout({ children }) {
+export default function AuthLayout({ children, backTo = "/", backLabel = "Zur Startseite" }) {
+  const location = useLocation();
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel — branding */}
-      <div className="hidden lg:flex w-1/2 bg-[#08090c] relative overflow-hidden">
-        {/* Decorative blobs */}
-        <div className="absolute top-0 left-0 w-56 h-56 xl:w-80 xl:h-80 2xl:w-96 2xl:h-96 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-52 h-52 xl:w-72 xl:h-72 2xl:w-80 2xl:h-80 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
-        <div className="absolute top-1/2 left-1/2 w-44 h-44 xl:w-56 xl:h-56 2xl:w-64 2xl:h-64 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
+    <div className="relative min-h-screen overflow-x-clip bg-[var(--color-bg)] text-[var(--color-fg)] font-sans">
+      {/* Top radial purple glow — matches the landing hero */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px]"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,92,255,0.22), transparent 70%)",
+        }}
+      />
+      {/* Bottom radial purple glow — matches the landing footer */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[600px]"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 100%, rgba(124,92,255,0.18), transparent 70%)",
+        }}
+      />
 
-        <div className="relative z-10 flex flex-col justify-center px-8 xl:px-12 2xl:px-16 text-white">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-accent-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
-              <Sparkles className="w-5 h-5 text-white" />
+      {/* Top bar — back link + brand mark */}
+      <header className="relative z-10">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-12 items-center gap-4 px-5 py-5 sm:px-8">
+          <Link
+            to={backTo}
+            className="col-span-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {backLabel}
+          </Link>
+          <Link to="/" className="col-span-6 flex items-center gap-2 justify-self-end">
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-accent-500)]">
+              <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="text-xl font-bold">JobAssist</span>
-          </div>
+            <span className="text-[15px] font-semibold tracking-tight">JobAssist</span>
+          </Link>
+        </div>
+      </header>
 
-          <h2 className="text-4xl font-bold leading-tight mb-4">
-            Finde deinen Traumjob<br />mit KI an deiner Seite
-          </h2>
-          <p className="text-white/70 text-lg mb-10 max-w-md">
-            Lade deinen Lebenslauf hoch, füge eine Stellenbeschreibung ein und erhalte sofort Match-Bewertungen, maßgeschneiderte Motivationsschreiben und Gesprächsvorbereitung.
-          </p>
+      {/* Centered card */}
+      <main className="relative z-10">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-12 gap-6 px-5 sm:px-8 pt-6 pb-20">
+          <div className="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
+            <div
+              key={location.pathname}
+              className="auth-card-enter rounded-2xl border border-[var(--color-border)] p-7 sm:p-9 backdrop-blur-sm"
+              style={{ background: "rgba(20,20,28,0.65)" }}
+            >
+              {children}
+            </div>
 
-          <div className="space-y-4">
-            {features.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-white/80" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">{title}</p>
-                  <p className="text-white/60 text-sm">{desc}</p>
-                </div>
-              </div>
-            ))}
+            {/* Tiny legal strip under the card */}
+            <div className="mt-6 flex justify-center gap-5 text-[11px] text-[var(--color-fg-dim)]">
+              <Link to="/terms"     className="hover:text-[var(--color-fg-muted)] transition-colors">AGB</Link>
+              <Link to="/privacy"   className="hover:text-[var(--color-fg-muted)] transition-colors">Datenschutz</Link>
+              <Link to="/impressum" className="hover:text-[var(--color-fg-muted)] transition-colors">Impressum</Link>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Right panel — form */}
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 sm:p-8 bg-[#08090c] min-h-screen">
-        {/* Mobile-only logo */}
-        <div className="lg:hidden flex items-center gap-2.5 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-slate-100">JobAssist</span>
-        </div>
-        <div className="w-full max-w-md">
-          {children}
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

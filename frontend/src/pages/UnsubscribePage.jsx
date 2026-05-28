@@ -29,27 +29,36 @@ export default function UnsubscribePage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="max-w-sm w-full card rounded-3xl p-8 text-center">
+    <div className="relative min-h-screen overflow-x-clip bg-[var(--color-bg)] flex items-center justify-center px-4">
+      {/* Page-level radial glow — matches AuthLayout/LegalLayout chrome */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px]"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,92,255,0.20), transparent 70%)",
+        }}
+      />
+      <div className="relative z-10 max-w-sm w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-8 text-center">
         {status === "loading" && (
           <>
-            <div className="w-14 h-14 rounded-full bg-white/[0.06] flex items-center justify-center mx-auto mb-5">
-              <Loader2 className="w-7 h-7 text-slate-400 animate-spin" />
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] mx-auto mb-5">
+              <Loader2 className="w-6 h-6 text-[var(--color-accent-300)] animate-spin" />
             </div>
-            <h1 className="text-lg font-bold text-slate-100 mb-2">Abmeldung wird verarbeitet…</h1>
-            <p className="text-sm text-slate-400">Bitte warte einen Moment.</p>
+            <h1 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-2">Abmeldung wird verarbeitet…</h1>
+            <p className="text-[13px] text-[var(--color-fg-muted)]">Bitte warte einen Moment.</p>
           </>
         )}
         {status === "success" && (
           <>
-            <div className="w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-7 h-7 text-green-400" />
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-success)]/10 border border-[var(--color-success)]/25 mx-auto mb-5">
+              <CheckCircle2 className="w-6 h-6 text-[var(--color-success)]" />
             </div>
-            <h1 className="text-lg font-bold text-slate-100 mb-2">Erfolgreich abgemeldet</h1>
-            <p className="text-sm text-slate-400 mb-6">{message}</p>
+            <h1 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-2">Erfolgreich abgemeldet</h1>
+            <p className="text-[13px] text-[var(--color-fg-muted)] mb-6 leading-relaxed">{message}</p>
             <Link
               to="/job-alerts"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 text-white text-sm font-semibold shadow-lg shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500 hover:shadow-xl hover:shadow-brand-500/40"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--color-accent-500)] text-white text-[13px] font-semibold transition-colors hover:bg-[var(--color-accent-400)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
             >
               <Bell className="w-4 h-4" /> Alerts verwalten
             </Link>
@@ -57,14 +66,14 @@ export default function UnsubscribePage() {
         )}
         {status === "error" && (
           <>
-            <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-5">
-              <AlertCircle className="w-7 h-7 text-red-400" />
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-error)]/10 border border-[var(--color-error)]/25 mx-auto mb-5">
+              <AlertCircle className="w-6 h-6 text-[var(--color-error)]" />
             </div>
-            <h1 className="text-lg font-bold text-slate-100 mb-2">Abmeldung fehlgeschlagen</h1>
-            <p className="text-sm text-slate-400 mb-6">{message}</p>
+            <h1 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-2">Abmeldung fehlgeschlagen</h1>
+            <p className="text-[13px] text-[var(--color-fg-muted)] mb-6 leading-relaxed">{message}</p>
             <Link
               to="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1f2937] text-slate-200 text-sm font-semibold hover:bg-[#2a3550] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] text-[var(--color-fg)] text-[13px] font-semibold hover:bg-[var(--color-bg-elev-3)] hover:border-[var(--color-border-strong)] transition-colors"
             >
               Zur Startseite
             </Link>

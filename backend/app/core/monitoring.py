@@ -8,72 +8,22 @@ Every payload that leaves the application is first run through
   * Stripe / Groq / Adzuna keys when they appear inside log messages
   * IP addresses (`request.env.REMOTE_ADDR` and `user.ip_address`)
 
+Redaction primitives (`SENSITIVE_KEYS`, `SECRET_VALUE_PATTERNS`,
+`scrub_string`, `scrub_mapping`) live in `app.core.redaction` so the
+stdout structured-log filter shares the exact same list — there is no
+"Sentry-safe" vs "stdout-safe" gap to drift.
+
 This means: you can ship to Sentry from the EU and still satisfy GDPR
 art. 32 + art. 5(1)(c) ("data minimisation").
 """
 from __future__ import annotations
 
 import logging
-import re
-from typing import Any, Mapping
+
+from app.core.redaction import REDACTED as _REDACTED, scrub_mapping as _scrub_mapping, scrub_string as _scrub_string
 
 
 logger = logging.getLogger(__name__)
-
-
-_SENSITIVE_KEYS = {
-    "password",
-    "passwd",
-    "pwd",
-    "token",
-    "access_token",
-    "refresh_token",
-    "id_token",
-    "api_key",
-    "apikey",
-    "secret",
-    "client_secret",
-    "stripe_secret_key",
-    "groq_api_key",
-    "anthropic_api_key",
-    "authorization",
-    "cookie",
-    "set-cookie",
-    "x-admin-secret",
-}
-_REDACTED = "[redacted]"
-
-# Patterns for values that look like secrets even when their key is opaque.
-_SECRET_VALUE_PATTERNS = [
-    re.compile(r"sk_(live|test)_[A-Za-z0-9]{16,}"),   # Stripe secret keys
-    re.compile(r"pk_(live|test)_[A-Za-z0-9]{16,}"),   # Stripe publishable keys (informational)
-    re.compile(r"whsec_[A-Za-z0-9]{16,}"),            # Stripe webhook secrets
-    re.compile(r"gsk_[A-Za-z0-9]{20,}"),              # Groq API keys
-    re.compile(r"eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]+"),  # JWTs
-]
-
-
-def _scrub_string(value: str) -> str:
-    for pattern in _SECRET_VALUE_PATTERNS:
-        value = pattern.sub(_REDACTED, value)
-    return value
-
-
-def _scrub_mapping(node: Any) -> Any:
-    """Recursively redact sensitive keys, in-place where possible."""
-    if isinstance(node, Mapping):
-        scrubbed = {}
-        for k, v in node.items():
-            if isinstance(k, str) and k.lower() in _SENSITIVE_KEYS:
-                scrubbed[k] = _REDACTED
-            else:
-                scrubbed[k] = _scrub_mapping(v)
-        return scrubbed
-    if isinstance(node, list):
-        return [_scrub_mapping(item) for item in node]
-    if isinstance(node, str):
-        return _scrub_string(node)
-    return node
 
 
 def _scrub_event(event: dict, _hint: dict) -> dict | None:

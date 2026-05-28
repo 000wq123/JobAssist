@@ -176,40 +176,62 @@ def match_resume_to_job(resume_text: str, job_description: str) -> dict:
     so the LLM cannot anchor to a fixed number.
     """
     system = (
-        "Du bist ein erfahrener österreichischer Personalvermittler. "
-        "Antworte AUSSCHLIESSLICH auf Deutsch. "
-        "Antworte nur mit gültigem JSON — kein Markdown, keine Code-Blöcke, kein Kommentar. "
-        "Alle Textwerte im JSON müssen auf Deutsch sein."
+        "Du bist ein ehrlicher, erfahrener Karriere-Berater für junge Menschen in Österreich (16–20 Jahre). "
+        "Deine Aufgabe ist es, den Jugendlichen ehrlich und direkt zu sagen, wie gut sie zu einer Stelle passen — "
+        "nicht um sie zu entmutigen, sondern damit sie eine fundierte Entscheidung treffen können. "
+        "Antworte AUSSCHLIESSLICH auf Deutsch, du-Form. "
+        "Antworte nur mit gültigem JSON — kein Markdown, keine Code-Blöcke, kein Kommentar."
     )
     prompt = f"""Analysiere die Übereinstimmung zwischen Lebenslauf und Stellenbeschreibung.
 Alle Texte im JSON müssen auf Deutsch sein.
 
+ZIELGRUPPE: 16–20-jährige Jugendliche in Österreich, die sich für Praktika, Teilzeit- oder Samstagjobs bewerben.
+ICHTIG: Fehlende Berufserfahrung ist bei dieser Altersgruppe NORMAL — bewerte das nicht als K.O.-Kriterium, außer die Stelle verlangt es explizit.
+
 AUFGABE:
 1. Identifiziere die 6 wichtigsten Anforderungen der Stelle.
-2. Bewerte jede Anforderung einzeln gegen den Lebenslauf:
-   - 2 = vollständig erfüllt
-   - 1 = teilweise erfüllt / verwandtes Potenzial vorhanden
-   - 0 = nicht erfüllt / keine Hinweise
-3. Schätze Bonus- und Abzugspunkte (ganze Zahlen):
-   - bonus: 0–20 (für passende Ausbildung, Branchenerfahrung, Soft Skills, Sprachen)
-   - penalty: 0–20 (für fehlende Kernanforderungen, Qualifikationslücken)
+2. Bewerte jede Anforderung gegen den Lebenslauf (0/1/2) UND suche direkte Belege im Lebenslauf.
+3. Schätze Bonus- und Abzugspunkte.
+4. Schreibe ein ehrliches Fazit direkt an den Bewerber.
+
+Bewertungsskala:
+- 2 = vollständig erfüllt (konkreter Nachweis im Lebenslauf)
+- 1 = teilweise erfüllt / verwandtes Potenzial vorhanden
+- 0 = nicht erfüllt / keine Hinweise
 
 Gib genau dieses JSON zurück (kein "score"-Feld — der Score wird extern berechnet):
 {{
   "requirements": [
-    {{"req": "<Anforderung 1 aus der Stellenbeschreibung>", "score": <0|1|2>, "note": "<1 Satz Begründung>"}},
-    {{"req": "<Anforderung 2>", "score": <0|1|2>, "note": "<Begründung>"}},
-    {{"req": "<Anforderung 3>", "score": <0|1|2>, "note": "<Begründung>"}},
-    {{"req": "<Anforderung 4>", "score": <0|1|2>, "note": "<Begründung>"}},
-    {{"req": "<Anforderung 5>", "score": <0|1|2>, "note": "<Begründung>"}},
-    {{"req": "<Anforderung 6>", "score": <0|1|2>, "note": "<Begründung>"}}
+    {{
+      "req": "<Anforderung 1 aus der Stellenbeschreibung (exakte Formulierung)>",
+      "score": <0|1|2>,
+      "note": "<1 Satz: Was hast du im Lebenslauf dafür gefunden oder nicht gefunden?>",
+      "evidence": "<Direktes Zitat oder Paraphrase aus dem Lebenslauf als Beleg, oder \"Kein Nachweis im Lebenslauf\" wenn nichts gefunden>",
+      "dealbreaker": <true wenn diese Anforderung ohne Ausnahme erfüllt sein muss, sonst false>
+    }},
+    {{"req": "<Anforderung 2>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
+    {{"req": "<Anforderung 3>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
+    {{"req": "<Anforderung 4>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
+    {{"req": "<Anforderung 5>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
+    {{"req": "<Anforderung 6>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}}
   ],
   "bonus": <ganze Zahl 0–20>,
   "penalty": <ganze Zahl 0–20>,
-  "summary": "<2–3 Sätze Gesamtbewertung auf Deutsch>",
-  "strengths": ["<Stärke 1>", "<Stärke 2>", "<Stärke 3>", "<Stärke 4>", "<Stärke 5>", "<Stärke 6>", "<Stärke 7>", "<Stärke 8>"],
-  "gaps": ["<Lücke 1>", "<Lücke 2>", "<Lücke 3>", "<Lücke 4>", "<Lücke 5>", "<Lücke 6>"],
-  "recommendations": ["<Empfehlung 1>", "<Empfehlung 2>", "<Empfehlung 3>", "<Empfehlung 4>", "<Empfehlung 5>"]
+  "verdict": "<2–3 Sätze DIREKT AN DEN BEWERBER (du-Form): ehrliche Einschätzung ob Bewerbung sinnvoll ist, welche konkrete Stärke sie mitbringen und was der eine wichtigste fehlende Punkt ist. Kein Konjunktiv, kein Ausweichen. Beispiel: 'Du bringst X mit, was hier gefragt ist. Deine Erfahrung bei Y zeigt Z. Was fehlt ist A — aber das ist bei Samstagjobs oft kein Ausschlussgrund.'>",
+  "strengths": [
+    "<Kompetenz (2-4 Wörter)>: <Zitiere was im Lebenslauf steht und erklär warum das hier passt — max 18 Wörter>",
+    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>",
+    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>",
+    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>",
+    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>"
+  ],
+  "gaps": [
+    "<Fehlende Kompetenz (2-4 Wörter)>: <Was fehlt, ob es ein K.O.-Kriterium ist und — wenn nicht — wie die Person es kompensieren kann>",
+    "<Fehlende Kompetenz>: <Erklärung + Einordnung>",
+    "<Fehlende Kompetenz>: <Erklärung + Einordnung>",
+    "<Fehlende Kompetenz>: <Erklärung + Einordnung>"
+  ],
+  "recommendations": ["<Konkreter Tipp 1 für die Bewerbung>", "<Tipp 2>", "<Tipp 3>"]
 }}
 
 Lebenslauf:
@@ -255,6 +277,7 @@ Stellenbeschreibung:
     return {
         "score":           computed_score,
         "summary":         raw.get("summary", ""),
+        "verdict":         raw.get("verdict", ""),
         "score_rationale": score_rationale,
         "requirements":    reqs,
         "strengths":       raw.get("strengths", []),
@@ -524,6 +547,53 @@ Lebenslauf:
         return {"tech": 50, "exp": 50, "edu": 50, "soft": 50, "lang": 50, "summary": "Analyse konnte nicht durchgeführt werden."}
 
 
+def rate_interview_answer(
+    question: str,
+    user_answer: str,
+    suggested_answer: str,
+) -> dict:
+    """Rate a user's practice answer against a reference and return structured feedback."""
+    system = (
+        "Du bist ein freundlicher Karriere-Coach für junge Erwachsene in Österreich. "
+        "Dein Ton ist direkt, ermutigend und konstruktiv — kein akademisches Fachchinesisch. "
+        "Antworte ausschließlich auf Deutsch. "
+        "Antworte immer nur mit gültigem JSON — kein Markdown, keine Code-Blöcke, kein Kommentar."
+    )
+    prompt = f"""Bewerte die folgende Interviewantwort eines jungen Bewerbers.
+
+Frage: {question}
+
+Antwort des Nutzers:
+\"\"\"{user_answer}\"\"\"
+
+Referenzantwort (was gut wäre):
+\"\"\"{suggested_answer}\"\"\"
+
+Gib ein JSON-Objekt zurück mit diesen Feldern:
+- score: NUR eines dieser drei Wörter: "stark" | "gut" | "ausbaufähig"
+- strong: Array von 1-2 kurzen Strings — was konkret gut war (je max. 1 Satz, locker formuliert)
+- improve: Array von 1-2 kurzen Strings — was besser sein könnte. Bei score="stark" leeres Array.
+- tip: Ein einziger, konkreter Tipp für das nächste Mal (max. 1 Satz, beginnt mit einem Verb)
+
+Regeln:
+- Sei ehrlich aber nicht hart — der Nutzer ist 16-20 Jahre alt.
+- Keine generischen Phrasen wie "Gute Antwort!" ohne Begründung.
+- Fokussiere auf Inhalt, nicht auf Grammatik.
+- Wenn die Antwort leer oder sinnlos ist, setze score="ausbaufähig" und tip="Versuch die Frage zu beantworten, auch wenn du dir nicht sicher bist."
+"""
+    result = _call_groq(prompt, system=system, max_tokens=512, temperature=0.4)
+    try:
+        data = json.loads(result)
+        return {
+            "score": data.get("score", "gut"),
+            "strong": data.get("strong", []),
+            "improve": data.get("improve", []),
+            "tip": data.get("tip", ""),
+        }
+    except json.JSONDecodeError:
+        return {"score": "gut", "strong": [], "improve": [], "tip": result[:200]}
+
+
 def generate_interview_prep(
     resume_text: str,
     job_description: str,
@@ -560,3 +630,84 @@ Stellenbeschreibung:
         return json.loads(result)
     except json.JSONDecodeError:
         return [{"question": "Could not parse", "type": "unknown", "answer": result, "tip": ""}]
+
+
+async def suggest_courses_for_job(description: str, role: str = "", resume_text: str = "") -> list[dict]:
+    """Generate 3-4 relevant online course suggestions for a job.
+
+    Returns a list of dicts: {title, platform, duration?, url?}.
+    """
+    system = (
+        "Du bist ein Karriereberater für österreichische Jugendliche (15–22 Jahre). "
+        "Antworte AUSSCHLIESSLICH mit gültigem JSON — kein Markdown, kein Kommentar, nur das Array."
+    )
+    resume_section = f"\n\nLebenslauf des Bewerbers:\n\"\"\"\n{resume_text[:3000]}\n\"\"\"" if resume_text else ""
+    prompt = f"""Schlage 3–4 konkrete Online-Kurse vor, die den Bewerber für folgende Stelle wettbewerbsfähiger machen.
+
+Stelle: {role or "nicht angegeben"}
+Stellenbeschreibung:
+\"\"\"
+{description[:4000]}
+\"\"\"{resume_section}
+
+Gib AUSSCHLIESSLICH ein JSON-Array zurück (kein Text davor oder danach):
+[
+  {{
+    "title": "Konkreter Kursname",
+    "platform": "Plattformname (YouTube / Coursera / Udemy / LinkedIn Learning / Khan Academy / OpenHPI)",
+    "duration": "geschätzte Dauer (z.B. '4 Stunden', '3 Wochen')",
+    "url": "PFLICHT — immer eine echte, klickbare URL angeben (siehe Regeln unten)"
+  }}
+]
+
+URL-Regeln (WICHTIG — jeder Kurs MUSS eine URL haben):
+- Wenn du die exakte Kurs-URL kennst: verwende sie direkt.
+- Wenn nicht: baue eine Suchanfrage-URL nach diesem Muster:
+  * YouTube:           https://www.youtube.com/results?search_query=SUCHBEGRIFF+tutorial
+  * Udemy:             https://www.udemy.com/courses/search/?q=SUCHBEGRIFF
+  * Coursera:          https://www.coursera.org/search?query=SUCHBEGRIFF
+  * LinkedIn Learning: https://www.linkedin.com/learning/search?keywords=SUCHBEGRIFF
+  * Khan Academy:      https://www.khanacademy.org/search?page_search_query=SUCHBEGRIFF
+  Ersetze SUCHBEGRIFF durch passende englische oder deutsche Keywords (URL-codiert: Leerzeichen = +).
+- "url": null ist VERBOTEN — jeder Eintrag braucht eine URL.
+- Bevorzuge kostenlose Plattformen (YouTube, Coursera Audit, Khan Academy).
+- Genau 3–4 Kurse. Kein Kommentar, nur JSON.
+"""
+    raw = _strip_code_fences(await call_groq_async(prompt, system=system, max_tokens=1024, temperature=0.4))
+    try:
+        result = json.loads(raw)
+        if not isinstance(result, list):
+            return []
+        from urllib.parse import quote_plus
+        cleaned = []
+        for item in result[:4]:
+            if not isinstance(item, dict):
+                continue
+            if not item.get("url"):
+                query = quote_plus(f"{item.get('title', '')} tutorial")
+                item["url"] = f"https://www.youtube.com/results?search_query={query}"
+            cleaned.append(item)
+        return cleaned
+    except json.JSONDecodeError:
+        return []
+
+
+async def match_resume_to_job_async(resume_text: str, job_description: str) -> dict:
+    """Async wrapper — runs the synchronous scorer in a thread pool."""
+    import asyncio
+    return await asyncio.to_thread(match_resume_to_job, resume_text, job_description)
+
+
+async def polish_text(text: str, context: str = "") -> str:
+    """Improve a short text snippet (hobby line, bullet point, etc.) for use in
+    an Austrian CV. Returns only the improved text — no explanations."""
+    system = (
+        "Du bist ein erfahrener österreichischer Lebenslauf-Experte. "
+        "Wenn dir ein kurzer Text gegeben wird, verbesserst du ihn: "
+        "klarer, prägnanter, aktive Formulierungen, keine Floskeln. "
+        "Antworte NUR mit dem verbesserten Text — keine Erklärungen, kein Markdown, "
+        "keine Anführungszeichen. Gleiche Sprache wie der Input."
+    )
+    context_line = f"\nKontext: {context}" if context else ""
+    prompt = f"Verbessere diesen Lebenslauf-Text:{context_line}\n\n{text}"
+    return await call_groq_async(prompt, system=system, max_tokens=512, temperature=0.4)

@@ -27,6 +27,11 @@ from app.models import (  # noqa: F401 — registers models with Base.metadata
     usage,
     user,
     user_profile,
+    profile_v2,
+    web_push_subscription,
+    inbox_item,
+    kv_wage,
+    deadline,
 )
 
 config = context.config

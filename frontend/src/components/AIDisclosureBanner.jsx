@@ -58,18 +58,18 @@ export default function AIDisclosureBanner({ feature }) {
   };
 
   return (
-    <div className="relative flex items-start gap-2 rounded-xl border border-brand-500/20 bg-brand-500/5 p-3 pr-9 text-sm">
-      <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-300" aria-hidden="true" />
+    <div className="relative flex items-start gap-2.5 rounded-xl border border-[var(--color-accent-500)]/20 bg-[var(--color-accent-500)]/5 p-3 pr-9 text-[13px]">
+      <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-300)]" aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <strong className="text-brand-200">{info.title}</strong>
-        <p className="mt-0.5 text-slate-300">{info.text}</p>
-        <p className="mt-1 text-[11px] text-brand-300/70">{info.article}</p>
+        <strong className="text-[var(--color-accent-200)]">{info.title}</strong>
+        <p className="mt-0.5 text-[var(--color-fg-muted)] leading-relaxed">{info.text}</p>
+        <p className="mt-1 text-[11px] text-[var(--color-accent-300)]/70">{info.article}</p>
       </div>
       <button
         type="button"
         onClick={handleDismiss}
         aria-label="Hinweis ausblenden"
-        className="absolute top-2 right-2 rounded-md p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+        className="absolute top-2 right-2 rounded-md p-1 text-[var(--color-fg-dim)] hover:bg-[var(--color-bg-elev-2)] hover:text-[var(--color-fg)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)]"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>

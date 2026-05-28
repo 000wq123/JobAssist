@@ -1,10 +1,9 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import OnboardingTutorial from "./components/OnboardingTutorial";
 
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import ErrorBoundary from "./components/ErrorBoundary";
-import Layout from "./components/layout/Layout";
+import AppShell from "./components/shell/AppShell";
 import UpgradeModal from "./components/UpgradeModal";
 import useAuthStore from "./hooks/useAuthStore";
 import queryClient from "./queryClient";
@@ -13,13 +12,14 @@ const loadLandingPage = () => import("./pages/LandingPage");
 const loadLoginPage = () => import("./pages/LoginPage");
 const loadRegisterPage = () => import("./pages/RegisterPage");
 const loadDashboardPage = () => import("./pages/DashboardPage");
+const loadCVBuilderPage = () => import("./pages/CVBuilderPage");
 const loadResumePage = () => import("./pages/ResumePage");
+const loadJobsLayout = () => import("./pages/JobsLayout");
 const loadJobsPage = () => import("./pages/JobsPage");
+const loadFindenPage = () => import("./pages/FindenPage");
 const loadJobDetailPage = () => import("./pages/JobDetailPage");
 const loadSettingsPage = () => import("./pages/SettingsPage");
-const loadAIAssistantPage = () => import("./pages/AIAssistantPage");
 const loadJobAlertsPage = () => import("./pages/JobAlertsPage");
-const loadCoverLetterPage = () => import("./pages/CoverLetterPage");
 const loadPricingPage = () => import("./pages/PricingPage");
 const loadBillingPage = () => import("./pages/BillingPage");
 const loadTermsPage = () => import("./pages/TermsPage");
@@ -35,13 +35,13 @@ const LandingPage = lazy(loadLandingPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
 const DashboardPage = lazy(loadDashboardPage);
+const CVBuilderPage = lazy(loadCVBuilderPage);
 const ResumePage = lazy(loadResumePage);
-const JobsPage = lazy(loadJobsPage);
+const JobsLayout = lazy(loadJobsLayout);
+const FindenPage = lazy(loadFindenPage);
 const JobDetailPage = lazy(loadJobDetailPage);
 const SettingsPage = lazy(loadSettingsPage);
-const AIAssistantPage = lazy(loadAIAssistantPage);
 const JobAlertsPage = lazy(loadJobAlertsPage);
-const CoverLetterPage = lazy(loadCoverLetterPage);
 const PricingPage = lazy(loadPricingPage);
 const BillingPage = lazy(loadBillingPage);
 const TermsPage = lazy(loadTermsPage);
@@ -55,12 +55,8 @@ const UnsubscribePage = lazy(loadUnsubscribePage);
 
 const preloaders = [
   loadDashboardPage,
+  loadJobsLayout,
   loadJobsPage,
-  loadResumePage,
-  loadJobAlertsPage,
-  loadSettingsPage,
-  loadBillingPage,
-  loadAIAssistantPage,
 ];
 
 /**
@@ -116,16 +112,18 @@ function AppRoutes() {
         <Route
           element={
             <PrivateRoute>
-              <Layout />
+              <AppShell />
             </PrivateRoute>
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/resume" element={<ResumePage />} />
-          <Route path="/jobs" element={<JobsPage />} />
-          <Route path="/jobs/:jobId" element={<Suspense fallback={null}><JobDetailPage /></Suspense>} />
-          <Route path="/ai-assistant" element={<AIAssistantPage />} />
-          <Route path="/cover-letter" element={<CoverLetterPage />} />
+          <Route path="/lebenslauf" element={<CVBuilderPage />} />
+          <Route path="/lebenslauf/analyse" element={<Suspense fallback={null}><ResumePage /></Suspense>} />
+          <Route path="/resume" element={<Navigate to="/lebenslauf" replace />} />
+          <Route path="/finden" element={<Suspense fallback={null}><FindenPage /></Suspense>} />
+          <Route path="/jobs" element={<Suspense fallback={null}><JobsLayout /></Suspense>}>
+            <Route path=":jobId" element={<Suspense fallback={null}><JobDetailPage /></Suspense>} />
+          </Route>
           <Route path="/job-alerts" element={<JobAlertsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />
@@ -141,18 +139,17 @@ export default function App() {
     const warm = () => preloaders.forEach((load) => load().catch(() => {}));
 
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(warm, { timeout: 0 });
+      const id = window.requestIdleCallback(warm, { timeout: 3000 });
       return () => window.cancelIdleCallback(id);
     }
 
-    const timer = window.setTimeout(warm, 0);
+    const timer = window.setTimeout(warm, 3000);
     return () => window.clearTimeout(timer);
   }, []);
 
   return (
     <>
       <UpgradeModal />
-      <OnboardingTutorial />
       <AppRoutes />
       <CookieConsentBanner />
     </>

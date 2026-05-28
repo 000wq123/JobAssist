@@ -3,14 +3,25 @@ import queryClient from "../queryClient";
 import { STORAGE_KEYS, removeKey } from "../storageKeys";
 
 export const defaultBaseURL = (() => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host === "jobassist.tech" || host === "www.jobassist.tech") {
-      return "https://jobassist-production.up.railway.app/api";
+  const url = import.meta.env.VITE_API_URL || (() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      // Production hostnames → Railway backend
+      if (host === "jobassist.tech" || host === "www.jobassist.tech") {
+        return "https://jobassist-backend-production-9e7e.up.railway.app/api";
+      }
+      // localhost / 127.0.0.1 → local dev backend
+      if (host === "localhost" || host === "127.0.0.1") {
+        return "http://localhost:8000/api";
+      }
     }
+    return "/api";
+  })();
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("🔌 API URL:", url);
   }
-  return "/api";
+  return url;
 })();
 
 // Default timeouts per endpoint. AI endpoints can take 30+ s, so the default
@@ -18,13 +29,14 @@ export const defaultBaseURL = (() => {
 const TIMEOUT_DEFAULT_MS = 15000;
 const TIMEOUT_AI_MS = 90000;
 const AI_PATH_HINTS = [
-  "/ai-assistant/",
   "/cover-letter/",
-  "/motivationsschreiben/",
   "/interview/",
   "/resume/", // upload + analyze can be slow
   "/jobs/match",
+  "/match",
+  "/courses",
   "/research/",
+  "/ai/",
 ];
 
 function pickTimeout(url = "") {
@@ -43,11 +55,8 @@ const api = axios.create({
 const USAGE_FEATURES = [
   { match: "/resume/analyze", feature: "cv_analysis" },
   { match: "/cover-letter/generate", feature: "cover_letter" },
-  { match: "/motivationsschreiben/generate", feature: "cover_letter" },
   { match: "/interview/generate", feature: "ai_chat" },
-  { match: "/ai-assistant/chat", feature: "ai_chat" },
-  { match: "/ai-assistant/optimize", feature: "ai_chat" },
-  { match: "/ai-assistant/analyze-job", feature: "ai_chat" },
+  { match: "/interview/rate",     feature: "ai_chat" },
   { match: "/jobs/match", feature: "cv_analysis" },
   { match: "/research/", feature: "ai_chat" },
   { match: "/jobs/search/recommended", feature: "job_search" },
@@ -248,8 +257,8 @@ export const jobApi = {
   list: (page = 1, pageSize = 100) => api.get(`/jobs/?page=${page}&page_size=${pageSize}`),
   get: (id) => api.get(`/jobs/${id}`),
   delete: (id) => api.delete(`/jobs/${id}`),
-  match: (jobId, resumeId) => api.post("/jobs/match", { job_id: jobId, resume_id: resumeId }),
-  generateMatch: (jobId, resumeId) => api.post("/jobs/match", { job_id: jobId, resume_id: resumeId }),
+  match: (jobId, resumeId) => api.post(`/jobs/${jobId}/match`, { resume_id: resumeId }),
+  generateMatch: (jobId, resumeId) => api.post(`/jobs/${jobId}/match`, { resume_id: resumeId }),
   generateCoverLetter: (jobId, resumeId, tone = "professional") =>
     api.post("/cover-letter/generate", { job_id: jobId, resume_id: resumeId, tone }),
   generateInterviewPrep: (jobId, resumeId, numQuestions = 10) =>
@@ -273,11 +282,6 @@ export const coverLetterApi = {
     api.post("/cover-letter/generate", { job_id: jobId, resume_id: resumeId, tone }),
 };
 
-// --- Motivationsschreiben ---
-export const motivationsschreibenApi = {
-  generate: (data) => api.post("/motivationsschreiben/generate", data),
-};
-
 // --- Interview Prep ---
 export const interviewApi = {
   generate: (jobId, resumeId, numQuestions = 10) =>
@@ -286,13 +290,12 @@ export const interviewApi = {
       resume_id: resumeId,
       num_questions: numQuestions,
     }),
-};
-
-// --- AI Assistant ---
-export const aiAssistantApi = {
-  chat: (data) => api.post("/ai-assistant/chat", data),
-  optimize: (data) => api.post("/ai-assistant/optimize", data),
-  analyzeJob: (data) => api.post("/ai-assistant/analyze-job", data),
+  rateAnswer: (question, userAnswer, suggestedAnswer) =>
+    api.post("/interview/rate", {
+      question,
+      user_answer: userAnswer,
+      suggested_answer: suggestedAnswer,
+    }),
 };
 
 // --- Job Alerts ---
@@ -303,6 +306,12 @@ export const jobAlertsApi = {
   delete: (id) => api.delete(`/job-alerts/${id}`),
   runNow: (id) => api.post(`/job-alerts/${id}/run`),
   unsubscribe: (token) => api.post("/job-alerts/unsubscribe", { token }),
+};
+
+// --- Courses ---
+export const coursesApi = {
+  generate: (jobId, resumeId) =>
+    api.post(`/jobs/${jobId}/courses`, { resume_id: resumeId ?? null }),
 };
 
 // --- Research ---
@@ -322,6 +331,11 @@ export const billingApi = {
   plans: () => api.get("/billing/plans"),
   createCheckout: (plan) => api.post("/billing/create-checkout-session", { plan }),
   createPortal: () => api.post("/billing/create-portal-session"),
+};
+
+// --- AI Text Polish ---
+export const aiApi = {
+  polish: (text, context = "") => api.post("/ai/polish", { text, context }),
 };
 
 // --- Contact ---

@@ -25,6 +25,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.routes import (
     admin,
+    ai,
     ai_assistant,
     auth,
     billing,
@@ -34,6 +35,7 @@ from app.api.routes import (
     interview,
     job_alerts,
     jobs,
+    logo_proxy,
     motivationsschreiben,
     research,
     resume,
@@ -146,6 +148,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 # Routers ─────────────────────────────────────────────────────────────────────
+app.include_router(ai.router,                   prefix="/api/ai",                   tags=["AI"])
 app.include_router(auth.router,                 prefix="/api/auth",                 tags=["Auth"])
 app.include_router(settings_routes.router,      prefix="/api/settings",             tags=["Settings"])
 app.include_router(resume.router,               prefix="/api/resume",               tags=["Resume"])
@@ -159,4 +162,5 @@ app.include_router(research.router,             prefix="/api/research",         
 app.include_router(billing.router,              prefix="/api/billing",              tags=["Billing"])
 app.include_router(contact.router,              prefix="/api/contact",              tags=["Contact"])
 app.include_router(admin.router,                prefix="/api/admin",                tags=["Admin"])
+app.include_router(logo_proxy.router,           prefix="/api",                      tags=["Utils"])
 app.include_router(health.router,                                                   tags=["Health"])

@@ -11,6 +11,17 @@ class JobCreate(BaseModel):
     description: Optional[str] = Field(None, max_length=50000)
     url: Optional[str] = Field(None, max_length=2000)
     resume_id: Optional[int] = None
+    # Scraper-sourced fields. Optional on purpose — manual job creation still
+    # works without them; Finden's "Speichern" passes them through so the
+    # detail page can render the wage hero, KPI tiles, and KV bar without a
+    # second round-trip.
+    salary_text: Optional[str] = Field(None, max_length=255)
+    location: Optional[str] = Field(None, max_length=255)
+    job_type: Optional[str] = Field(None, max_length=50)
+    source: Optional[str] = Field(None, max_length=50)
+    source_id: Optional[str] = Field(None, max_length=255)
+    posted_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
 
     @field_validator("url")
     @classmethod
@@ -33,13 +44,22 @@ class JobOut(BaseModel):
     description: Optional[str]
     url: Optional[str]
     status: str  # bookmarked, applied, interviewing, offered, rejected
-    match_score: Optional[float]
+    category: Optional[str] = None  # samstagsjob, praktikum, teilzeit, other
+    match_score: Optional[float] = None
     match_feedback: Optional[str]
     cover_letter: Optional[str]
     interview_qa: Optional[str]
+    suggested_courses: Optional[str] = None
     research_data: Optional[str] = None
     notes: Optional[str]
     deadline: Optional[datetime]
+    # Scraper-sourced fields (exposed for new hero design)
+    location: Optional[str] = None
+    job_type: Optional[str] = None
+    salary_text: Optional[str] = None
+    source: Optional[str] = None
+    posted_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -61,11 +81,6 @@ class JobResearchUpdate(BaseModel):
         return v
 
 
-class MatchRequest(BaseModel):
-    job_id: int
-    resume_id: Optional[int] = None
-
-
 class CoverLetterRequest(BaseModel):
     job_id: int
     resume_id: Optional[int] = None
@@ -76,6 +91,27 @@ class InterviewPrepRequest(BaseModel):
     job_id: int
     resume_id: Optional[int] = None
     num_questions: int = 10
+
+
+class InterviewRateRequest(BaseModel):
+    question: str = Field(..., max_length=1000)
+    user_answer: str = Field(..., max_length=3000)
+    suggested_answer: str = Field(..., max_length=3000)
+
+
+class InterviewRateFeedback(BaseModel):
+    score: str
+    strong: list[str]
+    improve: list[str]
+    tip: str
+
+
+class MatchRequest(BaseModel):
+    resume_id: int
+
+
+class CoursesRequest(BaseModel):
+    resume_id: Optional[int] = None
 
 
 class JobStatusUpdate(BaseModel):

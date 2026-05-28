@@ -46,27 +46,27 @@ export default function useUsageGuard(feature) {
     if (atLimit) {
       toast(
         (t) => (
-          <div className="w-full max-w-md rounded-2xl bg-[#0D1117] border border-[#1C2333] p-5 shadow-2xl shadow-black/60">
+          <div className="w-full max-w-md rounded-2xl bg-[var(--color-bg-elev-1)] border border-[var(--color-border)] p-5 shadow-2xl shadow-black/60 backdrop-blur-sm">
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/20">
-                <AlertCircle className="h-5 w-5 text-amber-400" />
+              <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl" style={{ background: "rgba(245,158,11,0.20)", border: "1px solid rgba(245,158,11,0.35)" }}>
+                <AlertCircle className="h-5 w-5 text-[var(--color-warning)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-white text-base">Limit erreicht</p>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="text-[15px] font-semibold text-[var(--color-fg)]">Limit erreicht</p>
+                <p className="mt-1 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
                   Du hast {used}/{limit} {label} {periodLabel} verbraucht.
                   Upgrade auf Pro oder Max für mehr Kapazität.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => { toast.dismiss(t.id); navigate("/pricing"); }}
-                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-500)] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--color-accent-400)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-elev-1)]"
                   >
                     Upgrade <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => toast.dismiss(t.id)}
-                    className="rounded-xl border border-[#1C2333] px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors"
+                    className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-[13px] font-medium text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] hover:text-[var(--color-fg)] transition-colors"
                   >
                     Schließen
                   </button>
@@ -81,8 +81,7 @@ export default function useUsageGuard(feature) {
     }
 
     if (nearLimit) {
-      toast(`Noch ${remaining} ${label} übrig ${periodLabel}`, {
-        icon: "⚠️",
+      toast(`Noch ${remaining} ${label} übrig ${periodLabel}.`, {
         duration: 4000,
         id: `usage-warning-${feature}`,
       });

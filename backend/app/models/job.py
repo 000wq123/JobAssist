@@ -1,4 +1,4 @@
-from sqlalchemy import Index, Integer, String, Text, Float, ForeignKey, DateTime, func
+from sqlalchemy import Index, Integer, String, Text, Float, ForeignKey, DateTime, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import Optional
@@ -10,6 +10,7 @@ class Job(Base):
     __table_args__ = (
         Index("idx_job_user_status", "user_id", "status"),
         Index("idx_job_user_created", "user_id", "created_at"),
+        Index("idx_jobs_source_id", "source_id", unique=True, postgresql_where=text("source_id IS NOT NULL")),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -31,10 +32,21 @@ class Job(Base):
     match_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     match_feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     cover_letter: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    interview_qa: Mapped[Optional[str]] = mapped_column(Text, nullable=True) 
+    interview_qa: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    suggested_courses: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Saved research data (JSON)
     research_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Scraper fields
+    source: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    source_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    full_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    job_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    salary_text: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # User notes
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -59,5 +71,5 @@ class Job(Base):
 
     # Relationships
     user = relationship("User", back_populates="jobs")
-    # Ensure the Resume model also has a matching 'jobs' relationship
     resume = relationship("Resume", back_populates="jobs")
+    deadlines = relationship("Deadline", back_populates="job", cascade="all, delete-orphan")

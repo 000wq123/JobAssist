@@ -52,27 +52,27 @@ export default function CookieConsentBanner() {
       aria-modal="false"
       aria-label="Cookie-Einstellungen"
       className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-md z-[60]
-                 rounded-2xl border border-slate-700/60 bg-slate-900/95 backdrop-blur
-                 shadow-2xl shadow-black/30 p-5 sm:p-6
-                 text-slate-200"
+                 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/95 backdrop-blur-sm
+                 shadow-2xl shadow-black/40 p-5 sm:p-6
+                 text-[var(--color-fg)]"
     >
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-          <Cookie className="w-5 h-5 text-amber-400" aria-hidden="true" />
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20 shrink-0">
+          <Cookie className="w-5 h-5 text-[var(--color-warning)]" aria-hidden="true" />
         </div>
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold text-slate-100 mb-1">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-[14px] font-semibold tracking-tight text-[var(--color-fg)] mb-1">
             Cookies &amp; Datenschutz
           </h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-[12px] text-[var(--color-fg-muted)] leading-relaxed">
             Wir verwenden technisch notwendige Cookies, damit Login und
             Sicherheitsfunktionen funktionieren. Optional erfassen wir mit{" "}
-            <span className="text-slate-300">anonymisierten Analytics</span> Fehler &amp;
+            <span className="text-[var(--color-fg)]">anonymisierten Analytics</span> Fehler &amp;
             Performance, um JobAssist zu verbessern. Du kannst jederzeit in den
             Einstellungen widerrufen.{" "}
             <Link
               to="/privacy"
-              className="underline decoration-dotted hover:text-slate-200 transition-colors"
+              className="underline decoration-dotted text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
             >
               Datenschutzerklärung
             </Link>
@@ -85,9 +85,9 @@ export default function CookieConsentBanner() {
         <button
           type="button"
           onClick={() => persist(false)}
-          className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg
-                     border border-slate-700 text-slate-200 hover:bg-slate-800
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500
+          className="flex-1 px-4 py-2 text-[12.5px] font-semibold rounded-lg
+                     border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-strong)]
                      transition-colors"
         >
           Nur notwendige
@@ -95,11 +95,11 @@ export default function CookieConsentBanner() {
         <button
           type="button"
           onClick={() => persist(true)}
-          className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg
-                     bg-gradient-to-r from-brand-500 to-accent-600 hover:from-brand-400 hover:to-accent-500
-                     text-white shadow-md shadow-brand-500/30
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400
-                     transition-all"
+          className="flex-1 px-4 py-2 text-[12.5px] font-semibold rounded-lg
+                     bg-[var(--color-accent-500)] hover:bg-[var(--color-accent-400)]
+                     text-white
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-elev-1)]
+                     transition-colors"
         >
           Alle akzeptieren
         </button>

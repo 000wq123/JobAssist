@@ -7,7 +7,7 @@ export function parseJson(value) {
 }
 
 export function getMatchColorClass(_score) {
-  return "bg-brand-500/10 text-brand-200";
+  return "bg-[var(--color-accent-500)]/10 text-[var(--color-accent-200)]";
 }
 
 export function getDeadlineMeta(deadlineValue, now = Date.now()) {

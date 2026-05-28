@@ -56,28 +56,28 @@ export default function UpgradeModal() {
       onClick={() => setData(null)}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-black/60"
+        className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 shadow-2xl shadow-black/60"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-600 shadow-lg shadow-brand-500/30">
-            <Zap className="h-6 w-6 text-white" />
+          <div className="grid h-12 w-12 place-items-center rounded-xl" style={{ background: "rgba(124,125,240,0.22)", border: "1px solid rgba(124,125,240,0.38)" }}>
+            <Zap className="h-5 w-5 text-[var(--color-accent-300)]" />
           </div>
           <button
             onClick={() => setData(null)}
             aria-label="Schließen"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+            className="rounded-lg p-1.5 text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)]"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        <h2 className="mb-2 text-xl font-bold text-white">Limit erreicht</h2>
-        <p className="mb-4 text-slate-300">
-          Du hast <strong className="text-white">{data.used}/{data.limit}</strong> {featureLabel} in deinem{" "}
-          <strong className="text-white">{data.plan === "basic" ? "Basic" : data.plan}</strong>-Plan verwendet.
+        <h2 className="mb-2 text-[18px] font-semibold tracking-tight text-[var(--color-fg)]">Limit erreicht</h2>
+        <p className="mb-4 text-[13px] text-[var(--color-fg-muted)]">
+          Du hast <strong className="text-[var(--color-fg)]">{data.used}/{data.limit}</strong> {featureLabel} in deinem{" "}
+          <strong className="text-[var(--color-fg)]">{data.plan === "basic" ? "Basic" : data.plan}</strong>-Plan verwendet.
         </p>
-        <p className="mb-6 text-sm text-slate-400">
+        <p className="mb-6 text-sm text-[var(--color-fg-muted)]">
           Upgrade auf Pro oder Max, um mehr Funktionen freizuschalten.
         </p>
 

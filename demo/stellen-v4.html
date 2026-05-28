@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Stellen v4 — Desktop + Mobile</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --page:#09090b; --s1:#111113; --s2:#18181b; --s3:#27272a;
+  --line:rgba(255,255,255,.10); --lineS:rgba(255,255,255,.06);
+  --ink:#fafafa; --muted:#a1a1aa; --dim:#71717a; --faint:#52525b;
+  --accent:#7c7df0; --accentL:#a5b4fc;
+  --green:#4ade80; --amber:#fbbf24; --blue:#60a5fa;
+}
+/* ── Demo stage ─────────────────────────────── */
+body{
+  background:#070709;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px; color:var(--ink);
+  display:flex; gap:48px; align-items:flex-start;
+  padding:48px 40px 80px; min-height:100vh;
+}
+
+/* ══════════════════════════════════════════════
+   DESKTOP FRAME
+══════════════════════════════════════════════ */
+.desktop-frame{
+  flex:1; min-width:0;
+  background:var(--page);
+  border-radius:12px;
+  border:1px solid var(--line);
+  overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);
+}
+.browser-bar{
+  background:var(--s2);
+  border-bottom:1px solid var(--lineS);
+  padding:10px 14px;
+  display:flex; align-items:center; gap:8px;
+}
+.bwin{ width:10px;height:10px;border-radius:50%; }
+.url-pill{
+  flex:1; margin:0 12px; height:24px; background:var(--s3);
+  border-radius:6px; display:flex; align-items:center; padding:0 10px;
+  font-size:11px; color:var(--dim);
+}
+.app-shell{ display:flex; }
+
+/* Left rail */
+.rail{
+  width:200px; flex-shrink:0;
+  border-right:1px solid var(--lineS);
+  padding:18px 10px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.logo{ font-size:13px;font-weight:700;padding:6px 10px;margin-bottom:10px; }
+.nav{
+  display:flex;align-items:center;gap:9px;padding:6px 10px;
+  border-radius:7px;color:var(--muted);font-size:12.5px;cursor:pointer;transition:all .12s;
+}
+.nav:hover{background:rgba(255,255,255,.04);color:var(--ink);}
+.nav.on{background:rgba(255,255,255,.07);color:var(--ink);}
+.nav svg{width:14px;height:14px;opacity:.65;}
+.rail-bot{margin-top:auto;padding-top:16px;border-top:1px solid var(--lineS);}
+.rail-user{display:flex;align-items:center;gap:8px;padding:8px 10px;}
+.avatar{width:24px;height:24px;border-radius:7px;background:var(--accent);
+  display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.rail-name{font-size:12px;color:var(--dim);}
+
+/* Main area */
+.main{ flex:1; padding:36px 44px 60px; min-width:0; overflow-y:auto; max-height:680px; }
+
+/* ── Page header ── */
+.ph{ display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px; }
+.ph h1{ font-size:28px;font-weight:600;letter-spacing:-.025em;line-height:1; }
+.ph p{ font-size:12px;color:var(--dim);margin-top:4px; }
+.add-btn{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 11px;
+  border-radius:8px;border:1px solid var(--line);
+  background:none;color:var(--muted);font-size:12px;cursor:pointer;
+  transition:all .12s;margin-top:3px;white-space:nowrap;
+}
+.add-btn:hover{background:rgba(255,255,255,.05);color:var(--ink);border-color:var(--line);}
+.add-btn svg{width:12px;height:12px;}
+
+/* ── Filter chips ── */
+/* FIX: active state uses a tinted version of its color */
+.chips{ display:flex;gap:5px;flex-wrap:wrap;margin-bottom:18px; }
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  border:1px solid var(--lineS);background:transparent;
+  color:var(--dim);font-size:11.5px;font-weight:500;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.chip:hover{border-color:var(--line);color:var(--ink);}
+.chip .cdot{ width:5px;height:5px;border-radius:50%;flex-shrink:0; }
+.chip .cn{
+  font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  padding:0 4px;border-radius:3px;background:var(--s3);color:var(--faint);
+  transition:all .15s;
+}
+.chip.active{ border-color:var(--line);background:var(--s2);color:var(--ink); }
+.chip.active .cn{color:var(--muted);}
+/* Status-specific active tints */
+.chip.active[data-s="gespräch"]{ background:rgba(124,125,240,.1);border-color:rgba(124,125,240,.3); }
+.chip.active[data-s="angebot"]{ background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.25); }
+.chip.active[data-s="beworben"]{ background:rgba(96,165,250,.08);border-color:rgba(96,165,250,.25); }
+.chip.active[data-s="gemerkt"]{ background:rgba(113,113,122,.1);border-color:rgba(113,113,122,.3); }
+
+/* ── Urgent banner ── */
+.banner{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:8px;margin-bottom:22px;
+  background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);
+}
+.bdot{ width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0; }
+.btxt{ flex:1;font-size:12px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.btxt strong{ color:var(--ink);font-weight:500; }
+.blink{ font-size:11.5px;color:var(--accentL);cursor:pointer;white-space:nowrap;flex-shrink:0; }
+.blink:hover{ text-decoration:underline; }
+
+/* ── Section label ── */
+/* FIX: more breathing room before each section */
+.sec{
+  display:flex;align-items:center;gap:6px;
+  padding-bottom:7px;margin-top:24px;margin-bottom:2px;
+  border-bottom:1px solid var(--lineS);
+}
+.sec:first-of-type{ margin-top:0; }
+.sdot{ width:6px;height:6px;border-radius:50%;flex-shrink:0; }
+.slabel{
+  font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted);
+}
+.sbadge{
+  font-size:10.5px;font-weight:500;font-variant-numeric:tabular-nums;
+  padding:0 5px;border-radius:3px;background:var(--s2);color:var(--faint);
+  margin-left:auto;
+}
+
+/* ── Job rows ── */
+/* FIX: persistent subtle left border, brighter on hover */
+.row{
+  display:grid;grid-template-columns:2px 1fr auto;
+  align-items:stretch;cursor:pointer;
+  transition:background .1s;border-radius:0;
+}
+.row:hover{ background:rgba(255,255,255,.03); }
+/* FIX: indented separator (not full-width) */
+.row+.row .rc{ border-top:1px solid var(--lineS); }
+.row+.row .re{ border-top:1px solid var(--lineS); }
+
+/* FIX: persistent bar at low opacity, full on hover */
+.rbar{
+  border-radius:0;align-self:stretch;
+  opacity:.22;transition:opacity .15s;
+}
+.row:hover .rbar{ opacity:.9; }
+
+.rc{ padding:11px 12px;min-width:0; }
+/* FIX: role is now font-weight 600 */
+.rr{ font-size:13.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.rm{ font-size:11.5px;color:var(--muted);margin-top:1.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+
+.re{
+  display:flex;align-items:center;gap:6px;
+  padding:11px 12px 11px 0;flex-shrink:0;
+}
+.score{
+  font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:5px;
+  font-variant-numeric:tabular-nums;
+}
+/* FIX: urgency as pill not plain text */
+.urgency{
+  font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;
+  color:var(--amber);background:rgba(251,191,36,.1);white-space:nowrap;
+}
+.ts{
+  font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;
+  min-width:36px;text-align:right;
+}
+.mbtn{
+  width:22px;height:22px;border-radius:4px;border:none;background:none;
+  color:var(--dim);cursor:pointer;display:grid;place-items:center;
+  opacity:0;transition:opacity .12s;
+}
+.row:hover .mbtn{ opacity:1; }
+.mbtn:hover{ background:var(--s3);color:var(--ink); }
+
+
+/* ══════════════════════════════════════════════
+   PHONE FRAME
+══════════════════════════════════════════════ */
+.phone-wrap{
+  flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.phone-label{
+  font-size:11.5px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+}
+.phone{
+  width:375px;
+  background:var(--page);
+  border-radius:48px;
+  border:8px solid #1c1c1e;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 32px 80px rgba(0,0,0,.7),
+             inset 0 1px 0 rgba(255,255,255,.05);
+  overflow:hidden;
+  position:relative;
+}
+.notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;background:#1c1c1e;border-radius:0 0 20px 20px;
+  z-index:10;
+}
+.status-bar{
+  height:44px;padding:12px 24px 0;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;font-weight:600;color:var(--ink);
+  position:relative;z-index:5;
+}
+.sb-time{ font-size:15px;font-weight:700; }
+.sb-icons{ display:flex;align-items:center;gap:5px; }
+
+/* Mobile scroll area */
+.m-scroll{
+  height:720px;overflow-y:auto;overflow-x:hidden;
+  padding:0 0 90px;
+  scrollbar-width:none;
+}
+.m-scroll::-webkit-scrollbar{ display:none; }
+
+/* Mobile header */
+.m-ph{
+  padding:8px 20px 10px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+.m-ph h1{ font-size:26px;font-weight:600;letter-spacing:-.025em;line-height:1; }
+.m-ph p{ font-size:12px;color:var(--dim);margin-top:3px; }
+.m-add{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--line);
+  background:none;color:var(--dim);cursor:pointer;
+  display:grid;place-items:center;margin-top:4px;flex-shrink:0;
+}
+
+/* Mobile chips — horizontal scroll */
+.m-chips{
+  display:flex;gap:5px;
+  padding:0 20px 14px;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;white-space:nowrap;
+  -webkit-overflow-scrolling:touch;
+}
+.m-chips::-webkit-scrollbar{ display:none; }
+.m-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:20px;
+  border:1px solid var(--lineS);background:transparent;
+  color:var(--dim);font-size:12px;font-weight:500;
+  white-space:nowrap;flex-shrink:0;
+}
+.m-chip.active{ background:var(--s2);border-color:var(--line);color:var(--ink); }
+.m-chip .cdot{ width:5px;height:5px;border-radius:50%; }
+.m-chip .cn{
+  font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  padding:0 4px;border-radius:3px;background:var(--s3);color:var(--faint);
+}
+.m-chip.active .cn{ color:var(--muted); }
+
+/* Mobile banner */
+.m-banner{
+  margin:0 20px 18px;
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:8px;
+  background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);
+}
+.m-banner .bdot{ width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0; }
+.m-banner .btxt{
+  flex:1;font-size:11.5px;color:var(--muted);
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.m-banner .btxt strong{ color:var(--ink);font-weight:500; }
+.m-banner .blink{ font-size:11px;color:var(--accentL);flex-shrink:0; }
+
+/* Mobile section */
+.m-sec{
+  display:flex;align-items:center;gap:6px;
+  margin:0 20px 0;padding-bottom:6px;
+  border-bottom:1px solid var(--lineS);
+  margin-top:20px;
+}
+.m-sec:first-of-type{ margin-top:0; }
+.m-sec .slabel{ font-size:10.5px; }
+.m-sec .sbadge{ margin-left:auto;font-size:10px; }
+
+/* Mobile rows — touch-friendly, ⋯ always visible */
+.m-row{
+  display:grid;grid-template-columns:2px 1fr auto;
+  align-items:stretch;
+  min-height:52px;
+}
+.m-row+.m-row .m-rc{ border-top:1px solid var(--lineS); }
+.m-row+.m-row .m-re{ border-top:1px solid var(--lineS); }
+
+.m-rbar{
+  align-self:stretch;border-radius:0;
+  opacity:.22;
+}
+
+.m-rc{ padding:11px 12px;min-width:0; }
+.m-rr{ font-size:13px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.m-rm{ font-size:11.5px;color:var(--muted);margin-top:1.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+
+/* FIX mobile: ⋯ always visible, right-aligned */
+.m-re{
+  display:flex;align-items:center;gap:5px;
+  padding:11px 14px 11px 0;flex-shrink:0;
+}
+.m-score{ font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:5px;font-variant-numeric:tabular-nums; }
+.m-urgency{ font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;
+  color:var(--amber);background:rgba(251,191,36,.1); }
+.m-ts{ font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;min-width:30px;text-align:right; }
+.m-mbtn{
+  width:26px;height:26px;border-radius:6px;border:none;background:none;
+  color:var(--dim);cursor:pointer;display:grid;place-items:center;
+  /* Always visible on mobile */
+  opacity:1;
+}
+
+/* Bottom nav */
+.m-bnav{
+  position:absolute;bottom:0;left:0;right:0;
+  height:83px;
+  background:rgba(9,9,11,.92);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--lineS);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  padding:0 4px 20px;
+  z-index:10;
+}
+.m-tab{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:8px 0;cursor:pointer;
+}
+.m-tab svg{ width:22px;height:22px;opacity:.4; }
+.m-tab.on svg{ opacity:1;color:var(--accentL); }
+.m-tab span{ font-size:10px;color:var(--dim); }
+.m-tab.on span{ color:var(--accentL); }
+.m-home{ width:134px;height:5px;background:rgba(255,255,255,.3);border-radius:3px;
+  margin:0 auto 4px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ DESKTOP ═══════════════════════ -->
+<div class="desktop-frame">
+  <div class="browser-bar">
+    <div class="bwin" style="background:#ff5f56"></div>
+    <div class="bwin" style="background:#ffbd2e"></div>
+    <div class="bwin" style="background:#27c93f"></div>
+    <div class="url-pill">jobassist.app/stellen</div>
+  </div>
+  <div class="app-shell">
+    <nav class="rail">
+      <div class="logo">JobAssist</div>
+      <div class="nav"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Dashboard</div>
+      <div class="nav on"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>Stellen</div>
+      <div class="nav"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M6 6h4M6 9h2"/></svg>Lebenslauf</div>
+      <div class="nav"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a4 4 0 014 4v2l1.5 2.5H2.5L4 8V6a4 4 0 014-4zM6.5 13a1.5 1.5 0 003 0"/></svg>Alerts</div>
+      <div class="rail-bot">
+        <div class="rail-user"><div class="avatar">DR</div><div class="rail-name">Davor Radeski</div></div>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="ph">
+        <div><h1>Stellen</h1><p>11 gespeichert</p></div>
+        <button class="add-btn">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2v8M2 6h8"/></svg>
+          Neue Stelle
+        </button>
+      </div>
+
+      <div class="chips">
+        <div class="chip active" data-s="alle"><span class="cdot" style="background:var(--dim)"></span>Alle<span class="cn">11</span></div>
+        <div class="chip" data-s="gespräch"><span class="cdot" style="background:var(--accent)"></span>Im Gespräch<span class="cn">2</span></div>
+        <div class="chip" data-s="angebot"><span class="cdot" style="background:var(--green)"></span>Angebot<span class="cn">2</span></div>
+        <div class="chip" data-s="beworben"><span class="cdot" style="background:var(--blue)"></span>Beworben<span class="cn">1</span></div>
+        <div class="chip" data-s="gemerkt"><span class="cdot" style="background:var(--dim)"></span>Gemerkt<span class="cn">6</span></div>
+      </div>
+
+      <div class="banner">
+        <span class="bdot"></span>
+        <span class="btxt"><strong>Lidl Österreich</strong> · Samstagsverkauf — Vorstellung vorbereiten</span>
+        <span class="blink">Ansehen →</span>
+      </div>
+
+      <!-- Im Gespräch -->
+      <div class="sec"><span class="sdot" style="background:var(--accent)"></span><span class="slabel">Im Gespräch</span><span class="sbadge">2</span></div>
+      <div>
+        <div class="row">
+          <div class="rbar" style="background:var(--accent)"></div>
+          <div class="rc"><div class="rr">Radiologietechnologe (m/w/d) in Teilzeit (25h/Wo)</div><div class="rm">MediCare Personaldienstleistungen GmbH · Wien</div></div>
+          <div class="re"><span class="ts">heute</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="rbar" style="background:var(--accent)"></div>
+          <div class="rc"><div class="rr">Samstagsverkauf (w/m/d) 6 Std./Woche</div><div class="rm">Lidl Österreich · Salzburg</div></div>
+          <div class="re"><span class="urgency">Vorbereiten</span><span class="ts">vor 5T</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+
+      <!-- Angebot -->
+      <div class="sec"><span class="sdot" style="background:var(--green)"></span><span class="slabel">Angebot</span><span class="sbadge">2</span></div>
+      <div>
+        <div class="row">
+          <div class="rbar" style="background:var(--green)"></div>
+          <div class="rc"><div class="rr">Raumpfleger:in in der Bezirksstelle Lienz · 15 Wochenstunden</div><div class="rm">WKO · Wirtschaftskammer Tirol</div></div>
+          <div class="re"><span class="ts">vor 1M</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="rbar" style="background:var(--green)"></div>
+          <div class="rc"><div class="rr">Büroassistent/in (Geringfügig/Teilzeit 10–20 h)</div><div class="rm">Noortec GmbH</div></div>
+          <div class="re"><span class="ts">vor 1M</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+
+      <!-- Beworben -->
+      <div class="sec"><span class="sdot" style="background:var(--blue)"></span><span class="slabel">Beworben</span><span class="sbadge">1</span></div>
+      <div>
+        <div class="row">
+          <div class="rbar" style="background:var(--blue)"></div>
+          <div class="rc"><div class="rr">Praktikum im Markenmanagement in Wien</div><div class="rm">Wen wir suchen · Wien</div></div>
+          <div class="re"><span class="urgency">Nachhaken</span><span class="ts">gestern</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+
+      <!-- Gemerkt -->
+      <div class="sec"><span class="sdot" style="background:var(--dim)"></span><span class="slabel">Gemerkt</span><span class="sbadge">6</span></div>
+      <div>
+        <div class="row">
+          <div class="rbar" style="background:var(--dim)"></div>
+          <div class="rc"><div class="rr">Praktikum im Bereich Front-Office (m/w/d)</div><div class="rm">GMS GOURMET GmbH</div></div>
+          <div class="re"><span class="score" style="color:#4ade80;background:rgba(74,222,128,.12)">95%</span><span class="ts">heute</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="rbar" style="background:var(--dim)"></div>
+          <div class="rc"><div class="rr">Frühstückskellner (all genders) in Teilzeit</div><div class="rm">MOONS Operations ALPHA GmbH · Wien</div></div>
+          <div class="re"><span class="score" style="color:#fbbf24;background:rgba(251,191,36,.12)">80%</span><span class="ts">vor 8T</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="rbar" style="background:var(--dim)"></div>
+          <div class="rc"><div class="rr">Praktikum People Operations (w/m/d)</div><div class="rm">A1 Telekom Austria AG</div></div>
+          <div class="re"><span class="score" style="color:#fbbf24;background:rgba(251,191,36,.12)">74%</span><span class="ts">vor 8T</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="row">
+          <div class="rbar" style="background:var(--dim)"></div>
+          <div class="rc"><div class="rr">Praktikum Digital Redaktion</div><div class="rm">ServusTV · Wien</div></div>
+          <div class="re"><span class="score" style="color:#a1a1aa;background:rgba(161,161,170,.1)">71%</span><span class="ts">vor 8T</span><button class="mbtn"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="7" r=".8" fill="currentColor"/><circle cx="7" cy="7" r=".8" fill="currentColor"/><circle cx="11" cy="7" r=".8" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ PHONE ═══════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Mobile</div>
+  <div class="phone">
+    <div class="notch"></div>
+
+    <div class="status-bar">
+      <span class="sb-time">9:41</span>
+      <div class="sb-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" opacity=".9"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="1" width="3" height="11" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".9"><path d="M1 6a9 9 0 0114 0M4 9a5 5 0 018 0M7 12h2"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none" opacity=".9"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity=".35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity=".4"/></svg>
+      </div>
+    </div>
+
+    <div class="m-scroll">
+      <!-- Mobile header -->
+      <div class="m-ph">
+        <div><h1>Stellen</h1><p>11 gespeichert</p></div>
+        <button class="m-add"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 2v9M2 6.5h9"/></svg></button>
+      </div>
+
+      <!-- Chips horizontal scroll -->
+      <div class="m-chips">
+        <div class="m-chip active"><span class="cdot" style="background:var(--dim)"></span>Alle<span class="cn">11</span></div>
+        <div class="m-chip"><span class="cdot" style="background:var(--accent)"></span>Gespräch<span class="cn">2</span></div>
+        <div class="m-chip"><span class="cdot" style="background:var(--green)"></span>Angebot<span class="cn">2</span></div>
+        <div class="m-chip"><span class="cdot" style="background:var(--blue)"></span>Beworben<span class="cn">1</span></div>
+        <div class="m-chip"><span class="cdot" style="background:var(--dim)"></span>Gemerkt<span class="cn">6</span></div>
+      </div>
+
+      <!-- Banner -->
+      <div class="m-banner">
+        <span class="bdot"></span>
+        <span class="btxt"><strong>Lidl Österreich</strong> — Vorstellung vorbereiten</span>
+        <span class="blink">→</span>
+      </div>
+
+      <!-- Im Gespräch -->
+      <div class="m-sec" style="margin-left:20px;margin-right:20px;">
+        <span class="sdot" style="background:var(--accent)"></span>
+        <span class="slabel" style="font-size:10.5px">Im Gespräch</span>
+        <span class="sbadge" style="font-size:10px">2</span>
+      </div>
+      <div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--accent)"></div>
+          <div class="m-rc"><div class="m-rr">Radiologietechnologe (m/w/d) in Teilzeit</div><div class="m-rm">MediCare Personaldienstleistungen GmbH</div></div>
+          <div class="m-re"><span class="m-ts">heute</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--accent)"></div>
+          <div class="m-rc"><div class="m-rr">Samstagsverkauf (w/m/d) 6 Std./Woche</div><div class="m-rm">Lidl Österreich · Salzburg</div></div>
+          <div class="m-re"><span class="m-urgency">Vorbereiten</span><span class="m-ts">5T</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+
+      <!-- Angebot -->
+      <div class="m-sec" style="margin-left:20px;margin-right:20px;margin-top:18px;">
+        <span class="sdot" style="background:var(--green)"></span>
+        <span class="slabel" style="font-size:10.5px">Angebot</span>
+        <span class="sbadge" style="font-size:10px">2</span>
+      </div>
+      <div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--green)"></div>
+          <div class="m-rc"><div class="m-rr">Raumpfleger:in Bezirksstelle Lienz</div><div class="m-rm">WKO · Wirtschaftskammer Tirol</div></div>
+          <div class="m-re"><span class="m-ts">1M</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--green)"></div>
+          <div class="m-rc"><div class="m-rr">Büroassistent/in (Geringfügig/Teilzeit)</div><div class="m-rm">Noortec GmbH</div></div>
+          <div class="m-re"><span class="m-ts">1M</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+
+      <!-- Beworben -->
+      <div class="m-sec" style="margin-left:20px;margin-right:20px;margin-top:18px;">
+        <span class="sdot" style="background:var(--blue)"></span>
+        <span class="slabel" style="font-size:10.5px">Beworben</span>
+        <span class="sbadge" style="font-size:10px">1</span>
+      </div>
+      <div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--blue)"></div>
+          <div class="m-rc"><div class="m-rr">Praktikum im Markenmanagement Wien</div><div class="m-rm">Wen wir suchen · Wien</div></div>
+          <div class="m-re"><span class="m-urgency">Nachhaken</span><span class="m-ts">gest.</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+
+      <!-- Gemerkt -->
+      <div class="m-sec" style="margin-left:20px;margin-right:20px;margin-top:18px;">
+        <span class="sdot" style="background:var(--dim)"></span>
+        <span class="slabel" style="font-size:10.5px">Gemerkt</span>
+        <span class="sbadge" style="font-size:10px">6</span>
+      </div>
+      <div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--dim)"></div>
+          <div class="m-rc"><div class="m-rr">Praktikum Front-Office (m/w/d)</div><div class="m-rm">GMS GOURMET GmbH</div></div>
+          <div class="m-re"><span class="m-score" style="color:#4ade80;background:rgba(74,222,128,.12)">95%</span><span class="m-ts">heute</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--dim)"></div>
+          <div class="m-rc"><div class="m-rr">Frühstückskellner (all genders)</div><div class="m-rm">MOONS Operations · Wien</div></div>
+          <div class="m-re"><span class="m-score" style="color:#fbbf24;background:rgba(251,191,36,.12)">80%</span><span class="m-ts">8T</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="m-row">
+          <div class="m-rbar" style="background:var(--dim)"></div>
+          <div class="m-rc"><div class="m-rr">Praktikum People Operations (w/m/d)</div><div class="m-rm">A1 Telekom Austria AG</div></div>
+          <div class="m-re"><span class="m-score" style="color:#fbbf24;background:rgba(251,191,36,.12)">74%</span><span class="m-ts">8T</span><button class="m-mbtn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="7" r=".9" fill="currentColor"/><circle cx="7" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="7" r=".9" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+    </div><!-- end m-scroll -->
+
+    <!-- Bottom nav -->
+    <div class="m-bnav">
+      <div class="m-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="m-tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h12M3 18h15"/></svg>
+        <span>Stellen</span>
+      </div>
+      <div class="m-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M9 9h6M9 13h4"/></svg>
+        <span>Lebenslauf</span>
+      </div>
+      <div class="m-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3a7 7 0 017 7v3l2 3H3l2-3v-3a7 7 0 017-7zM9.5 19a2.5 2.5 0 005 0"/></svg>
+        <span>Alerts</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+  });
+});
+document.querySelectorAll('.m-chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.m-chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

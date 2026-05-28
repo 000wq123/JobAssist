@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "Job Application Assistant"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
+    # Echo every SQL statement to the logger. Off by default — when DEBUG=true
+    # we still don't want the firehose unless explicitly opted in.
+    SQL_ECHO: bool = False
     SENTRY_DSN: str = ""
     SENTRY_TRACES_SAMPLE_RATE: float = 0.0
 
@@ -60,7 +63,8 @@ class Settings(BaseSettings):
     # CORS — comma-separated string, e.g. "https://app.vercel.app,http://localhost:5173"
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:4173,https://jobassist.tech,https://www.jobassist.tech"
     # Optional regex for dynamic origins like Vercel previews, e.g. "https://job-assist-.*\.vercel\.app"
-    ALLOWED_ORIGIN_REGEX: str = ""
+    # Default covers any 127.0.0.1 port (local dev proxies such as Windsurf browser preview).
+    ALLOWED_ORIGIN_REGEX: str = r"http://127\.0\.0\.1:\d+"
 
     # ── Auth cookies ─────────────────────────────────────────────────────────
     # Refresh token is stored in an httpOnly cookie (XSS-proof). Access token
@@ -76,8 +80,8 @@ class Settings(BaseSettings):
     # (Safari ITP, Firefox ETP) — moving the backend to a same-eTLD subdomain
     # is the durable fix.
     COOKIE_DOMAIN: str = ""
-    COOKIE_SAMESITE: str = "none"   # "lax" | "strict" | "none"
-    COOKIE_SECURE: bool = True       # MUST be True when SameSite=none
+    COOKIE_SAMESITE: str = "lax"    # "lax" | "strict" | "none" — use "none" for cross-site prod
+    COOKIE_SECURE: bool = False      # set True in production .env (required when SameSite=none)
     COOKIE_PATH: str = "/api/auth"   # Refresh cookie scoped to auth endpoints only
     REFRESH_COOKIE_NAME: str = "ja_refresh"
 

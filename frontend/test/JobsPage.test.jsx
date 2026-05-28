@@ -41,26 +41,6 @@ vi.mock("../src/hooks/useUsageGuard", () => ({
   }),
 }));
 
-vi.mock("../src/components/PipelineStats", () => ({
-  default: () => <div>PipelineStats</div>,
-}));
-
-vi.mock("../src/components/ApplicationsList", () => ({
-  default: () => <div>ApplicationsList</div>,
-}));
-
-vi.mock("../src/components/ViennaMap", () => ({
-  default: () => null,
-}));
-
-vi.mock("../src/components/CityMap", () => ({
-  default: () => null,
-}));
-
-vi.mock("../src/components/ResearchModal", () => ({
-  default: () => null,
-}));
-
 vi.mock("react-hot-toast", () => ({
   default: Object.assign((...args) => mockToast(...args), {
     success: (...args) => mockSuccess(...args),
@@ -107,20 +87,17 @@ describe("JobsPage", () => {
 
     renderWithProviders(<JobsPage />, { queryClient });
 
-    // The "Empfohlen" / "Eigene Suche" tabs are rendered inline on the page,
-    // there is no "open search" wrapper button anymore.
-    await userEvent.click(await screen.findByRole("button", { name: /Eigene Suche/i }));
+    // Switch to the "Eigene Suche" tab — Tabs component renders these as buttons.
+    await userEvent.click(await screen.findByRole("tab", { name: /Eigene Suche/i }));
 
-    await userEvent.type(screen.getByPlaceholderText("z.B. Verkauf, Gastro, IT, Praktikum"), "qa");
-    await userEvent.click(screen.getByRole("button", { name: /Stellen suchen/i }));
+    await userEvent.type(
+      screen.getByPlaceholderText(/React, Verkauf, Praktikum/i),
+      "qa",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^Suchen$/i }));
 
-    // Result tile is itself a button containing the role title.
-    const resultTile = await screen.findByRole("button", { name: /QA Engineer/ });
-    await userEvent.click(resultTile);
-
-    // Inside the expanded panel, the bookmark control is labelled "Speichern"
-    // before the save and flips to "Gespeichert" after.
-    await userEvent.click(screen.getByRole("button", { name: /^Speichern$/ }));
+    // The result row's bookmark icon button is labelled "Speichern".
+    await userEvent.click(await screen.findByRole("button", { name: /^Speichern$/ }));
 
     await waitFor(() => {
       expect(mockJobCreate).toHaveBeenCalledTimes(1);
@@ -131,8 +108,7 @@ describe("JobsPage", () => {
       role: "QA Engineer",
       url: "https://example.com/job-1",
     });
-    expect(await screen.findByText("Gespeichert")).toBeInTheDocument();
-    // Save-success toast copy was reworded to a more neutral confirmation.
-    expect(mockSuccess).toHaveBeenCalledWith("Die Stelle wurde sicher hinterlegt");
+    // Save-success toast was simplified.
+    expect(mockSuccess).toHaveBeenCalledWith("Stelle gespeichert");
   });
 });

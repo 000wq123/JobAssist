@@ -30,12 +30,24 @@ export const STORAGE_KEYS = Object.freeze({
   RESUME_OPTIMIZATION_TASKS: "resume_optimization_tasks",
   APP_LOADED: "app-loaded",                // sessionStorage, but tracked here too
   COOKIE_CONSENT: "cookie_consent_v1",     // {essential:true, analytics:bool, ts:number}
+  CV_PROFILE: "cv_profile_v1",             // Lebenslauf builder draft (autosaved)
+  CV_LIBRARY: "cv_library_v1",             // Saved generated CVs (max 10)
+  CV_GEN_COUNT: "ja:cv_gen",               // Daily PDF generation counter { count, date }
 });
 
 /** Key prefixes whose dynamic suffixes should also be cleared on logout. */
 const DYNAMIC_PREFIXES = Object.freeze([
   "resume_analysis_",
 ]);
+
+/**
+ * Keys that represent durable, cross-session user preferences and must
+ * survive login/logout cycles. Wiping these would re-trigger consent
+ * banners or onboarding for returning users, which is a UX bug.
+ */
+const DURABLE_KEYS = Object.freeze(new Set([
+  STORAGE_KEYS.COOKIE_CONSENT,
+]));
 
 /** Returns every static key in `STORAGE_KEYS` plus any dynamic-prefix matches. */
 export function listAllAppKeys() {
@@ -50,9 +62,14 @@ export function listAllAppKeys() {
   return [...staticKeys, ...dynamic];
 }
 
-/** Removes every JobAssist localStorage entry, including dynamic-prefix keys. */
+/**
+ * Removes every JobAssist localStorage entry except durable user-preference
+ * keys (see `DURABLE_KEYS`). Used on login + logout to scrub the previous
+ * session's cached data.
+ */
 export function clearAllAppStorage() {
   for (const k of listAllAppKeys()) {
+    if (DURABLE_KEYS.has(k)) continue;
     try {
       localStorage.removeItem(k);
     } catch {}

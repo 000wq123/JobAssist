@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   Save,
-  MapPin,
-  Briefcase,
-  Sliders,
   Camera,
   Trash2,
   User,
   AlertTriangle,
   ChevronDown,
+  FileText,
+  Upload,
+  X,
 } from "lucide-react";
-import { authApi, settingsApi } from "../services/api";
+import { authApi, resumeApi, settingsApi } from "../services/api";
 import useAuthStore from "../hooks/useAuthStore";
 import { useI18n } from "../context/I18nContext";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -75,10 +75,10 @@ const JOB_TYPES = [
   "Freiberuflich",
 ];
 const EXPERIENCE_LEVELS = [
-  "Schüler/Student",
-  "Berufseinsteiger",
-  "Mit Erfahrung",
-  "Senior/Führungskraft",
+  "Noch in der Schule",
+  "Gerade fertig / Studium",
+  "Habe schon etwas gearbeitet",
+  "Mehrere Jahre Erfahrung",
 ];
 const INDUSTRIES = [
   "Gastronomie",
@@ -90,16 +90,26 @@ const INDUSTRIES = [
   "Büro/Verwaltung",
   "Sonstiges",
 ];
-const CURRENCIES = ["EUR"];
-const LANGUAGES = [{ code: "de", label: "Deutsch" }];
-
 const INPUT_CLS =
-  "w-full rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500/50 focus:ring-0 h-10";
-// Constrained width variant for short-value fields (selects, short inputs)
-const INPUT_SM_CLS =
-  "w-full max-w-[240px] rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500/50 focus:ring-0 h-10";
-const LABEL_CLS =
-  "block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1";
+  "w-full rounded-xl border px-3 py-2 text-sm h-10" +
+  " focus:outline-none focus:border-[var(--color-accent-500)]/50 focus:ring-0" +
+  " transition-colors";
+
+const INPUT_STYLE = {
+  borderColor: 'rgba(255,255,255,0.1)',
+  backgroundColor: 'var(--color-surface-input)',
+  color: 'var(--color-ink-primary)',
+  '--placeholder': 'var(--color-ink-meta)',
+};
+const LABEL_STYLE = {
+  display: 'block',
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  marginBottom: '0.25rem',
+  color: 'var(--color-ink-dim)',
+};
 
 function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Auswählen…" }) {
   const [open, setOpen] = useState(false);
@@ -129,21 +139,22 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
     <div ref={ref} className="relative">
       <div
         onClick={() => setOpen((o) => !o)}
-        className="min-h-10 w-full rounded-xl border border-[#1f2937] bg-[#0b1220] px-2 py-1.5 text-sm text-white cursor-pointer flex flex-wrap gap-1 items-center focus:outline-none hover:border-brand-500/30 transition-colors"
+        className="min-h-10 w-full rounded-xl border px-2 py-1.5 text-sm cursor-pointer flex flex-wrap gap-1 items-center focus:outline-none hover:border-[var(--color-border-strong)] transition-colors"
+        style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-primary)' }}
       >
         {value.length === 0 ? (
-          <span className="text-slate-500 px-1 py-0.5">{placeholder}</span>
+          <span className="px-1 py-0.5" style={{ color: 'var(--color-ink-meta)' }}>{placeholder}</span>
         ) : (
           value.map((v) => (
             <span
               key={v}
-              className="inline-flex items-center gap-1 rounded-md bg-brand-500/20 border border-brand-500/30 px-1.5 py-0.5 text-xs font-semibold text-brand-200"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] px-1.5 py-0.5 text-xs font-medium text-[var(--color-fg)]"
             >
               {v}
               <button
                 type="button"
                 onClick={(e) => remove(v, e)}
-                className="hover:text-white text-brand-300 leading-none ml-0.5"
+                className="hover:text-[var(--color-fg)] text-[var(--color-fg-dim)] leading-none ml-0.5 transition-colors"
                 aria-label={`${v} entfernen`}
               >
                 ×
@@ -152,11 +163,12 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
           ))
         )}
         <ChevronDown
-          className={`ml-auto h-4 w-4 text-slate-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`ml-auto h-4 w-4 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+              style={{ color: 'var(--color-ink-dim)' }}
         />
       </div>
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-[#1f2937] bg-[#0d1525] shadow-xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-xl border shadow-xl overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-elevated)' }}>
           {options.map((option) => (
             <label
               key={option}
@@ -168,7 +180,7 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
                 onChange={() => toggle(option)}
                 className="w-4 h-4 rounded accent-brand-500 flex-shrink-0"
               />
-              <span className="text-sm text-slate-200">{option}</span>
+              <span className="text-sm" style={{ color: 'var(--color-ink-sub)' }}>{option}</span>
             </label>
           ))}
         </div>
@@ -180,7 +192,7 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
 /** User settings page: profile photo, personal info, notification toggles, and account deletion. */
 export default function SettingsPage() {
   const queryClient = useQueryClient();
-  const { t, setLanguage, releaseLanguageLock } = useI18n();
+  const { setLanguage, releaseLanguageLock } = useI18n();
   const fileInputRef = useRef(null);
   const [avatar, setAvatar] = useState(null);
 
@@ -192,6 +204,7 @@ export default function SettingsPage() {
         return res.data;
       }),
     initialData: () => loadStored("profile"),
+    initialDataUpdatedAt: 0,
     staleTime: 1000 * 60 * 3,
   });
 
@@ -203,24 +216,23 @@ export default function SettingsPage() {
         return res.data;
       }),
     initialData: () => loadStored("preferences"),
+    initialDataUpdatedAt: 0,
     staleTime: 1000 * 60 * 3,
   });
 
-  const formValues =
-    profile && preferences
-      ? {
-          desired_locations: profile.desired_locations ?? [],
-          salary_min: profile.salary_min ?? null,
-          salary_max: profile.salary_max ?? null,
-          job_types: profile.job_types ?? [],
-          industries: profile.industries ?? [],
-          experience_level: profile.experience_level ?? "",
-          is_open_to_relocation: profile.is_open_to_relocation ?? false,
-          currency: preferences.currency ?? "EUR",
-          location: preferences.location ?? "Österreich",
-          language: preferences.language ?? "de",
-        }
-      : undefined;
+  // Compute form values as soon as either query has data — don't wait for both.
+  const formValues = {
+    desired_locations: profile?.desired_locations ?? [],
+    salary_min: profile?.salary_min ?? null,
+    salary_max: profile?.salary_max ?? null,
+    job_types: profile?.job_types ?? [],
+    industries: profile?.industries ?? [],
+    experience_level: profile?.experience_level ?? "",
+    is_open_to_relocation: profile?.is_open_to_relocation ?? false,
+    currency: preferences?.currency ?? "EUR",
+    location: preferences?.location ?? "Österreich",
+    language: preferences?.language ?? "de",
+  };
 
   useEffect(() => {
     if (profile?.avatar) setAvatar(profile.avatar);
@@ -231,19 +243,7 @@ export default function SettingsPage() {
     handleSubmit,
     formState: { isSubmitting },
   } = useForm({
-    values:
-      formValues ?? {
-        currency: "EUR",
-        location: "Österreich",
-        language: "de",
-        desired_locations: [],
-        salary_min: null,
-        salary_max: null,
-        job_types: [],
-        industries: [],
-        experience_level: "",
-        is_open_to_relocation: false,
-      },
+    values: formValues,
   });
 
   const onSubmit = async (data) => {
@@ -323,7 +323,7 @@ export default function SettingsPage() {
       }
 
       if (data.language) setLanguage(data.language);
-      toast.success(`${t("settings.savePreferences")} ✓`);
+      toast.success("Einstellungen gespeichert");
     } finally {
       clearTimeout(abortTimer);
       releaseLanguageLock();
@@ -338,7 +338,7 @@ export default function SettingsPage() {
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Bild muss unter 5 MB sein");
+      toast.error("Bild ist zu groß. Maximal 5 MB.");
       return;
     }
     try {
@@ -352,15 +352,14 @@ export default function SettingsPage() {
   return (
     <div className="animate-slide-up">
       <PageHeader
-        eyebrow="Konto"
         title="Einstellungen"
-        description="Profil & Jobpräferenzen konfigurieren"
-        className="mb-3"
+        description="Profil und Jobpräferenzen anpassen"
+        className="mb-6"
         actions={
           <Button
             type="submit"
             form="settings-form"
-            variant="primary"
+            variant="secondary"
             size="md"
             disabled={isSubmitting}
           >
@@ -371,34 +370,33 @@ export default function SettingsPage() {
       />
 
       <form id="settings-form" onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-3 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-10 lg:gap-14 items-start">
 
-          {/* ── LEFT COLUMN ─────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-2.5">
+          {/* ── LEFT COLUMN ─────────────────────────────────── */}
+          <div className="flex flex-col gap-10">
 
             {/* Profilfoto */}
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
-              <div className="mb-2 flex items-center gap-2">
-                <User className="h-4 w-4 text-brand-300 flex-shrink-0" />
-                <h2 className="font-semibold text-white">Profilfoto</h2>
-              </div>
-              <div className="flex items-center gap-3">
+            <section>
+              <h2 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4">
+                Profilfoto
+              </h2>
+              <div className="flex items-center gap-4">
                 <div className="relative flex-shrink-0">
                   {avatar ? (
                     <img
                       src={avatar}
                       alt="Profil"
-                      className="h-16 w-16 rounded-2xl object-cover ring-2 ring-brand-500/30"
+                      className="h-16 w-16 rounded-2xl object-cover ring-1 ring-[var(--color-border-subtle)]"
                     />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-600 ring-2 ring-brand-500/30">
-                      <User className="h-7 w-7 text-white" />
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)]">
+                      <User className="h-7 w-7 text-[var(--color-fg-muted)]" />
                     </div>
                   )}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-600 text-white shadow-md transition-all hover:from-brand-400 hover:to-accent-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base"
+                    className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-xl bg-[var(--color-accent-500)] text-white transition-colors hover:bg-[var(--color-accent-400)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
                     aria-label="Profilfoto ändern"
                     title="Foto ändern"
                   >
@@ -409,7 +407,8 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-1.5 text-sm font-semibold text-slate-300 transition-colors hover:border-brand-500/30 hover:text-brand-200"
+                    className="rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
+                    style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-sub)' }}
                   >
                     {avatar ? "Foto ändern" : "Foto hochladen"}
                   </button>
@@ -426,7 +425,7 @@ export default function SettingsPage() {
                       Foto entfernen
                     </button>
                   )}
-                  <p className="text-[11px] text-slate-500">JPG, PNG, WebP · max. 5 MB</p>
+                  <p className="text-[11px] text-[var(--color-fg-dim)]">JPG, PNG, WebP · max. 5 MB</p>
                 </div>
               </div>
               <input
@@ -436,97 +435,33 @@ export default function SettingsPage() {
                 className="hidden"
                 onChange={handleFileChange}
               />
-            </div>
+            </section>
 
-            {/* Basis-Konfiguration */}
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
-              <div className="mb-2 flex items-center gap-2">
-                <Sliders className="h-4 w-4 text-brand-300 flex-shrink-0" />
-                <div>
-                  <h2 className="font-semibold text-white">Basis-Konfiguration</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">Sprache, Währung & Marktstandort</p>
-                </div>
-              </div>
-              <div className="space-y-2.5">
-                <Controller
-                  name="language"
-                  control={control}
-                  render={({ field }) => (
-                    <div>
-                      <label className={LABEL_CLS}>Sprache</label>
-                      <div className="relative">
-                        <select
-                          {...field}
-                          className={`${INPUT_SM_CLS} appearance-none pr-9`}
-                          value={field.value || "de"}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        >
-                          {LANGUAGES.map((l) => (
-                            <option key={l.code} value={l.code}>{l.label}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      </div>
-                    </div>
-                  )}
-                />
-                <Controller
-                  name="currency"
-                  control={control}
-                  render={({ field }) => (
-                    <div>
-                      <label className={LABEL_CLS}>Währung</label>
-                      <div className="relative">
-                        <select
-                          {...field}
-                          className={`${INPUT_SM_CLS} appearance-none pr-9`}
-                          value={field.value || "EUR"}
-                        >
-                          {CURRENCIES.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      </div>
-                    </div>
-                  )}
-                />
-                <Controller
-                  name="location"
-                  control={control}
-                  render={({ field }) => (
-                    <div>
-                      <label className={LABEL_CLS}>Suchregion</label>
-                      <input
-                        {...field}
-                        className={INPUT_CLS}
-                        placeholder="z.B. Wien, Graz"
-                        value={field.value || ""}
-                      />
-                    </div>
-                  )}
-                />
-              </div>
-            </div>
+            {/* Lebenslauf hochladen */}
+            <section>
+              <h2 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4">
+                Lebenslauf
+              </h2>
+              <CVUploadSection />
+            </section>
 
           </div>
 
-          {/* ── RIGHT COLUMN ────────────────────────────────────────────── */}
-          <div className="space-y-2.5 flex flex-col lg:row-span-2">
+          {/* ── RIGHT COLUMN ──────────────────────────────── */}
+          <div className="flex flex-col gap-10">
 
             {/* Jobsuche — Orte + Gehalt combined */}
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-brand-300 flex-shrink-0" />
-                <h2 className="font-semibold text-white">Jobsuche</h2>
-              </div>
+            <section className="flex flex-col gap-4">
+              <h2 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)]">
+                Jobsuche
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Controller
                 name="desired_locations"
                 control={control}
                 render={({ field }) => (
                   <div>
-                    <label className={LABEL_CLS}>Arbeitsorte</label>
+                    <label style={LABEL_STYLE}>Arbeitsorte</label>
                     <input
                       {...field}
                       value={field.value?.join(", ") || ""}
@@ -536,6 +471,7 @@ export default function SettingsPage() {
                         )
                       }
                       className={INPUT_CLS}
+                        style={INPUT_STYLE}
                       placeholder="Wien, Graz…"
                     />
                   </div>
@@ -548,8 +484,8 @@ export default function SettingsPage() {
                   control={control}
                   render={({ field }) => (
                     <div>
-                      <label className={LABEL_CLS}>Gehalt min (k€)</label>
-                      <input {...field} type="number" className="w-full max-w-[160px] rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500/50 focus:ring-0 h-10" placeholder="30" value={field.value || ""} />
+                      <label style={LABEL_STYLE}>Mindestgehalt (€ / Monat)</label>
+                      <input {...field} type="number" className="w-full max-w-[160px] rounded-xl border px-3 py-2 text-sm h-10 focus:outline-none focus:border-[var(--color-accent-500)]/50 focus:ring-0 transition-colors" style={INPUT_STYLE} placeholder="30" value={field.value || ""} />
                     </div>
                   )}
                 />
@@ -558,48 +494,48 @@ export default function SettingsPage() {
                   control={control}
                   render={({ field }) => (
                     <div>
-                      <label className={LABEL_CLS}>Gehalt max (k€)</label>
-                      <input {...field} type="number" className="w-full max-w-[160px] rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500/50 focus:ring-0 h-10" placeholder="50" value={field.value || ""} />
+                      <label style={LABEL_STYLE}>Maximalgehalt (€ / Monat)</label>
+                      <input {...field} type="number" className="w-full max-w-[160px] rounded-xl border px-3 py-2 text-sm h-10 focus:outline-none focus:border-[var(--color-accent-500)]/50 focus:ring-0 transition-colors" style={INPUT_STYLE} placeholder="50" value={field.value || ""} />
                     </div>
                   )}
                 />
               </div>
-            </div>
+            </section>
 
             {/* Stellenarten + Erfahrung + Branchen combined */}
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-brand-300 flex-shrink-0" />
-                <h2 className="font-semibold text-white">Präferenzen</h2>
-              </div>
+            <section className="flex flex-col gap-4">
+              <h2 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)]">
+                Präferenzen
+              </h2>
 
-              {/* Erfahrungsstufe */}
+              {/* Berufserfahrung */}
               <Controller
                 name="experience_level"
                 control={control}
                 render={({ field }) => (
                   <div>
-                    <label className={LABEL_CLS}>Erfahrungsstufe</label>
+                    <label style={LABEL_STYLE}>Wo stehst du gerade?</label>
                     <div className="relative">
-                      <select {...field} className={`${INPUT_CLS} appearance-none pr-9`} value={field.value || ""}>
-                        <option value="">Stufe auswählen…</option>
+                      <select {...field} className={`${INPUT_CLS} appearance-none pr-9`}
+                        style={INPUT_STYLE} value={field.value || ""}>
+                        <option value="">Wähle dein Niveau…</option>
                         {EXPERIENCE_LEVELS.map((l) => (
                           <option key={l} value={l}>{l}</option>
                         ))}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-muted)]" />
                     </div>
                   </div>
                 )}
               />
 
-              {/* Stellenarten — multi-select dropdown */}
+              {/* Jobarten — multi-select dropdown */}
               <Controller
                 name="job_types"
                 control={control}
                 render={({ field }) => (
                   <div>
-                    <label className={LABEL_CLS}>Stellenarten</label>
+                    <label style={LABEL_STYLE}>Jobarten</label>
                     <MultiSelectDropdown
                       options={JOB_TYPES}
                       value={field.value || []}
@@ -616,7 +552,7 @@ export default function SettingsPage() {
                 control={control}
                 render={({ field }) => (
                   <div>
-                    <label className={LABEL_CLS}>Branchen</label>
+                    <label style={LABEL_STYLE}>Branchen</label>
                     <MultiSelectDropdown
                       options={INDUSTRIES}
                       value={field.value || []}
@@ -626,18 +562,16 @@ export default function SettingsPage() {
                   </div>
                 )}
               />
-            </div>
 
-            {/* Umzugsbereitschaft */}
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5">
+              {/* Umzugsbereitschaft — kept inside Präferenzen for context */}
               <Controller
                 name="is_open_to_relocation"
                 control={control}
                 render={({ field }) => (
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4 pt-2 border-t border-[var(--color-border-subtle)]">
                     <div>
                       <p className="text-sm font-semibold text-white">Umzugsbereitschaft</p>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-[var(--color-fg-muted)] mt-0.5">
                         Offen für Stellen außerhalb der Heimatstadt
                       </p>
                     </div>
@@ -645,7 +579,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => field.onChange(!field.value)}
                       className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors overflow-hidden [transform:translateZ(0)] ${
-                        field.value ? "bg-brand-500" : "bg-[#1f2937]"
+                        field.value ? "bg-[var(--color-accent-500)]" : "bg-[var(--color-bg-elev-3)]"
                       }`}
                     >
                       <span
@@ -657,14 +591,14 @@ export default function SettingsPage() {
                   </div>
                 )}
               />
-            </div>
+            </section>
 
             {/* Mobile save — sticky bottom bar (visible on small screens only) */}
             <div className="lg:hidden sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-10">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500 hover:shadow-xl hover:shadow-brand-500/40 disabled:opacity-50 disabled:shadow-none h-10"
+                className="w-full flex items-center justify-center gap-2 rounded-md bg-[var(--color-accent-500)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-400)] disabled:opacity-50 h-10"
               >
                 <Save className="h-4 w-4" />
                 {isSubmitting ? "Wird gespeichert…" : "Einstellungen speichern"}
@@ -672,23 +606,121 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Legal Links — nur auf Mobile (Desktop: Footer im Layout) */}
-          <div className="md:hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
-            <p className={LABEL_CLS}>Rechtliches</p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-1">
-              <Link to="/terms" className="text-sm text-slate-400 hover:text-slate-200 transition-colors">AGB</Link>
-              <Link to="/privacy" className="text-sm text-slate-400 hover:text-slate-200 transition-colors">Datenschutz</Link>
-              <Link to="/impressum" className="text-sm text-slate-400 hover:text-slate-200 transition-colors">Impressum</Link>
-              <Link to="/contact" className="text-sm text-slate-400 hover:text-slate-200 transition-colors">Kontakt</Link>
-            </div>
-          </div>
-
-          {/* Danger Zone — bottom on mobile, left col row 2 on desktop */}
-          <DeleteAccountSection />
-
         </div>
 
+      {/* Full-width bottom section: Danger Zone */}
+      <div className="mt-5 pt-4 border-t border-[var(--color-border-subtle)]">
+        <DeleteAccountSection />
+      </div>
+
       </form>
+    </div>
+  );
+}
+
+/**
+ * CV upload/management panel for the Settings left column.
+ * Wraps the existing /resume/upload endpoint and lists current resumes.
+ */
+function CVUploadSection() {
+  const qc = useQueryClient();
+  const cvInputRef = useRef(null);
+
+  const { data: resumes = [] } = useQuery({
+    queryKey: ["resumes"],
+    queryFn: () => resumeApi.list().then((r) => r.data),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const uploadMut = useMutation({
+    mutationFn: (file) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return resumeApi.upload(fd);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["resumes"] });
+      toast.success("Lebenslauf hochgeladen");
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, "Upload fehlgeschlagen")),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id) => resumeApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["resumes"] });
+      toast.success("Lebenslauf entfernt");
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, "Löschen fehlgeschlagen")),
+  });
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast.error("Nur PDF-Dateien erlaubt");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Datei zu groß. Maximal 10 MB.");
+      return;
+    }
+    uploadMut.mutate(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {resumes.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {resumes.map((r) => (
+            <li
+              key={r.id}
+              className="flex items-center gap-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] px-3 py-2.5"
+            >
+              <FileText className="h-4 w-4 flex-shrink-0 text-[var(--color-accent-300)]" />
+              <span className="flex-1 min-w-0 text-[13px] text-[var(--color-fg-muted)] truncate">
+                {r.filename || r.original_filename || `Lebenslauf ${r.id}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => deleteMut.mutate(r.id)}
+                disabled={deleteMut.isPending}
+                className="flex-shrink-0 text-[var(--color-fg-faint)] hover:text-[var(--color-error)] transition-colors disabled:opacity-50"
+                aria-label="Lebenslauf entfernen"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[12.5px] text-[var(--color-fg-dim)]">
+          Noch kein Lebenslauf hochgeladen. Lade deinen Lebenslauf hoch, damit die KI ihn bei der Jobsuche und Passung verwenden kann.
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => cvInputRef.current?.click()}
+        disabled={uploadMut.isPending}
+        className="flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] font-semibold transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)] disabled:opacity-50"
+        style={{ borderColor: "rgba(255,255,255,0.1)", backgroundColor: "var(--color-surface-input)", color: "var(--color-ink-sub)" }}
+      >
+        {uploadMut.isPending ? (
+          <span className="inline-block w-3.5 h-3.5 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Upload className="h-3.5 w-3.5" />
+        )}
+        {uploadMut.isPending ? "Wird hochgeladen…" : resumes.length > 0 ? "Weiteren hochladen" : "PDF hochladen"}
+      </button>
+      <input
+        ref={cvInputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={handleFile}
+      />
+      <p className="text-[11px] text-[var(--color-fg-dim)]">Nur PDF · max. 10 MB</p>
     </div>
   );
 }
@@ -712,23 +744,23 @@ function DeleteAccountSection() {
     setDeleting(true);
     try {
       await authApi.deleteAccount(password);
-      toast.success("Konto wurde gelöscht");
+      toast.success("Konto gelöscht");
       logout();
       navigate("/login");
     } catch (err) {
-      toast.error(getApiErrorMessage(err, "Fehler beim Löschen des Kontos"));
+      toast.error(getApiErrorMessage(err, "Konto konnte nicht gelöscht werden"));
       setDeleting(false);
     }
   };
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
-      <div className="mb-2 flex items-start gap-2">
-        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-500" />
+    <div className="rounded-xl border border-red-900/40 bg-red-950/20 p-4 mt-4">
+      <div className="mb-3 flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
         <div>
-          <h2 className="font-semibold text-slate-400">Gefahrenzone</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Alle Daten, Profile, Lebensläufe und Jobs werden permanent gelöscht.
+          <h2 className="font-semibold text-red-400">Konto löschen</h2>
+          <p className="mt-0.5 text-xs text-[var(--color-fg-dim)]">
+            Entfernt alle deine Daten, Profile, Lebensläufe und gespeicherten Stellen dauerhaft.
           </p>
         </div>
       </div>
@@ -752,7 +784,7 @@ function DeleteAccountSection() {
             </label>
             <input
               type="password"
-              className="w-full rounded-xl border border-red-900/60 bg-[#0b0606] px-3 py-2 text-sm text-white placeholder-red-900 focus:outline-none focus:border-red-500/50 h-10"
+              className="w-full rounded-xl border border-red-900/60 bg-[var(--color-bg-input)] px-3 py-2 text-sm text-white placeholder-red-900 focus:outline-none focus:border-red-500/50 h-10"
               placeholder="Aktuelles Passwort eingeben"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -771,7 +803,8 @@ function DeleteAccountSection() {
                 setShowConfirm(false);
                 setPassword("");
               }}
-              className="rounded-xl border border-[#1f2937] bg-[#0b1220] px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:border-brand-500/30 hover:text-white"
+              className="rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
+            style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-sub)' }}
             >
               Abbrechen
             </button>

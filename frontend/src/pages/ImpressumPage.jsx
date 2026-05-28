@@ -1,77 +1,72 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import LegalLayout from "../components/ui/LegalLayout";
 
 /** Static Austrian Impressum (legal notice) page as required by §5 ECG. */
 export default function ImpressumPage() {
+  const linkClass = "text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] hover:underline transition-colors";
+  const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
+  const h2Class = "text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4";
+
+  const rows = [
+    { dt: "Name",                   dd: "Davor Radeski" },
+    { dt: "Unternehmensgegenstand", dd: "IT-Dienstleistungen / Softwareentwicklung" },
+    { dt: "Status",                 dd: "Nicht gewerblich registriert — privates Projekt" },
+    { dt: "Anschrift",              dd: "Österreich" },
+    { dt: "E-Mail",                 dd: "info@jobassist.tech" },
+  ];
+
   return (
-    <div className="min-h-screen bg-black text-slate-100">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-10 pb-20">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-8">
-          <ArrowLeft className="w-4 h-4" /> Zurück
-        </Link>
-
-        <h1 className="text-3xl font-extrabold text-white mb-2">Impressum</h1>
-        <p className="text-sm text-slate-500 mb-10">Angaben gemäß § 5 E-Commerce-Gesetz (ECG) und § 25 Mediengesetz (MedienG)</p>
-
-        <div className="prose prose-gray max-w-none space-y-8 text-[15px] leading-relaxed text-slate-300">
-          <section className="bg-[#111827] rounded-xl border border-[#1e293b] p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-white mb-4">Unternehmensangaben</h2>
-            <dl className="space-y-3 text-sm">
-              <div className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="font-semibold text-white sm:w-48 flex-shrink-0">Name</dt>
-                <dd className="text-slate-400">Davor Radeski</dd>
+    <LegalLayout
+      title={<><span className="font-display italic text-[var(--color-accent-300)]">Impressum</span></>}
+      subtitle="Angaben gemäß § 5 E-Commerce-Gesetz (ECG) und § 25 Mediengesetz (MedienG)"
+    >
+      <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
+        <section className={sectionClass}>
+          <h2 className={h2Class}>Unternehmensangaben</h2>
+          <dl className="grid grid-cols-12 gap-y-3 gap-x-4 text-[14px]">
+            {rows.map(({ dt, dd }) => (
+              <div key={dt} className="col-span-12 grid grid-cols-12 gap-x-4">
+                <dt className="col-span-12 sm:col-span-4 font-semibold text-[var(--color-fg)]">{dt}</dt>
+                <dd className="col-span-12 sm:col-span-8 text-[var(--color-fg-muted)]">{dd}</dd>
               </div>
-              <div className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="font-semibold text-white sm:w-48 flex-shrink-0">Unternehmensgegenstand</dt>
-                <dd className="text-slate-400">IT-Dienstleistungen / Softwareentwicklung</dd>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="font-semibold text-white sm:w-48 flex-shrink-0">Status</dt>
-                <dd className="text-slate-400">Nicht gewerblich registriert — privates Projekt</dd>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="font-semibold text-white sm:w-48 flex-shrink-0">Anschrift</dt>
-                <dd className="text-slate-400">Österreich</dd>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="font-semibold text-white sm:w-48 flex-shrink-0">E-Mail</dt>
-                <dd className="text-slate-400">info@jobassist.tech</dd>
-              </div>
-            </dl>
-          </section>
+            ))}
+          </dl>
+        </section>
 
-          <section className="bg-[#111827] rounded-xl border border-[#1e293b] p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-white mb-4">Medieninhaber & Herausgeber</h2>
-            <p className="text-slate-400">
-              Medieninhaber und Herausgeber dieser Website ist die oben genannte Person. Grundlegende Richtung des Mediums: Information über das Produkt JobAssist und KI-gestützte Bewerbungshilfe für den österreichischen Arbeitsmarkt.
-            </p>
-          </section>
+        <section className={sectionClass}>
+          <h2 className={h2Class}>Medieninhaber & Herausgeber</h2>
+          <p>
+            Medieninhaber und Herausgeber dieser Website ist die oben genannte Person. Grundlegende Richtung
+            des Mediums: Information über das Produkt JobAssist und KI-gestützte Bewerbungshilfe für den
+            österreichischen Arbeitsmarkt.
+          </p>
+        </section>
 
-          <section className="bg-[#111827] rounded-xl border border-[#1e293b] p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-white mb-4">Haftungsausschluss</h2>
-            <p className="text-slate-400">
-              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
-            </p>
-            <p className="mt-2 text-slate-400">
-              Die von der KI generierten Inhalte stellen keine Rechts-, Karriere- oder Finanzberatung dar. Die Nutzung erfolgt auf eigene Verantwortung.
-            </p>
-          </section>
+        <section className={sectionClass}>
+          <h2 className={h2Class}>Haftungsausschluss</h2>
+          <p>
+            Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links.
+            Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
+          </p>
+          <p className="mt-2">
+            Die von der KI generierten Inhalte stellen keine Rechts-, Karriere- oder Finanzberatung dar.
+            Die Nutzung erfolgt auf eigene Verantwortung.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-lg font-bold text-white mb-3">Streitbeilegung</h2>
-            <p className="text-slate-400">
-              Online-Streitbeilegung gemäß Art. 14 Abs. 1 ODR-VO:{" "}
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-brand-200 hover:underline transition-colors">
-                https://ec.europa.eu/consumers/odr
-              </a>
-            </p>
-            <p className="mt-2 text-slate-400">
-              Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
-            </p>
-          </section>
-
-        </div>
+        <section className={sectionClass}>
+          <h2 className={h2Class}>Streitbeilegung</h2>
+          <p>
+            Online-Streitbeilegung gemäß Art. 14 Abs. 1 ODR-VO:{" "}
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              https://ec.europa.eu/consumers/odr
+            </a>
+          </p>
+          <p className="mt-2">
+            Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer
+            Verbraucherschlichtungsstelle teilzunehmen.
+          </p>
+        </section>
       </div>
-    </div>
+    </LegalLayout>
   );
 }

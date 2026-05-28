@@ -11,8 +11,8 @@ from app.core.usage import require_usage
 from app.models.user import User
 from app.models.job import Job
 from app.models.resume import Resume
-from app.schemas.job import InterviewPrepRequest, JobOut
-from app.services.claude_service import generate_interview_prep
+from app.schemas.job import InterviewPrepRequest, InterviewRateRequest, InterviewRateFeedback, JobOut
+from app.services.claude_service import generate_interview_prep, rate_interview_answer
 from app.core.rate_limit import limiter
 
 router = APIRouter()
@@ -55,3 +55,20 @@ async def generate(
     await db.commit()
     await db.refresh(job)
     return job
+
+
+@router.post("/rate", response_model=InterviewRateFeedback)
+@limiter.limit("20/minute")
+async def rate(
+    request: Request,
+    payload: InterviewRateRequest,
+    current_user: User = Depends(get_current_user),
+    _usage=Depends(require_usage("ai_chat")),
+) -> dict:
+    feedback = await asyncio.to_thread(
+        rate_interview_answer,
+        question=payload.question,
+        user_answer=payload.user_answer,
+        suggested_answer=payload.suggested_answer,
+    )
+    return feedback

@@ -180,13 +180,13 @@ export default function ViennaMap({ value, onChange }) {
           </div>
 
           {/* Map container */}
-          <div className="relative border border-[#1f2937] rounded-xl overflow-hidden bg-[#0b1220]">
+          <div className="relative border border-[var(--color-border)] rounded-xl overflow-hidden bg-[var(--color-bg-input)]">
             {/* Zoom controls */}
             <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={() => zoomBy(1 / 1.4)}
-                className="w-7 h-7 flex items-center justify-center bg-[#111827] border border-[#1f2937] rounded-lg text-slate-400 hover:bg-[#1f2937] hover:text-slate-200 transition-colors"
+                className="w-7 h-7 flex items-center justify-center bg-[var(--color-bg-elev-1)] border border-[var(--color-border)] rounded-lg text-slate-400 hover:bg-[var(--color-bg-elev-2)] hover:text-slate-200 transition-colors"
                 title="Hineinzoomen"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export default function ViennaMap({ value, onChange }) {
                 type="button"
                 onClick={() => zoomBy(1.4)}
                 disabled={!isZoomed}
-                className="w-7 h-7 flex items-center justify-center bg-[#111827] border border-[#1f2937] rounded-lg text-slate-400 hover:bg-[#1f2937] hover:text-slate-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-7 h-7 flex items-center justify-center bg-[var(--color-bg-elev-1)] border border-[var(--color-border)] rounded-lg text-slate-400 hover:bg-[var(--color-bg-elev-2)] hover:text-slate-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Herauszoomen"
               >
                 <Minus className="w-3.5 h-3.5" />
@@ -204,7 +204,7 @@ export default function ViennaMap({ value, onChange }) {
                 <button
                   type="button"
                   onClick={() => setVb(INITIAL_VB)}
-                  className="w-7 h-7 flex items-center justify-center bg-[#111827] border border-[#1f2937] rounded-lg text-slate-400 hover:bg-[#1f2937] hover:text-slate-200 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center bg-[var(--color-bg-elev-1)] border border-[var(--color-border)] rounded-lg text-slate-400 hover:bg-[var(--color-bg-elev-2)] hover:text-slate-200 transition-colors"
                   title="Ansicht zurücksetzen"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

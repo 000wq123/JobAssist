@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Heute · 10 Designs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Page chrome — neutral host so each variant frame can own its colours. */
+  html, body { background: #18181b; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { color: #d4d4d8; }
+  .frame {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5);
+  }
+  .variant-section { padding: 70px 24px; scroll-margin-top: 70px; }
+  .variant-label {
+    max-width: 1280px; margin: 0 auto 18px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    color: #a1a1aa; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .variant-label .num { color: #fafafa; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .variant-note { max-width: 1280px; margin: 18px auto 0; color: #71717a; font-size: 13px; line-height: 1.6; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* ─── Variant-scoped fonts (loaded but applied per-variant) ─── */
+  .ff-serif      { font-family: 'Instrument Serif', ui-serif, Georgia, serif; letter-spacing: -0.025em; }
+  .ff-source     { font-family: 'Source Serif 4', ui-serif, Georgia, serif; }
+  .ff-playfair   { font-family: 'Playfair Display', ui-serif, Georgia, serif; }
+  .ff-mono       { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+  .ff-grotesk    { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  .ff-spacemono  { font-family: 'Space Mono', ui-monospace, Menlo, monospace; }
+
+  /* Funnel + bar helpers reused across variants */
+  .funnel-row { display: grid; grid-template-columns: 110px 1fr 50px; gap: 12px; align-items: center; }
+  .day-bar-col { display: flex; height: 100%; align-items: flex-end; }
+</style>
+</head>
+<body>
+
+<!-- ─── Sticky TOC nav ────────────────────────────────────────────────── -->
+<nav class="sticky top-0 z-50 backdrop-blur bg-[#18181b]/85 border-b border-white/10">
+  <div class="max-w-[1280px] mx-auto px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
+    <span class="font-semibold text-white tracking-wide">Heute · 10 Designs</span>
+    <span class="text-zinc-500">|</span>
+    <a href="#v1" class="text-zinc-300 hover:text-white">1 Sepia</a>
+    <a href="#v2" class="text-zinc-300 hover:text-white">2 Charcoal</a>
+    <a href="#v3" class="text-zinc-300 hover:text-white">3 Sage</a>
+    <a href="#v4" class="text-zinc-300 hover:text-white">4 Navy Desk</a>
+    <a href="#v5" class="text-zinc-300 hover:text-white">5 Lavender</a>
+    <a href="#v6" class="text-zinc-300 hover:text-white">6 Terminal</a>
+    <a href="#v7" class="text-zinc-300 hover:text-white">7 Editorial</a>
+    <a href="#v8" class="text-zinc-300 hover:text-white">8 Brutalist</a>
+    <a href="#v9" class="text-zinc-300 hover:text-white">9 Blueprint</a>
+    <a href="#v10" class="text-zinc-300 hover:text-white">10 Bento</a>
+  </div>
+</nav>
+
+<!-- ─── Intro ──────────────────────────────────────────────────────────── -->
+<section class="px-6 pt-16 pb-8 max-w-[920px] mx-auto">
+  <p class="text-[11px] uppercase tracking-[0.14em] text-zinc-500 font-semibold">Heute · Gallery</p>
+  <h1 class="mt-3 text-[40px] leading-[1.05] tracking-tight font-semibold text-white">Zehn Richtungen. Eine wählen.</h1>
+  <p class="mt-4 text-[14px] text-zinc-400 leading-relaxed max-w-prose">
+    Jede Variante zeigt denselben Inhalt — Hero · 3 KPIs · Pipeline · zwei Vorschläge — in einer eigenen visuellen Sprache.
+    Hintergrund, Typografie, Layoutgitter, Akzentfarben sind alle unterschiedlich. Ziel: Du erkennst sofort, welche
+    Sprache du leben willst, ohne dass dich „weiß ist zu hell" oder „schwarz ist zu dunkel" wieder einfängt.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     1 / SEPIA PAPER LEDGER
+     Tan paper bg, sepia ink, rust accent. All-serif. Marginalia. No radius.
+     Reference: NYT print, Substack longform, Field Notes journal.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #2a2620;">
+  <div class="variant-label"><span><span class="num">01</span> &nbsp; Sepia Paper Ledger</span><span>warm tan · all-serif · marginalia</span></div>
+
+  <div class="frame" id="v1" style="background: #ebe2cf; color: #2a1f10; font-family: 'Source Serif 4', Georgia, serif;">
+    <div style="padding: 56px 64px;">
+
+      <!-- Letterhead -->
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid #2a1f10;">
+        <p style="font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;">JobAssist · Hauptbuch</p>
+        <p style="font-size: 13px; font-style: italic; color: #6b5a3a;">Sonntag, der 17. Mai · Abend</p>
+      </div>
+
+      <!-- Hero -->
+      <h1 style="font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 64px; line-height: 1.04; letter-spacing: -0.015em; margin-top: 36px;">
+        Drei starke Treffer<br/>warten auf dich.
+      </h1>
+      <p style="font-style: italic; color: #6b5a3a; margin-top: 14px; font-size: 16px;">
+        — und vor 3 Tagen bei Bitpanda eingereicht. Schnitt sind acht Tage bis zur Antwort.
+      </p>
+
+      <!-- KPI ledger row -->
+      <div style="margin-top: 40px; border-top: 2px solid #2a1f10; border-bottom: 1px solid #2a1f10; display: grid; grid-template-columns: repeat(3, 1fr);">
+        <div style="padding: 18px 24px 18px 0; border-right: 1px solid rgba(42,31,16,0.2);">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a3a;">Match-Schnitt</p>
+          <p style="font-family: 'Playfair Display', Georgia, serif; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 6px;">82<span style="font-size: 18px; color: #8b3a1b;">%</span></p>
+          <p style="font-size: 12px; font-style: italic; color: #6b5a3a; margin-top: 4px;">über 11 Stellen</p>
+        </div>
+        <div style="padding: 18px 24px; border-right: 1px solid rgba(42,31,16,0.2);">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a3a;">Antwortquote</p>
+          <p style="font-family: 'Playfair Display', Georgia, serif; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 6px;">33<span style="font-size: 18px; color: #8b3a1b;">%</span></p>
+          <p style="font-size: 12px; font-style: italic; color: #6b5a3a; margin-top: 4px;">1 von 3 · Schnitt 28 %</p>
+        </div>
+        <div style="padding: 18px 0 18px 24px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a3a;">Frist</p>
+          <p style="font-family: 'Playfair Display', Georgia, serif; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 6px; color: #8b3a1b;">2 T.</p>
+          <p style="font-size: 12px; font-style: italic; color: #6b5a3a; margin-top: 4px;">Bitpanda · 19. Mai</p>
+        </div>
+      </div>
+
+      <!-- Two-col body: ledger entries + pipeline aside -->
+      <div style="margin-top: 40px; display: grid; grid-template-columns: 1.6fr 1fr; gap: 48px;">
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a3a; font-weight: 600;">Eintragungen</p>
+          <ol style="margin-top: 16px; list-style: none; padding: 0;">
+            <li style="display: grid; grid-template-columns: 36px 1fr auto; align-items: baseline; padding: 14px 0; border-bottom: 1px solid rgba(42,31,16,0.18);">
+              <span style="font-style: italic; color: #6b5a3a;">i.</span>
+              <span style="font-size: 17px;"><strong>Bitpanda</strong> — Frontend-Praktikum, Frist in 2 Tagen.<br/><em style="color: #6b5a3a; font-size: 14px;">Hat sich auf das letzte Anschreiben gut entwickelt.</em></span>
+              <span style="color: #8b3a1b; font-style: italic; font-size: 13px;">dringend</span>
+            </li>
+            <li style="display: grid; grid-template-columns: 36px 1fr auto; align-items: baseline; padding: 14px 0; border-bottom: 1px solid rgba(42,31,16,0.18);">
+              <span style="font-style: italic; color: #6b5a3a;">ii.</span>
+              <span style="font-size: 17px;"><strong>A1 Telekom</strong> — vor 11 Tagen beworben.<br/><em style="color: #6b5a3a; font-size: 14px;">Schnitt sind 8 Tage. Eine kurze Nachfrage ist okay.</em></span>
+              <span style="color: #6b5a3a; font-style: italic; font-size: 13px;">offen</span>
+            </li>
+            <li style="display: grid; grid-template-columns: 36px 1fr auto; align-items: baseline; padding: 14px 0;">
+              <span style="font-style: italic; color: #6b5a3a;">iii.</span>
+              <span style="font-size: 17px;"><strong>GMS Gourmet</strong> — neuer Treffer, 95 % Match.<br/><em style="color: #6b5a3a; font-size: 14px;">Front-Office Praktikum, Wien · € 11,40/h.</em></span>
+              <span style="color: #6b5a3a; font-style: italic; font-size: 13px;">neu</span>
+            </li>
+          </ol>
+        </div>
+
+        <aside style="border-left: 1px solid rgba(42,31,16,0.3); padding-left: 32px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a3a; font-weight: 600;">Pipeline</p>
+          <table style="margin-top: 14px; width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td style="padding: 6px 0;">Gespeichert</td><td style="text-align: right; font-weight: 600;">11</td></tr>
+            <tr><td style="padding: 6px 0;">Beworben</td><td style="text-align: right; font-weight: 600;">3</td></tr>
+            <tr><td style="padding: 6px 0;">Im Gespräch</td><td style="text-align: right; font-weight: 600;">1</td></tr>
+            <tr><td style="padding: 6px 0;">Angebot</td><td style="text-align: right; font-style: italic; color: #6b5a3a;">—</td></tr>
+          </table>
+          <p style="margin-top: 18px; font-style: italic; color: #6b5a3a; font-size: 13px; line-height: 1.6; border-top: 1px solid rgba(42,31,16,0.18); padding-top: 14px;">
+            Bewerbungsquote 27 %, Plattform-Schnitt 31 %. Etwas darunter — Lebenslauf könnte schärfer.
+          </p>
+        </aside>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Sepia Paper Ledger.</strong> Warmes Papier, Tinte, ledger-grid. Komplett Serif (Playfair + Source Serif). Marginalia in Italic. Keine Border-Radius. Wirkt wie Substack longform oder NYT-Print. <em>Trade-off:</em> Sehr „read", weniger „dashboard" — könnte für Statistik-Density zu langsam wirken.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     2 / WARM CHARCOAL CONSOLE
+     Off-black (#1f2126), warm cream ink, dense grid, muted gold accent.
+     Reference: Things 3 dark, Bear writer, Soulver.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #0d0d10;">
+  <div class="variant-label"><span><span class="num">02</span> &nbsp; Warm Charcoal Console</span><span>off-black · warm cream · muted gold</span></div>
+
+  <div class="frame" id="v2" style="background: #1f2126; color: #e8e4d8; font-family: 'Inter', sans-serif;">
+    <div style="padding: 48px 56px;">
+
+      <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #a39b85; font-weight: 600;">SO 17. MAI · 20:14</p>
+      <h1 class="ff-serif" style="font-size: 60px; line-height: 1.05; margin-top: 18px; color: #f5f1e6;">Drei starke Treffer warten auf dich.</h1>
+      <p style="margin-top: 14px; font-size: 14px; color: #b3a78f; max-width: 560px; line-height: 1.55;">Vor 3 Tagen bei Bitpanda. Schnitt 8 Tage bis zur Antwort.</p>
+
+      <!-- Compact KPI strip — flat, dense, no card chrome -->
+      <div style="margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(232,228,216,0.1); border-bottom: 1px solid rgba(232,228,216,0.1);">
+        <div style="padding: 18px 24px 18px 0; border-right: 1px solid rgba(232,228,216,0.08);">
+          <p style="font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #a39b85;">Match</p>
+          <p class="tnum" style="font-size: 38px; font-weight: 600; margin-top: 4px; color: #f5f1e6; letter-spacing: -0.02em;">82<span style="font-size: 14px; color: #c4a577; margin-left: 2px;">%</span> <span style="font-size: 11px; color: #6dba85; font-weight: 500; margin-left: 6px;">+4</span></p>
+        </div>
+        <div style="padding: 18px 24px; border-right: 1px solid rgba(232,228,216,0.08);">
+          <p style="font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #a39b85;">Antwortquote</p>
+          <p class="tnum" style="font-size: 38px; font-weight: 600; margin-top: 4px; color: #f5f1e6; letter-spacing: -0.02em;">33<span style="font-size: 14px; color: #c4a577; margin-left: 2px;">%</span> <span style="font-size: 11px; color: #a39b85; font-weight: 400; margin-left: 6px;">/ ⌀ 28</span></p>
+        </div>
+        <div style="padding: 18px 0 18px 24px;">
+          <p style="font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #a39b85;">Nächste Frist</p>
+          <p class="tnum" style="font-size: 38px; font-weight: 600; margin-top: 4px; color: #d4844f; letter-spacing: -0.02em;">2 T. <span style="font-size: 13px; color: #b3a78f; font-weight: 400; margin-left: 4px;">Bitpanda</span></p>
+        </div>
+      </div>
+
+      <!-- Three-column dense grid: pipeline, week, suggestions -->
+      <div style="margin-top: 32px; display: grid; grid-template-columns: 1.3fr 1fr 1.2fr; gap: 32px;">
+
+        <div>
+          <p style="font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #a39b85; font-weight: 600;">Pipeline</p>
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="funnel-row"><span style="font-size: 12.5px; color: #b3a78f;">Gespeichert</span><div style="height: 22px; background: #c4a577; opacity: 1; width: 100%;"></div><span class="tnum" style="font-size: 13px; text-align: right; color: #f5f1e6;">11</span></div>
+            <div class="funnel-row"><span style="font-size: 12.5px; color: #b3a78f;">Beworben</span><div style="height: 22px; background: #c4a577; opacity: 0.7; width: 27%;"></div><span class="tnum" style="font-size: 13px; text-align: right; color: #f5f1e6;">3</span></div>
+            <div class="funnel-row"><span style="font-size: 12.5px; color: #b3a78f;">Im Gespräch</span><div style="height: 22px; background: #c4a577; opacity: 0.45; width: 9%;"></div><span class="tnum" style="font-size: 13px; text-align: right; color: #f5f1e6;">1</span></div>
+            <div class="funnel-row"><span style="font-size: 12.5px; color: #b3a78f;">Angebot</span><div style="height: 22px; background: #c4a577; opacity: 0.2; width: 2%;"></div><span class="tnum" style="font-size: 13px; text-align: right; color: #6e6a5e;">0</span></div>
+          </div>
+          <p style="margin-top: 14px; font-size: 11.5px; color: #a39b85;">Bewerbungsquote 27 % · Plattform 31 %.</p>
+        </div>
+
+        <div>
+          <p style="font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #a39b85; font-weight: 600;">Diese Woche</p>
+          <div style="margin-top: 14px; height: 100px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end;">
+            <div class="day-bar-col"><div style="width: 100%; background: #c4a577; opacity: 0.3; height: 8%; border-radius: 2px;"></div></div>
+            <div class="day-bar-col"><div style="width: 100%; background: #c4a577; height: 35%; border-radius: 2px;"></div></div>
+            <div class="day-bar-col"><div style="width: 100%; background: #c4a577; height: 55%; border-radius: 2px;"></div></div>
+            <div class="day-bar-col"><div style="width: 100%; background: #c4a577; opacity: 0.3; height: 5%; border-radius: 2px;"></div></div>
+            <div class="day-bar-col"><div style="width: 100%; background: #c4a577; height: 75%; border-radius: 2px;"></div></div>
+            <div class="day-bar-col"><div style="width: 100%; background: #f5f1e6; height: 30%; border-radius: 2px;"></div></div>
+            <div class="day-bar-col"><div style="width: 100%; background: #c4a577; opacity: 0.2; height: 2%; border-radius: 2px;"></div></div>
+          </div>
+          <div style="margin-top: 6px; display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; text-align: center; font-size: 10px; color: #6e6a5e;">
+            <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span style="color: #f5f1e6; font-weight: 600;">heute</span><span>So</span>
+          </div>
+        </div>
+
+        <div>
+          <p style="font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #a39b85; font-weight: 600;">Vorschläge</p>
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="border-left: 2px solid #d4844f; padding-left: 12px;">
+              <p style="font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #d4844f; font-weight: 600;">FRIST · 2T</p>
+              <p style="margin-top: 3px; font-size: 13.5px; color: #f5f1e6; line-height: 1.4;">Bitpanda Frontend-Praktikum.</p>
+            </div>
+            <div style="border-left: 2px solid #c4a577; padding-left: 12px;">
+              <p style="font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #c4a577; font-weight: 600;">NACHFRAGEN</p>
+              <p style="margin-top: 3px; font-size: 13.5px; color: #f5f1e6; line-height: 1.4;">A1 Telekom · vor 11 Tagen.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Warm Charcoal Console.</strong> Off-black `#1f2126` (warmer than reines Schwarz, weniger Augenbelastung als v1). Cremefarbene Tinte. Akzent: matt-gold + zart grün. Drei-Spalten-Densität à la Things/Soulver. <em>Trade-off:</em> Immer noch dunkel — wenn Augen wirklich Helligkeit brauchen, geht das nicht weit genug.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     3 / SAGE GARDEN
+     Light desaturated green-gray. Calm, organic. Big serif numbers, terracotta.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #1d2218;">
+  <div class="variant-label"><span><span class="num">03</span> &nbsp; Sage Garden</span><span>muted sage · terracotta · breath</span></div>
+
+  <div class="frame" id="v3" style="background: #d8ddd0; color: #2a3528; font-family: 'Inter', sans-serif;">
+    <div style="padding: 64px 72px;">
+
+      <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b8068; font-weight: 600;">Sonntag · Abend · 17. Mai</p>
+      <h1 class="ff-serif" style="font-size: 72px; line-height: 1.02; margin-top: 22px; color: #1f2a1d; max-width: 900px;">Drei starke Treffer warten.</h1>
+      <p style="margin-top: 18px; font-size: 15px; color: #4a5a47; max-width: 540px; line-height: 1.6;">
+        Vor drei Tagen bei <span style="color: #b8623e; font-weight: 500;">Bitpanda</span> beworben — der Schnitt sind acht Tage bis zur Antwort.
+      </p>
+
+      <!-- KPI tiles in soft sage panels -->
+      <div style="margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div style="background: #c8d1bc; padding: 22px 24px; border-radius: 14px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #4a5a47; font-weight: 600;">Match</p>
+          <p class="ff-serif tnum" style="font-size: 52px; line-height: 1; margin-top: 8px; color: #1f2a1d;">82<span style="font-size: 18px; color: #6b8068;">%</span></p>
+          <p style="margin-top: 6px; font-size: 12px; color: #4a5a47;">über 11 Stellen</p>
+        </div>
+        <div style="background: #c8d1bc; padding: 22px 24px; border-radius: 14px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #4a5a47; font-weight: 600;">Antwortquote</p>
+          <p class="ff-serif tnum" style="font-size: 52px; line-height: 1; margin-top: 8px; color: #1f2a1d;">33<span style="font-size: 18px; color: #6b8068;">%</span></p>
+          <p style="margin-top: 6px; font-size: 12px; color: #4a5a47;">1 von 3 · Schnitt 28 %</p>
+        </div>
+        <div style="background: #e8c8b6; padding: 22px 24px; border-radius: 14px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b3a1b; font-weight: 600;">Frist</p>
+          <p class="ff-serif tnum" style="font-size: 52px; line-height: 1; margin-top: 8px; color: #6b2410;">2 T.</p>
+          <p style="margin-top: 6px; font-size: 12px; color: #8b3a1b;">Bitpanda · 19. Mai</p>
+        </div>
+      </div>
+
+      <!-- Asymmetric two-col -->
+      <div style="margin-top: 56px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 56px;">
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b8068; font-weight: 600;">Pipeline</p>
+          <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 12px;">
+            <div class="funnel-row"><span style="font-size: 13px; color: #4a5a47;">Gespeichert</span><div style="height: 26px; background: #6b8068; width: 100%; border-radius: 4px;"></div><span class="tnum" style="font-size: 14px; text-align: right; font-weight: 600;">11</span></div>
+            <div class="funnel-row"><span style="font-size: 13px; color: #4a5a47;">Beworben</span><div style="height: 26px; background: #6b8068; opacity: 0.75; width: 27%; border-radius: 4px;"></div><span class="tnum" style="font-size: 14px; text-align: right; font-weight: 600;">3</span></div>
+            <div class="funnel-row"><span style="font-size: 13px; color: #4a5a47;">Im Gespräch</span><div style="height: 26px; background: #6b8068; opacity: 0.5; width: 9%; border-radius: 4px;"></div><span class="tnum" style="font-size: 14px; text-align: right; font-weight: 600;">1</span></div>
+            <div class="funnel-row"><span style="font-size: 13px; color: #4a5a47;">Angebot</span><div style="height: 26px; background: #6b8068; opacity: 0.25; width: 2%; border-radius: 4px;"></div><span class="tnum" style="font-size: 14px; text-align: right; color: #6b8068;">0</span></div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b8068; font-weight: 600;">Heute</p>
+          <ul style="margin-top: 18px; list-style: none; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+            <li>
+              <p style="font-size: 14.5px; line-height: 1.45;"><span style="color: #b8623e; font-weight: 600;">Frist:</span> Bitpanda läuft in 2 Tagen ab.</p>
+              <p style="font-size: 12.5px; color: #6b8068; margin-top: 2px;">Frontend-Praktikum, 19. Mai.</p>
+            </li>
+            <li>
+              <p style="font-size: 14.5px; line-height: 1.45;"><span style="color: #6b8068; font-weight: 600;">Nachfragen:</span> A1 vor 11 Tagen beworben.</p>
+              <p style="font-size: 12.5px; color: #6b8068; margin-top: 2px;">Schnitt sind 8 Tage. Eine kurze Mail ist okay.</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Sage Garden.</strong> Entsättigtes Salbei-Grau (`#d8ddd0`) als BG. Dunkle Forest-Tinte. Akzent Terracotta `#b8623e` für Dringliches. Sehr ruhig, viel Atem, organisch. <em>Trade-off:</em> Wenn die Marke energetischer wirken soll, ist das hier zu meditativ.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     4 / MIDNIGHT NAVY DESK
+     Deep blue-black, cool white, mono numbers, gold + teal accents.
+     Reference: Bloomberg Terminal, Sequoia LP letters.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #08101e;">
+  <div class="variant-label"><span><span class="num">04</span> &nbsp; Midnight Navy Desk</span><span>deep blue-black · gold · trading-desk density</span></div>
+
+  <div class="frame" id="v4" style="background: #131a2e; color: #d8ddec; font-family: 'Inter', sans-serif;">
+    <div style="padding: 40px 48px;">
+
+      <!-- Top status bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid rgba(216,221,236,0.1); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8895b0;">
+        <span><span style="color: #d4a857;">●</span> HEUTE · 17.05 · 20:14 LOCAL · WIEN</span>
+        <span>SESSION 11d 4h · LIVE</span>
+      </div>
+
+      <!-- Hero -->
+      <h1 class="ff-serif" style="font-size: 56px; line-height: 1.05; margin-top: 28px; color: #f0f4ff;">Drei starke Treffer warten auf dich.</h1>
+      <p style="margin-top: 12px; font-size: 13.5px; color: #8895b0; font-family: 'JetBrains Mono', monospace;">// last_application = bitpanda · 3d ago · avg_response = 8d</p>
+
+      <!-- Wide KPI stat row, 5 metrics -->
+      <div style="margin-top: 36px; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid rgba(216,221,236,0.1); border-bottom: 1px solid rgba(216,221,236,0.1); padding: 18px 0;">
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">MATCH AVG</p>
+          <p class="tnum" style="font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: #f0f4ff; margin-top: 6px;">82.0<span style="color: #d4a857; font-size: 14px;">%</span></p>
+          <p style="font-size: 11px; color: #5fb3a8; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">▲ 4.0</p>
+        </div>
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">REPLY RATE</p>
+          <p class="tnum" style="font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: #f0f4ff; margin-top: 6px;">33.3<span style="color: #d4a857; font-size: 14px;">%</span></p>
+          <p style="font-size: 11px; color: #5fb3a8; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">▲ vs ⌀ 28.0</p>
+        </div>
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">DEADLINE</p>
+          <p class="tnum" style="font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: #d4a857; margin-top: 6px;">02 D</p>
+          <p style="font-size: 11px; color: #8895b0; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">BITPANDA</p>
+        </div>
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">PIPELINE</p>
+          <p class="tnum" style="font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: #f0f4ff; margin-top: 6px;">11<span style="color: #8895b0; font-size: 14px;">/15</span></p>
+          <p style="font-size: 11px; color: #8895b0; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">73 % full</p>
+        </div>
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">RESP. ⌀</p>
+          <p class="tnum" style="font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: #f0f4ff; margin-top: 6px;">06 D</p>
+          <p style="font-size: 11px; color: #5fb3a8; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">▼ vs ⌀ 8 D</p>
+        </div>
+      </div>
+
+      <!-- Two-col: pipeline rows + sparkline list -->
+      <div style="margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 36px;">
+
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">// PIPELINE BREAKDOWN</p>
+          <table style="margin-top: 14px; width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12.5px;">
+            <thead>
+              <tr style="color: #5e6a85; border-bottom: 1px solid rgba(216,221,236,0.1);">
+                <td style="padding: 8px 0; text-align: left;">STAGE</td><td style="text-align: right;">N</td><td style="text-align: right;">%</td><td style="text-align: right;">Δ7D</td>
+              </tr>
+            </thead>
+            <tbody style="color: #d8ddec;">
+              <tr><td style="padding: 8px 0;">SAVED</td><td class="tnum" style="text-align: right;">11</td><td class="tnum" style="text-align: right;">100.0</td><td class="tnum" style="text-align: right; color: #5fb3a8;">▲ 3</td></tr>
+              <tr><td style="padding: 8px 0;">APPLIED</td><td class="tnum" style="text-align: right;">3</td><td class="tnum" style="text-align: right;">27.3</td><td class="tnum" style="text-align: right; color: #5fb3a8;">▲ 1</td></tr>
+              <tr><td style="padding: 8px 0;">INTERVIEWING</td><td class="tnum" style="text-align: right;">1</td><td class="tnum" style="text-align: right;">9.1</td><td class="tnum" style="text-align: right; color: #8895b0;">— 0</td></tr>
+              <tr><td style="padding: 8px 0;">OFFERED</td><td class="tnum" style="text-align: right; color: #8895b0;">0</td><td class="tnum" style="text-align: right; color: #8895b0;">0.0</td><td class="tnum" style="text-align: right; color: #8895b0;">— 0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <p style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #8895b0;">// PRIORITY QUEUE</p>
+          <div style="margin-top: 14px; display: flex; flex-direction: column;">
+            <div style="display: grid; grid-template-columns: 70px 1fr 60px; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(216,221,236,0.06); align-items: center;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #d4a857;">[FRIST]</span>
+              <span style="font-size: 13px;">Bitpanda — Frontend</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; color: #d4a857;">2D</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 70px 1fr 60px; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(216,221,236,0.06); align-items: center;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5fb3a8;">[FOLLOW]</span>
+              <span style="font-size: 13px;">A1 Telekom — Praktikum</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; color: #8895b0;">11D</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 70px 1fr 60px; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(216,221,236,0.06); align-items: center;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8895b0;">[NEW]</span>
+              <span style="font-size: 13px;">GMS Gourmet — Front-Office</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; color: #d4a857;">95%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Midnight Navy Desk.</strong> Tiefes Marineblau-Schwarz, kühles Weiß, Mono-Zahlen, Gold + Teal. Bloomberg-Terminal-Density, 5 KPIs nebeneinander, Tabellen statt Cards. <em>Trade-off:</em> Sieht „professional" aus, aber für Teenager evtl. einschüchternd.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     5 / LAVENDER CALM
+     Pale lavender bg, deep purple ink, kanban horizontal lanes.
+     Reference: Notion calendar pastel themes, Linear graphite.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #1a1325;">
+  <div class="variant-label"><span><span class="num">05</span> &nbsp; Lavender Calm</span><span>pale lavender · royal purple · kanban lanes</span></div>
+
+  <div class="frame" id="v5" style="background: #e9e3f3; color: #2a1f3d; font-family: 'Inter', sans-serif;">
+    <div style="padding: 56px 64px;">
+
+      <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a8b; font-weight: 600;">Sonntag · 17. Mai · Abend</p>
+      <h1 class="ff-serif" style="font-size: 64px; line-height: 1.04; margin-top: 18px; color: #2a1f3d;">Drei Treffer warten.<br/><span style="color: #6633aa;">Atmen, dann öffnen.</span></h1>
+
+      <!-- KPI strip -->
+      <div style="margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+        <div style="background: #d8cef0; padding: 22px; border-radius: 18px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6633aa; font-weight: 600;">Match</p>
+          <p class="ff-serif tnum" style="font-size: 48px; line-height: 1; margin-top: 8px;">82<span style="font-size: 18px; color: #6633aa;">%</span></p>
+        </div>
+        <div style="background: #d8cef0; padding: 22px; border-radius: 18px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6633aa; font-weight: 600;">Antwort</p>
+          <p class="ff-serif tnum" style="font-size: 48px; line-height: 1; margin-top: 8px;">33<span style="font-size: 18px; color: #6633aa;">%</span></p>
+        </div>
+        <div style="background: #f3d8e2; padding: 22px; border-radius: 18px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #c8508a; font-weight: 600;">Frist</p>
+          <p class="ff-serif tnum" style="font-size: 48px; line-height: 1; margin-top: 8px; color: #c8508a;">2 T.</p>
+        </div>
+      </div>
+
+      <!-- Kanban-style horizontal lanes -->
+      <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b5a8b; font-weight: 600; margin-top: 48px;">Pipeline</p>
+      <div style="margin-top: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <div style="background: #f5f1fb; border-radius: 14px; padding: 16px; min-height: 200px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; font-weight: 600; color: #2a1f3d;">Gespeichert</p>
+            <span style="background: #6633aa; color: white; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600;">11</span>
+          </div>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="background: white; border-radius: 8px; padding: 10px 12px;"><p style="font-size: 12.5px; font-weight: 500;">GMS Gourmet</p><p style="font-size: 11px; color: #6b5a8b; margin-top: 2px;">95 % Match</p></div>
+            <div style="background: white; border-radius: 8px; padding: 10px 12px;"><p style="font-size: 12.5px; font-weight: 500;">THEMATIK</p><p style="font-size: 11px; color: #6b5a8b; margin-top: 2px;">80 %</p></div>
+            <p style="font-size: 11px; color: #6b5a8b; padding: 6px 4px;">+ 9 weitere</p>
+          </div>
+        </div>
+        <div style="background: #f5f1fb; border-radius: 14px; padding: 16px; min-height: 200px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; font-weight: 600; color: #2a1f3d;">Beworben</p>
+            <span style="background: #6633aa; color: white; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600;">3</span>
+          </div>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="background: white; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #c8508a;"><p style="font-size: 12.5px; font-weight: 500;">Bitpanda</p><p style="font-size: 11px; color: #c8508a; margin-top: 2px;">Frist in 2 Tagen</p></div>
+            <div style="background: white; border-radius: 8px; padding: 10px 12px;"><p style="font-size: 12.5px; font-weight: 500;">A1 Telekom</p><p style="font-size: 11px; color: #6b5a8b; margin-top: 2px;">vor 11 Tagen</p></div>
+            <div style="background: white; border-radius: 8px; padding: 10px 12px;"><p style="font-size: 12.5px; font-weight: 500;">MOOONS</p><p style="font-size: 11px; color: #6b5a8b; margin-top: 2px;">vor 4 Tagen</p></div>
+          </div>
+        </div>
+        <div style="background: #f5f1fb; border-radius: 14px; padding: 16px; min-height: 200px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; font-weight: 600; color: #2a1f3d;">Im Gespräch</p>
+            <span style="background: #6633aa; color: white; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600;">1</span>
+          </div>
+          <div style="margin-top: 12px;">
+            <div style="background: white; border-radius: 8px; padding: 10px 12px;"><p style="font-size: 12.5px; font-weight: 500;">Volksbank</p><p style="font-size: 11px; color: #6b5a8b; margin-top: 2px;">Termin: 20.05.</p></div>
+          </div>
+        </div>
+        <div style="background: #f5f1fb; border-radius: 14px; padding: 16px; min-height: 200px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; font-weight: 600; color: #6b5a8b;">Angebot</p>
+            <span style="background: rgba(102,51,170,0.15); color: #6633aa; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600;">0</span>
+          </div>
+          <p style="margin-top: 14px; font-size: 12px; color: #6b5a8b; font-style: italic;">Noch keins. Es kommt — Schnitt sind 6 Bewerbungen.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Lavender Calm.</strong> Pale Lavender (`#e9e3f3`) BG, tiefes Lila Tinte. Akzent: Royal Purple + warmes Pink für Frist. Kanban-Lanes statt Funnel — du siehst direkt jede Stelle einzeln. <em>Trade-off:</em> Kanban braucht mehr Platz, weniger „glance-able" als Funnel.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     6 / TERMINAL PHOSPHOR
+     Cool dark slate (#16181d), CRT green accent, JetBrains Mono.
+     Reference: Warp, Raycast, Ghostty.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #08090b;">
+  <div class="variant-label"><span><span class="num">06</span> &nbsp; Terminal Phosphor</span><span>cool slate · CRT green · monospace</span></div>
+
+  <div class="frame" id="v6" style="background: #16181d; color: #d8dde0; font-family: 'JetBrains Mono', monospace;">
+    <div style="padding: 32px 40px;">
+
+      <!-- Prompt header -->
+      <p style="color: #4ade80; font-size: 12px;">jobassist@local <span style="color: #6e7280;">~/heute</span> $ status --today</p>
+      <p style="color: #6e7280; font-size: 11px; margin-top: 4px;">Sun 17 May 20:14 CEST · 11 jobs tracked · 3d since last apply</p>
+
+      <!-- Hero in mono -->
+      <pre style="margin-top: 28px; font-size: 13px; color: #4ade80; line-height: 1.4;">
+┌────────────────────────────────────────────────────┐
+│  3 strong matches awaiting your attention          │
+│  next deadline: 2d (bitpanda · frontend praktikum) │
+└────────────────────────────────────────────────────┘</pre>
+
+      <!-- Stats block -->
+      <div style="margin-top: 32px;">
+        <p style="color: #6e7280; font-size: 11px;">// stats</p>
+        <pre style="margin-top: 8px; font-size: 13px; line-height: 1.7;">
+<span style="color: #6e7280;">match_avg     </span><span style="color: #fafafa; font-weight: 600;">82.0%</span>  <span style="color: #4ade80;">▲ 4.0</span>   <span style="color: #6e7280;">over 11 jobs</span>
+<span style="color: #6e7280;">reply_rate    </span><span style="color: #fafafa; font-weight: 600;">33.3%</span>  <span style="color: #4ade80;">▲ vs ⌀ 28</span>  <span style="color: #6e7280;">1 of 3 applied</span>
+<span style="color: #6e7280;">deadline_next </span><span style="color: #fbbf24; font-weight: 600;">2d</span>     <span style="color: #6e7280;">bitpanda · 19 may</span>
+<span style="color: #6e7280;">avg_response  </span><span style="color: #fafafa; font-weight: 600;">6d</span>     <span style="color: #4ade80;">▼ vs ⌀ 8d</span>   <span style="color: #6e7280;">your platform-wide</span></pre>
+      </div>
+
+      <!-- Pipeline as ASCII bars -->
+      <div style="margin-top: 28px;">
+        <p style="color: #6e7280; font-size: 11px;">// pipeline</p>
+        <pre style="margin-top: 8px; font-size: 13px; line-height: 1.7; color: #d8dde0;">
+saved        <span style="color: #4ade80;">████████████████████████</span>  11
+applied      <span style="color: #4ade80; opacity: 0.7;">██████</span>                     3
+interviewing <span style="color: #4ade80; opacity: 0.5;">██</span>                          1
+offered      <span style="color: #6e7280;">·</span>                            0</pre>
+      </div>
+
+      <!-- Action queue -->
+      <div style="margin-top: 28px;">
+        <p style="color: #6e7280; font-size: 11px;">// queue</p>
+        <pre style="margin-top: 8px; font-size: 13px; line-height: 1.8;">
+<span style="color: #fbbf24;">[!]</span>  bitpanda      frontend prakt.    <span style="color: #fbbf24;">2d left</span>
+<span style="color: #6e7280;">[~]</span>  a1 telekom    praktikum          <span style="color: #6e7280;">11d sent · followup ok</span>
+<span style="color: #4ade80;">[+]</span>  gms gourmet   front-office       <span style="color: #4ade80;">new · 95% match</span></pre>
+      </div>
+
+      <!-- Blinking cursor prompt -->
+      <p style="margin-top: 32px; color: #4ade80; font-size: 13px;">$ <span style="background: #4ade80; color: #16181d; padding: 0 4px;">_</span></p>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Terminal Phosphor.</strong> Cool slate `#16181d`, CRT-Grün Akzent, JetBrains Mono throughout, ASCII-Bars statt CSS-Bars. Prompt-Style ($ · [!] · [+]). <em>Trade-off:</em> Krass distinct, aber polarisierend — entweder geliebt oder als „too nerdy" abgestempelt. Für Power-User stark.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     7 / EDITORIAL NEWSPAPER
+     Yellowed newsprint bg, all-serif, multi-column with column rules.
+     Reference: NYT magazine, Atlantic, Bloomberg Businessweek.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #1a1410;">
+  <div class="variant-label"><span><span class="num">07</span> &nbsp; Editorial Newspaper</span><span>newsprint · serif · column rules · drop cap</span></div>
+
+  <div class="frame" id="v7" style="background: #ece5d4; color: #1a1410; font-family: 'Source Serif 4', Georgia, serif;">
+    <div style="padding: 48px 56px;">
+
+      <!-- Masthead -->
+      <div style="border-top: 4px solid #1a1410; border-bottom: 1px solid #1a1410; padding: 14px 0; display: flex; align-items: center; justify-content: space-between;">
+        <p style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; letter-spacing: -0.01em;">Heute</p>
+        <p style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Sonntag, 17. Mai · Ausgabe 47</p>
+      </div>
+
+      <!-- Hero headline -->
+      <h1 style="font-family: 'Playfair Display', serif; font-weight: 900; font-size: 72px; line-height: 1.0; letter-spacing: -0.02em; margin-top: 36px; max-width: 920px;">
+        Drei starke Treffer warten — <span style="font-style: italic; font-weight: 400;">und eine Frist drückt.</span>
+      </h1>
+      <p style="margin-top: 12px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: #8b6f3a;">Bericht aus deiner Suche · 11 Stellen analysiert · Antwortrate 33 %</p>
+
+      <!-- Three-column body -->
+      <div style="margin-top: 36px; column-count: 3; column-gap: 36px; column-rule: 1px solid rgba(26,20,16,0.15); font-size: 15px; line-height: 1.55;">
+        <p><span style="font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 900; float: left; line-height: 0.9; padding: 4px 8px 0 0;">D</span>rei Stellen liegen in deinem oberen Match-Quartil — Bitpanda, A1 Telekom und der neueste Treffer GMS Gourmet mit 95 %. Bei Bitpanda wurde vor drei Tagen eingereicht; statistisch dauern Antworten auf Praktikumsplätze acht Tage.</p>
+        <p style="margin-top: 12px;">Die <strong>Frist</strong> bei Bitpanda läuft am 19. Mai ab — also in zwei Tagen. Das Anschreiben sollte bis Dienstag morgen abgesendet werden.</p>
+        <p style="margin-top: 12px;"><strong>A1 Telekom</strong> wartet seit elf Tagen auf eine Antwort. Eine kurze, freundliche Nachfrage ist üblich und wird in 60 % der Fälle positiv aufgenommen.</p>
+        <p style="margin-top: 12px;"><em>Pipeline.</em> Von 11 gespeicherten Stellen wurden 3 beworben (27 %, Plattform-Schnitt 31 %). Eine ist im Gespräch, kein Angebot bisher — was nach 3 Bewerbungen statistisch normal ist.</p>
+        <p style="margin-top: 12px;"><em>Tipp aus der Praxis:</em> Bewerbungen, die Mo 8–10 Uhr eingereicht werden, haben +18 % Antwortrate gegenüber Fr nachmittags.</p>
+      </div>
+
+      <!-- Stats sidebar — "Box" insert -->
+      <div style="margin-top: 40px; padding: 20px 24px; border-top: 2px solid #1a1410; border-bottom: 2px solid #1a1410; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;">
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b6f3a;">Match</p>
+          <p style="font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; line-height: 1; margin-top: 4px;">82<span style="font-size: 16px;">%</span></p>
+        </div>
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b6f3a;">Antwort</p>
+          <p style="font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; line-height: 1; margin-top: 4px;">33<span style="font-size: 16px;">%</span></p>
+        </div>
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b6f3a;">Bewerb.-Quote</p>
+          <p style="font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; line-height: 1; margin-top: 4px;">27<span style="font-size: 16px;">%</span></p>
+        </div>
+        <div>
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b6f3a;">Frist</p>
+          <p style="font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; line-height: 1; margin-top: 4px; color: #8b3a1b;">2 T.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Editorial Newspaper.</strong> Vergilbtes Newsprint `#ece5d4`, alles Serif (Playfair Display + Source Serif 4), 3-Spalten-Body, Drop-Cap, Spaltenlinien, Subhead in Caps. Wirkt wie NYT Magazine. <em>Trade-off:</em> Schön zu lesen, aber „dashboard" geht verloren — du liest, du klickst nicht. Vielleicht zu langsam für tägliche App.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     8 / BRUTALIST BLOCK
+     Warm cement gray, black text, vermillion + caution yellow, mono caps.
+     Reference: Are.na, brutalist Linear pricing pages, Stripe Press.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #2a2825;">
+  <div class="variant-label"><span><span class="num">08</span> &nbsp; Brutalist Block</span><span>cement · vermillion · all-caps mono</span></div>
+
+  <div class="frame" id="v8" style="background: #babab2; color: #000; font-family: 'Space Grotesk', sans-serif;">
+    <div style="padding: 0;">
+
+      <!-- Header bar -->
+      <div style="border-bottom: 2px solid #000; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between;">
+        <p style="font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.1em;">HEUTE / 17.05 / SO / 20:14</p>
+        <p style="font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.1em;">11 JOBS</p>
+      </div>
+
+      <!-- Hero block -->
+      <div style="border-bottom: 2px solid #000; padding: 48px 32px;">
+        <p style="font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">STATUS:</p>
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 88px; font-weight: 700; line-height: 0.95; letter-spacing: -0.03em; margin-top: 6px; text-transform: uppercase;">3 starke Treffer.</h1>
+        <p style="font-family: 'Space Mono', monospace; font-size: 14px; margin-top: 16px; max-width: 600px; line-height: 1.5;">// 1 frist (-2 tage) · 1 nachfrage offen (-11) · 1 neu</p>
+      </div>
+
+      <!-- KPI bento — 3 hard blocks with thick borders -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid #000;">
+        <div style="background: #babab2; padding: 28px 32px; border-right: 2px solid #000;">
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">MATCH</p>
+          <p style="font-family: 'Space Grotesk', sans-serif; font-size: 88px; font-weight: 700; line-height: 1; margin-top: 4px; letter-spacing: -0.04em;">82<span style="font-size: 32px;">%</span></p>
+        </div>
+        <div style="background: #ffd400; padding: 28px 32px; border-right: 2px solid #000;">
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">ANTWORT</p>
+          <p style="font-family: 'Space Grotesk', sans-serif; font-size: 88px; font-weight: 700; line-height: 1; margin-top: 4px; letter-spacing: -0.04em;">33<span style="font-size: 32px;">%</span></p>
+        </div>
+        <div style="background: #ff3300; color: #fff; padding: 28px 32px;">
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">FRIST</p>
+          <p style="font-family: 'Space Grotesk', sans-serif; font-size: 88px; font-weight: 700; line-height: 1; margin-top: 4px; letter-spacing: -0.04em;">02<span style="font-size: 32px;">T</span></p>
+        </div>
+      </div>
+
+      <!-- Pipeline as raw rows with thick borders -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr;">
+        <div style="border-right: 2px solid #000; padding: 28px 32px;">
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">PIPELINE</p>
+          <table style="margin-top: 16px; width: 100%; font-family: 'Space Mono', monospace; font-size: 14px; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid #000;"><td style="padding: 12px 0; text-transform: uppercase;">SAVED</td><td style="text-align: right; font-weight: 700;">11</td></tr>
+            <tr style="border-bottom: 1px solid #000;"><td style="padding: 12px 0; text-transform: uppercase;">APPLIED</td><td style="text-align: right; font-weight: 700;">03</td></tr>
+            <tr style="border-bottom: 1px solid #000;"><td style="padding: 12px 0; text-transform: uppercase;">INTERVIEW</td><td style="text-align: right; font-weight: 700;">01</td></tr>
+            <tr><td style="padding: 12px 0; text-transform: uppercase;">OFFER</td><td style="text-align: right; font-weight: 700;">00</td></tr>
+          </table>
+        </div>
+        <div style="padding: 28px 32px;">
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">TODO</p>
+          <ul style="margin-top: 16px; list-style: none; padding: 0; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 500;">
+            <li style="padding: 14px 0; border-bottom: 1px solid #000; display: flex; justify-content: space-between;"><span>Bitpanda absenden.</span><span style="background: #ff3300; color: white; padding: 2px 8px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;">2T</span></li>
+            <li style="padding: 14px 0; border-bottom: 1px solid #000; display: flex; justify-content: space-between;"><span>A1 Telekom: nachfragen.</span><span style="background: #000; color: white; padding: 2px 8px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;">11D</span></li>
+            <li style="padding: 14px 0; display: flex; justify-content: space-between;"><span>GMS Gourmet öffnen.</span><span style="background: #ffd400; color: black; padding: 2px 8px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;">95%</span></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Brutalist Block.</strong> Warmer Beton-Grau (`#babab2`), pures Schwarz, knallige Vermillon + Senfgelb-Blocks. Space Grotesk + Space Mono, ALL CAPS, dicke 2px-Borders, keine Border-Radius. Wirkt wie are.na oder Stripe Press. <em>Trade-off:</em> Sehr stark als Marke, aber „cool" für 16-jährige? Vielleicht zu underground.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     9 / BLUEPRINT SCHEMATIC
+     Architect blueprint blue, chalk white, grid lines visible, dimensions.
+     Reference: Figma's old onboarding, architectural drawings.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #0d1626;">
+  <div class="variant-label"><span><span class="num">09</span> &nbsp; Blueprint Schematic</span><span>architect blue · chalk · visible grid · annotated</span></div>
+
+  <div class="frame" id="v9" style="background: #1d3557; color: #f1f5f4; font-family: 'Space Grotesk', sans-serif; background-image: linear-gradient(rgba(241,245,244,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(241,245,244,0.04) 1px, transparent 1px); background-size: 32px 32px;">
+    <div style="padding: 48px 56px;">
+
+      <!-- Title block (technical drawing style) -->
+      <div style="border: 1px solid rgba(241,245,244,0.4); padding: 14px 18px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 24px; font-family: 'Space Mono', monospace; font-size: 11px;">
+        <div><span style="color: #88d8d0;">PROJECT:</span> JOBSEARCH-DAVOR / 2026</div>
+        <div><span style="color: #88d8d0;">SHEET:</span> 01/01</div>
+        <div><span style="color: #88d8d0;">DATE:</span> 2026-05-17</div>
+        <div><span style="color: #88d8d0;">REV:</span> 11.4.0</div>
+      </div>
+
+      <!-- Hero with dimension annotations -->
+      <div style="margin-top: 56px; position: relative; padding: 0 40px;">
+        <h1 class="ff-serif" style="font-size: 68px; line-height: 1.04; color: #f1f5f4;">Drei starke Treffer warten auf dich.</h1>
+        <!-- Dimension lines -->
+        <div style="position: absolute; left: 0; top: 50%; height: 1px; width: 30px; background: #fbbf24;"></div>
+        <div style="position: absolute; right: 0; top: 50%; height: 1px; width: 30px; background: #fbbf24;"></div>
+        <span style="position: absolute; left: 0; top: calc(50% - 16px); font-family: 'Space Mono', monospace; font-size: 10px; color: #fbbf24;">A</span>
+        <span style="position: absolute; right: 0; top: calc(50% - 16px); font-family: 'Space Mono', monospace; font-size: 10px; color: #fbbf24;">A'</span>
+      </div>
+
+      <!-- Annotated KPI panels -->
+      <div style="margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <div style="border: 1px solid #88d8d0; padding: 20px 22px; position: relative;">
+          <span style="position: absolute; top: -8px; left: 12px; background: #1d3557; padding: 0 6px; font-family: 'Space Mono', monospace; font-size: 10px; color: #88d8d0;">FIG. 1 — MATCH</span>
+          <p class="tnum ff-mono" style="font-size: 48px; font-weight: 600; color: #f1f5f4; margin-top: 4px;">82<span style="font-size: 18px; color: #88d8d0;">%</span></p>
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; color: #88d8d0; margin-top: 6px;">n=11 · σ=14.2</p>
+        </div>
+        <div style="border: 1px solid #88d8d0; padding: 20px 22px; position: relative;">
+          <span style="position: absolute; top: -8px; left: 12px; background: #1d3557; padding: 0 6px; font-family: 'Space Mono', monospace; font-size: 10px; color: #88d8d0;">FIG. 2 — REPLY</span>
+          <p class="tnum ff-mono" style="font-size: 48px; font-weight: 600; color: #f1f5f4; margin-top: 4px;">33<span style="font-size: 18px; color: #88d8d0;">%</span></p>
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; color: #88d8d0; margin-top: 6px;">applied=3 · μ_avg=28%</p>
+        </div>
+        <div style="border: 1px solid #fbbf24; padding: 20px 22px; position: relative;">
+          <span style="position: absolute; top: -8px; left: 12px; background: #1d3557; padding: 0 6px; font-family: 'Space Mono', monospace; font-size: 10px; color: #fbbf24;">FIG. 3 — DEADLINE</span>
+          <p class="tnum ff-mono" style="font-size: 48px; font-weight: 600; color: #fbbf24; margin-top: 4px;">2D</p>
+          <p style="font-family: 'Space Mono', monospace; font-size: 11px; color: #fbbf24; margin-top: 6px;">bitpanda · 19-may</p>
+        </div>
+      </div>
+
+      <!-- Pipeline as bar chart with measured annotations -->
+      <div style="margin-top: 48px; border: 1px solid rgba(241,245,244,0.3); padding: 24px;">
+        <p style="font-family: 'Space Mono', monospace; font-size: 11px; color: #88d8d0;">FIG. 4 — PIPELINE [n=11]</p>
+        <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 10px; font-family: 'Space Mono', monospace; font-size: 12px;">
+          <div style="display: grid; grid-template-columns: 130px 1fr 60px; gap: 12px; align-items: center;"><span>SAVED</span><div style="height: 18px; background: #88d8d0; width: 100%;"></div><span style="text-align: right;">11 / 100%</span></div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 60px; gap: 12px; align-items: center;"><span>APPLIED</span><div style="height: 18px; background: #88d8d0; opacity: 0.6; width: 27%;"></div><span style="text-align: right;">03 / 27%</span></div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 60px; gap: 12px; align-items: center;"><span>INTERVIEW</span><div style="height: 18px; background: #88d8d0; opacity: 0.4; width: 9%;"></div><span style="text-align: right;">01 / 09%</span></div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 60px; gap: 12px; align-items: center;"><span>OFFER</span><div style="height: 18px; background: #88d8d0; opacity: 0.15; width: 2%;"></div><span style="text-align: right; color: #88d8d0;">00 / 0%</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Blueprint Schematic.</strong> Architekten-Tiefblau (`#1d3557`) BG mit sichtbarem 32px-Raster, Kreide-Weiß. Cyan + warmes Gelb. Beschriftungen wie technische Zeichnungen (FIG. 1, n=11, σ=14.2). <em>Trade-off:</em> Charakterstark und „smart", aber Notations-Sprache (σ, μ) könnte für jüngere Nutzer einschüchternd wirken.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     10 / BENTO PASTEL
+     Peach base, multi-color tinted bento blocks, rounded everything.
+     Reference: iOS 18 widgets, Material You Expressive, Headspace.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="variant-section" style="background: #2a1f12;">
+  <div class="variant-label"><span><span class="num">10</span> &nbsp; Bento Pastel</span><span>peach base · tinted blocks · rounded · multi-accent</span></div>
+
+  <div class="frame" id="v10" style="background: #f5e8d8; color: #2d1f12; font-family: 'Inter', sans-serif;">
+    <div style="padding: 48px 56px;">
+
+      <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b6a3a; font-weight: 600;">Sonntag · 17. Mai · Abend</p>
+      <h1 class="ff-serif" style="font-size: 60px; line-height: 1.05; margin-top: 18px; color: #2d1f12;">Drei starke Treffer warten auf dich.</h1>
+
+      <!-- Bento grid: 4 cols × 3 rows, mixed sizes -->
+      <div style="margin-top: 36px; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 130px; gap: 14px;">
+
+        <!-- Match — wide -->
+        <div style="grid-column: span 2; background: #d4a857; color: #2d1f12; padding: 22px 26px; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;">Match-Schnitt</p>
+          <div>
+            <p class="ff-serif tnum" style="font-size: 64px; line-height: 1;">82<span style="font-size: 22px;">%</span></p>
+            <p style="font-size: 12px; margin-top: 4px; opacity: 0.75;">+4 vs. letzte Woche · über 11 Stellen</p>
+          </div>
+        </div>
+
+        <!-- Reply — square -->
+        <div style="background: #88a982; color: #fff; padding: 18px 22px; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;">Antwort</p>
+          <div>
+            <p class="ff-serif tnum" style="font-size: 48px; line-height: 1;">33<span style="font-size: 18px;">%</span></p>
+            <p style="font-size: 11px; margin-top: 4px; opacity: 0.85;">⌀ 28 %</p>
+          </div>
+        </div>
+
+        <!-- Deadline — square, hot color -->
+        <div style="background: #c87a4a; color: #fff; padding: 18px 22px; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;">Frist</p>
+          <div>
+            <p class="ff-serif tnum" style="font-size: 48px; line-height: 1;">2 T.</p>
+            <p style="font-size: 11px; margin-top: 4px; opacity: 0.85;">Bitpanda · 19. Mai</p>
+          </div>
+        </div>
+
+        <!-- Pipeline — large block -->
+        <div style="grid-column: span 2; grid-row: span 2; background: #fff; padding: 22px 26px; border-radius: 24px;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8b6a3a; font-weight: 700;">Pipeline</p>
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="funnel-row"><span style="font-size: 13px; color: #6b4e2a;">Gespeichert</span><div style="height: 24px; background: #d4a857; width: 100%; border-radius: 6px;"></div><span class="tnum" style="font-size: 13px; text-align: right; font-weight: 600;">11</span></div>
+            <div class="funnel-row"><span style="font-size: 13px; color: #6b4e2a;">Beworben</span><div style="height: 24px; background: #88a982; width: 27%; border-radius: 6px;"></div><span class="tnum" style="font-size: 13px; text-align: right; font-weight: 600;">3</span></div>
+            <div class="funnel-row"><span style="font-size: 13px; color: #6b4e2a;">Im Gespräch</span><div style="height: 24px; background: #6e7fc6; width: 9%; border-radius: 6px;"></div><span class="tnum" style="font-size: 13px; text-align: right; font-weight: 600;">1</span></div>
+            <div class="funnel-row"><span style="font-size: 13px; color: #6b4e2a;">Angebot</span><div style="height: 24px; background: rgba(0,0,0,0.08); width: 2%; border-radius: 6px;"></div><span class="tnum" style="font-size: 13px; text-align: right; color: #8b6a3a;">0</span></div>
+          </div>
+        </div>
+
+        <!-- Tip — periwinkle small -->
+        <div style="grid-column: span 2; background: #6e7fc6; color: #fff; padding: 18px 22px; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+          <p style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; opacity: 0.85;">Tipp · Timing</p>
+          <p style="font-size: 14.5px; line-height: 1.45;">Bewerbungen Mo 8–10 Uhr haben <strong>+18 %</strong> Antwortrate.</p>
+        </div>
+
+        <!-- Suggestions row — full width -->
+        <div style="grid-column: span 4; background: #fff; padding: 20px 24px; border-radius: 24px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
+          <div style="border-left: 3px solid #c87a4a; padding-left: 12px;">
+            <p style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #c87a4a; font-weight: 700;">Frist · 2T</p>
+            <p style="margin-top: 4px; font-size: 14px; font-weight: 500;">Bitpanda Frontend-Praktikum.</p>
+          </div>
+          <div style="border-left: 3px solid #88a982; padding-left: 12px;">
+            <p style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #88a982; font-weight: 700;">Nachfragen</p>
+            <p style="margin-top: 4px; font-size: 14px; font-weight: 500;">A1 Telekom · vor 11 Tagen.</p>
+          </div>
+          <div style="border-left: 3px solid #6e7fc6; padding-left: 12px;">
+            <p style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #6e7fc6; font-weight: 700;">Neu · 95 %</p>
+            <p style="margin-top: 4px; font-size: 14px; font-weight: 500;">GMS Gourmet Front-Office.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <p class="variant-note">
+    <strong style="color:#fafafa">Bento Pastel.</strong> Pfirsich-Basis (`#f5e8d8`) — warm, nicht weiß. Bento-Grid mit getönten Blocks: Amber, Sage, Terracotta, Periwinkle. Mixed Card Sizes wie iOS 18 Widgets / Material You Expressive. <em>Trade-off:</em> Sehr „freundlich" und Mobile-friendly, aber kann verspielt wirken — Frage ob Marke seriös genug rüberkommt.
+  </p>
+</div>
+
+<!-- ─── Footer ────────────────────────────────────────────────────────────── -->
+<footer class="px-6 py-12 text-center text-zinc-500 text-[12px]">
+  <p>10 Designs · Demo /demo/heute-gallery · Inhalt synthetisch, gleicher Daten-Stand für alle Varianten</p>
+  <p class="mt-2">Bei Auswahl: Variante porten oder zwei mischen (z.B. „Charcoal-Dichte + Sage-Farbpalette").</p>
+</footer>
+
+</body>
+</html>

@@ -32,11 +32,14 @@ budget tied to their billing plan.
 backend/      FastAPI service, SQLAlchemy models, Alembic migrations, pytest suite
 frontend/     React SPA, Vitest unit/component tests, Playwright e2e tests
 docs/         Long-form docs — start with docs/README.md
-memory/       Session notes used by AI agents
 scripts/      One-shot maintenance scripts
 render.yaml   Render.com deployment manifest
 vercel.json   Vercel deployment config for the SPA
 ```
+
+> Maintainer-only: `memory/`, `.windsurf/`, `.claude/`, and `AGENTS.md`
+> hold internal context for AI-assisted development workflows. Reading
+> them is not required to use, deploy, or contribute to JobAssist.
 
 ## Common commands
 

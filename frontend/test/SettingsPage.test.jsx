@@ -110,8 +110,12 @@ describe("SettingsPage", () => {
 
     renderWithProviders(<SettingsPage />);
 
-    const locationInput = await screen.findByDisplayValue("Österreich");
-    fireEvent.change(locationInput, { target: { value: "Deutschland" } });
+    // The standalone "Suchregion" / language / currency controls were
+    // removed (single-option dropdowns + a duplicate of Arbeitsorte).
+    // Change a still-rendered preference instead — the desired-locations
+    // text input — to verify the save flow.
+    const locationsInput = await screen.findByDisplayValue("Wien");
+    fireEvent.change(locationsInput, { target: { value: "Wien, Graz" } });
 
     await userEvent.click(screen.getByRole("button", { name: "Einstellungen speichern" }));
 
@@ -120,10 +124,14 @@ describe("SettingsPage", () => {
       expect(mockUpdateProfile).toHaveBeenCalledTimes(1);
     });
 
+    // Preferences are still saved (location/language/currency carried from
+    // the loaded defaults), even though the user can't edit them here.
     expect(mockUpdatePreferences.mock.calls[0][0]).toMatchObject({
       currency: "EUR",
-      location: "Deutschland",
       language: "de",
+    });
+    expect(mockUpdateProfile.mock.calls[0][0]).toMatchObject({
+      desired_locations: ["Wien", "Graz"],
     });
     expect(mockSuccess).toHaveBeenCalledWith("Einstellungen speichern ✓");
     expect(mockReleaseLanguageLock).toHaveBeenCalled();

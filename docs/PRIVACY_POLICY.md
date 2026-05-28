@@ -1,9 +1,16 @@
 # Privacy Policy — JobAssist
 
-> **Template — replace every `{{PLACEHOLDER}}` before publishing.**
-> This file is the customer-facing privacy notice we surface from the
-> `/privacy` route of the SPA. It is calibrated to GDPR (EU) and is
-> deliberately concise. Run any substantive change past counsel.
+> ⚠️ **This is a working template, not legal advice.**
+> Replace every `{{PLACEHOLDER}}` and have qualified counsel in your
+> establishment jurisdiction review the final text **before** publishing
+> it at `/privacy` or referencing it in any contract. The structure is
+> calibrated to GDPR (EU/EEA) and the Austrian DSG; if you operate
+> outside the EEA you will need additional jurisdiction-specific
+> sections (CCPA/CPRA, UK GDPR, LGPD, etc.).
+>
+> This file is intentionally short and concrete — it mirrors the
+> categories the codebase actually collects (see `backend/app/models/`)
+> and the subprocessors the codebase actually calls.
 
 **Effective date:** {{EFFECTIVE_DATE}}  
 **Last updated:** {{LAST_UPDATED}}
@@ -58,9 +65,11 @@ ID, plan tier, and the current billing-period end date in the
 | Marketing email (if you opt in) | Consent — Art. 6(1)(a) |
 | Comply with tax / accounting law | Legal obligation — Art. 6(1)(c) |
 
-We do **not** sell personal data and we do **not** use it to train any
-LLM. The LLM provider we use (see § 4) is contractually bound to the
-same restriction.
+We do **not** sell personal data. Per our contract with our LLM
+subprocessor (Groq, Inc. — see § 4), data sent for inference is not
+retained for model training. Confirm the latest Groq DPA at
+<https://groq.com/dpa/> reflects this before relying on the statement;
+if Groq's terms change, update this section and notify users per § 10.
 
 ## 3. Retention
 
@@ -110,10 +119,13 @@ Under GDPR you may:
 - **Access** the personal data we hold about you.
 - **Correct** any inaccurate data — most fields can be edited directly
   in the app's settings page.
-- **Erase** your data — clicking "Konto endgültig löschen" in settings
-  triggers a hard delete of your account, CVs, jobs, alerts, profile,
-  and refresh tokens. Subscription history is anonymised but retained
-  for tax purposes per § 3.
+- **Erase** your data — clicking "Konto löschen" in the settings page's
+  danger zone, confirming with your current password in the modal, and
+  pressing "Unwiderruflich löschen" triggers a hard delete of your
+  account, CVs, jobs, alerts, profile, and refresh tokens (the
+  `ON DELETE CASCADE` relationships in `users` propagate the delete).
+  Subscription history is anonymised but retained for tax purposes per
+  § 3.
 - **Export** your data — request a JSON export by emailing
   {{PRIVACY_EMAIL}}. We respond within 30 days.
 - **Restrict** or **object** to specific processing.

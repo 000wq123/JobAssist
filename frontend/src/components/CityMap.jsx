@@ -328,8 +328,8 @@ export default function CityMap({ cityKey, onSelect, selected }) {
       </button>
 
       {!collapsed && (
-        <div className="border border-[#1f2937] rounded-lg overflow-hidden bg-[#0b1220]">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827] border-b border-[#1f2937]">
+        <div className="border border-[var(--color-border)] rounded-lg overflow-hidden bg-[var(--color-bg-input)]">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--color-bg-elev-1)] border-b border-[var(--color-border)]">
             <span className="text-xs text-slate-400 truncate">
               {hovered ? (
                 hovered
@@ -347,7 +347,7 @@ export default function CityMap({ cityKey, onSelect, selected }) {
                 onClick={() =>
                   setVb((v) => clampVb({ ...v, w: v.w / 1.3, h: v.h / 1.3 }))
                 }
-                className="w-5 h-5 rounded text-xs bg-[#1f2937] border border-[#374151] text-slate-400 hover:bg-[#374151] hover:text-slate-200 flex items-center justify-center"
+                className="w-5 h-5 rounded text-xs bg-[var(--color-bg-elev-2)] border border-[var(--color-border)] text-slate-400 hover:bg-[var(--color-bg-elev-3)] hover:text-slate-200 flex items-center justify-center"
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -356,14 +356,14 @@ export default function CityMap({ cityKey, onSelect, selected }) {
                 onClick={() =>
                   setVb((v) => clampVb({ ...v, w: v.w * 1.3, h: v.h * 1.3 }))
                 }
-                className="w-5 h-5 rounded text-xs bg-[#1f2937] border border-[#374151] text-slate-400 hover:bg-[#374151] hover:text-slate-200 flex items-center justify-center"
+                className="w-5 h-5 rounded text-xs bg-[var(--color-bg-elev-2)] border border-[var(--color-border)] text-slate-400 hover:bg-[var(--color-bg-elev-3)] hover:text-slate-200 flex items-center justify-center"
               >
                 <Minus className="w-3 h-3" />
               </button>
               <button
                 type="button"
                 onClick={() => setVb(INITIAL_VB)}
-                className="w-5 h-5 rounded text-xs bg-[#1f2937] border border-[#374151] text-slate-400 hover:bg-[#374151] hover:text-slate-200 flex items-center justify-center"
+                className="w-5 h-5 rounded text-xs bg-[var(--color-bg-elev-2)] border border-[var(--color-border)] text-slate-400 hover:bg-[var(--color-bg-elev-3)] hover:text-slate-200 flex items-center justify-center"
               >
                 <RotateCcw className="w-3 h-3" />
               </button>

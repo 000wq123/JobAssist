@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Mail, Clock, Send, CheckCircle2, Loader2, MessageCircle, FileText, Shield } from "lucide-react";
+import {
+  Mail, Clock, Send, CheckCircle2, Loader2, MessageCircle, FileText, Shield, ArrowRight,
+} from "lucide-react";
 import toast from "react-hot-toast";
+
+import LegalLayout from "../components/ui/LegalLayout";
 import { contactApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
 
@@ -13,6 +16,12 @@ const TOPICS = [
   "Abrechnung & Abonnement",
   "Feedback & Verbesserungen",
   "Sonstiges",
+];
+
+const INFO_CARDS = [
+  { icon: MessageCircle, label: "Allgemeine Fragen", sub: "Funktionen, Preise, Abos"  },
+  { icon: FileText,      label: "Technischer Support", sub: "Fehler & Probleme"        },
+  { icon: Shield,        label: "Datenschutz",         sub: "DSGVO-Anfragen"            },
 ];
 
 /** Contact form page with subject categories and a success confirmation screen. */
@@ -36,156 +45,159 @@ export default function ContactPage() {
     }
   };
 
+  const inputBase =
+    "w-full rounded-lg border bg-[var(--color-bg-elev-1)] px-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors";
+
   return (
-    <div className="min-h-screen bg-black text-slate-100">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-10 pb-20">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-8">
-          <ArrowLeft className="w-4 h-4" /> Zurück
-        </Link>
-
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-white mb-3">Kontakt & Support</h1>
-          <p className="text-slate-400 text-base max-w-md mx-auto">
-            Wir helfen dir gerne weiter — ob technische Frage, Feedback oder Datenschutzanliegen.
+    <LegalLayout
+      title={<>Kontakt & <span className="font-display italic text-[var(--color-accent-300)]">Support</span></>}
+      subtitle="Wir helfen dir gerne weiter — ob technische Frage, Feedback oder Datenschutzanliegen."
+    >
+      {submitted ? (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-10 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-success-soft)] mx-auto mb-5">
+            <CheckCircle2 className="h-7 w-7 text-[var(--color-success)]" />
+          </div>
+          <h2 className="text-[24px] sm:text-[28px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)]">
+            Nachricht{" "}
+            <span className="font-display italic text-[var(--color-accent-300)]">gesendet</span>.
+          </h2>
+          <p className="mt-3 max-w-[44ch] mx-auto text-[14px] text-[var(--color-fg-muted)]">
+            Vielen Dank für deine Nachricht. Wir melden uns in der Regel innerhalb von 24 Stunden bei dir.
           </p>
+          <button
+            onClick={() => setSubmitted(false)}
+            className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+          >
+            Weitere Nachricht senden
+          </button>
         </div>
+      ) : (
+        <div className="grid grid-cols-12 gap-6">
+          {/* Form */}
+          <div className="col-span-12 md:col-span-7 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7">
+            <h2 className="text-[16px] font-semibold text-[var(--color-fg)] mb-5">Nachricht senden</h2>
+            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-12 gap-y-4">
+              <div className="col-span-12">
+                <label htmlFor="name" className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]">Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  placeholder="Dein Name"
+                  className={`${inputBase} ${errors.name ? "border-[var(--color-error)]/60" : "border-[var(--color-border)]"}`}
+                  {...register("name", { required: "Name ist erforderlich" })}
+                />
+                {errors.name && <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.name.message}</p>}
+              </div>
 
-        {submitted ? (
-          <div className="bg-[#111827] rounded-2xl border border-[#1e293b] shadow-sm p-10 text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white mb-2">Nachricht gesendet!</h2>
-            <p className="text-sm text-slate-400 mb-6">
-              Vielen Dank für deine Nachricht. Wir melden uns in der Regel innerhalb von 24 Stunden bei dir.
-            </p>
-            <button
-              onClick={() => setSubmitted(false)}
-              className="text-sm font-semibold text-brand-300 hover:text-brand-200 transition-colors"
-            >
-              Weitere Nachricht senden
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            {/* Form */}
-            <div className="md:col-span-3 bg-[#111827] rounded-2xl border border-[#1e293b] shadow-sm p-6">
-              <h2 className="text-base font-bold text-white mb-5">Nachricht senden</h2>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Name</label>
-                  <input
-                    type="text"
-                    placeholder="Dein Name"
-                    className={`w-full px-3 py-2.5 rounded-xl border text-sm bg-[#0A0A0A] text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/30 transition-all ${errors.name ? "border-red-400" : "border-[#1e293b]"}`}
-                    {...register("name", { required: "Name ist erforderlich" })}
-                  />
-                  {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
-                </div>
+              <div className="col-span-12">
+                <label htmlFor="email" className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]">E-Mail</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="deine@email.at"
+                  className={`${inputBase} ${errors.email ? "border-[var(--color-error)]/60" : "border-[var(--color-border)]"}`}
+                  {...register("email", {
+                    required: "E-Mail ist erforderlich",
+                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Ungültige E-Mail-Adresse" },
+                  })}
+                />
+                {errors.email && <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.email.message}</p>}
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">E-Mail</label>
-                  <input
-                    type="email"
-                    placeholder="deine@email.at"
-                    className={`w-full px-3 py-2.5 rounded-xl border text-sm bg-[#0A0A0A] text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/30 transition-all ${errors.email ? "border-red-400" : "border-[#1e293b]"}`}
-                    {...register("email", {
-                      required: "E-Mail ist erforderlich",
-                      pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Ungültige E-Mail-Adresse" },
-                    })}
-                  />
-                  {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Thema</label>
-                  <select
-                    className={`w-full px-3 py-2.5 rounded-xl border text-sm bg-[#0A0A0A] text-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/30 transition-all ${errors.topic ? "border-red-400" : "border-[#1e293b]"}`}
-                    {...register("topic", { required: "Bitte wähle ein Thema" })}
-                  >
-                    <option value="">Thema auswählen…</option>
-                    {TOPICS.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  {errors.topic && <p className="text-xs text-red-400 mt-1">{errors.topic.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Nachricht</label>
-                  <textarea
-                    rows={5}
-                    placeholder="Beschreibe dein Anliegen so genau wie möglich…"
-                    className={`w-full px-3 py-2.5 rounded-xl border text-sm bg-[#0A0A0A] text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/30 transition-all resize-none ${errors.message ? "border-red-400" : "border-[#1e293b]"}`}
-                    {...register("message", { required: "Nachricht ist erforderlich", minLength: { value: 10, message: "Mindestens 10 Zeichen" } })}
-                  />
-                  {errors.message && <p className="text-xs text-red-400 mt-1">{errors.message.message}</p>}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-brand-500 to-accent-600 text-white font-semibold text-sm shadow-lg shadow-brand-500/30 transition-all hover:from-brand-400 hover:to-accent-500 hover:shadow-xl hover:shadow-brand-500/40 disabled:opacity-60 disabled:shadow-none"
+              <div className="col-span-12">
+                <label htmlFor="topic" className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]">Thema</label>
+                <select
+                  id="topic"
+                  className={`${inputBase} appearance-none bg-no-repeat bg-[right_0.9rem_center] pr-10 cursor-pointer ${errors.topic ? "border-[var(--color-error)]/60" : "border-[var(--color-border)]"}`}
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a3a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>\")",
+                  }}
+                  {...register("topic", { required: "Bitte wähle ein Thema" })}
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {loading ? "Wird gesendet…" : "Nachricht senden"}
-                </button>
-              </form>
-            </div>
-
-            {/* Sidebar info */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="bg-[#111827] rounded-2xl border border-[#1e293b] shadow-sm p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center">
-                    <Mail className="w-4.5 h-4.5 text-brand-300" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">Direkter Kontakt</p>
-                    <a href="mailto:info@jobassist.tech" className="text-xs text-brand-300 hover:text-brand-200 hover:underline transition-colors">
-                      info@jobassist.tech
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Clock className="w-3.5 h-3.5" />
-                  Antwort innerhalb von 24 Stunden
-                </div>
+                  <option value="">Thema auswählen…</option>
+                  {TOPICS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                {errors.topic && <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.topic.message}</p>}
               </div>
 
-              <div className="grid grid-cols-1 gap-3">
-                {[
-                  { icon: MessageCircle, label: "Allgemeine Fragen", sub: "Funktionen, Preise, Abos" },
-                  { icon: FileText, label: "Technischer Support", sub: "Fehler & Probleme" },
-                  { icon: Shield, label: "Datenschutz", sub: "DSGVO-Anfragen" },
-                ].map(({ icon: Icon, label, sub }) => (
-                  <div key={label} className="bg-[#111827] rounded-xl border border-[#1e293b] p-4 flex items-center gap-3">
-                    <Icon className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-300">{label}</p>
-                      <p className="text-[11px] text-slate-500">{sub}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="col-span-12">
+                <label htmlFor="message" className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]">Nachricht</label>
+                <textarea
+                  id="message"
+                  rows={5}
+                  placeholder="Beschreibe dein Anliegen so genau wie möglich…"
+                  className={`${inputBase} resize-none ${errors.message ? "border-[var(--color-error)]/60" : "border-[var(--color-border)]"}`}
+                  {...register("message", {
+                    required: "Nachricht ist erforderlich",
+                    minLength: { value: 10, message: "Mindestens 10 Zeichen" },
+                  })}
+                />
+                {errors.message && <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.message.message}</p>}
               </div>
 
-              <div className="bg-[#111827] rounded-xl border border-[#1e293b] shadow-sm p-5">
-                <p className="text-xs font-bold text-slate-300 mb-3">Rechtliches</p>
-                <div className="space-y-2">
-                  {[
-                    { to: "/terms", label: "AGB" },
-                    { to: "/privacy", label: "Datenschutzerklärung" },
-                    { to: "/impressum", label: "Impressum" },
-                  ].map(({ to, label }) => (
-                    <Link key={to} to={to} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/5 group transition-colors">
-                      <span className="text-xs text-slate-400">{label}</span>
-                      <ArrowLeft className="w-3.5 h-3.5 text-slate-500 rotate-180 group-hover:text-slate-300 transition-colors" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="col-span-12 mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span>Wird gesendet…</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span>Nachricht senden</span>
+                  </>
+                )}
+              </button>
+            </form>
           </div>
-        )}
-      </div>
-    </div>
+
+          {/* Sidebar */}
+          <div className="col-span-12 md:col-span-5 grid grid-cols-12 gap-3 content-start">
+            <div className="col-span-12 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-5">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-[var(--color-accent-500)]/15 border border-[var(--color-accent-500)]/25">
+                  <Mail className="h-4 w-4 text-[var(--color-accent-300)]" aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">Direkter Kontakt</p>
+                  <a
+                    href="mailto:info@jobassist.tech"
+                    className="mt-0.5 inline-block text-[12px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] hover:underline transition-colors"
+                  >
+                    info@jobassist.tech
+                  </a>
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[var(--color-fg-dim)]">
+                    <Clock className="h-3 w-3" />
+                    Antwort innerhalb von 24 Stunden
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {INFO_CARDS.map(({ icon: Icon, label, sub }) => (
+              <div
+                key={label}
+                className="col-span-12 group rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-5 flex items-center gap-3 hover:border-[var(--color-accent-500)]/40 hover:bg-[var(--color-bg-elev-1)]/80 transition-colors"
+              >
+                <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] group-hover:border-[var(--color-accent-500)]/30 transition-colors">
+                  <Icon className="h-4 w-4 text-[var(--color-fg-muted)] group-hover:text-[var(--color-accent-300)] transition-colors" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">{label}</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--color-fg-dim)]">{sub}</p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-fg-dim)] group-hover:text-[var(--color-accent-300)] group-hover:translate-x-0.5 transition-all" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </LegalLayout>
   );
 }

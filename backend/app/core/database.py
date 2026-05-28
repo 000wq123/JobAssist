@@ -8,7 +8,7 @@ _pool_kwargs: dict = {} if _is_sqlite else {"pool_size": 10, "max_overflow": 20}
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=settings.SQL_ECHO,
     pool_pre_ping=True,
     pool_recycle=300,
     **_pool_kwargs,

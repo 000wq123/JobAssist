@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JobAssist — Heute (perfect dashboard demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+          serif: ['Instrument Serif', 'ui-serif', 'Georgia', 'serif'],
+        },
+        colors: {
+          page: '#09090b',
+          ink: { DEFAULT: '#fafafa', muted: '#a1a1aa', dim: '#71717a', faint: '#52525b' },
+          surface: { 1: '#111113', 2: '#18181b', 3: '#212124' },
+          line: { subtle: 'rgba(255,255,255,0.06)', DEFAULT: 'rgba(255,255,255,0.10)', strong: 'rgba(255,255,255,0.16)' },
+          accent: '#7c7df0',
+          ok: '#4ade80',
+          warn: '#fbbf24',
+          bad: '#f87171',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { background: #0a0a0c; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; color: #fafafa; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .serif-hero { font-family: 'Instrument Serif', ui-serif, Georgia, serif; letter-spacing: -0.025em; line-height: 1.05; }
+  .hairline { background: rgba(255,255,255,0.08); }
+  /* Sparkline mini-bars: each <i> is one day */
+  .spark { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+  .spark > i { display:block; width: 3px; background: rgba(255,255,255,0.18); border-radius: 1px; }
+  .spark > i.lit { background: rgba(255,255,255,0.55); }
+  /* Week timeline cells */
+  .week-cell { aspect-ratio: 1; border-radius: 4px; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ────────────────────────────────────────────────────────────────────────── -->
+<!-- Demo wrapper: emulates the AppShell layout (left rail + main content)      -->
+<!-- ────────────────────────────────────────────────────────────────────────── -->
+<div class="mx-auto max-w-[1280px] grid grid-cols-[200px_1fr] min-h-screen">
+
+  <!-- Left rail (decorative, not the focus of this demo) -->
+  <aside class="border-r border-line-subtle py-8 px-4 flex flex-col gap-1 text-[13px]">
+    <div class="flex items-center gap-2 px-2 mb-6">
+      <div class="w-7 h-7 rounded-lg bg-accent/80"></div>
+      <span class="font-semibold">JobAssist</span>
+    </div>
+    <a class="px-2 py-1.5 rounded-md bg-surface-2 text-ink">Heute</a>
+    <a class="px-2 py-1.5 rounded-md text-ink-muted hover:text-ink">Stellen</a>
+    <a class="px-2 py-1.5 rounded-md text-ink-muted hover:text-ink">Lebenslauf</a>
+    <a class="px-2 py-1.5 rounded-md text-ink-muted hover:text-ink">Alerts</a>
+    <p class="mt-6 mb-1 px-2 text-[10.5px] tracking-[0.12em] uppercase text-ink-faint">Filter</p>
+    <a class="px-2 py-1.5 rounded-md text-ink-muted hover:text-ink truncate">IT · Wien · Praktikum</a>
+    <a class="px-2 py-1.5 rounded-md text-ink-muted hover:text-ink truncate">Samstagsjob Verkauf</a>
+  </aside>
+
+  <!-- Main -->
+  <main class="px-12 py-10 overflow-y-auto">
+
+    <!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+    <!-- Calm, factual, real-data anchor. Two layered lines:                  -->
+    <!--   1. tiny eyebrow: weekday/date/time-of-day                           -->
+    <!--   2. serif headline: ONE real fact that matters today                 -->
+    <header class="mb-12">
+      <p class="text-[12px] tracking-[0.14em] uppercase text-ink-dim">Sonntag, 17. Mai · Abend</p>
+      <h1 class="serif-hero mt-3 text-[56px] sm:text-[68px] font-normal text-ink">
+        Drei starke Treffer warten auf dich.
+      </h1>
+      <p class="mt-3 text-[14px] text-ink-muted max-w-xl leading-relaxed">
+        Hey Davor. Vor drei Tagen hast du bei <span class="text-ink">Bitpanda</span> beworben — der Schnitt sind acht Tage bis zur Antwort.
+      </p>
+    </header>
+
+    <!-- Hero variants reference (commented out — show A/B options for picker) -->
+    <!--
+      Morgen 06–11: "Guten Morgen, Davor."
+      Spät >22:00:  "Es ist spät. Morgen geht's weiter."
+      Sonntag:      "Sonntag. Plan für die Woche?"
+      Empty data:   "Heute ist ein guter Tag, anzufangen."
+      Interview:    "Heute Vorstellungsgespräch bei A1 Telekom."
+      Offer:        "Du hast ein Angebot. Atmen, dann lesen."
+    -->
+
+    <!-- ─── VORSCHLÄGE ───────────────────────────────────────────────────── -->
+    <!-- Always 2-4 cards. Sorted by urgency. Snooze + dismiss + primary CTA.  -->
+    <section class="mb-14">
+      <div class="flex items-baseline justify-between mb-5">
+        <p class="text-[11px] font-semibold tracking-[0.14em] uppercase text-ink-dim">Vorschläge</p>
+        <p class="text-[11px] text-ink-dim tnum">5 offen · ≈ 8 Min</p>
+      </div>
+
+      <div class="flex flex-col">
+
+        <!-- 1. Upcoming deadline (HIGHEST URGENCY) -->
+        <article class="grid grid-cols-12 items-center gap-4 py-5 border-b border-line-subtle">
+          <div class="col-span-12 sm:col-span-7 min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-warn"></span>
+              <span class="text-[10.5px] tracking-[0.14em] uppercase text-warn/90">Frist</span>
+            </div>
+            <p class="mt-2 text-[15px] font-medium leading-snug">Bitpanda — Frist läuft in 2 Tagen ab.</p>
+            <p class="mt-1 text-[12.5px] text-ink-muted leading-relaxed">Frontend-Praktikum (m/w/d). Bewerbung bis Dienstag, 19. Mai.</p>
+          </div>
+          <div class="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-3 flex-wrap">
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Heute nicht</button>
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Ignorieren</button>
+            <button class="rounded-lg bg-ink text-page text-[12.5px] font-medium px-3 py-1.5">Stelle öffnen</button>
+          </div>
+        </article>
+
+        <!-- 2. Stale follow-up — anxiety-reducing baseline -->
+        <article class="grid grid-cols-12 items-center gap-4 py-5 border-b border-line-subtle">
+          <div class="col-span-12 sm:col-span-7 min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-ink-dim"></span>
+              <span class="text-[10.5px] tracking-[0.14em] uppercase text-ink-dim">Nachfragen</span>
+            </div>
+            <p class="mt-2 text-[15px] font-medium leading-snug">A1 Telekom — vor 11 Tagen beworben.</p>
+            <p class="mt-1 text-[12.5px] text-ink-muted leading-relaxed">Im Schnitt dauern Antworten 8 Tage. Eine kurze, freundliche Nachfrage ist okay.</p>
+          </div>
+          <div class="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-3 flex-wrap">
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Heute nicht</button>
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Ignorieren</button>
+            <button class="rounded-lg bg-ink text-page text-[12.5px] font-medium px-3 py-1.5">Entwurf schreiben</button>
+          </div>
+        </article>
+
+        <!-- 3. Skills-gap (AMBITIOUS — uses Groq + resume parsing) -->
+        <article class="grid grid-cols-12 items-center gap-4 py-5 border-b border-line-subtle">
+          <div class="col-span-12 sm:col-span-7 min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-accent/80"></span>
+              <span class="text-[10.5px] tracking-[0.14em] uppercase text-ink-dim">Lebenslauf</span>
+            </div>
+            <p class="mt-2 text-[15px] font-medium leading-snug">Drei deiner Treffer wollen <span class="text-ink">Excel</span>, <span class="text-ink">Englisch B2</span>, <span class="text-ink">SAP</span>.</p>
+            <p class="mt-1 text-[12.5px] text-ink-muted leading-relaxed">Im Lebenslauf nicht erwähnt. Vielleicht hast du es nur vergessen — oder es ist ein blinder Fleck.</p>
+          </div>
+          <div class="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-3 flex-wrap">
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Heute nicht</button>
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Ignorieren</button>
+            <button class="rounded-lg border border-line text-[12.5px] px-3 py-1.5 hover:bg-surface-1">Lebenslauf öffnen</button>
+          </div>
+        </article>
+
+        <!-- 4. Decision overdue -->
+        <article class="grid grid-cols-12 items-center gap-4 py-5 border-b border-line-subtle">
+          <div class="col-span-12 sm:col-span-7 min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-ink-dim"></span>
+              <span class="text-[10.5px] tracking-[0.14em] uppercase text-ink-dim">Aufräumen</span>
+            </div>
+            <p class="mt-2 text-[15px] font-medium leading-snug">5 gemerkte Stellen warten auf eine Entscheidung.</p>
+            <p class="mt-1 text-[12.5px] text-ink-muted leading-relaxed">Liegen seit über 14 Tagen unangetastet. Kurz durchsehen — bewerben oder weg?</p>
+          </div>
+          <div class="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-3 flex-wrap">
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Heute nicht</button>
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Ignorieren</button>
+            <button class="rounded-lg border border-line text-[12.5px] px-3 py-1.5 hover:bg-surface-1">Durchgehen</button>
+          </div>
+        </article>
+
+        <!-- 5. Wage education (AMBITIOUS — calm fact, never pushy) -->
+        <article class="grid grid-cols-12 items-center gap-4 py-5">
+          <div class="col-span-12 sm:col-span-7 min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-ink-dim"></span>
+              <span class="text-[10.5px] tracking-[0.14em] uppercase text-ink-dim">Kontext</span>
+            </div>
+            <p class="mt-2 text-[15px] font-medium leading-snug">Praktika in Wien zahlen im Schnitt €1.200 brutto.</p>
+            <p class="mt-1 text-[12.5px] text-ink-muted leading-relaxed">Drei deiner Treffer liegen darüber. Quelle: KV Handel, Stand 2025.</p>
+          </div>
+          <div class="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-3 flex-wrap">
+            <button class="text-[12.5px] text-ink-dim hover:text-ink-muted">Verstanden</button>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ─── DEINE LISTE (status strip, with sparklines + last-touched) ───── -->
+    <section class="mb-14">
+      <div class="flex items-baseline justify-between mb-5">
+        <p class="text-[11px] font-semibold tracking-[0.14em] uppercase text-ink-dim">Deine Liste</p>
+        <a href="#" class="text-[12px] text-ink-muted hover:text-ink">Alle ansehen →</a>
+      </div>
+      <div class="grid grid-cols-3 sm:grid-cols-5 divide-x divide-line-subtle border-y border-line-subtle">
+
+        <a href="#" class="px-5 py-5 hover:bg-surface-1/40 transition-colors">
+          <div class="flex items-baseline justify-between">
+            <p class="serif-hero text-[34px] tnum leading-none text-ink">8</p>
+            <span class="spark"><i style="height:30%"></i><i style="height:55%" class="lit"></i><i style="height:20%"></i><i style="height:70%" class="lit"></i><i style="height:40%"></i><i style="height:90%" class="lit"></i><i style="height:60%"></i></span>
+          </div>
+          <p class="mt-3 text-[12px] text-ink-muted">Gemerkt</p>
+          <p class="mt-0.5 text-[11px] text-ink-dim tnum">vor 2 Tagen</p>
+        </a>
+
+        <a href="#" class="px-5 py-5 hover:bg-surface-1/40 transition-colors">
+          <div class="flex items-baseline justify-between">
+            <p class="serif-hero text-[34px] tnum leading-none text-ink">3</p>
+            <span class="spark"><i style="height:0%"></i><i style="height:50%" class="lit"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:60%" class="lit"></i><i style="height:0%"></i><i style="height:80%" class="lit"></i></span>
+          </div>
+          <p class="mt-3 text-[12px] text-ink-muted">Beworben</p>
+          <p class="mt-0.5 text-[11px] text-ink-dim tnum">vor 3 Tagen</p>
+        </a>
+
+        <a href="#" class="px-5 py-5 hover:bg-surface-1/40 transition-colors">
+          <div class="flex items-baseline justify-between">
+            <p class="serif-hero text-[34px] tnum leading-none text-ink">1</p>
+            <span class="spark"><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:80%" class="lit"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i></span>
+          </div>
+          <p class="mt-3 text-[12px] text-ink-muted">Im Gespräch</p>
+          <p class="mt-0.5 text-[11px] text-ink-dim tnum">vor 4 Tagen</p>
+        </a>
+
+        <a href="#" class="px-5 py-5 hover:bg-surface-1/40 transition-colors">
+          <div class="flex items-baseline justify-between">
+            <p class="serif-hero text-[34px] tnum leading-none text-ink-dim">0</p>
+            <span class="spark"><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i></span>
+          </div>
+          <p class="mt-3 text-[12px] text-ink-muted">Angebot</p>
+          <p class="mt-0.5 text-[11px] text-ink-faint tnum">noch keins</p>
+        </a>
+
+        <a href="#" class="px-5 py-5 hover:bg-surface-1/40 transition-colors">
+          <div class="flex items-baseline justify-between">
+            <p class="serif-hero text-[34px] tnum leading-none text-ink">2</p>
+            <span class="spark"><i style="height:0%"></i><i style="height:60%" class="lit"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:0%"></i><i style="height:80%" class="lit"></i><i style="height:0%"></i></span>
+          </div>
+          <p class="mt-3 text-[12px] text-ink-muted">Erledigt</p>
+          <p class="mt-0.5 text-[11px] text-ink-dim tnum">vor 6 Tagen</p>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ─── DIESE WOCHE (mini-timeline + upcoming deadlines) ─────────────── -->
+    <!-- Two-column inside this section: 7-day activity bars LEFT, deadlines RIGHT -->
+    <section class="mb-14">
+      <div class="flex items-baseline justify-between mb-5">
+        <p class="text-[11px] font-semibold tracking-[0.14em] uppercase text-ink-dim">Diese Woche</p>
+        <p class="text-[11px] text-ink-dim tnum">Mo 12. — So 18. Mai</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- 7-day activity timeline -->
+        <div class="lg:col-span-7">
+          <p class="text-[12px] text-ink-muted mb-4 leading-relaxed">5 Aktionen diese Woche · 2 Bewerbungen · 1 Antwort</p>
+          <div class="grid grid-cols-7 gap-2">
+            <!-- Each cell: a column stack with date, activity bar, weekday label. Today = brighter ring. -->
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">12.</span>
+              <div class="week-cell w-full bg-surface-2"></div>
+              <span class="text-[10px] text-ink-dim">Mo</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">13.</span>
+              <div class="week-cell w-full bg-ink/30" title="1 Bewerbung gesendet"></div>
+              <span class="text-[10px] text-ink-dim">Di</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">14.</span>
+              <div class="week-cell w-full bg-ink/15" title="2 Stellen gespeichert"></div>
+              <span class="text-[10px] text-ink-dim">Mi</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">15.</span>
+              <div class="week-cell w-full bg-surface-2"></div>
+              <span class="text-[10px] text-ink-dim">Do</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">16.</span>
+              <div class="week-cell w-full bg-ink/45" title="1 Bewerbung + Antwort"></div>
+              <span class="text-[10px] text-ink-dim">Fr</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">17.</span>
+              <div class="week-cell w-full bg-ink/20 ring-1 ring-ink/40"></div>
+              <span class="text-[10px] text-ink">heute</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="text-[10px] text-ink-faint tnum">18.</span>
+              <div class="week-cell w-full bg-surface-2 opacity-50"></div>
+              <span class="text-[10px] text-ink-faint">So</span>
+            </div>
+          </div>
+          <p class="mt-4 text-[12px] text-ink-dim leading-relaxed">Letzte Woche: 1 Bewerbung · 0 Antworten. Schritt für Schritt geht's voran.</p>
+        </div>
+
+        <!-- Upcoming deadlines -->
+        <div class="lg:col-span-5">
+          <p class="text-[12px] text-ink-muted mb-4">Anstehende Fristen</p>
+          <div class="border border-line-subtle rounded-lg divide-y divide-line-subtle">
+            <a href="#" class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3 hover:bg-surface-1/40 transition-colors items-center">
+              <div class="min-w-0">
+                <p class="text-[13.5px] font-medium leading-snug truncate">Bitpanda — Frontend-Praktikum</p>
+                <p class="mt-0.5 text-[11.5px] text-ink-muted">19. Mai · Dienstag</p>
+              </div>
+              <span class="text-[11.5px] tnum text-warn">in 2 Tagen</span>
+            </a>
+            <a href="#" class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3 hover:bg-surface-1/40 transition-colors items-center">
+              <div class="min-w-0">
+                <p class="text-[13.5px] font-medium leading-snug truncate">A1 Telekom — Sommerpraktikum</p>
+                <p class="mt-0.5 text-[11.5px] text-ink-muted">25. Mai · Samstag</p>
+              </div>
+              <span class="text-[11.5px] tnum text-ink-muted">in 8 Tagen</span>
+            </a>
+            <a href="#" class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3 hover:bg-surface-1/40 transition-colors items-center">
+              <div class="min-w-0">
+                <p class="text-[13.5px] font-medium leading-snug truncate">MOOONS — Frühstückskellner</p>
+                <p class="mt-0.5 text-[11.5px] text-ink-muted">31. Mai · Samstag</p>
+              </div>
+              <span class="text-[11.5px] tnum text-ink-muted">in 14 Tagen</span>
+            </a>
+          </div>
+          <p class="mt-3 text-[11.5px] text-ink-dim">3 von 11 gespeicherten Stellen haben eine Frist.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─── NEU FÜR DICH ─────────────────────────────────────────────────── -->
+    <section class="mb-14">
+      <div class="flex items-baseline justify-between mb-5">
+        <p class="text-[11px] font-semibold tracking-[0.14em] uppercase text-ink-dim">Neu für dich</p>
+        <a href="#" class="text-[12px] text-ink-muted hover:text-ink">Alle 7 ansehen →</a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <article class="rounded-2xl border border-line-subtle bg-surface-1 p-5 hover:border-line transition-colors">
+          <div class="flex items-baseline justify-between">
+            <span class="text-[11px] text-ink-dim">Praktikum · Wien</span>
+            <span class="text-[16px] font-semibold tnum">95<span class="text-[11px] text-ink-dim">%</span></span>
+          </div>
+          <p class="mt-3 text-[14.5px] font-medium leading-snug">Praktikum im Bereich Front-Office (m/w/d)</p>
+          <p class="mt-1 text-[12.5px] text-ink-muted">GMS GOURMET GmbH</p>
+          <p class="mt-3 text-[11px] text-ink-faint tnum">€ 11,40/h · gespeichert vor 4h</p>
+        </article>
+        <article class="rounded-2xl border border-line-subtle bg-surface-1 p-5 hover:border-line transition-colors">
+          <div class="flex items-baseline justify-between">
+            <span class="text-[11px] text-ink-dim">Teilzeit · Wien</span>
+            <span class="text-[16px] font-semibold tnum">80<span class="text-[11px] text-ink-dim">%</span></span>
+          </div>
+          <p class="mt-3 text-[14.5px] font-medium leading-snug">Office Manager:in (all genders)</p>
+          <p class="mt-1 text-[12.5px] text-ink-muted">THEMATIK consulting & services GmbH</p>
+          <p class="mt-3 text-[11px] text-ink-faint tnum">€ 2.300/Mo · gespeichert vor 6h</p>
+        </article>
+        <article class="rounded-2xl border border-line-subtle bg-surface-1 p-5 hover:border-line transition-colors">
+          <div class="flex items-baseline justify-between">
+            <span class="text-[11px] text-ink-dim">Teilzeit · Wien</span>
+            <span class="text-[16px] font-semibold tnum">80<span class="text-[11px] text-ink-dim">%</span></span>
+          </div>
+          <p class="mt-3 text-[14.5px] font-medium leading-snug">Frühstückskellner in Teilzeit</p>
+          <p class="mt-1 text-[12.5px] text-ink-muted">MOOONS Operations ALPHA GmbH</p>
+          <p class="mt-3 text-[11px] text-ink-faint tnum">€ 12,80/h · gespeichert vor 1d</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ─── LETZTE AKTIVITÄT (sparse Notion-style) ───────────────────────── -->
+    <section class="mb-14">
+      <div class="flex items-baseline justify-between mb-5">
+        <p class="text-[11px] font-semibold tracking-[0.14em] uppercase text-ink-dim">Zuletzt</p>
+      </div>
+      <div class="border-t border-line-subtle">
+        <div class="grid grid-cols-[80px_1fr] gap-4 py-3 border-b border-line-subtle">
+          <span class="text-[11.5px] text-ink-faint tnum pt-0.5">vor 2 h</span>
+          <p class="text-[13.5px] text-ink-muted">MOOONS — Frühstückskellner gespeichert.</p>
+        </div>
+        <div class="grid grid-cols-[80px_1fr] gap-4 py-3 border-b border-line-subtle">
+          <span class="text-[11.5px] text-ink-faint tnum pt-0.5">gestern</span>
+          <p class="text-[13.5px] text-ink-muted">Bewerbung an <span class="text-ink">A1 Telekom</span> verschickt.</p>
+        </div>
+        <div class="grid grid-cols-[80px_1fr] gap-4 py-3 border-b border-line-subtle">
+          <span class="text-[11.5px] text-ink-faint tnum pt-0.5">vor 3 Tagen</span>
+          <p class="text-[13.5px] text-ink-muted">Lebenslauf v3 hochgeladen.</p>
+        </div>
+        <div class="grid grid-cols-[80px_1fr] gap-4 py-3">
+          <span class="text-[11.5px] text-ink-faint tnum pt-0.5">vor 5 Tagen</span>
+          <p class="text-[13.5px] text-ink-muted">Filter <span class="text-ink">IT · Wien · Praktikum</span> gespeichert.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Footer note ─────────────────────────────────────────────────── -->
+    <p class="text-[11px] text-ink-faint">Demo · alle Zahlen sind Beispiele · /demo/heute</p>
+
+  </main>
+</div>
+
+</body>
+</html>

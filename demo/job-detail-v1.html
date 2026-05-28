@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Job Detail v1</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --page:#09090b; --s1:#111113; --s2:#18181b; --s3:#27272a; --s4:#323236;
+  --line:rgba(255,255,255,.10); --lineS:rgba(255,255,255,.06);
+  --ink:#fafafa; --muted:#a1a1aa; --dim:#71717a; --faint:#52525b;
+  --accent:#7c7df0; --accentL:#a5b4fc;
+  --green:#4ade80; --amber:#fbbf24; --red:#f87171;
+  --serif:'Georgia',ui-serif,serif;
+}
+body{
+  background:#070709;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px;color:var(--ink);
+  display:flex;gap:56px;align-items:flex-start;
+  padding:48px 40px 80px;min-height:100vh;
+  justify-content:center;
+}
+
+/* ══ Desktop frame ══ */
+.desktop-frame{
+  flex:1;max-width:700px;background:var(--page);border-radius:12px;
+  border:1px solid var(--line);overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);
+  display:flex;flex-direction:column;
+}
+.browser-bar{
+  background:var(--s2);border-bottom:1px solid var(--lineS);
+  padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.bwin{width:10px;height:10px;border-radius:50%;}
+.url-pill{flex:1;margin:0 12px;height:24px;background:var(--s3);border-radius:6px;
+  display:flex;align-items:center;padding:0 10px;font-size:11px;color:var(--dim);}
+
+/* ── Toolbar ── */
+.toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 20px;
+  border-bottom:1px solid var(--lineS);
+  background:var(--page);
+  flex-shrink:0;
+}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);min-width:0;}
+.breadcrumb a{color:var(--dim);text-decoration:none;}
+.breadcrumb a:hover{color:var(--ink);}
+.breadcrumb .sep{opacity:.4;font-size:11px;}
+.breadcrumb .current{color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tb-spacer{flex:1;}
+/* Status dropdown */
+.status-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  height:30px;padding:0 10px;border-radius:6px;
+  border:1px solid var(--lineS);background:var(--s2);
+  color:var(--ink);font-size:12px;font-weight:500;cursor:pointer;
+}
+.status-btn svg{width:10px;height:10px;opacity:.5;}
+/* Toolbar actions row — only 2 items + ⋯ */
+.tb-actions{display:flex;align-items:center;gap:2px;}
+.tb-btn{
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;height:38px;min-width:36px;padding:0 6px;
+  border-radius:6px;border:none;background:none;
+  color:var(--dim);cursor:pointer;transition:all .12s;
+}
+.tb-btn:hover{background:rgba(255,255,255,.05);color:var(--ink);}
+.tb-btn svg{width:14px;height:14px;}
+.tb-btn span{font-size:9px;font-weight:500;letter-spacing:.02em;}
+/* ⋯ dropdown */
+.more-wrap{position:relative;}
+.more-drop{
+  position:absolute;right:0;top:calc(100% + 6px);z-index:50;
+  min-width:160px;background:var(--s2);border:1px solid var(--line);
+  border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);
+  padding:4px;display:none;
+}
+.more-drop.open{display:block;}
+.drop-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:6px;font-size:12.5px;color:var(--muted);
+  cursor:pointer;transition:all .1s;width:100%;border:none;background:none;text-align:left;
+}
+.drop-item:hover{background:rgba(255,255,255,.05);color:var(--ink);}
+.drop-item svg{width:13px;height:13px;flex-shrink:0;}
+.drop-item.danger{color:rgba(248,113,113,.7);}
+.drop-item.danger:hover{color:var(--red);background:rgba(248,113,113,.08);}
+.drop-sep{height:1px;background:var(--lineS);margin:3px 0;}
+
+/* ── Page body ── */
+.page-body{flex:1;overflow-y:auto;padding:28px 28px 32px;display:flex;flex-direction:column;gap:20px;max-height:680px;}
+
+/* Identity */
+.identity{display:flex;align-items:flex-start;gap:14px;}
+.logo-chip{
+  width:44px;height:44px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;font-size:16px;font-weight:700;
+  background:var(--s3);color:var(--muted);border:1px solid var(--lineS);
+}
+.role{font-size:22px;font-weight:600;letter-spacing:-.025em;line-height:1.15;color:var(--ink);}
+.company-loc{font-size:12.5px;color:var(--dim);margin-top:4px;}
+
+/* Inline meta tags */
+.meta-row{display:flex;flex-wrap:wrap;gap:5px;}
+.meta-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:5px;font-size:11.5px;font-weight:500;
+  background:var(--s2);border:1px solid var(--lineS);color:var(--muted);
+}
+
+/* Match card — calm bar style */
+.match-card{
+  background:var(--s1);border:1px solid var(--lineS);border-radius:14px;padding:20px;
+}
+.match-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.match-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);}
+.match-pct{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+.score-track{height:5px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;}
+.score-fill{height:100%;border-radius:99px;transition:width .4s;}
+.match-points{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+.point{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted);}
+.point .sig{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.point .sig.pos{background:rgba(74,222,128,.12);color:var(--green);}
+.point .sig.neg{background:rgba(113,113,122,.1);color:var(--dim);}
+
+/* Kontext */
+.kontext{background:var(--s1);border:1px solid var(--lineS);border-radius:10px;padding:14px 16px;}
+.kontext-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:6px;}
+.kontext-text{font-size:12.5px;color:var(--dim);line-height:1.55;}
+.kontext-text strong{color:var(--muted);font-weight:600;}
+
+/* Beschreibung collapsed */
+.beschr-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px;border-radius:10px;
+  background:var(--s1);border:1px solid var(--lineS);
+  cursor:pointer;transition:background .12s;
+}
+.beschr-toggle:hover{background:rgba(255,255,255,.03);}
+.beschr-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);}
+.beschr-label svg{width:12px;height:12px;opacity:.6;transition:transform .2s;}
+.beschr-toggle.open .beschr-label svg{transform:rotate(90deg);}
+.beschr-show{font-size:11.5px;color:var(--faint);}
+.beschr-body{padding:14px 16px 0;font-size:13px;color:var(--dim);line-height:1.65;display:none;}
+.beschr-body.open{display:block;}
+
+/* Bottom CTAs */
+.cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.cta-primary{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  height:42px;border-radius:10px;
+  background:var(--accent);color:#fff;font-size:13px;font-weight:600;
+  border:none;cursor:pointer;transition:all .15s;
+  box-shadow:0 0 0 1px rgba(124,125,240,.3);
+}
+.cta-primary:hover{background:#8f90f5;transform:translateY(-1px);}
+.cta-secondary{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  height:42px;border-radius:10px;
+  background:transparent;color:var(--muted);font-size:13px;font-weight:500;
+  border:1px solid var(--line);cursor:pointer;transition:all .15s;
+}
+.cta-secondary:hover{background:rgba(255,255,255,.04);color:var(--ink);}
+.cta-secondary svg,.cta-primary svg{width:14px;height:14px;opacity:.8;}
+
+/* ══ Phone frame ══ */
+.phone-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.phone-label{font-size:11.5px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;font-weight:600;}
+.phone{
+  width:390px;background:var(--page);border-radius:52px;
+  border:8px solid #1c1c1e;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 32px 80px rgba(0,0,0,.7);
+  overflow:hidden;position:relative;
+}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#1c1c1e;border-radius:0 0 20px 20px;z-index:10;}
+.status-bar{height:44px;padding:12px 28px 0;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:5;}
+.sb-time{font-size:15px;font-weight:700;}
+.sb-icons{display:flex;align-items:center;gap:5px;}
+
+.m-scroll{height:800px;overflow-y:auto;scrollbar-width:none;padding-bottom:100px;}
+.m-scroll::-webkit-scrollbar{display:none;}
+
+/* Mobile toolbar */
+.m-toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 20px;border-bottom:1px solid var(--lineS);
+  position:sticky;top:0;z-index:8;
+  background:rgba(9,9,11,.92);backdrop-filter:blur(20px);
+}
+.m-back{
+  width:28px;height:28px;border-radius:7px;border:none;background:none;
+  display:grid;place-items:center;color:var(--dim);cursor:pointer;
+}
+.m-back svg{width:15px;height:15px;}
+.m-tb-spacer{flex:1;}
+.m-status-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  height:28px;padding:0 9px;border-radius:6px;
+  border:1px solid var(--lineS);background:var(--s2);
+  color:var(--ink);font-size:11.5px;font-weight:500;cursor:pointer;
+}
+.m-status-btn svg{width:9px;height:9px;opacity:.5;}
+.m-more{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--lineS);
+  background:var(--s2);display:grid;place-items:center;
+  color:var(--dim);cursor:pointer;
+}
+.m-more svg{width:14px;height:14px;}
+
+/* Mobile body */
+.m-body{padding:20px 20px 0;display:flex;flex-direction:column;gap:16px;}
+.m-role{font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2;color:var(--ink);}
+.m-company{font-size:12px;color:var(--dim);margin-top:3px;}
+.m-meta{display:flex;flex-wrap:wrap;gap:4px;}
+.m-tag{padding:3px 7px;border-radius:4px;font-size:11px;font-weight:500;background:var(--s2);border:1px solid var(--lineS);color:var(--muted);}
+
+/* Mobile match card */
+.m-match{background:var(--s1);border:1px solid var(--lineS);border-radius:12px;padding:16px;}
+.m-match-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.m-match-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);}
+
+/* Mobile CTA sticky bar */
+.m-cta-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:12px 20px 24px;
+  background:rgba(9,9,11,.92);backdrop-filter:blur(20px);
+  border-top:1px solid var(--lineS);
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  z-index:10;
+}
+.m-cta-primary{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  height:40px;border-radius:9px;
+  background:var(--accent);color:#fff;font-size:12.5px;font-weight:600;
+  border:none;cursor:pointer;
+}
+.m-cta-secondary{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  height:40px;border-radius:9px;
+  background:transparent;color:var(--muted);font-size:12.5px;font-weight:500;
+  border:1px solid var(--line);cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ DESKTOP ══════════ -->
+<div class="desktop-frame">
+  <div class="browser-bar">
+    <div class="bwin" style="background:#ff5f56"></div>
+    <div class="bwin" style="background:#ffbd2e"></div>
+    <div class="bwin" style="background:#27c93f"></div>
+    <div class="url-pill">jobassist.app/jobs/42</div>
+  </div>
+
+  <!-- Toolbar: breadcrumb · status · ⋯ only -->
+  <div class="toolbar">
+    <nav class="breadcrumb">
+      <a href="#">Stellen</a>
+      <span class="sep">›</span>
+      <span class="current">Noortec GmbH</span>
+    </nav>
+    <div class="tb-spacer"></div>
+    <button class="status-btn">
+      Angebot
+      <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4l3 3 3-3"/></svg>
+    </button>
+    <div class="tb-actions">
+      <button class="tb-btn" title="Stellenanzeige öffnen">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3h4v4M13 3l-6 6M6 5H4a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1v-2"/></svg>
+        <span>Anzeige</span>
+      </button>
+      <div class="more-wrap">
+        <button class="tb-btn" id="moreBtn" title="Mehr">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r=".9" fill="currentColor"/><circle cx="8" cy="8" r=".9" fill="currentColor"/><circle cx="13" cy="8" r=".9" fill="currentColor"/></svg>
+          <span>Mehr</span>
+        </button>
+        <div class="more-drop" id="moreDrop">
+          <button class="drop-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>
+            Bearbeiten
+          </button>
+          <button class="drop-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 4h8M4 8h6M4 12h5"/></svg>
+            Notizen
+          </button>
+          <button class="drop-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8l2 2 4-4"/></svg>
+            Frist setzen
+          </button>
+          <button class="drop-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2v12M2 8l6-6 6 6"/></svg>
+            Anschreiben generieren
+          </button>
+          <button class="drop-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 6v2.5l1.5 1.5"/></svg>
+            Vorbereitung
+          </button>
+          <div class="drop-sep"></div>
+          <button class="drop-item danger">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 4h10M6 4V3h4v1M5 4v9h6V4"/></svg>
+            Stelle löschen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page body -->
+  <div class="page-body">
+
+    <!-- Identity: flat chip + role + company line -->
+    <div class="identity">
+      <div class="logo-chip">N</div>
+      <div class="identity-text">
+        <div class="role">Büroassistent/in (Geringfügig/Teilzeit für 10–20 h)</div>
+        <div class="company-loc">Noortec GmbH · Wien</div>
+      </div>
+    </div>
+
+    <!-- Inline meta tags instead of KPI boxes -->
+    <div class="meta-row">
+      <span class="meta-tag">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1a5 5 0 015 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 015-5z"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg>
+        Wien
+      </span>
+      <span class="meta-tag">Geringfügig / Teilzeit</span>
+      <span class="meta-tag">10 – 20 h/Wo.</span>
+    </div>
+
+    <!-- Match card — bar instead of giant number -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="match-label">Passt zu dir</span>
+        <span class="match-pct" style="color:#fbbf24;">60 %</span>
+      </div>
+      <div class="score-track">
+        <div class="score-fill" style="width:60%;background:linear-gradient(90deg,#fbbf24,#f59e0b);"></div>
+      </div>
+      <div class="match-points">
+        <div class="point"><span class="sig pos">+</span><span>Schnelle Auffassungsgabe</span></div>
+        <div class="point"><span class="sig pos">+</span><span>Analytisches Denken</span></div>
+        <div class="point"><span class="sig pos">+</span><span>Selbstständige Arbeitsweise</span></div>
+        <div class="point"><span class="sig pos">+</span><span>Hohes Pflichtbewusstsein</span></div>
+        <div class="point"><span class="sig neg">−</span><span>Erfahrung in der Branche</span></div>
+        <div class="point"><span class="sig neg">−</span><span>Administrative Erfahrung</span></div>
+        <div class="point"><span class="sig neg">−</span><span>Korrespondenz mit Behörden und Kunden</span></div>
+      </div>
+    </div>
+
+    <!-- Kontext -->
+    <div class="kontext">
+      <div class="kontext-label">Kontext</div>
+      <div class="kontext-text">Antworten dauern bei Noortec GmbH im Schnitt <strong>8 Tage</strong>. Wenn nach 11 Tagen nichts kommt, ist Nachfragen okay.</div>
+    </div>
+
+    <!-- Stellenbeschreibung collapsed -->
+    <div>
+      <div class="beschr-toggle" id="beschrToggle">
+        <span class="beschr-label">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 2l4 4-4 4"/></svg>
+          Stellenbeschreibung
+        </span>
+        <span class="beschr-show">Einblenden</span>
+      </div>
+      <div class="beschr-body" id="beschrBody">
+        Wir suchen eine/n zuverlässige/n Büroassistent/in für unseren Standort in Wien. Die Tätigkeit umfasst allgemeine Büroarbeiten, Korrespondenz mit Kunden und Behörden sowie administrative Unterstützung des Teams. Erfahrung im Bürobereich von Vorteil, aber nicht Voraussetzung. Bewerbungen bitte per E-Mail.
+        <br><br>
+        <button style="font-size:12px;color:var(--accentL);background:none;border:none;cursor:pointer;padding:4px 0;">Mehr anzeigen</button>
+      </div>
+    </div>
+
+    <!-- Bottom CTAs — equal weight -->
+    <div class="cta-row">
+      <button class="cta-primary">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h8M4 7h8M4 10h5"/></svg>
+        Anschreiben ansehen
+      </button>
+      <button class="cta-secondary">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3h4v4M13 3l-6 6M6 5H4a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1v-2"/></svg>
+        Stellenanzeige
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════ PHONE ══════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Mobile</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar">
+      <span class="sb-time">9:41</span>
+      <div class="sb-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" opacity=".9"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="1" width="3" height="11" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none" opacity=".9"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity=".35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/></svg>
+      </div>
+    </div>
+
+    <div class="m-scroll">
+      <!-- Mobile toolbar: back · title · status · ⋯ -->
+      <div class="m-toolbar">
+        <button class="m-back">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 12L6 8l4-4"/></svg>
+        </button>
+        <div class="m-tb-spacer"></div>
+        <button class="m-status-btn">
+          Angebot
+          <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4l3 3 3-3"/></svg>
+        </button>
+        <button class="m-more">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r=".9" fill="currentColor"/><circle cx="8" cy="8" r=".9" fill="currentColor"/><circle cx="13" cy="8" r=".9" fill="currentColor"/></svg>
+        </button>
+      </div>
+
+      <div class="m-body">
+        <!-- Identity -->
+        <div>
+          <div class="m-role">Büroassistent/in (Geringfügig / Teilzeit 10–20 h)</div>
+          <div class="m-company">Noortec GmbH · Wien</div>
+        </div>
+
+        <!-- Meta tags -->
+        <div class="m-meta">
+          <span class="m-tag">Wien</span>
+          <span class="m-tag">Geringfügig / Teilzeit</span>
+          <span class="m-tag">10 – 20 h</span>
+        </div>
+
+        <!-- Match card -->
+        <div class="m-match">
+          <div class="m-match-header">
+            <span class="m-match-label">Passt zu dir</span>
+            <span style="font-size:12.5px;font-weight:700;color:#fbbf24;">60 %</span>
+          </div>
+          <div class="score-track">
+            <div class="score-fill" style="width:60%;background:linear-gradient(90deg,#fbbf24,#f59e0b);"></div>
+          </div>
+          <div class="match-points" style="margin-top:14px;">
+            <div class="point"><span class="sig pos">+</span><span>Schnelle Auffassungsgabe</span></div>
+            <div class="point"><span class="sig pos">+</span><span>Analytisches Denken</span></div>
+            <div class="point"><span class="sig pos">+</span><span>Selbstständige Arbeitsweise</span></div>
+            <div class="point"><span class="sig pos">+</span><span>Hohes Pflichtbewusstsein</span></div>
+            <div class="point"><span class="sig neg">−</span><span>Erfahrung in der Branche</span></div>
+            <div class="point"><span class="sig neg">−</span><span>Administrative Erfahrung</span></div>
+          </div>
+        </div>
+
+        <!-- Kontext -->
+        <div class="kontext">
+          <div class="kontext-label">Kontext</div>
+          <div class="kontext-text" style="font-size:12px;">Antworten dauern bei Noortec GmbH im Schnitt <strong>8 Tage</strong>. Wenn nach 11 Tagen nichts kommt, ist Nachfragen okay.</div>
+        </div>
+
+        <!-- Stellenbeschreibung -->
+        <div>
+          <div class="beschr-toggle" style="padding:12px 14px;">
+            <span class="beschr-label">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 2l4 4-4 4"/></svg>
+              Stellenbeschreibung
+            </span>
+            <span class="beschr-show">Einblenden</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sticky CTA bar -->
+    <div class="m-cta-bar">
+      <button class="m-cta-primary">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h8M4 7h8M4 10h5"/></svg>
+        Anschreiben
+      </button>
+      <button class="m-cta-secondary">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3h4v4M13 3l-6 6M6 5H4a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1v-2"/></svg>
+        Stellenanzeige
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('moreBtn').addEventListener('click', function(e){
+  e.stopPropagation();
+  document.getElementById('moreDrop').classList.toggle('open');
+});
+document.addEventListener('click', function(){
+  document.getElementById('moreDrop').classList.remove('open');
+});
+document.getElementById('beschrToggle').addEventListener('click', function(){
+  this.classList.toggle('open');
+  var body = document.getElementById('beschrBody');
+  body.classList.toggle('open');
+  var showLabel = this.querySelector('.beschr-show');
+  showLabel.textContent = body.classList.contains('open') ? 'Ausblenden' : 'Einblenden';
+});
+</script>
+</body>
+</html>

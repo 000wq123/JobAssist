@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stellen — Design Explorations</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --page:    #09090b;
+  --s1:      #111113;
+  --s2:      #18181b;
+  --s3:      #27272a;
+  --line:    rgba(255,255,255,0.10);
+  --lineS:   rgba(255,255,255,0.06);
+  --ink:     #fafafa;
+  --muted:   #a1a1aa;
+  --dim:     #71717a;
+  --faint:   #52525b;
+  --accent:  #7c7df0;
+  --accentL: #a5b4fc;
+  --green:   #4ade80;
+  --amber:   #fbbf24;
+  --blue:    #60a5fa;
+  --serif:   'Georgia', ui-serif, serif;
+}
+body { background: var(--page); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }
+
+/* ── Tab switcher ─────────────────────────────────────── */
+.switcher { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 100;
+  display: flex; gap: 4px; background: var(--s2); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.switcher button { padding: 6px 16px; border-radius: 7px; border: none; background: none; color: var(--muted);
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.switcher button.active { background: var(--s3); color: var(--ink); }
+
+/* ── Shell ────────────────────────────────────────────── */
+.shell { display: flex; min-height: 100vh; }
+.left-rail { width: 220px; flex-shrink: 0; border-right: 1px solid var(--lineS);
+  padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+.logo { font-size: 14px; font-weight: 700; padding: 8px 12px; color: var(--ink); margin-bottom: 12px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
+  color: var(--muted); font-size: 13.5px; cursor: pointer; transition: all .15s; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--ink); }
+.nav-item.active { background: rgba(255,255,255,0.07); color: var(--ink); }
+.nav-icon { width: 16px; height: 16px; opacity: .7; }
+.main { flex: 1; padding: 40px 48px; max-width: 800px; }
+
+/* ── View panels ──────────────────────────────────────── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Shared header ────────────────────────────────────── */
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+.page-title { font-size: 32px; font-weight: 600; letter-spacing: -.025em; }
+.page-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line);
+  background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; transition: all .15s; }
+.icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--ink); }
+
+/* ════════════════════════════════════════════════════════
+   VIEW A — Linear-style flat list with filter tabs
+   ════════════════════════════════════════════════════════ */
+.filter-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+.ftab { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 7px;
+  border: 1px solid var(--lineS); background: var(--s1); color: var(--muted);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.ftab:hover { border-color: var(--line); color: var(--ink); }
+.ftab.active { border-color: var(--line); background: var(--s2); color: var(--ink); }
+.ftab .dot { width: 6px; height: 6px; border-radius: 50%; }
+.ftab .cnt { font-size: 11px; color: var(--dim); padding: 1px 5px; background: var(--s3); border-radius: 4px; }
+
+.flat-list { display: flex; flex-direction: column; }
+.flat-row { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 12px;
+  padding: 11px 12px; border-radius: 8px; cursor: pointer; transition: background .12s; }
+.flat-row:hover { background: rgba(255,255,255,0.04); }
+.flat-row + .flat-row { border-top: 1px solid var(--lineS); border-radius: 0; }
+.flat-row:first-child { border-radius: 8px 8px 0 0; }
+.flat-row:last-child { border-radius: 0 0 8px 8px; }
+.status-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.row-body { min-width: 0; }
+.row-role { font-size: 13.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-meta { font-size: 12px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.score-pill { font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 5px; }
+.time-lbl { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+.urgency-lbl { font-size: 10.5px; color: var(--amber); }
+
+/* ════════════════════════════════════════════════════════
+   VIEW B — Pipeline: sticky inline section labels
+   ════════════════════════════════════════════════════════ */
+.status-bar { display: flex; gap: 0; margin-bottom: 24px; background: var(--s1);
+  border: 1px solid var(--lineS); border-radius: 10px; overflow: hidden; }
+.sbar-item { flex: 1; padding: 10px 14px; cursor: pointer; transition: background .12s; border-right: 1px solid var(--lineS); }
+.sbar-item:last-child { border-right: none; }
+.sbar-item:hover { background: rgba(255,255,255,0.04); }
+.sbar-label { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 5px; }
+.sbar-dot { width: 6px; height: 6px; border-radius: 50%; }
+.sbar-count { font-size: 22px; font-weight: 600; color: var(--ink); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.section-inline { display: flex; align-items: center; gap: 8px; padding: 14px 0 6px; }
+.section-inline-dot { width: 7px; height: 7px; border-radius: 50%; }
+.section-inline-label { font-size: 11.5px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.section-inline-count { font-size: 11px; color: var(--faint); background: var(--s2); padding: 1px 6px; border-radius: 4px; }
+
+.pipe-list { display: flex; flex-direction: column; }
+.pipe-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 8px; cursor: pointer; transition: background .12s;
+  border-left: 2px solid transparent; }
+.pipe-row:hover { background: rgba(255,255,255,0.04); }
+.pipe-row.gespräch { border-left-color: var(--accent); }
+.pipe-row.angebot   { border-left-color: var(--green); }
+.pipe-row.beworben  { border-left-color: var(--blue); }
+.pipe-row.gemerkt   { border-left-color: transparent; }
+
+/* ════════════════════════════════════════════════════════
+   VIEW C — Focus first: urgent card + status tiles + list
+   ════════════════════════════════════════════════════════ */
+.focus-card { background: var(--s1); border: 1px solid rgba(124,125,240,.25);
+  border-radius: 14px; padding: 20px 24px; margin-bottom: 24px;
+  background-image: radial-gradient(ellipse at top right, rgba(124,125,240,.08), transparent 60%); }
+.focus-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--accentL); font-weight: 600; margin-bottom: 10px; }
+.focus-company { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.focus-action { font-family: var(--serif); font-size: 26px; color: var(--ink); letter-spacing: -.015em; line-height: 1.2; }
+.focus-sub { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+.focus-cta { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--accentL); cursor: pointer; }
+.focus-cta:hover { text-decoration: underline; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 24px; }
+.tile { background: var(--s1); border: 1px solid var(--lineS); border-radius: 10px;
+  padding: 12px 14px; cursor: pointer; transition: all .15s; }
+.tile:hover { border-color: var(--line); background: var(--s2); }
+.tile.active-tile { border-color: var(--line); background: var(--s2); }
+.tile-label { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.tile-count { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.compact-list { background: var(--s1); border: 1px solid var(--lineS); border-radius: 12px; overflow: hidden; }
+.compact-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+  padding: 11px 16px; cursor: pointer; transition: background .12s; }
+.compact-row + .compact-row { border-top: 1px solid var(--lineS); }
+.compact-row:hover { background: rgba(255,255,255,0.03); }
+.compact-role { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.compact-meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.compact-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-chip { font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: 5px;
+  border: 1px solid transparent; white-space: nowrap; }
+
+/* ── Urgent banner ──────────────────────────────────────── */
+.urgent-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 14px; border-radius: 8px; margin-bottom: 20px;
+  background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.2); }
+.urgent-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.urgent-text { font-size: 12.5px; color: var(--muted); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.urgent-text strong { color: var(--ink); font-weight: 500; }
+.urgent-link { font-size: 12px; color: var(--accentL); white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+.urgent-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <button class="active" onclick="show('a')">A — Linear</button>
+  <button onclick="show('b')">B — Pipeline</button>
+  <button onclick="show('c')">C — Focus</button>
+</div>
+
+<div class="shell">
+  <!-- Left Rail -->
+  <nav class="left-rail">
+    <div class="logo">JobAssist</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+      Stellen
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M6 6h4M6 9h2"/></svg>
+      Lebenslauf
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a4 4 0 014 4v2l1.5 2.5H2.5L4 8V6a4 4 0 014-4zM6.5 13a1.5 1.5 0 003 0"/></svg>
+      Alerts
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- ══ VIEW A — Linear ══════════════════════════════════════ -->
+    <div class="view active" id="view-a">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Stellen</h1>
+          <p class="page-sub">11 gespeichert</p>
+        </div>
+        <button class="icon-btn" title="Stelle hinzufügen">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+
+      <div class="urgent-banner">
+        <span class="urgent-dot"></span>
+        <span class="urgent-text"><strong>Lidl Österreich</strong> · Vorstellung vorbereiten — Gespräch geplant</span>
+        <span class="urgent-link">Ansehen →</span>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filter-tabs">
+        <div class="ftab active"><span class="dot" style="background:var(--muted)"></span> Alle <span class="cnt">11</span></div>
+        <div class="ftab"><span class="dot" style="background:var(--accent)"></span> Im Gespräch <span class="cnt">2</span></div>
+        <div class="ftab"><span class="dot" style="background:var(--green)"></span> Angebot <span class="cnt">2</span></div>
+        <div class="ftab"><span class="dot" style="background:var(--blue)"></span> Beworben <span class="cnt">1</span></div>
+        <div class="ftab"><span class="dot" style="background:var(--dim)"></span> Gemerkt <span class="cnt">6</span></div>
+      </div>
+
+      <div class="flat-list">
+        <!-- Im Gespräch -->
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--accent)"></span>
+          <div class="row-body">
+            <div class="row-role">Radiologietechnologe (m/w/d) in Teilzeit (25h/Wo)</div>
+            <div class="row-meta">MediCare Personaldienstleistungen GmbH · Wien</div>
+          </div>
+          <div class="row-right"><span class="time-lbl">heute</span></div>
+        </div>
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--accent)"></span>
+          <div class="row-body">
+            <div class="row-role">Samstagsverkauf (w/m/d) 6 Std./Woche</div>
+            <div class="row-meta">Lidl Österreich · Salzburg</div>
+          </div>
+          <div class="row-right"><span class="urgency-lbl">Vorbereiten</span><span class="time-lbl">vor 5T</span></div>
+        </div>
+        <!-- Angebot -->
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--green)"></span>
+          <div class="row-body">
+            <div class="row-role">Raumpfleger:in in der Bezirksstelle Lienz</div>
+            <div class="row-meta">WKO · Wirtschaftskammer Tirol</div>
+          </div>
+          <div class="row-right"><span class="time-lbl">vor 1M</span></div>
+        </div>
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--green)"></span>
+          <div class="row-body">
+            <div class="row-role">Büroassistent/in (Geringfügig/Teilzeit für 10–20 h)</div>
+            <div class="row-meta">Noortec GmbH</div>
+          </div>
+          <div class="row-right"><span class="time-lbl">vor 1M</span></div>
+        </div>
+        <!-- Beworben -->
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--blue)"></span>
+          <div class="row-body">
+            <div class="row-role">Praktikum im Markenmanagement in Wien</div>
+            <div class="row-meta">Wen wir suchen · Wien</div>
+          </div>
+          <div class="row-right"><span class="urgency-lbl">Nachhaken</span><span class="time-lbl">gestern</span></div>
+        </div>
+        <!-- Gemerkt -->
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--dim)"></span>
+          <div class="row-body">
+            <div class="row-role">Praktikum im Bereich Front-Office (m/w/d)</div>
+            <div class="row-meta">GMS GOURMET GmbH</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#4ade80;background:rgba(74,222,128,.12)">95%</span>
+            <span class="time-lbl">heute</span>
+          </div>
+        </div>
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--dim)"></span>
+          <div class="row-body">
+            <div class="row-role">Frühstückskellner (all genders) in Teilzeit</div>
+            <div class="row-meta">MOONS Operations ALPHA GmbH · Wien</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#fbbf24;background:rgba(251,191,36,.12)">80%</span>
+            <span class="time-lbl">vor 8T</span>
+          </div>
+        </div>
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--dim)"></span>
+          <div class="row-body">
+            <div class="row-role">Praktikum People Operations (w/m/d)</div>
+            <div class="row-meta">A1 Telekom Austria AG</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#fbbf24;background:rgba(251,191,36,.12)">74%</span>
+            <span class="time-lbl">vor 8T</span>
+          </div>
+        </div>
+        <div class="flat-row">
+          <span class="status-sq" style="background:var(--dim)"></span>
+          <div class="row-body">
+            <div class="row-role">Praktikum Digital Redaktion</div>
+            <div class="row-meta">ServusTV · Wien</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#a1a1aa;background:rgba(161,161,170,.1)">71%</span>
+            <span class="time-lbl">vor 8T</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW B — Pipeline ════════════════════════════════════ -->
+    <div class="view" id="view-b">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Stellen</h1>
+          <p class="page-sub">11 gespeichert</p>
+        </div>
+        <button class="icon-btn" title="Stelle hinzufügen">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+
+      <!-- Status bar → jump links -->
+      <div class="status-bar">
+        <div class="sbar-item">
+          <div class="sbar-label"><span class="sbar-dot" style="background:var(--accent)"></span> Im Gespräch</div>
+          <div class="sbar-count">2</div>
+        </div>
+        <div class="sbar-item">
+          <div class="sbar-label"><span class="sbar-dot" style="background:var(--green)"></span> Angebot</div>
+          <div class="sbar-count">2</div>
+        </div>
+        <div class="sbar-item">
+          <div class="sbar-label"><span class="sbar-dot" style="background:var(--blue)"></span> Beworben</div>
+          <div class="sbar-count">1</div>
+        </div>
+        <div class="sbar-item">
+          <div class="sbar-label"><span class="sbar-dot" style="background:var(--dim)"></span> Gemerkt</div>
+          <div class="sbar-count">6</div>
+        </div>
+      </div>
+
+      <div class="urgent-banner">
+        <span class="urgent-dot"></span>
+        <span class="urgent-text"><strong>Lidl Österreich</strong> · Vorstellung vorbereiten — Gespräch geplant</span>
+        <span class="urgent-link">Ansehen →</span>
+      </div>
+
+      <div class="pipe-list">
+        <!-- Im Gespräch -->
+        <div class="section-inline">
+          <span class="section-inline-dot" style="background:var(--accent)"></span>
+          <span class="section-inline-label">Im Gespräch</span>
+          <span class="section-inline-count">2</span>
+        </div>
+        <div class="pipe-row gespräch">
+          <div class="row-body">
+            <div class="row-role">Radiologietechnologe (m/w/d) in Teilzeit (25h/Wo)</div>
+            <div class="row-meta">MediCare Personaldienstleistungen GmbH · Wien</div>
+          </div>
+          <div class="row-right"><span class="time-lbl">heute</span></div>
+        </div>
+        <div class="pipe-row gespräch">
+          <div class="row-body">
+            <div class="row-role">Samstagsverkauf (w/m/d) 6 Std./Woche</div>
+            <div class="row-meta">Lidl Österreich · Salzburg</div>
+          </div>
+          <div class="row-right"><span class="urgency-lbl">Vorbereiten</span><span class="time-lbl">vor 5T</span></div>
+        </div>
+
+        <!-- Angebot -->
+        <div class="section-inline" style="margin-top:8px">
+          <span class="section-inline-dot" style="background:var(--green)"></span>
+          <span class="section-inline-label">Angebot</span>
+          <span class="section-inline-count">2</span>
+        </div>
+        <div class="pipe-row angebot">
+          <div class="row-body">
+            <div class="row-role">Raumpfleger:in in der Bezirksstelle Lienz</div>
+            <div class="row-meta">WKO · Wirtschaftskammer Tirol</div>
+          </div>
+          <div class="row-right"><span class="time-lbl">vor 1M</span></div>
+        </div>
+        <div class="pipe-row angebot">
+          <div class="row-body">
+            <div class="row-role">Büroassistent/in (Geringfügig/Teilzeit 10–20 h)</div>
+            <div class="row-meta">Noortec GmbH</div>
+          </div>
+          <div class="row-right"><span class="time-lbl">vor 1M</span></div>
+        </div>
+
+        <!-- Beworben -->
+        <div class="section-inline" style="margin-top:8px">
+          <span class="section-inline-dot" style="background:var(--blue)"></span>
+          <span class="section-inline-label">Beworben</span>
+          <span class="section-inline-count">1</span>
+        </div>
+        <div class="pipe-row beworben">
+          <div class="row-body">
+            <div class="row-role">Praktikum im Markenmanagement in Wien</div>
+            <div class="row-meta">Wen wir suchen · Wien</div>
+          </div>
+          <div class="row-right"><span class="urgency-lbl">Nachhaken</span><span class="time-lbl">gestern</span></div>
+        </div>
+
+        <!-- Gemerkt -->
+        <div class="section-inline" style="margin-top:8px">
+          <span class="section-inline-dot" style="background:var(--dim)"></span>
+          <span class="section-inline-label">Gemerkt</span>
+          <span class="section-inline-count">6</span>
+        </div>
+        <div class="pipe-row gemerkt">
+          <div class="row-body">
+            <div class="row-role">Praktikum im Bereich Front-Office (m/w/d)</div>
+            <div class="row-meta">GMS GOURMET GmbH</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#4ade80;background:rgba(74,222,128,.12)">95%</span>
+            <span class="time-lbl">heute</span>
+          </div>
+        </div>
+        <div class="pipe-row gemerkt">
+          <div class="row-body">
+            <div class="row-role">Frühstückskellner (all genders) in Teilzeit</div>
+            <div class="row-meta">MOONS Operations · Wien</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#fbbf24;background:rgba(251,191,36,.12)">80%</span>
+            <span class="time-lbl">vor 8T</span>
+          </div>
+        </div>
+        <div class="pipe-row gemerkt">
+          <div class="row-body">
+            <div class="row-role">Praktikum People Operations (w/m/d)</div>
+            <div class="row-meta">A1 Telekom Austria AG</div>
+          </div>
+          <div class="row-right">
+            <span class="score-pill" style="color:#fbbf24;background:rgba(251,191,36,.12)">74%</span>
+            <span class="time-lbl">vor 8T</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW C — Focus first ══════════════════════════════════ -->
+    <div class="view" id="view-c">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Stellen</h1>
+          <p class="page-sub">11 gespeichert</p>
+        </div>
+        <button class="icon-btn" title="Stelle hinzufügen">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+
+      <!-- Focus card -->
+      <div class="focus-card">
+        <div class="focus-eyebrow">Dringend</div>
+        <div class="focus-company">Lidl Österreich · Samstagsverkauf</div>
+        <div class="focus-action">Vorstellung vorbereiten.</div>
+        <div class="focus-sub">Gespräch ist geplant — schau dir die Stelle nochmal an.</div>
+        <div class="focus-cta">Stelle öffnen →</div>
+      </div>
+
+      <!-- Status tiles (click to filter) -->
+      <div class="tiles">
+        <div class="tile">
+          <div class="tile-label"><span class="sbar-dot" style="background:var(--accent)"></span>Im Gespräch</div>
+          <div class="tile-count" style="color:var(--accentL)">2</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label"><span class="sbar-dot" style="background:var(--green)"></span>Angebot</div>
+          <div class="tile-count" style="color:var(--green)">2</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label"><span class="sbar-dot" style="background:var(--blue)"></span>Beworben</div>
+          <div class="tile-count" style="color:var(--blue)">1</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label"><span class="sbar-dot" style="background:var(--dim)"></span>Gemerkt</div>
+          <div class="tile-count" style="color:var(--muted)">6</div>
+        </div>
+      </div>
+
+      <!-- Compact unified list -->
+      <div class="compact-list">
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Radiologietechnologe (m/w/d) in Teilzeit</div>
+            <div class="compact-meta">MediCare Personaldienstleistungen GmbH · Wien</div>
+          </div>
+          <div class="compact-right">
+            <span class="status-chip" style="color:var(--accentL);background:rgba(124,125,240,.1);border-color:rgba(124,125,240,.2)">Im Gespräch</span>
+            <span class="time-lbl">heute</span>
+          </div>
+        </div>
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Samstagsverkauf (w/m/d) 6 Std./Woche</div>
+            <div class="compact-meta">Lidl Österreich · Salzburg</div>
+          </div>
+          <div class="compact-right">
+            <span class="status-chip" style="color:var(--accentL);background:rgba(124,125,240,.1);border-color:rgba(124,125,240,.2)">Im Gespräch</span>
+            <span class="time-lbl">vor 5T</span>
+          </div>
+        </div>
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Raumpfleger:in in der Bezirksstelle Lienz</div>
+            <div class="compact-meta">WKO · Wirtschaftskammer Tirol</div>
+          </div>
+          <div class="compact-right">
+            <span class="status-chip" style="color:var(--green);background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.2)">Angebot</span>
+            <span class="time-lbl">vor 1M</span>
+          </div>
+        </div>
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Büroassistent/in (Geringfügig/Teilzeit)</div>
+            <div class="compact-meta">Noortec GmbH</div>
+          </div>
+          <div class="compact-right">
+            <span class="status-chip" style="color:var(--green);background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.2)">Angebot</span>
+            <span class="time-lbl">vor 1M</span>
+          </div>
+        </div>
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Praktikum im Markenmanagement in Wien</div>
+            <div class="compact-meta">Wen wir suchen · Wien</div>
+          </div>
+          <div class="compact-right">
+            <span class="urgency-lbl" style="font-size:11px">Nachhaken</span>
+            <span class="status-chip" style="color:var(--blue);background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.2)">Beworben</span>
+            <span class="time-lbl">gestern</span>
+          </div>
+        </div>
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Praktikum im Bereich Front-Office (m/w/d)</div>
+            <div class="compact-meta">GMS GOURMET GmbH</div>
+          </div>
+          <div class="compact-right">
+            <span class="score-pill" style="color:#4ade80;background:rgba(74,222,128,.12)">95%</span>
+            <span class="status-chip" style="color:var(--dim);background:rgba(113,113,122,.1);border-color:rgba(113,113,122,.2)">Gemerkt</span>
+            <span class="time-lbl">heute</span>
+          </div>
+        </div>
+        <div class="compact-row">
+          <div>
+            <div class="compact-role">Frühstückskellner (all genders) in Teilzeit</div>
+            <div class="compact-meta">MOONS Operations ALPHA GmbH · Wien</div>
+          </div>
+          <div class="compact-right">
+            <span class="score-pill" style="color:#fbbf24;background:rgba(251,191,36,.12)">80%</span>
+            <span class="status-chip" style="color:var(--dim);background:rgba(113,113,122,.1);border-color:rgba(113,113,122,.2)">Gemerkt</span>
+            <span class="time-lbl">vor 8T</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.switcher button').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

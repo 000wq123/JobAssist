@@ -103,14 +103,13 @@ describe("JobAlertsPage", () => {
 
     expect(await screen.findByText("python")).toBeInTheDocument();
 
-    // The "Such-Agent einrichten" CTA replaces the old "Neuer Alert" text;
-    // an exact-text match would be too brittle — match on the prefix.
-    await userEvent.click(screen.getByRole("button", { name: /Such-Agent einrichten/i }));
+    // Open the create modal via "Neuer Alert" CTA in the page header.
+    await userEvent.click(screen.getByRole("button", { name: /Neuer Alert/i }));
     const textboxes = screen.getAllByRole("textbox");
     await userEvent.type(textboxes[0], "golang");
     await userEvent.type(textboxes[1], "Graz");
     await userEvent.click(screen.getByRole("radio", { name: "Wöchentlich" }));
-    await userEvent.click(screen.getByRole("button", { name: "Alert erstellen" }));
+    await userEvent.click(screen.getByRole("button", { name: /Alert erstellen/i }));
 
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalledTimes(1);
@@ -122,9 +121,11 @@ describe("JobAlertsPage", () => {
       frequency: "weekly",
     });
 
-    // After create, "golang" appears both in the list sidebar (compact card)
-    // and in the selected-alert detail header, so we expect ≥1 occurrence.
-    expect((await screen.findAllByText("golang")).length).toBeGreaterThan(0);
+    // After create, "golang" appears in:
+    //   1. the sidebar list card
+    //   2. the detail header
+    const golangMatches = await screen.findAllByText("golang");
+    expect(golangMatches.length).toBeGreaterThanOrEqual(2);
     expect(mockSuccess).toHaveBeenCalledWith("Alert erstellt!");
     // bumpJobAlertUsageCaches bumps both billing-overview and init caches.
     expect(queryClient.getQueryData(["init"]).usage[0]).toMatchObject({ used: 2, remaining: 0 });

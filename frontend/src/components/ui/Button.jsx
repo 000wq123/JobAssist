@@ -1,35 +1,45 @@
 import { forwardRef } from "react";
+import clsx from "clsx";
 
+/**
+ * Variant classes — borders, not shadows. Single accent. No gradients.
+ */
 const VARIANT_CLS = {
   primary:
-    "bg-gradient-to-r from-brand-500 to-accent-600 text-white shadow-lg shadow-brand-500/30 " +
-    "hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-500/40 " +
-    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+    "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-400)] active:bg-[var(--color-accent-600)] " +
+    "disabled:bg-[var(--color-accent-500)]/40 disabled:cursor-not-allowed",
   secondary:
-    "border border-white/10 bg-white/5 text-slate-200 " +
-    "hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed",
+    "bg-[var(--color-bg-elev-1)] text-[var(--color-fg)] border border-[var(--color-border)] " +
+    "hover:bg-[var(--color-bg-elev-2)] hover:border-[var(--color-border-strong)] " +
+    "disabled:opacity-50 disabled:cursor-not-allowed",
   ghost:
-    "text-slate-300 hover:bg-white/5 hover:text-white " +
+    "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] " +
     "disabled:opacity-50 disabled:cursor-not-allowed",
   danger:
-    "border border-red-500/20 bg-red-500/10 text-red-300 " +
-    "hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed",
+    "bg-[var(--color-bg-elev-1)] text-[var(--color-error)] border border-[var(--color-error)]/30 " +
+    "hover:bg-[var(--color-error)]/10 hover:border-[var(--color-error)]/50 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed",
+  link:
+    "text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] underline-offset-2 hover:underline " +
+    "disabled:opacity-50 disabled:cursor-not-allowed",
 };
 
 const SIZE_CLS = {
-  sm: "px-3 py-1.5 text-xs gap-1.5",
-  md: "px-4 py-2.5 text-sm gap-2",
-  lg: "px-5 py-3 text-base gap-2",
+  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-md",
+  md: "h-9 px-4 text-[13px] gap-2 rounded-md",
+  lg: "h-10 px-5 text-sm gap-2 rounded-lg",
 };
 
 /**
- * Shared button component with primary / secondary / ghost / danger variants.
+ * Shared button component with primary / secondary / ghost / danger / link variants.
  *
- * Prefer this over hand-rolling Tailwind-utility buttons in new code so the app
- * has a consistent CTA style and one place to evolve hover / focus / disabled states.
+ * Design principles:
+ * - Borders, not shadows
+ * - Single accent color (no gradients)
+ * - Color-shift on hover (no transform/lift)
  *
  * @param {object} props
- * @param {'primary'|'secondary'|'ghost'|'danger'} [props.variant='primary']
+ * @param {'primary'|'secondary'|'ghost'|'danger'|'link'} [props.variant='primary']
  * @param {'sm'|'md'|'lg'} [props.size='md']
  * @param {boolean} [props.fullWidth] - Stretch to the parent's width.
  * @param {React.ReactNode} props.children
@@ -42,17 +52,15 @@ const Button = forwardRef(function Button(
   return (
     <button
       ref={ref}
-      className={[
-        "inline-flex items-center justify-center rounded-xl font-semibold",
-        "transition-all duration-200 active:scale-[0.98]",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base",
+      className={clsx(
+        "inline-flex items-center justify-center font-semibold",
+        "transition-colors duration-150",
+        "focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-400)]",
         SIZE_CLS[size],
         VARIANT_CLS[variant],
-        fullWidth ? "w-full" : "",
+        fullWidth && "w-full",
         className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      )}
       {...rest}
     >
       {children}

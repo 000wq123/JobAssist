@@ -4,6 +4,7 @@ export const FEATURE_LABELS = {
   job_alerts: "Job-Alerts (Diesen Monat)",
   ai_chat: "KI-Nachrichten (Diesen Monat)",
   job_search: "Jobsuchen (Heute)",
+  cv_pdf: "Lebenslauf-PDF (Heute)",
 };
 
 export const PLAN_NAMES = {
