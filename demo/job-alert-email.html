@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>8 neue Stellen für „IT Wien" — JobAssist</title>
+  <style>
+    /* ── Reset ───────────────────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { margin: 0; padding: 0; background: #f0f0f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    img { display: block; border: 0; }
+
+    /* ── Outer shell ─────────────────────────────────────────── */
+    .shell { width: 100%; background: #f0f0f5; padding: 40px 16px 56px; }
+    .wrap  { max-width: 600px; margin: 0 auto; }
+
+    /* ── Logo bar ─────────────────────────────────────────────── */
+    .logo-bar { padding-bottom: 28px; display: flex; align-items: center; gap: 10px; }
+    .logo-mark {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, #7c7df0 0%, #a78bfa 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark svg { width: 18px; height: 18px; }
+    .logo-name { font-size: 16px; font-weight: 700; color: #0f0f14; letter-spacing: -0.3px; }
+
+    /* ── Hero card ───────────────────────────────────────────── */
+    .hero {
+      background: #ffffff;
+      border-radius: 18px 18px 0 0;
+      padding: 40px 40px 32px;
+      border: 1px solid #e4e4ec;
+      border-bottom: none;
+    }
+    .hero-alert-meta {
+      display: inline-flex; align-items: center; column-gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #7c7df0; background: #ededfc; padding: 4px 10px; border-radius: 99px;
+      margin-bottom: 16px;
+    }
+    .hero-alert-meta span { opacity: 0.6; margin: 0 4px; }
+    .hero-title {
+      font-size: 26px; font-weight: 800; color: #0f0f14;
+      letter-spacing: -0.6px; line-height: 1.2; margin-bottom: 10px;
+    }
+    .hero-title em { font-style: normal; color: #7c7df0; }
+    .hero-sub { font-size: 14px; color: #6b7280; line-height: 1.6; }
+    .hero-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+    .pill {
+      font-size: 12px; font-weight: 500; color: #374151;
+      background: #f3f4f6; border: 1px solid #e5e7eb;
+      padding: 4px 10px; border-radius: 99px;
+    }
+
+    /* ── Stats row ────────────────────────────────────────────── */
+    .stats-row {
+      background: linear-gradient(135deg, #7c7df0 0%, #a78bfa 100%);
+      padding: 20px 40px; display: flex; gap: 0;
+    }
+    .stat { flex: 1; color: white; text-align: center; }
+    .stat-n { font-size: 26px; font-weight: 800; letter-spacing: -0.8px; }
+    .stat-l { font-size: 11px; opacity: 0.75; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .stat-div { width: 1px; background: rgba(255,255,255,0.2); margin: 0 8px; }
+
+    /* ── Jobs section ─────────────────────────────────────────── */
+    .jobs-header {
+      background: #ffffff; border-left: 1px solid #e4e4ec; border-right: 1px solid #e4e4ec;
+      padding: 24px 40px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .jobs-header-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; }
+    .jobs-header-sort  { font-size: 12px; color: #7c7df0; font-weight: 600; }
+
+    /* ── Job card ─────────────────────────────────────────────── */
+    .job-card {
+      background: #ffffff;
+      border-left: 1px solid #e4e4ec; border-right: 1px solid #e4e4ec; border-top: 1px solid #f3f4f6;
+      padding: 0;
+      display: block;
+      transition: background 0.15s;
+    }
+    .job-card-inner {
+      padding: 20px 40px;
+      border-left: 3px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .job-card:hover .job-card-inner { border-left-color: #7c7df0; background: #fafafa; }
+
+    .job-row-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .job-logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #f3f4f6; border: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800; color: #374151;
+      flex-shrink: 0;
+    }
+    .job-main { flex: 1; min-width: 0; }
+    .job-title {
+      font-size: 15px; font-weight: 700; color: #0f0f14;
+      letter-spacing: -0.2px; line-height: 1.3;
+    }
+    .job-title:hover { color: #7c7df0; }
+    .job-company { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .job-score-wrap { flex-shrink: 0; text-align: right; }
+    .job-score {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 700;
+      padding: 4px 10px; border-radius: 99px;
+    }
+    .job-score-high   { background: #ecfdf5; color: #059669; }
+    .job-score-med    { background: #eff6ff; color: #2563eb; }
+    .job-score-low    { background: #f3f4f6; color: #6b7280; }
+    .job-score-dot    { width: 6px; height: 6px; border-radius: 50%; }
+    .job-score-dot-high { background: #10b981; }
+    .job-score-dot-med  { background: #3b82f6; }
+    .job-score-dot-low  { background: #9ca3af; }
+
+    .job-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+    .job-tag {
+      font-size: 11px; color: #6b7280; background: #f9fafb;
+      border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 99px;
+    }
+    .job-tag-new {
+      font-size: 11px; color: #7c7df0; background: #ededfc;
+      border: 1px solid #d4d4fc; padding: 2px 8px; border-radius: 99px; font-weight: 600;
+    }
+    .job-tag-urgent {
+      font-size: 11px; color: #dc2626; background: #fef2f2;
+      border: 1px solid #fecaca; padding: 2px 8px; border-radius: 99px; font-weight: 600;
+    }
+
+    .job-salary { font-size: 12px; font-weight: 600; color: #059669; margin-top: 6px; }
+    .job-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+    .job-posted { font-size: 11px; color: #9ca3af; }
+    .job-cta {
+      font-size: 12px; font-weight: 600; color: #7c7df0;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .job-cta:hover { color: #5b5bf0; }
+
+    /* ── CTA section ─────────────────────────────────────────── */
+    .cta-section {
+      background: #ffffff;
+      border: 1px solid #e4e4ec; border-top: 1px solid #f3f4f6; border-radius: 0;
+      padding: 28px 40px;
+      text-align: center;
+    }
+    .cta-count { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+    .cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #7c7df0 0%, #a78bfa 100%);
+      color: white; font-weight: 700; font-size: 14px;
+      padding: 14px 36px; border-radius: 12px;
+      letter-spacing: -0.1px;
+      box-shadow: 0 4px 20px rgba(124,125,240,0.35);
+      transition: opacity 0.15s;
+    }
+    .cta-btn:hover { opacity: 0.9; }
+
+    /* ── Upgrade nudge ───────────────────────────────────────── */
+    .upgrade-section {
+      background: #fafafa;
+      border: 1px solid #e4e4ec; border-top: none;
+      padding: 24px 40px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .upgrade-icon {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, #7c7df0 0%, #a78bfa 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .upgrade-body { flex: 1; }
+    .upgrade-title { font-size: 13px; font-weight: 700; color: #0f0f14; }
+    .upgrade-sub   { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .upgrade-cta   {
+      font-size: 12px; font-weight: 700; color: #7c7df0;
+      background: #ededfc; padding: 8px 16px; border-radius: 8px;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .upgrade-cta:hover { background: #ddddfb; }
+
+    /* ── Tip card ─────────────────────────────────────────────── */
+    .tip-section {
+      background: #ffffff;
+      border: 1px solid #e4e4ec; border-top: none; border-radius: 0 0 18px 18px;
+      padding: 24px 40px;
+    }
+    .tip-inner {
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-radius: 12px; padding: 16px 20px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .tip-icon { font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+    .tip-text { font-size: 12.5px; color: #374151; line-height: 1.6; }
+    .tip-text strong { color: #0f0f14; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .footer { padding: 32px 0 0; text-align: center; }
+    .footer-logo { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; }
+    .footer-text { font-size: 12px; color: #9ca3af; line-height: 1.7; }
+    .footer-links { margin-top: 14px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+    .footer-link { font-size: 11px; color: #9ca3af; padding: 0 6px; }
+    .footer-link:hover { color: #6b7280; }
+    .footer-sep { font-size: 11px; color: #d1d5db; }
+    .footer-unsub {
+      margin-top: 20px; display: inline-block;
+      font-size: 11px; color: #c4c4cc;
+      border-bottom: 1px solid #e5e7eb; padding-bottom: 2px;
+    }
+    .footer-unsub:hover { color: #9ca3af; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .hero, .jobs-header, .job-card-inner, .cta-section,
+      .upgrade-section, .tip-section { padding-left: 20px; padding-right: 20px; }
+      .stats-row { padding: 18px 20px; }
+      .hero-title { font-size: 22px; }
+      .upgrade-section { flex-wrap: wrap; }
+      .upgrade-cta { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+<div class="wrap">
+
+  <!-- Logo bar -->
+  <div class="logo-bar">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 2L12.4 7.6H18.4L13.6 11.2L15.4 17.2L10 13.6L4.6 17.2L6.4 11.2L1.6 7.6H7.6L10 2Z"
+          fill="white" fill-opacity="0.9"/>
+      </svg>
+    </div>
+    <span class="logo-name">JobAssist</span>
+  </div>
+
+  <!-- Hero + stats -->
+  <div class="hero">
+    <div class="hero-alert-meta">
+      🔔 <span>·</span> Jobalert <span>·</span> IT · Wien
+    </div>
+    <h1 class="hero-title">
+      <em>8 neue Stellen</em> warten auf dich.
+    </h1>
+    <p class="hero-sub">
+      Wir haben heute für deinen Alert <strong style="color:#374151">„IT Wien"</strong> gesucht
+      und die besten Treffer für dich zusammengestellt.
+    </p>
+    <div class="hero-pills">
+      <span class="pill">📍 Wien</span>
+      <span class="pill">💼 IT</span>
+      <span class="pill">⏰ Befristet</span>
+      <span class="pill">📅 Täglich</span>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-n">8</div>
+      <div class="stat-l">Neue Stellen</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat">
+      <div class="stat-n">3</div>
+      <div class="stat-l">Sehr gute Matches</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat">
+      <div class="stat-n">2</div>
+      <div class="stat-l">Heute eingestellt</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat">
+      <div class="stat-n">Ø6 Tage</div>
+      <div class="stat-l">Antwortzeit</div>
+    </div>
+  </div>
+
+  <!-- Jobs section header -->
+  <div class="jobs-header">
+    <span class="jobs-header-label">Deine Treffer</span>
+    <span class="jobs-header-sort">Nach Match sortiert</span>
+  </div>
+
+  <!-- Job Card 1 — Top match, new -->
+  <a href="https://jobassist.at/jobs/1?ref=alert&alert_id=it-wien" class="job-card" target="_blank">
+    <div class="job-card-inner">
+      <div class="job-row-top">
+        <div class="job-logo">G</div>
+        <div class="job-main">
+          <div class="job-title">IT-Techniker / Systemadministrator (m/w/d)</div>
+          <div class="job-company">GMS GOURMET GmbH · Wien</div>
+        </div>
+        <div class="job-score-wrap">
+          <span class="job-score job-score-high">
+            <span class="job-score-dot job-score-dot-high"></span>
+            95% Match
+          </span>
+        </div>
+      </div>
+      <div class="job-tags">
+        <span class="job-tag-new">✨ Neu heute</span>
+        <span class="job-tag">Befristet</span>
+        <span class="job-tag">Wien 1030</span>
+        <span class="job-tag">Vollzeit</span>
+        <span class="job-tag">ab sofort</span>
+      </div>
+      <div class="job-salary">€ 2.400 – 2.900 brutto / Monat</div>
+      <div class="job-footer">
+        <span class="job-posted">Vor 3 Stunden</span>
+        <span class="job-cta">Stelle ansehen →</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- Job Card 2 — High match -->
+  <a href="https://jobassist.at/jobs/2?ref=alert&alert_id=it-wien" class="job-card" target="_blank">
+    <div class="job-card-inner">
+      <div class="job-row-top">
+        <div class="job-logo" style="background:#fef3c7; color:#b45309;">I</div>
+        <div class="job-main">
+          <div class="job-title">IT Support Specialist (m/w/d)</div>
+          <div class="job-company">ISG Personalmanagement GmbH · Wien</div>
+        </div>
+        <div class="job-score-wrap">
+          <span class="job-score job-score-high">
+            <span class="job-score-dot job-score-dot-high"></span>
+            88% Match
+          </span>
+        </div>
+      </div>
+      <div class="job-tags">
+        <span class="job-tag-new">✨ Neu heute</span>
+        <span class="job-tag">Praktikum</span>
+        <span class="job-tag">Wien 1010</span>
+        <span class="job-tag">Teilzeit möglich</span>
+      </div>
+      <div class="job-salary">€ 1.800 – 2.200 brutto / Monat</div>
+      <div class="job-footer">
+        <span class="job-posted">Vor 6 Stunden</span>
+        <span class="job-cta">Stelle ansehen →</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- Job Card 3 — Medium match, urgent -->
+  <a href="https://jobassist.at/jobs/3?ref=alert&alert_id=it-wien" class="job-card" target="_blank">
+    <div class="job-card-inner">
+      <div class="job-row-top">
+        <div class="job-logo" style="background:#ede9fe; color:#5b21b6;">T</div>
+        <div class="job-main">
+          <div class="job-title">Junior Software Developer — Frontend</div>
+          <div class="job-company">THEMATIK consulting & services GmbH · Wien</div>
+        </div>
+        <div class="job-score-wrap">
+          <span class="job-score job-score-med">
+            <span class="job-score-dot job-score-dot-med"></span>
+            74% Match
+          </span>
+        </div>
+      </div>
+      <div class="job-tags">
+        <span class="job-tag-urgent">⚡ Frist: 3 Tage</span>
+        <span class="job-tag">Vollzeit</span>
+        <span class="job-tag">Wien 1120</span>
+        <span class="job-tag">React</span>
+        <span class="job-tag">TypeScript</span>
+      </div>
+      <div class="job-salary">€ 2.100 – 2.600 brutto / Monat</div>
+      <div class="job-footer">
+        <span class="job-posted">Gestern</span>
+        <span class="job-cta">Stelle ansehen →</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- Job Card 4 — Medium match -->
+  <a href="https://jobassist.at/jobs/4?ref=alert&alert_id=it-wien" class="job-card" target="_blank">
+    <div class="job-card-inner">
+      <div class="job-row-top">
+        <div class="job-logo" style="background:#ecfdf5; color:#047857;">Ö</div>
+        <div class="job-main">
+          <div class="job-title">IT-Koordinator für Schulen (m/w/d)</div>
+          <div class="job-company">Österreichisches Zentrum für Gesundheitsförderung · Wien</div>
+        </div>
+        <div class="job-score-wrap">
+          <span class="job-score job-score-med">
+            <span class="job-score-dot job-score-dot-med"></span>
+            61% Match
+          </span>
+        </div>
+      </div>
+      <div class="job-tags">
+        <span class="job-tag">Befristet</span>
+        <span class="job-tag">Wien 1060</span>
+        <span class="job-tag">Teilzeit</span>
+        <span class="job-tag">26h/Woche</span>
+      </div>
+      <div class="job-footer">
+        <span class="job-posted">Vor 2 Tagen</span>
+        <span class="job-cta">Stelle ansehen →</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- Job Card 5 — Lower match -->
+  <a href="https://jobassist.at/jobs/5?ref=alert&alert_id=it-wien" class="job-card" target="_blank">
+    <div class="job-card-inner">
+      <div class="job-row-top">
+        <div class="job-logo" style="background:#fef2f2; color:#b91c1c;">L</div>
+        <div class="job-main">
+          <div class="job-title">Warenpräsentator (m/w/d) — auch für Schüler geeignet</div>
+          <div class="job-company">Lidl Österreich · Wien & Umgebung</div>
+        </div>
+        <div class="job-score-wrap">
+          <span class="job-score job-score-low">
+            <span class="job-score-dot job-score-dot-low"></span>
+            42% Match
+          </span>
+        </div>
+      </div>
+      <div class="job-tags">
+        <span class="job-tag">Samstagjob</span>
+        <span class="job-tag">Mehrere Standorte</span>
+        <span class="job-tag">6 Std./Woche</span>
+      </div>
+      <div class="job-salary">€ 12,50 / Stunde</div>
+      <div class="job-footer">
+        <span class="job-posted">Vor 4 Tagen</span>
+        <span class="job-cta">Stelle ansehen →</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- CTA — See all -->
+  <div class="cta-section">
+    <p class="cta-count">+ 3 weitere Stellen warten auf dich</p>
+    <a href="https://jobassist.at/jobs?ref=alert_email&alert_id=it-wien" class="cta-btn" target="_blank">
+      Alle Stellen ansehen &nbsp;→
+    </a>
+  </div>
+
+  <!-- Upgrade nudge -->
+  <div class="upgrade-section">
+    <div class="upgrade-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+    </div>
+    <div class="upgrade-body">
+      <div class="upgrade-title">Mehr Treffer mit Pro</div>
+      <div class="upgrade-sub">Bis zu 10 Alerts, unbegrenzte KI-Analysen &amp; sofortige Benachrichtigungen.</div>
+    </div>
+    <a href="https://jobassist.at/pricing?ref=alert_email" class="upgrade-cta" target="_blank">
+      Pro testen →
+    </a>
+  </div>
+
+  <!-- Tip -->
+  <div class="tip-section">
+    <div class="tip-inner">
+      <span class="tip-icon">💡</span>
+      <p class="tip-text">
+        <strong>Profi-Tipp:</strong> Dein Match-Score basiert auf deinem Lebenslauf und der Stellenbeschreibung.
+        Je vollständiger dein Profil, desto genauer die Treffer.
+        <a href="https://jobassist.at/lebenslauf?ref=alert_tip" style="color:#7c7df0; font-weight:600;">Profil vervollständigen →</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-logo">
+      <div class="logo-mark" style="width:24px;height:24px;border-radius:6px;">
+        <svg viewBox="0 0 20 20" fill="none" style="width:12px;height:12px;">
+          <path d="M10 2L12.4 7.6H18.4L13.6 11.2L15.4 17.2L10 13.6L4.6 17.2L6.4 11.2L1.6 7.6H7.6L10 2Z" fill="white" fill-opacity="0.9"/>
+        </svg>
+      </div>
+      <span style="font-size:13px; font-weight:700; color:#6b7280;">JobAssist</span>
+    </div>
+    <p class="footer-text">
+      Diese E-Mail wurde gesendet, weil du den Alert <strong style="color:#374151">„IT Wien"</strong>
+      aktiviert hast.<br/>
+      JobAssist · Für Schüler &amp; Jugendliche in Österreich &mdash; Wien
+    </p>
+    <div class="footer-links">
+      <a href="https://jobassist.at/terms"     class="footer-link">AGB</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="https://jobassist.at/privacy"   class="footer-link">Datenschutz</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="https://jobassist.at/impressum" class="footer-link">Impressum</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="https://jobassist.at/contact"   class="footer-link">Kontakt</a>
+    </div>
+    <a href="https://jobassist.at/job-alerts?action=unsubscribe&id=it-wien&token=DEMO_TOKEN" class="footer-unsub" target="_blank">
+      Diesen Alert abbestellen
+    </a>
+  </div>
+
+</div>
+</div>
+
+<!-- ================================================================
+  BRAINSTORM — Email features to implement
+  ================================================================
+
+  INTERACTIVE
+  ✅ Match % score on each card (requires ML or keyword matching)
+  ✅ "Neu heute" + "Frist: 3 Tage" urgency badges
+  ✅ Salary range when available
+  ✅ UTM-tracked links per job + per alert
+  ○  One-click "Merken" mailto link that updates DB without login
+  ○  "Warum dieser Match?" expandable section (web version via redirect)
+
+  PERSONALISATION
+  ○  Greeting with user first name: "Hallo Davor, 8 neue Stellen..."
+  ○  "Letzte Woche hast du X Stellen angeschaut" weekly digest intro
+  ○  Highlight jobs matching saved companies the user previously viewed
+  ○  "Diese Woche hattest du 0 Bewerbungen. Willst du loslegen?" nudge
+
+  FREQUENCY / ANTI-SPAM
+  ○  Digest mode: batch multiple alerts into one weekly email
+  ○  Quiet hours: don't send between 22:00-07:00
+  ○  Smart deduplication: don't re-surface jobs from last email
+  ○  "Pause for 1 week" link in footer (one-click, no login)
+
+  ANTI-ABUSE (current issue)
+  ○  Free plan: 0 manual "Jetzt prüfen" — scheduled-only (daily/weekly)
+  ○  Or: 1 manual run/day with a 4-hour cooldown per-alert
+  ○  Rate limit "Erstellungen" more aggressively: 1/day for free (not 3)
+  ○  Show "last sent" info more prominently so users understand cadence
+
+  DESIGN FEATURES
+  ○  Dark-mode variant via prefers-color-scheme media query
+  ○  Plain-text fallback auto-generated
+  ○  Company logos fetched from Clearbit Logo API or Favicon API
+  ○  Progress bar per alert: "12 von 15 KI-Analysen genutzt diesen Monat"
+
+  ANALYTICS (backend)
+  ○  Track email open rate (1px tracking pixel)
+  ○  Track link clicks per job card
+  ○  "Top performing alert" shown in dashboard
+  ○  A/B test subject lines automatically
+
+================================================================ -->
+
+</body>
+</html>
