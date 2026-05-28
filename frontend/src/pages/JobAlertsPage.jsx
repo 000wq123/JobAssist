@@ -146,19 +146,30 @@ function AlertRow({ alert, onDelete, onRunNow, onEdit, isRunning, runState, crea
 
       {/* Inline actions */}
       <div className="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-2 flex-wrap">
-        <Button
-          variant="secondary"
-          onClick={() => !runDisabled && onRunNow(alert.id)}
-          disabled={runDisabled}
-          title={runState.atLimit ? `Tageslimit (${runState.used}/${runState.limit}) — Reset um 00:00 UTC` : "Jetzt prüfen"}
-        >
-          {isRunning
-            ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            : runState.atLimit
-            ? <Lock className="w-3.5 h-3.5" />
-            : <Play className="w-3.5 h-3.5" />}
-          Jetzt prüfen
-        </Button>
+        {runState.limit === 0
+          ? (
+            <span
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold text-[var(--color-accent-400)] border border-[var(--color-accent-500)]/30 bg-[var(--color-accent-500)]/10 cursor-default"
+              title="Manuelle Ausführungen sind nur für Pro verfügbar"
+            >
+              <Lock className="w-3 h-3" />
+              Pro
+            </span>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={() => !runDisabled && onRunNow(alert.id)}
+              disabled={runDisabled}
+              title={runState.atLimit ? `Tageslimit (${runState.used}/${runState.limit}) — Reset um 00:00 UTC` : "Jetzt prüfen"}
+            >
+              {isRunning
+                ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                : runState.atLimit
+                ? <Lock className="w-3.5 h-3.5" />
+                : <Play className="w-3.5 h-3.5" />}
+              Jetzt prüfen
+            </Button>
+          )}
         <Button
           variant="ghost"
           onClick={() => onEdit(alert)}
@@ -558,8 +569,8 @@ export default function JobAlertsPage() {
         }
       />
 
-      {/* Account-level usage strip */}
-      {!runState.unlimited && (
+      {/* Account-level usage strip — only show run counter when user actually has manual runs (Pro+) */}
+      {!runState.unlimited && runState.limit > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] px-4 py-2.5">
           <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-fg-muted)]">
             <Play className="w-3 h-3 text-[var(--color-fg-dim)]" />
@@ -580,7 +591,7 @@ export default function JobAlertsPage() {
           <span className="text-[11px] text-[var(--color-fg-dim)] ml-auto">Täglich zurückgesetzt</span>
         </div>
       )}
-      {runState.atLimit && (
+      {runState.atLimit && runState.limit > 0 && (
         <div className="mb-4 grid grid-cols-12 items-start gap-3 rounded-md border border-[var(--color-warning)]/20 bg-[var(--color-warning-soft)] px-4 py-3">
           <Lock className="col-span-1 w-4 h-4 text-[var(--color-warning)]" />
           <div className="col-span-11 text-[12.5px] text-[var(--color-fg)]">

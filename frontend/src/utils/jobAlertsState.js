@@ -1,6 +1,6 @@
 // Default limits match the "basic" plan. The real limits are always returned
 // by the backend in the JobAlertListResponse and should be preferred.
-export const DEFAULT_DAILY_RUN_LIMIT = 3;
+export const DEFAULT_DAILY_RUN_LIMIT = 0;
 export const DEFAULT_DAILY_CREATION_LIMIT = 3;
 export const REWRITE_WINDOW_MS = 3 * 60 * 60 * 1000;
 
