@@ -114,9 +114,9 @@ const PLANS = [
 // ─── Short labels for x-axis ─────────────────────────────────────────────────
 const FEATURE_SHORT = {
   cv_analysis:  "Analysen",
-  cover_letter: "Motivationsschreiben",
+  cover_letter: "Anschreiben",
   job_alerts:   "Alerts",
-  ai_chat:      "KI-Bewerbungsassistent",
+  ai_chat:      "KI-Assistent",
   job_search:   "Jobsuche",
   cv_pdf:       "Lebenslauf-PDF",
 };
@@ -131,8 +131,8 @@ function UsageHeroChart({ usage }) {
   const items = usage.filter((u) => u.limit > 0 && u.limit !== -1);
   if (!items.length) return null;
 
-  const vw = 360, vh = 180;
-  const padL = 28, padR = 8, padT = 14, padB = 42;
+  const vw = 560, vh = 200;
+  const padL = 32, padR = 12, padT = 16, padB = 44;
   const chartW = vw - padL - padR;
   const chartH = vh - padT - padB;
   const n = items.length;
@@ -141,7 +141,7 @@ function UsageHeroChart({ usage }) {
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 pt-2 pb-1">
-      <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full" style={{ maxHeight: 220 }} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full" style={{ maxHeight: 260 }} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         {/* Dashed grid lines */}
         {[25, 50, 75, 100].map((pct) => {
           const y = padT + chartH * (1 - pct / 100);
@@ -348,13 +348,17 @@ export default function BillingPage() {
   ];
 
   return (
-    <div className={`space-y-5 animate-slide-up ${!isMax ? "pb-20 sm:pb-0" : ""}`}>
+    <div className={`animate-slide-up ${!isMax ? "pb-20 sm:pb-0" : ""}`}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <PageHeader
         title="Abrechnung & Plan"
         description="Verwalte deinen Plan, deine Nutzung und den Ausbau deiner KI-Leistung."
       />
+
+      {/* 2-col on desktop: plan left, usage right ─────────────────────────── */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="lg:col-span-5 flex flex-col gap-5">
 
       {/* ── Plan hero card ───────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]/60 p-5 sm:p-6">
@@ -409,7 +413,12 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* ── Usage: donut gauges ───────────────────────────────────────────────── */}
+      </div>{/* end left column */}
+
+      {/* ─── RIGHT COLUMN ──────────────────────────────────────────────────────── */}
+      <div className="lg:col-span-7 flex flex-col gap-5">
+
+      {/* ── Usage chart ───────────────────────────────────────────────── */}
       {usage.length > 0 && (
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)]/60 backdrop-blur-sm shadow-[0_20px_60px_rgba(0,0,0,0.28)] overflow-hidden">
           {/* Section header with health bar */}
@@ -472,10 +481,10 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* ── Bottom: payment method only ───────────────────────────────── */}
-      {/* `sub?.last4` guard avoids a crash for paid users whose Stripe
-          payment-method metadata has not yet been hydrated (e.g. right after
-          a fresh checkout, or a temporary Stripe outage). */}
+      </div>{/* end right column */}
+      </div>{/* end 2-col grid */}
+
+      {/* ── Payment method (paid users only) ───────────────────────────── */}
       {isPaid && sub?.last4 && (
         <div className="grid grid-cols-1 gap-4">
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)]">
