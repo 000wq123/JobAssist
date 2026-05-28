@@ -172,12 +172,19 @@ export default function LeftRail({ me, profile, onCommandClick }) {
         </div>
       </nav>
 
-      {/* Legal links — slim strip, always accessible */}
-      <div className="px-3 py-2.5 grid grid-cols-2 gap-x-3 gap-y-1">
-        <Link to="/terms"     className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] transition-colors">AGB</Link>
-        <Link to="/privacy"   className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] transition-colors">Datenschutz</Link>
-        <Link to="/impressum" className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] transition-colors">Impressum</Link>
-        <Link to="/contact"   className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] transition-colors">Kontakt</Link>
+      {/* Legal links — single line, dot-separated */}
+      <div className="px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {[
+          { to: "/terms",     label: "AGB" },
+          { to: "/privacy",   label: "Datenschutz" },
+          { to: "/impressum", label: "Impressum" },
+          { to: "/contact",   label: "Kontakt" },
+        ].map(({ to, label }, i, arr) => (
+          <span key={to} className="flex items-center gap-2">
+            <Link to={to} className="text-[10.5px] text-[var(--color-fg-faint)] hover:text-[var(--color-fg-dim)] transition-colors">{label}</Link>
+            {i < arr.length - 1 && <span className="text-[var(--color-fg-faint)] text-[10px] select-none">&middot;</span>}
+          </span>
+        ))}
       </div>
 
       {/* User pill */}
