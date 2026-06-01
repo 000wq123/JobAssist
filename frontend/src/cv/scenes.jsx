@@ -11,7 +11,6 @@ import BigField from "../components/cv/focus/BigField";
 import ChipPickerV2 from "../components/cv/focus/ChipPickerV2";
 import AuditList from "../components/cv/focus/AuditList";
 import { runAudit, summarize } from "./audit";
-import { CVTemplatePicker } from "./CVTemplatePicker";
 import { aiApi } from "../services/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,10 +119,13 @@ function Geburtsdatum({ profile, onChange }) {
   };
   return (
     <SceneShell question="Wann hast du Geburtstag?" hint="Auf österreichischen Lebensläufen üblich. Wenn du nicht möchtest, lass es offen.">
-      <div className="grid grid-cols-[1fr_1fr_1.4fr] gap-[10px]">
-        <BigField value={d ? String(parseInt(d, 10) || "") : ""} onChange={(v) => set({ d: v.replace(/\D/g, "") })} placeholder="TT" inputMode="numeric" maxLength={2} center="true" />
-        <BigField value={m ? String(parseInt(m, 10) || "") : ""} onChange={(v) => set({ m: v.replace(/\D/g, "") })} placeholder="MM" inputMode="numeric" maxLength={2} center="true" />
-        <BigField value={y ? String(parseInt(y, 10) || "") : ""} onChange={(v) => set({ y: v.replace(/\D/g, "") })} placeholder="JJJJ" inputMode="numeric" maxLength={4} center="true" />
+      <div className="flex flex-col gap-[10px]">
+        <div className="grid grid-cols-[1fr_1fr_1.4fr] gap-[10px]">
+          <BigField value={d ? String(parseInt(d, 10) || "") : ""} onChange={(v) => set({ d: v.replace(/\D/g, "") })} placeholder="TT" inputMode="numeric" maxLength={2} center="true" />
+          <BigField value={m ? String(parseInt(m, 10) || "") : ""} onChange={(v) => set({ m: v.replace(/\D/g, "") })} placeholder="MM" inputMode="numeric" maxLength={2} center="true" />
+          <BigField value={y ? String(parseInt(y, 10) || "") : ""} onChange={(v) => set({ y: v.replace(/\D/g, "") })} placeholder="JJJJ" inputMode="numeric" maxLength={4} center="true" />
+        </div>
+        <BigField value={profile.geburtsort || ""} onChange={(v) => onChange({ geburtsort: v })} placeholder="Geburtsort (z. B. Wien)" />
       </div>
     </SceneShell>
   );
@@ -158,6 +160,32 @@ function Kontakt({ profile, onChange }) {
           <input value={profile.telefon} onChange={(e) => onChange({ telefon: e.target.value })} placeholder="664 1234567" inputMode="tel" autoComplete="tel" className="flex-1 h-full bg-transparent border-0 outline-none px-4 text-[16px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)]" />
         </div>
         <BigField value={profile.email} onChange={(v) => onChange({ email: v })} placeholder="E-Mail" type="email" inputMode="email" autoComplete="email" />
+      </div>
+    </SceneShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5b. Profil
+// ─────────────────────────────────────────────────────────────────────────────
+function Profil({ profile, onChange }) {
+  return (
+    <SceneShell question="Über dich" hint="2–3 Sätze über dich, deine Stärken und was du suchst. Optional, aber überzeugend.">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-end">
+          <AiPolishButton
+            value={profile.profil}
+            context="Kurzes Persönlichkeitsprofil für einen österreichischen Lebenslauf, 2–3 Sätze, motiviert und authentisch"
+            onResult={(text) => onChange({ profil: text })}
+          />
+        </div>
+        <textarea
+          value={profile.profil || ""}
+          onChange={(e) => onChange({ profil: e.target.value })}
+          placeholder="z. B. Ich bin eine engagierte HTL-Schülerin mit Leidenschaft für Software-Entwicklung und Suche nach einem Praktikum, um erste Berufserfahrungen zu sammeln."
+          rows={4}
+          className="w-full rounded-[14px] px-[18px] py-[14px] text-[16px] bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)] outline-none focus:border-[var(--color-accent-500)] focus:bg-[var(--color-bg-elev-1)] resize-none"
+        />
       </div>
     </SceneShell>
   );
@@ -218,6 +246,34 @@ function SchulDetails({ profile, onChange }) {
             maxLength={4}
           />
         </div>
+      </div>
+    </SceneShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8b. Weiterbildung (courses, certificates)
+// ─────────────────────────────────────────────────────────────────────────────
+function Weiterbildung({ profile, onChange }) {
+  const list = profile.weiterbildungen || [];
+  const set = (i, patch) => onChange({ weiterbildungen: list.map((w, j) => (i === j ? { ...w, ...patch } : w)) });
+  const add = () => onChange({ weiterbildungen: [...list, { name: "", institution: "", jahr: "" }] });
+  const remove = (i) => onChange({ weiterbildungen: list.filter((_, j) => j !== i) });
+  return (
+    <SceneShell question="Weiterbildungen oder Zertifikate?" hint="Erste-Hilfe-Kurs, Sprachzertifikate, Online-Kurse — alles zählt.">
+      <div className="flex flex-col gap-[10px]">
+        {list.map((w, i) => (
+          <div key={i} className="grid grid-cols-[1fr_1fr_100px_44px] gap-[8px]">
+            <BigField value={w.name} onChange={(v) => set(i, { name: v })} placeholder="Kurs / Zertifikat" />
+            <BigField value={w.institution} onChange={(v) => set(i, { institution: v })} placeholder="Institution" />
+            <BigField value={w.jahr} onChange={(v) => set(i, { jahr: v.replace(/\D/g, "").slice(0, 4) })} placeholder="Jahr" inputMode="numeric" maxLength={4} />
+            <button type="button" onClick={() => remove(i)} aria-label="Entfernen" className="h-[54px] w-[44px] rounded-[14px] border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-error)] inline-flex items-center justify-center"><Trash2 className="h-4 w-4" /></button>
+          </div>
+        ))}
+        <button type="button" onClick={add} className="h-[52px] rounded-[14px] border border-dashed border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] inline-flex items-center justify-center gap-2 text-[14px]"><Plus className="h-4 w-4" /> Weiterbildung hinzufügen</button>
+        {list.length === 0 && (
+          <p className="text-[12px] text-[var(--color-fg-faint)] mt-1">Du kannst auch direkt weiter — optional.</p>
+        )}
       </div>
     </SceneShell>
   );
@@ -486,6 +542,42 @@ function Hobbys({ profile, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 14b. Aktivitäten (Vereine, Sport, Ehrenamt)
+// ─────────────────────────────────────────────────────────────────────────────
+function Aktivitaeten({ profile, onChange }) {
+  const list = profile.aktivitaeten || [];
+  const set = (i, patch) => onChange({ aktivitaeten: list.map((a, j) => (i === j ? { ...a, ...patch } : a)) });
+  const add = () => onChange({ aktivitaeten: [...list, { name: "", organisation: "", beschreibung: "", von: "", bis: "" }] });
+  const remove = (i) => onChange({ aktivitaeten: list.filter((_, j) => j !== i) });
+  return (
+    <SceneShell question="Engagierst du dich außerhalb der Schule?" hint="Vereine, Sportteams, Schülervertretung, Ehrenamt — alles, das zeigt, wer du bist.">
+      <div className="flex flex-col gap-[10px]">
+        {list.map((a, i) => (
+          <div key={i} className="p-[14px] rounded-[14px] bg-[var(--color-bg-elev-1)] border border-[var(--color-border)]">
+            <div className="grid grid-cols-[1fr_1fr] gap-[8px] mb-2">
+              <BigField value={a.name} onChange={(v) => set(i, { name: v })} placeholder="Tätigkeit (z. B. Fußball)" />
+              <BigField value={a.organisation} onChange={(v) => set(i, { organisation: v })} placeholder="Verein / Organisation" />
+            </div>
+            <div className="grid grid-cols-[1fr_1fr] gap-[8px] mb-2">
+              <BigField value={a.von} onChange={(v) => set(i, { von: v })} placeholder="Von (MM/JJJJ)" />
+              <BigField value={a.bis} onChange={(v) => set(i, { bis: v })} placeholder="Bis (MM/JJJJ oder laufend)" />
+            </div>
+            <BigField value={a.beschreibung} onChange={(v) => set(i, { beschreibung: v })} placeholder="Kurze Beschreibung (optional)" />
+            <div className="flex justify-end mt-2">
+              <button type="button" onClick={() => remove(i)} className="text-[12px] text-[var(--color-fg-faint)] hover:text-[var(--color-error)]">Entfernen</button>
+            </div>
+          </div>
+        ))}
+        <button type="button" onClick={add} className="h-[52px] rounded-[14px] border border-dashed border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] inline-flex items-center justify-center gap-2 text-[14px]"><Plus className="h-4 w-4" /> Aktivität hinzufügen</button>
+        {list.length === 0 && (
+          <p className="text-[12px] text-[var(--color-fg-faint)] mt-1">Du kannst auch direkt weiter — optional.</p>
+        )}
+      </div>
+    </SceneShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 15. JobArten — clustered accordion
 // ─────────────────────────────────────────────────────────────────────────────
 const JOBARTEN_CLUSTERS = [
@@ -732,25 +824,26 @@ const validators = {
 // ─────────────────────────────────────────────────────────────────────────────
 /** @type {import("../components/cv/focus/FocusModeWizard").SceneDef[]} */
 export const SCENES = [
-  { id: "intro",                 title: "Intro",            render: Intro,             primaryLabel: "Los geht's", primaryAccent: true },
   { id: "name",                  title: "Name",             render: Name,              validate: validators.name },
   { id: "geburtsdatum",          title: "Geburtsdatum",     render: Geburtsdatum,      showSkip: () => true, skipLabel: "überspringen" },
   { id: "adresse",               title: "Adresse",          render: Adresse,           validate: validators.adresse },
   { id: "kontakt",               title: "Kontakt",          render: Kontakt,           validate: validators.kontakt },
+  { id: "profil",                title: "Profil",           render: Profil,            showSkip: () => true, skipLabel: "überspringen" },
   { id: "staatsbuergerschaft",   title: "Staatsbürgerschaft", render: Staatsbuergerschaft },
   { id: "schultyp",              title: "Schultyp",         render: Schultyp,          validate: validators.schultyp },
   { id: "schul-details",         title: "Schule",           render: SchulDetails,      validate: validators.schulDetails },
+  { id: "weiterbildung",         title: "Weiterbildung",    render: Weiterbildung,     showSkip: () => true, skipLabel: "überspringen" },
   { id: "pflichtpraktikum",      title: "Pflichtpraktikum", render: Pflichtpraktikum,  condition: pflichtRequired },
   { id: "erfahrungen",           title: "Erfahrungen",      render: Erfahrungen },
   { id: "sprachen",              title: "Sprachen",         render: Sprachen,          validate: validators.sprachen },
   { id: "skills",                title: "Skills",           render: Skills },
   { id: "fuehrerschein",         title: "Führerschein",     render: Fuehrerschein },
   { id: "hobbys",                title: "Hobbys",           render: Hobbys,            showSkip: () => true, skipLabel: "überspringen" },
+  { id: "aktivitaeten",          title: "Aktivitäten",      render: Aktivitaeten,      showSkip: () => true, skipLabel: "überspringen" },
   { id: "jobarten",              title: "Job-Arten",        render: JobArten,          validate: validators.jobArten },
   { id: "branchen",              title: "Branchen",         render: Branchen },
   { id: "wann-wo",               title: "Wann + Wo",        render: WannWo },
   { id: "foto",                  title: "Foto",             render: Foto,              showSkip: () => true, skipLabel: "ohne Foto fortfahren" },
   { id: "check",                 title: "Check",            render: Check },
-  { id: "vorlage",               title: "Vorlage",          render: CVTemplatePicker },
-  { id: "fertig",                title: "Fertig",           render: Fertig,            primaryLabel: "PDF herunterladen", primaryAccent: true },
+  { id: "fertig",                title: "Fertig",           render: Fertig,            primaryLabel: "Weiter zur Vorschau", primaryAccent: true },
 ];

@@ -37,6 +37,29 @@ class JobCreate(BaseModel):
         return v
 
 
+class JobListItem(BaseModel):
+    """Lightweight schema for list views — excludes large TEXT blobs."""
+
+    id: int
+    company: Optional[str]
+    role: Optional[str]
+    url: Optional[str]
+    status: str  # bookmarked, applied, interviewing, offered, rejected
+    category: Optional[str] = None
+    match_score: Optional[float] = None
+    deadline: Optional[datetime]
+    location: Optional[str] = None
+    job_type: Optional[str] = None
+    salary_text: Optional[str] = None
+    source: Optional[str] = None
+    posted_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class JobOut(BaseModel):
     id: int
     company: Optional[str]
@@ -144,7 +167,7 @@ class JobUrlUpdate(BaseModel):
 
 
 class JobListResponse(BaseModel):
-    items: list["JobOut"]
+    items: list["JobListItem"]
     total: int
     page: int
     page_size: int

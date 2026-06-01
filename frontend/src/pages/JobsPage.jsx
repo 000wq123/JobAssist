@@ -13,26 +13,18 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Search, Sparkles, VolumeX, ChevronDown, MoreHorizontal, Plus, ArrowUpDown } from "lucide-react";
+import { Search, Sparkles, Trash2, Plus, ArrowUpDown, ChevronDown } from "lucide-react";
 
 import { jobApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
+import { DARK } from "../utils/colors";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Skeleton from "../components/ui/Skeleton";
-import BottomSheet from "../components/ui/BottomSheet";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MUTED_KEY = "muted-jobs";
-
-const STATUS_BUCKETS = [
-  { key: "bookmarked",   label: "Gemerkt" },
-  { key: "applied",      label: "Beworben" },
-  { key: "interviewing", label: "Im Gespräch" },
-  { key: "offered",      label: "Angebot" },
-  { key: "rejected",     label: "Erledigt" },
-];
 
 const STATUS_GROUPS = [
   { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0" },
@@ -41,17 +33,7 @@ const STATUS_GROUPS = [
   { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b" },
 ];
 
-const C = {
-  surface1:   "#111113",
-  surface2:   "#18181b",
-  surface3:   "#27272a",
-  line:       "rgba(255,255,255,0.10)",
-  lineSubtle: "rgba(255,255,255,0.06)",
-  ink:        "#fafafa",
-  inkMuted:   "#a1a1aa",
-  inkDim:     "#71717a",
-  inkFaint:   "#52525b",
-};
+const C = { ...DARK, surface3: "#27272a", inkFaint: "#52525b" };
 
 const FILTER_CHIPS = [
   { key: "alle",         label: "Alle",        dot: "#71717a", activeBg: "#18181b",                    activeBorder: "rgba(255,255,255,0.10)" },
@@ -59,6 +41,7 @@ const FILTER_CHIPS = [
   { key: "offered",      label: "Angebot",     dot: "#4ade80", activeBg: "rgba(74,222,128,0.08)",     activeBorder: "rgba(74,222,128,0.25)" },
   { key: "applied",      label: "Beworben",    dot: "#60a5fa", activeBg: "rgba(96,165,250,0.08)",     activeBorder: "rgba(96,165,250,0.25)" },
   { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b", activeBg: "rgba(245,158,11,0.08)",     activeBorder: "rgba(245,158,11,0.30)" },
+  { key: "rejected",     label: "Erledigt",    dot: "#52525b", activeBg: "rgba(82,82,91,0.10)",      activeBorder: "rgba(82,82,91,0.25)" },
 ];
 
 const loadStored = (key) => {
@@ -235,37 +218,65 @@ function SectionLabel({ label, count, dot, collapsible, collapsed, onToggle }) {
 }
 
 /**
- * ThreadRow — flat grid row: 2px accent bar · content · meta+⋯.
- * No urgency pills; urgency is surfaced in HeuteCard instead.
+ * ThreadRow — flat grid row: 2px accent bar · content · meta.
+ * Supports multi-select via Shift+click (desktop) or long-press (mobile).
  */
-function ThreadRow({ job, muted = false, isFirst = false, onOpen, onChangeStatus }) {
+function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSelect, selectMode }) {
   const role     = job.role || job.title || "Stelle";
   const company  = job.company || "";
   const location = job.location ? job.location.split(",")[0] : null;
   const meta     = [company, location].filter(Boolean).join(" \u00b7 ");
   const timeLabel = timeAgoShort(job.updated_at || job.created_at);
 
-  const statusDot = STATUS_GROUPS.find((g) => g.key === job.status)?.dot ?? C.inkDim;
+  const statusGroup = STATUS_GROUPS.find((g) => g.key === job.status);
+  const statusDot = statusGroup?.dot ?? C.inkDim;
+  const statusLabel = statusGroup?.label ?? job.status ?? "Unbekannt";
 
   const rawScore   = Number.isFinite(job.match_score) ? Math.round(job.match_score) : null;
-  const matchScore = (rawScore !== null && job.match_feedback) ? rawScore : null;
+  const matchScore = rawScore !== null ? rawScore : null;
   const matchColor = matchScore !== null
     ? (matchScore >= 80 ? "#34d399" : matchScore >= 65 ? "#2dd4bf" : matchScore >= 45 ? "#94a3b8" : "#52525b") : null;
   const matchBg = matchScore !== null
     ? (matchScore >= 80 ? "rgba(52,211,153,0.13)" : matchScore >= 65 ? "rgba(45,212,191,0.11)" : matchScore >= 45 ? "rgba(148,163,184,0.09)" : "rgba(82,82,91,0.06)") : null;
 
+  const longPressRef = useRef(null);
+
+  const handlePointerDown = () => {
+    longPressRef.current = setTimeout(() => { onSelect(job.id, true); }, 500);
+  };
+  const handlePointerUp = () => { clearTimeout(longPressRef.current); };
+
   return (
     <div
-      className={`group grid cursor-pointer transition-colors hover:bg-white/[0.03] ${muted ? "opacity-40" : ""}`}
-      style={{ gridTemplateColumns: "2px minmax(0, 1fr) auto", borderTop: isFirst ? "none" : `1px solid ${C.lineSubtle}` }}
+      className={`group grid cursor-pointer transition-colors hover:bg-white/[0.03] ${muted ? "opacity-40" : ""} ${selected ? "bg-white/[0.04]" : ""}`}
+      style={{ gridTemplateColumns: selectMode ? "2px 40px minmax(0, 1fr) auto" : "2px minmax(0, 1fr) auto", borderTop: isFirst ? "none" : `1px solid ${C.lineSubtle}` }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
     >
       <div
         className="self-stretch transition-opacity opacity-[0.22] group-hover:opacity-90"
         style={{ background: statusDot }}
+        role="img"
+        aria-label={`Status: ${statusLabel}`}
       />
+      {selectMode && (
+        <div className="flex items-center justify-center">
+          <div
+            className={`w-[18px] h-[18px] rounded border ${selected ? "border-[var(--color-accent-400)] bg-[var(--color-accent-400)]" : "border-[var(--color-border)]"} flex items-center justify-center transition-colors`}
+          >
+            {selected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
+          </div>
+        </div>
+      )}
       <button
         type="button"
-        onClick={onOpen}
+        aria-label={`${role} bei ${company || "Unbekannt"} — ${statusLabel}`}
+        onClick={(e) => {
+          if (selectMode) { onSelect(job.id); return; }
+          if (e.shiftKey) { onSelect(job.id, true); return; }
+          onOpen();
+        }}
         className="min-w-0 text-left px-3 py-3 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent-400)] rounded-sm"
       >
         <p className="text-[13.5px] font-semibold leading-snug truncate" style={{ color: C.ink }}>{role}</p>
@@ -279,31 +290,73 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, onChangeStatus
         {timeLabel && (
           <span className="text-[11px] tabular-nums" style={{ color: C.inkFaint, minWidth: 36, textAlign: "right" }}>{timeLabel}</span>
         )}
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onChangeStatus(); }}
-          aria-label={`Optionen für ${role}`}
-          className="w-[22px] h-[22px] rounded flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex-shrink-0"
-          style={{ color: C.inkDim }}
-        >
-          <MoreHorizontal className="w-3.5 h-3.5" />
-        </button>
       </div>
     </div>
   );
 }
 
-/** Loading skeleton — flat section + rows style. */
+/** Empty state when a filter has zero results. */
+function FilterEmptyState({ filter }) {
+  const copy = {
+    alle: { title: "Keine Stellen", desc: "Speichere eine Stelle, um sie hier zu sehen." },
+    interviewing: { title: "Keine Stellen im Gespräch", desc: "Wenn du dich beworben hast, markiere die Stelle als Beworben." },
+    offered: { title: "Noch kein Angebot", desc: "Bewirb dich auf eine gespeicherte Stelle." },
+    applied: { title: "Noch keine Bewerbungen", desc: "Speichere eine Stelle und markiere sie als Beworben." },
+    bookmarked: { title: "Keine gemerkten Stellen", desc: "Finde Stellen über Empfehlungen oder eigene Suche." },
+    rejected: { title: "Noch keine erledigten Stellen", desc: "Markiere abgelehnte oder zurückgezogene Stellen hier." },
+  };
+  const { title, desc } = copy[filter] || copy.alle;
+  return (
+    <div className="py-10 text-center">
+      <p className="text-[14px] font-medium text-[var(--color-fg-muted)]">{title}</p>
+      <p className="mt-1 text-[12.5px] text-[var(--color-fg-dim)]">{desc}</p>
+    </div>
+  );
+}
+
+/** Loading skeleton — flat section + rows style. Derives shape from cache. */
 function RowSkeleton() {
+  const cached = loadStored("jobs") || [];
+  const groups = ["interviewing", "offered", "applied", "bookmarked", "rejected"];
+  const counts = {};
+  let totalCached = 0;
+  cached.forEach((j) => {
+    const key = groups.includes(j.status) ? j.status : "bookmarked";
+    counts[key] = (counts[key] || 0) + 1;
+    totalCached++;
+  });
+
+  if (totalCached === 0) {
+    return (
+      <div className="flex flex-col gap-5">
+        {[0, 1].map((s) => (
+          <div key={s}>
+            <div className="flex items-center gap-1.5 pb-1.5 mb-0.5" style={{ borderBottom: `1px solid ${C.lineSubtle}` }}>
+              <Skeleton className="w-1.5 h-1.5 rounded-full" />
+              <Skeleton className="h-2.5 w-20" />
+            </div>
+            {[0, 1, 2].map((r) => (
+              <div key={r} className="px-3 py-3" style={{ borderTop: r > 0 ? `1px solid ${C.lineSubtle}` : "none" }}>
+                <Skeleton className="h-3 w-2/3 mb-1.5" />
+                <Skeleton className="h-2.5 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const activeGroups = groups.filter((g) => counts[g]);
   return (
     <div className="flex flex-col gap-5">
-      {[0, 1].map((s) => (
-        <div key={s}>
+      {activeGroups.map((g) => (
+        <div key={g}>
           <div className="flex items-center gap-1.5 pb-1.5 mb-0.5" style={{ borderBottom: `1px solid ${C.lineSubtle}` }}>
             <Skeleton className="w-1.5 h-1.5 rounded-full" />
             <Skeleton className="h-2.5 w-20" />
           </div>
-          {[0, 1, 2].map((r) => (
+          {Array.from({ length: counts[g] }).map((_, r) => (
             <div key={r} className="px-3 py-3" style={{ borderTop: r > 0 ? `1px solid ${C.lineSubtle}` : "none" }}>
               <Skeleton className="h-3 w-2/3 mb-1.5" />
               <Skeleton className="h-2.5 w-1/2" />
@@ -360,15 +413,14 @@ export default function JobsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedJobs]);
 
-  // ── Auto-remove expired bookmarked jobs ─────────────────────────────────────
-  // Runs once per mount after the first real API fetch resolves.
-  // Only removes "bookmarked" jobs (user has not yet acted) whose expires_at /
-  // deadline is in the past. Applied / Gespräch / Angebot / Erledigt are
-  // intentionally kept so the user can track their application outcomes.
-  const expiredCleanupRef = useRef(false);
+  // ── Warn about expired bookmarked jobs (non-destructive) ────────────────────
+  // Shows a calm toast when bookmarked jobs have a past deadline / expires_at.
+  // We do NOT delete them automatically — the user may still want to apply,
+  // follow up, or keep the record for reference.
+  const expiredWarnRef = useRef(false);
   useEffect(() => {
-    if (savedFetching || savedJobs.length === 0 || expiredCleanupRef.current) return;
-    expiredCleanupRef.current = true;
+    if (savedFetching || savedJobs.length === 0 || expiredWarnRef.current) return;
+    expiredWarnRef.current = true;
 
     const now = Date.now();
     const expired = savedJobs.filter((j) => {
@@ -380,22 +432,39 @@ export default function JobsPage() {
     });
     if (!expired.length) return;
 
-    const ids = new Set(expired.map((e) => e.id));
-    qc.setQueryData(["jobs"], (old = []) => old.filter((j) => !ids.has(j.id)));
-
-    Promise.allSettled(expired.map((j) => jobApi.delete(j.id))).then(() => {
-      const fresh = qc.getQueryData(["jobs"]) || [];
-      saveStored("jobs", fresh);
-    });
-
     const companies = [...new Set(expired.map((j) => j.company).filter(Boolean))].slice(0, 3);
     const noun = expired.length === 1 ? "Stelle" : "Stellen";
     const coStr = companies.length ? ` — ${companies.join(", ")}` : "";
-    toast(`${expired.length} abgelaufene ${noun} entfernt${coStr}. Frist bereits vorbei.`, { duration: 7000 });
-  }, [savedJobs, savedFetching, qc]);
+    toast(`${expired.length} ${noun} mit abgelaufener Frist${coStr}. Status ändern, falls du dich bereits beworben hast.`, { duration: 7000 });
+  }, [savedJobs, savedFetching]);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeFilter, setActiveFilter] = useState(() => {
+    const s = searchParams.get("status");
+    return FILTER_CHIPS.some((c) => c.key === s) ? s : "alle";
+  });
 
   // Group by status, sorted by most recently updated
-  const [sortBy, setSortBy] = useState("date");
+  const [sortBy, setSortBy] = useState(() => {
+    const s = searchParams.get("sort");
+    return s === "score" ? "score" : "date";
+  });
+
+  const setFilter = (key) => {
+    setActiveFilter(key);
+    const next = new URLSearchParams(searchParams);
+    if (key === "alle") next.delete("status");
+    else next.set("status", key);
+    setSearchParams(next, { replace: true });
+  };
+
+  const setSort = (s) => {
+    setSortBy(s);
+    const next = new URLSearchParams(searchParams);
+    if (s === "date") next.delete("sort");
+    else next.set("sort", s);
+    setSearchParams(next, { replace: true });
+  };
 
   const grouped = useMemo(() => {
     const out = { interviewing: [], offered: [], applied: [], bookmarked: [], rejected: [] };
@@ -420,47 +489,53 @@ export default function JobsPage() {
 
   const heute = useMemo(() => pickHeuteAction(savedJobs, mutedIds), [savedJobs, mutedIds]);
 
-  const [searchParams] = useSearchParams();
-  const [activeFilter, setActiveFilter] = useState(() => {
-    const s = searchParams.get("status");
-    return FILTER_CHIPS.some((c) => c.key === s) ? s : "alle";
-  });
-  const [sheetJob, setSheetJob] = useState(null);
-  const closeSheet = () => setSheetJob(null);
+  // ── Multi-select for mass delete ────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const isSelectMode = selectedIds.size > 0;
 
-  const statusMutation = useMutation({
-    mutationFn: ({ jobId, status }) => jobApi.updateStatus(jobId, status),
-    onMutate: async ({ jobId, status }) => {
-      await qc.cancelQueries({ queryKey: ["jobs"] });
-      const prev = qc.getQueryData(["jobs"]);
-      qc.setQueryData(["jobs"], (old = []) =>
-        old.map((j) => (j.id === jobId ? { ...j, status, updated_at: new Date().toISOString() } : j)),
-      );
-      return { prev };
-    },
-    onError: (err, _vars, ctx) => {
-      qc.setQueryData(["jobs"], ctx?.prev);
-      toast.error(getApiErrorMessage(err, "Status konnte nicht geändert werden"));
-    },
-    onSuccess: () => toast.success("Status aktualisiert"),
-  });
-
-  const handleStatusPick = (status) => {
-    if (!sheetJob) return;
-    if (status !== sheetJob.status) statusMutation.mutate({ jobId: sheetJob.id, status });
-    closeSheet();
+  const enterSelectMode = (jobId) => {
+    setSelectedIds(new Set([jobId]));
   };
-
-  const handleToggleMute = () => {
-    if (!sheetJob) return;
-    setMutedIds((prev) => {
+  const toggleSelect = (jobId, forceEnter = false) => {
+    if (forceEnter && !isSelectMode) { enterSelectMode(jobId); return; }
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(sheetJob.id)) next.delete(sheetJob.id);
-      else next.add(sheetJob.id);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
       return next;
     });
-    closeSheet();
   };
+  const exitSelectMode = () => setSelectedIds(new Set());
+
+  useEffect(() => {
+    if (!isSelectMode) return;
+    const onKey = (e) => { if (e.key === "Escape") exitSelectMode(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isSelectMode]);
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids) => {
+      await Promise.allSettled(ids.map((id) => jobApi.delete(id)));
+    },
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: ["jobs"] });
+      const prev = qc.getQueryData(["jobs"]);
+      const idSet = new Set(ids);
+      qc.setQueryData(["jobs"], (old = []) => old.filter((j) => !idSet.has(j.id)));
+      return { prev };
+    },
+    onSuccess: (_data, ids) => {
+      const noun = ids.length === 1 ? "Stelle" : "Stellen";
+      toast.success(`${ids.length} ${noun} gelöscht`);
+      exitSelectMode();
+      qc.invalidateQueries({ queryKey: ["jobs"], exact: true });
+    },
+    onError: (err, _ids, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["jobs"], ctx.prev);
+      toast.error(getApiErrorMessage(err, "Löschen fehlgeschlagen"));
+    },
+  });
 
   const scrollSaveRef = useRef(false);
   useEffect(() => {
@@ -479,6 +554,10 @@ export default function JobsPage() {
   const visibleGroups = activeFilter === "alle"
     ? STATUS_GROUPS
     : STATUS_GROUPS.filter((g) => g.key === activeFilter);
+
+  const hasVisibleRejected = (activeFilter === "alle" || activeFilter === "rejected") && grouped.rejected.length > 0;
+  const hasAnyVisible = visibleGroups.some((g) => grouped[g.key]?.length > 0)
+    || (hasVisibleRejected && (showDone || activeFilter === "rejected"));
 
   return (
     <div className="flex flex-col gap-5 animate-slide-up">
@@ -504,6 +583,13 @@ export default function JobsPage() {
         </button>
       </header>
 
+      {/* ── Near-capacity notice ──────────────────────────────────── */}
+      {total >= 480 && total < 500 && (
+        <div className="rounded-lg border border-[var(--color-warning)]/20 bg-[var(--color-warning-soft)] px-4 py-3 text-[12.5px] text-[var(--color-fg-muted)]">
+          Deine Liste hat {total} Stellen. Bei 500 ist das Limit erreicht.
+        </div>
+      )}
+
       {/* ── Filter chips + sort toggle ───────────────────────────── */}
       {total > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
@@ -515,7 +601,8 @@ export default function JobsPage() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setActiveFilter(key)}
+                  aria-pressed={isActive}
+                  onClick={() => setFilter(key)}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-all"
                   style={isActive
                     ? { background: activeBg, border: `1px solid ${activeBorder}`, color: C.ink }
@@ -533,7 +620,7 @@ export default function JobsPage() {
           </div>
           <button
             type="button"
-            onClick={() => setSortBy((s) => s === "date" ? "score" : "date")}
+            onClick={() => setSort(sortBy === "date" ? "score" : "date")}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all flex-shrink-0"
             style={sortBy === "score"
               ? { background: "rgba(124,125,240,0.14)", border: "1px solid rgba(124,125,240,0.35)", color: "#a5b4fc" }
@@ -554,7 +641,7 @@ export default function JobsPage() {
       ) : total === 0 ? (
         <EmptyState
           tone="subtle"
-          title="Noch keine Stellen gespeichert"
+          title="Speichere eine Stelle, um sie hier zu sehen."
           description="Starte mit Empfehlungen oder einer eigenen Suche."
           icon={Sparkles}
           action={<Button onClick={() => navigate("/finden")}><Search className="w-3.5 h-3.5" />Stelle finden</Button>}
@@ -575,79 +662,69 @@ export default function JobsPage() {
                     isFirst={i === 0}
                     muted={mutedIds.has(job.id)}
                     onOpen={() => openJob(job.id)}
-                    onChangeStatus={() => setSheetJob(job)}
+                    selected={selectedIds.has(job.id)}
+                    onSelect={toggleSelect}
+                    selectMode={isSelectMode}
                   />
                 ))}
               </div>
             );
           })}
 
-          {activeFilter === "alle" && grouped.rejected.length > 0 && (
+          {(activeFilter === "alle" || activeFilter === "rejected") && grouped.rejected.length > 0 && (
             <div>
               <SectionLabel
                 label="Erledigt"
                 count={grouped.rejected.length}
                 dot={C.inkFaint}
-                collapsible
-                collapsed={!showDone}
+                collapsible={activeFilter === "alle"}
+                collapsed={activeFilter === "alle" ? !showDone : false}
                 onToggle={() => setShowDone((v) => !v)}
               />
-              {showDone && grouped.rejected.map((job, i) => (
+              {(showDone || activeFilter === "rejected") && grouped.rejected.map((job, i) => (
                 <ThreadRow
                   key={job.id}
                   job={job}
                   isFirst={i === 0}
-                  muted
+                  muted={mutedIds.has(job.id)}
                   onOpen={() => openJob(job.id)}
-                  onChangeStatus={() => setSheetJob(job)}
+                  selected={selectedIds.has(job.id)}
+                  onSelect={toggleSelect}
+                  selectMode={isSelectMode}
                 />
               ))}
             </div>
           )}
 
+          {!hasAnyVisible && <FilterEmptyState filter={activeFilter} />}
+
         </div>
       )}
 
-      {/* ── Bottom sheet: status changer ────────────────────────────── */}
-      <BottomSheet open={!!sheetJob} onClose={closeSheet} title="Status ändern">
-        {sheetJob && (
-          <>
-            <p className="text-[14px] font-medium text-[var(--color-fg)] truncate">{sheetJob.company || "Stelle"}</p>
-            <p className="text-[12.5px] text-[var(--color-fg-muted)] truncate mt-0.5">{sheetJob.role || "-"}</p>
-            <ul className="mt-4 flex flex-col">
-              {STATUS_BUCKETS.map((b, i) => {
-                const isCurrent = sheetJob.status === b.key;
-                return (
-                  <li key={b.key} className={i > 0 ? "border-t border-[var(--color-border-subtle)]" : ""}>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusPick(b.key)}
-                      className="w-full flex items-center justify-between py-3.5 text-left hover:text-[var(--color-fg)] transition-colors"
-                    >
-                      <span className={`text-[14.5px] ${isCurrent ? "text-[var(--color-fg)] font-medium" : "text-[var(--color-fg-muted)]"}`}>
-                        {b.label}
-                      </span>
-                      {isCurrent && <span className="text-[12px] text-[var(--color-fg-faint)]">aktuell</span>}
-                    </button>
-                  </li>
-                );
-              })}
-              <li className="border-t border-[var(--color-border-subtle)]">
-                <button
-                  type="button"
-                  onClick={handleToggleMute}
-                  className="w-full flex items-center justify-between py-3.5 text-left hover:text-[var(--color-fg)] transition-colors"
-                >
-                  <span className="flex items-center gap-2 text-[14.5px] text-[var(--color-fg-muted)]">
-                    <VolumeX className="w-3.5 h-3.5" />
-                    {mutedIds.has(sheetJob.id) ? "Wiederaufnehmen" : "Parken"}
-                  </span>
-                </button>
-              </li>
-            </ul>
-          </>
-        )}
-      </BottomSheet>
+      {/* ── Floating mass-delete toolbar ───────────────────────────── */}
+      {isSelectMode && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+          <span className="text-[13px] text-[var(--color-fg-muted)] tabular-nums">
+            {selectedIds.size} {selectedIds.size === 1 ? "Stelle" : "Stellen"} ausgewählt
+          </span>
+          <button
+            type="button"
+            onClick={exitSelectMode}
+            className="text-[12.5px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] px-2 py-1 rounded-md transition-colors"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="button"
+            disabled={bulkDeleteMutation.isPending}
+            onClick={() => bulkDeleteMutation.mutate(Array.from(selectedIds))}
+            className="inline-flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[12.5px] font-semibold transition-all bg-[var(--color-error)] text-white hover:opacity-90 disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Löschen
+          </button>
+        </div>
+      )}
     </div>
   );
 }

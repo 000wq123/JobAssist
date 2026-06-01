@@ -33,7 +33,7 @@ function buildCommands(navigate, close) {
     { id: "nav-resume",    group: "Navigation", label: "Lebenslauf",    icon: FileText,         action: go("/lebenslauf") },
     { id: "nav-alerts",    group: "Navigation", label: "Job-Alerts",    icon: Bell,             action: go("/job-alerts") },
     { id: "nav-settings",  group: "Navigation", label: "Einstellungen", icon: Settings,         action: go("/settings") },
-    { id: "nav-billing",   group: "Navigation", label: "Abonnement",    icon: CreditCard,       action: go("/billing") },
+    { id: "nav-billing",   group: "Navigation", label: "Mein Plan",    icon: CreditCard,       action: go("/billing") },
   ];
 }
 

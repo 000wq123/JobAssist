@@ -1,4 +1,5 @@
 import axios from "axios";
+import useAuthStore from "../hooks/useAuthStore";
 import queryClient from "../queryClient";
 import { STORAGE_KEYS, removeKey } from "../storageKeys";
 
@@ -6,9 +7,9 @@ export const defaultBaseURL = (() => {
   const url = import.meta.env.VITE_API_URL || (() => {
     if (typeof window !== "undefined") {
       const host = window.location.hostname;
-      // Production hostnames → Railway backend
+      // Production hostnames → same-eTLD API subdomain to avoid 3rd-party cookies
       if (host === "jobassist.tech" || host === "www.jobassist.tech") {
-        return "https://jobassist-backend-production-9e7e.up.railway.app/api";
+        return "https://api.jobassist.tech/api";
       }
       // localhost / 127.0.0.1 → local dev backend
       if (host === "localhost" || host === "127.0.0.1") {
@@ -51,6 +52,14 @@ const api = axios.create({
   // on /auth/refresh and accepts Set-Cookie on /auth/login.
   withCredentials: true,
 });
+
+try {
+  const bootToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  if (bootToken && !useAuthStore.getState().token) {
+    useAuthStore.getState().setAccessToken(bootToken);
+    removeKey(STORAGE_KEYS.ACCESS_TOKEN);
+  }
+} catch {}
 
 const USAGE_FEATURES = [
   { match: "/resume/analyze", feature: "cv_analysis" },
@@ -101,7 +110,7 @@ function bumpUsageCaches(feature) {
 
 // Attach the in-memory access token + a per-route timeout to every request.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -197,10 +206,7 @@ api.interceptors.response.use(
         const res = await api.post("/auth/refresh", {});
         const { access_token } = res.data;
         if (!access_token) throw new Error("Refresh response missing access_token");
-
-        try {
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
-        } catch {}
+        useAuthStore.getState().setAccessToken(access_token);
         // Invalidate cached queries so they re-fetch with the fresh token.
         queryClient.invalidateQueries();
 
@@ -331,6 +337,13 @@ export const billingApi = {
   plans: () => api.get("/billing/plans"),
   createCheckout: (plan) => api.post("/billing/create-checkout-session", { plan }),
   createPortal: () => api.post("/billing/create-portal-session"),
+};
+
+// --- Profile / CV Builder ---
+export const profileApi = {
+  get: () => api.get("/profile/me"),
+  patch: (data) => api.patch("/profile/me", data),
+  generateCv: () => api.post("/profile/cv/generate"),
 };
 
 // --- AI Text Polish ---

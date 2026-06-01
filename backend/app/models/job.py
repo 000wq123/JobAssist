@@ -10,7 +10,7 @@ class Job(Base):
     __table_args__ = (
         Index("idx_job_user_status", "user_id", "status"),
         Index("idx_job_user_created", "user_id", "created_at"),
-        Index("idx_jobs_source_id", "source_id", unique=True, postgresql_where=text("source_id IS NOT NULL")),
+        Index("idx_jobs_user_source_id", "user_id", "source_id", unique=True, postgresql_where=text("source_id IS NOT NULL")),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -47,6 +47,12 @@ class Job(Base):
     salary_text: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # AI enrichment attempt marker — prevents re-calling expensive LLM
+    # enrichment on every GET across multiple workers/restarts.
+    ai_enrich_attempted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # User notes
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

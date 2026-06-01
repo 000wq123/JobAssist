@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { jobApi, resumeApi } from "../services/api";
+import { DARK } from "../utils/colors";
 
 // ─── Constants ─────────────────────────────────────────────────────
 const DAY = 86400 * 1000;
@@ -13,26 +14,7 @@ const MONTHS = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", 
 const BENCHMARK_RESPONSE_DAYS = 8;
 
 // Dark Cron-deep palette — matches /demo/heute-mobile/index.html
-const C = {
-  bg:        "#09090b",
-  surface:   "#111113",
-  surface2:  "#18181b",
-  surface3:  "#1f1f23",
-  line:      "rgba(255,255,255,0.06)",
-  line2:     "rgba(255,255,255,0.10)",
-  line3:     "rgba(255,255,255,0.16)",
-  ink:       "#fafafa",
-  mute:      "#a1a1aa",
-  dim:       "#71717a",
-  faint:     "#52525b",
-  accent:    "#7c7df0",
-  accentSoft:"rgba(124,125,240,0.14)",
-  hot:       "#f97366",
-  hotSoft:   "rgba(249,115,102,0.12)",
-  hotBorder: "rgba(249,115,102,0.35)",
-  ok:        "#86efac",
-  okSoft:    "rgba(134,239,172,0.10)",
-};
+const C = { ...DARK, surface3: "#1f1f23", accentSoft: "rgba(124,125,240,0.14)", ok: "#86efac", okSoft: "rgba(134,239,172,0.10)" };
 
 const SERIF = '"Instrument Serif", ui-serif, Georgia, serif';
 const MONO  = '"JetBrains Mono", ui-monospace, monospace';

@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.js",
     "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{js,jsx}\" --report-unused-disable-directives",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --report-unused-disable-directives",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium"
@@ -45,6 +45,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.4.0",
+    "typescript": "^5.5.0",
     "jsdom": "^29.0.1",
     "postcss": "^8.4.40",
     "tailwindcss": "^4.3.0",

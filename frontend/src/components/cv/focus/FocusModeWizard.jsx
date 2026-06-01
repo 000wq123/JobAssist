@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Download } from "lucide-react";
-import { TemplatePreviewPanel } from "../../../cv/CVTemplatePicker";
 
 /**
  * @typedef {Object} SceneCtx
@@ -95,10 +94,19 @@ export default function FocusModeWizard({ scenes, profile, onChange, onComplete,
     if (target >= 0) goTo(target);
   }, [activeScenes, goTo]);
 
-  // Keyboard nav: ← back, → next.
+  // Keyboard nav: Enter → next (from input), ← → back, → next.
   useEffect(() => {
     const handler = (e) => {
-      if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA") return;
+      const tag = e.target?.tagName;
+      const isInput = tag === "INPUT";
+      const isTextarea = tag === "TEXTAREA";
+      if (isTextarea) return;
+      if (e.key === "Enter" && isInput && !isLast) {
+        e.preventDefault();
+        next();
+        return;
+      }
+      if (isInput) return;
       if (e.key === "ArrowRight" && !isLast) next();
       if (e.key === "ArrowLeft" && !isFirst) back();
     };
@@ -201,11 +209,9 @@ export default function FocusModeWizard({ scenes, profile, onChange, onComplete,
         )}
       </div>
 
-      {/* ── DESKTOP layout (lg+) — left: question, right: CV preview ── */}
-      <div className="hidden lg:grid lg:grid-cols-12 lg:gap-8 flex-1 px-8 xl:px-14 pb-12">
-
-        {/* Left: scene + inline CTA */}
-        <div className="col-span-7 flex flex-col pt-8">
+      {/* ── DESKTOP layout (lg+) — centered form only, no preview ── */}
+      <div className="hidden lg:flex flex-1 justify-center px-8 xl:px-14 pb-12">
+        <div className="w-full max-w-[520px] flex flex-col pt-8">
           <main
             key={activeId}
             ref={sceneRef}
@@ -216,19 +222,11 @@ export default function FocusModeWizard({ scenes, profile, onChange, onComplete,
             <scene.render profile={profile} onChange={onChange} errors={errors} ctx={ctx} />
           </main>
           {!scene.hidePrimary && (
-            <div className="mt-8 max-w-[440px]">
+            <div className="mt-8">
               {ctaButton}
             </div>
           )}
         </div>
-
-        {/* Right: template preview — always visible, shows Wechseln link on non-vorlage steps */}
-        <aside className="col-span-5 pt-8 flex flex-col overflow-y-auto">
-          <TemplatePreviewPanel
-            profile={profile}
-            onJumpToTemplate={scene.id !== "vorlage" ? () => jumpTo("vorlage") : undefined}
-          />
-        </aside>
       </div>
     </div>
   );

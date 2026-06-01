@@ -19,12 +19,16 @@ import {
  * On full app load with no in-memory token, `api.js` will silently call
  * `/api/auth/refresh`, which uses the cookie to mint a fresh access token.
  */
+const _sessionToken = (() => {
+  try { return sessionStorage.getItem("ja:access_token"); } catch { return null; }
+})();
+
 const useAuthStore = create((set) => ({
-  // Initial value comes from localStorage so a hard reload doesn't kick the
-  // user back to /login before the silent-refresh round-trip lands.
-  token: readJson(STORAGE_KEYS.ACCESS_TOKEN, null) || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || null,
+  // Boot from sessionStorage so a hard reload doesn't wait for the silent-
+  // refresh round-trip. The refresh still runs in the background (App.jsx).
+  token: _sessionToken,
   user: readJson(STORAGE_KEYS.AUTH_USER),
-  isHydrated: false,
+  isHydrated: true,
 
   /**
    * Persist a fresh login. The legacy `refreshToken` argument is accepted
@@ -36,9 +40,7 @@ const useAuthStore = create((set) => ({
   login: (accessToken, _refreshToken) => {
     if (!accessToken) return;
     clearAllAppStorage();
-    try {
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-    } catch {}
+    try { sessionStorage.setItem("ja:access_token", accessToken); } catch {}
     set({ token: accessToken, user: null, isHydrated: true });
   },
 
@@ -47,9 +49,7 @@ const useAuthStore = create((set) => ({
    * @param {string} accessToken
    */
   setAccessToken: (accessToken) => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-    } catch {}
+    try { sessionStorage.setItem("ja:access_token", accessToken); } catch {}
     set({ token: accessToken });
   },
 
@@ -58,6 +58,7 @@ const useAuthStore = create((set) => ({
     clearAllAppStorage();
     removeKey(STORAGE_KEYS.ACCESS_TOKEN);
     removeKey(STORAGE_KEYS.REFRESH_TOKEN);
+    try { sessionStorage.removeItem("ja:access_token"); } catch {}
     set({ token: null, user: null, isHydrated: true });
   },
 
@@ -67,12 +68,15 @@ const useAuthStore = create((set) => ({
     set({ user });
   },
 
-  /** Re-read persisted auth state from localStorage. Called on app boot. */
   hydrate: () => {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || null;
     const user = readJson(STORAGE_KEYS.AUTH_USER);
-    set({ token, user, isHydrated: true });
+    const token = (() => {
+      try { return sessionStorage.getItem("ja:access_token"); } catch { return null; }
+    })();
+    set({ user, token, isHydrated: true });
   },
+
+  setHydrated: (v) => set({ isHydrated: !!v }),
 }));
 
 export default useAuthStore;

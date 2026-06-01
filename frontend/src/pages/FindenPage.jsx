@@ -72,7 +72,6 @@ export default function FindenPage() {
   const [submittedParams, setSubmittedParams] = useState(null);
   const [recommendedEnabled, setRecommendedEnabled] = useState(false);
   const [savedSearchIds, setSavedSearchIds] = useState(() => new Set());
-  const [savingId, setSavingId] = useState(null);
 
   const { data: recommendedData, isFetching: recommendedLoading } = useQuery({
     queryKey: ["search", "recommended"],
@@ -106,15 +105,20 @@ export default function FindenPage() {
     mutationFn: jobApi.create,
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["jobs"] });
-      toast.success("Stelle gespeichert");
       if (vars.__sourceId) {
         setSavedSearchIds((prev) => new Set([...prev, vars.__sourceId]));
       }
-      setSavingId(null);
     },
-    onError: (err) => {
+    onError: (err, vars) => {
       toast.error(getApiErrorMessage(err, "Stelle konnte nicht gespeichert werden"));
-      setSavingId(null);
+      // Rollback optimistic state so the user can retry.
+      if (vars?.__sourceId) {
+        setSavedSearchIds((prev) => {
+          const next = new Set(prev);
+          next.delete(vars.__sourceId);
+          return next;
+        });
+      }
     },
   });
 
@@ -140,9 +144,11 @@ export default function FindenPage() {
   };
 
   const handleSaveResult = (result) => {
-    setSavingId(result.source_id);
-    // Forward scraper metadata so the detail page can render the wage hero,
-    // KPI tiles, and KV bar immediately — without a second backend round-trip.
+    // Optimistic UI: mark as saved immediately, toast immediately, then
+    // fire the network request in the background. The user perceives zero
+    // latency — the save action is done the instant the click happens.
+    setSavedSearchIds((prev) => new Set([...prev, result.source_id]));
+    toast.success("Stelle gespeichert");
     saveJobMutation.mutate({
       company: result.company,
       role: result.title,
@@ -317,7 +323,7 @@ export default function FindenPage() {
                     }}
                     onSave={() => handleSaveResult(result)}
                     isSaved={isSaved}
-                    saving={savingId === id}
+                    saving={false}
                     onClick={() => {
                       const url = result.full_url || result.url;
                       if (url) window.open(url, "_blank", "noopener");

@@ -3,6 +3,29 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SEO / Prerender setup
+// ───────────────────────────────────────────────────────────────────────────
+// The app is a client-side SPA. To make structural routes crawlable for
+// search engines and AI search platforms (Perplexity, OpenAI Search, Gemini),
+// we run a post-build prerender script (`scripts/prerender.js`) that uses
+// Playwright to render each route into static HTML.
+//
+// Prerendered routes:
+//   /          → dist/index.html
+//   /pricing   → dist/pricing/index.html
+//   /impressum → dist/impressum/index.html
+//   /terms     → dist/terms/index.html
+//   /privacy   → dist/privacy/index.html
+//
+// CI step:
+//   npm run build   # vite build + node scripts/prerender.js
+//
+// The hosting platform (Vercel/Netlify) should be configured to serve
+// index.html for unmatched paths (SPA fallback) while allowing the
+// prerendered subdirectories to be served directly.
+// ═══════════════════════════════════════════════════════════════════════════
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
@@ -19,12 +42,12 @@ export default defineConfig({
     // by Playwright (see playwright.config.js) and must NOT be picked up by
     // vitest, otherwise Playwright's `test()` API explodes inside the vitest
     // runner.
-    include: ['test/**/*.{test,spec}.{js,jsx}'],
+    include: ['test/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules/**', 'dist/**', 'e2e/**', 'test-results/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
-      include: ['src/**/*.{js,jsx}'],
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
       exclude: [
         'src/main.jsx',
         'src/**/index.js',

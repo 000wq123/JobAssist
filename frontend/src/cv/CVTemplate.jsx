@@ -307,20 +307,23 @@ function extractData(profile) {
   const abschlussLabel = p.abschlussjahr ? `Abschluss geplant ${p.abschlussjahr}` : "";
   const hasSchule = !!(schulLabel || klasseLabel);
   const nameSubtitle = [schulLabel, klasseLabel].filter(Boolean).join(" · ");
-  const erfahrungen = Array.isArray(p.erfahrungen) ? p.erfahrungen : [];
+  const erfahrungen = Array.isArray(p.erfahrungen) ? [...p.erfahrungen].sort((a, b) => (b.von || "").localeCompare(a.von || "")) : [];
   const langs = Array.isArray(p.sprachkenntnisse) ? p.sprachkenntnisse.filter((l) => l.sprache?.trim()) : [];
   const skills = Array.isArray(p.faehigkeiten) ? p.faehigkeiten : [];
   const softSkills = skills.filter((sk) => SOFT_SKILLS.has(sk));
   const techSkills = skills.filter((sk) => !SOFT_SKILLS.has(sk));
-  const _hobbyLine = (p.hobbies || "").split("\n")[0] || "";
-  const hobbyTags = (_hobbyLine.includes(",")
-    ? _hobbyLine.split(",").map((t) => t.trim().slice(0, 32)).filter(Boolean)
-    : _hobbyLine.trim() ? [_hobbyLine.trim().slice(0, 32)] : []);
+  const hobbyRaw = (p.hobbies || "").trim();
+  const hobbyTags = hobbyRaw.includes(",")
+    ? hobbyRaw.split(",").map((t) => t.trim()).filter(Boolean)
+    : hobbyRaw ? [hobbyRaw] : [];
   const today = new Date();
   const todayStr = [String(today.getDate()).padStart(2, "0"), String(today.getMonth() + 1).padStart(2, "0"), today.getFullYear()].join(".");
   const ortToday = p.ort ? `${p.ort}, ${todayStr}` : todayStr;
   const hasFoto = typeof p.foto === "string" && p.foto.length > 10;
-  return { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, hasFoto };
+  const profil = (p.profil || "").trim();
+  const weiterbildungen = Array.isArray(p.weiterbildungen) ? p.weiterbildungen : [];
+  const aktivitaeten = Array.isArray(p.aktivitaeten) ? p.aktivitaeten : [];
+  return { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, hasFoto, profil, weiterbildungen, aktivitaeten };
 }
 
 // ─── Gray Header Template ─────────────────────────────────────────────────────
@@ -339,7 +342,7 @@ function GHSection({ title, children }) {
 
 function GrayHeaderTemplate({ profile }) {
   const d = extractData(profile);
-  const { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday } = d;
+  const { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, profil, weiterbildungen, aktivitaeten } = d;
   return (
     <Document title={`Lebenslauf \u2013 ${fullName}`} author={fullName}>
       <Page size="A4" style={{ fontFamily: "Helvetica", fontSize: 10, color: INK, backgroundColor: WHITE }}>
@@ -359,11 +362,26 @@ function GrayHeaderTemplate({ profile }) {
           </View>
         </View>
         <View style={{ padding: "22 36 20 36", flex: 1 }}>
+          {profil && (
+            <GHSection title="Profil">
+              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
+            </GHSection>
+          )}
           {hasSchule && (
             <GHSection title="Ausbildung">
               <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>{schulLabel || "Schule"}</Text>
               {klasseLabel ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{klasseLabel}</Text> : null}
               {abschlussLabel ? <Text style={{ fontSize: 8.5, color: BLUE, marginTop: 1 }}>{abschlussLabel}</Text> : null}
+            </GHSection>
+          )}
+          {weiterbildungen.length > 0 && (
+            <GHSection title="Weiterbildung">
+              {weiterbildungen.map((w, i) => (
+                <View key={i} style={{ marginBottom: 5, flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5, flex: 1 }}>{w.name}</Text>
+                  <Text style={{ fontSize: 8, color: MUTED }}>{[w.institution, w.jahr].filter(Boolean).join(" \u2013 ")}</Text>
+                </View>
+              ))}
             </GHSection>
           )}
           {erfahrungen.length > 0 && (
@@ -377,7 +395,7 @@ function GrayHeaderTemplate({ profile }) {
                   {e.organisation ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.organisation}</Text> : null}
                   {(e.bullets || []).filter((b) => b?.trim()).map((b, i) => (
                     <View key={i} style={{ flexDirection: "row", marginTop: 2, marginLeft: 6 }}>
-                      <Text style={{ width: 8, color: BLUE, fontSize: 9 }}>\u203a</Text>
+                      <Text style={{ width: 8, color: BLUE, fontSize: 9 }}>{'\u203a'}</Text>
                       <Text style={{ flex: 1, fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{b}</Text>
                     </View>
                   ))}
@@ -417,6 +435,16 @@ function GrayHeaderTemplate({ profile }) {
               </View>
             </GHSection>
           )}
+          {aktivitaeten.length > 0 && (
+            <GHSection title="Aktivit\u00e4ten">
+              {aktivitaeten.map((a, i) => (
+                <View key={i} style={{ marginBottom: 6 }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{a.name}{a.organisation ? ` \u2014 ${a.organisation}` : ""}</Text>
+                  {a.beschreibung ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{a.beschreibung}</Text> : null}
+                </View>
+              ))}
+            </GHSection>
+          )}
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", padding: "8 36", borderTopWidth: 0.5, borderTopColor: LINE, fontSize: 8.5, color: DIM }}>
           <Text>{ortToday}</Text>
@@ -430,18 +458,16 @@ function GrayHeaderTemplate({ profile }) {
 // ─── Slim Sidebar Template (light gray sidebar) ───────────────────────────────
 function SlimSidebarTemplate({ profile }) {
   const d = extractData(profile);
-  const { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, hasFoto } = d;
+  const { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, hasFoto, profil, weiterbildungen, aktivitaeten } = d;
   const sideTitle = { fontSize: 7, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#d0d0d0", paddingBottom: 4, marginBottom: 8, fontFamily: "Helvetica-Bold" };
   return (
     <Document title={`Lebenslauf \u2013 ${fullName}`} author={fullName}>
       <Page size="A4" style={{ flexDirection: "row", fontFamily: "Helvetica", fontSize: 10, color: INK, backgroundColor: WHITE }}>
-        <View style={{ width: 148, minHeight: "100%", backgroundColor: "#f0f0f0", paddingTop: 28, paddingBottom: 28, paddingHorizontal: 14 }}>
-          {hasFoto
-            ? <Image style={{ width: 80, height: 96, borderRadius: 3, marginBottom: 18, alignSelf: "center" }} src={p.foto} />
-            : <View style={{ width: 80, height: 96, backgroundColor: "#d8d8d8", borderRadius: 3, marginBottom: 18, alignSelf: "center" }} />}
+        <View style={{ width: 170, minHeight: "100%", backgroundColor: "#f0f0f0", paddingTop: 28, paddingBottom: 28, paddingHorizontal: 16 }}>
+          {hasFoto && <Image style={{ width: 80, height: 96, borderRadius: 3, marginBottom: 18, alignSelf: "center" }} src={p.foto} />}
           <View style={{ marginBottom: 16 }}>
             <Text style={sideTitle}>{"KONTAKT"}</Text>
-            {p.geburtsdatum ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{fmtIsoDate(p.geburtsdatum)}</Text> : null}
+            {p.geburtsdatum ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{fmtIsoDate(p.geburtsdatum)}{p.geburtsort ? `, ${p.geburtsort}` : ""}</Text> : null}
             {adresse ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{adresse}</Text> : null}
             {tel ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{tel}</Text> : null}
             {p.email ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{p.email}</Text> : null}
@@ -461,7 +487,11 @@ function SlimSidebarTemplate({ profile }) {
           {techSkills.length > 0 && (
             <View style={{ marginBottom: 16 }}>
               <Text style={sideTitle}>{"EDV"}</Text>
-              {techSkills.map((sk, i) => <Text key={i} style={{ fontSize: 8, color: "#333", marginBottom: 3, lineHeight: 1.4 }}>{sk}</Text>)}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3 }}>
+                {techSkills.map((sk, i) => (
+                  <Text key={i} style={{ fontSize: 7.5, color: "#333", backgroundColor: "#e0e0e0", paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3, marginBottom: 3 }}>{sk}</Text>
+                ))}
+              </View>
             </View>
           )}
           {p.fuehrerschein && p.fuehrerschein !== "Keiner" && (
@@ -479,12 +509,28 @@ function SlimSidebarTemplate({ profile }) {
             </View>
             {nameSubtitle ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>{nameSubtitle}</Text> : null}
           </View>
+          {profil && (
+            <View style={{ marginBottom: 14, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: "#ddd" }}>
+              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
+            </View>
+          )}
           {hasSchule && (
             <View style={{ marginBottom: 14 }}>
               <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"AUSBILDUNG"}</Text>
               <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>{schulLabel || "Schule"}</Text>
               {klasseLabel ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{klasseLabel}</Text> : null}
               {abschlussLabel ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{abschlussLabel}</Text> : null}
+            </View>
+          )}
+          {weiterbildungen.length > 0 && (
+            <View style={{ marginBottom: 14 }}>
+              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"WEITERBILDUNG"}</Text>
+              {weiterbildungen.map((w, i) => (
+                <View key={i} style={{ marginBottom: 5 }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{w.name}</Text>
+                  <Text style={{ fontSize: 8, color: MUTED }}>{[w.institution, w.jahr].filter(Boolean).join(" \u2013 ")}</Text>
+                </View>
+              ))}
             </View>
           )}
           {erfahrungen.length > 0 && (
@@ -497,6 +543,12 @@ function SlimSidebarTemplate({ profile }) {
                     <Text style={{ fontSize: 8.5, color: MUTED }}>{rangeLabel(e.von, e.bis)}</Text>
                   </View>
                   {e.organisation ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.organisation}</Text> : null}
+                  {(e.bullets || []).filter((b) => b?.trim()).map((b, i) => (
+                    <View key={i} style={{ flexDirection: "row", marginTop: 2, marginLeft: 6 }}>
+                      <Text style={{ width: 8, color: MUTED, fontSize: 9 }}>{'\u203a'}</Text>
+                      <Text style={{ flex: 1, fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{b}</Text>
+                    </View>
+                  ))}
                 </View>
               ))}
             </View>
@@ -519,6 +571,17 @@ function SlimSidebarTemplate({ profile }) {
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {hobbyTags.map((h, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 10, marginBottom: 3 }}>{h}</Text>)}
               </View>
+            </View>
+          )}
+          {aktivitaeten.length > 0 && (
+            <View style={{ marginBottom: 14 }}>
+              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"AKTIVIT\u00c4TEN"}</Text>
+              {aktivitaeten.map((a, i) => (
+                <View key={i} style={{ marginBottom: 6 }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{a.name}{a.organisation ? ` \u2014 ${a.organisation}` : ""}</Text>
+                  {a.beschreibung ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{a.beschreibung}</Text> : null}
+                </View>
+              ))}
             </View>
           )}
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: "auto", paddingTop: 10, borderTopWidth: 0.5, borderTopColor: LINE, fontSize: 8.5, color: DIM }}>
@@ -547,7 +610,7 @@ function DBSection({ title, children }) {
 
 function DarkBandsTemplate({ profile }) {
   const d = extractData(profile);
-  const { p, fullName, adresse, tel, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday } = d;
+  const { p, fullName, adresse, tel, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, profil, weiterbildungen, aktivitaeten } = d;
   return (
     <Document title={`Lebenslauf \u2013 ${fullName}`} author={fullName}>
       <Page size="A4" style={{ fontFamily: "Helvetica", fontSize: 10, color: INK, backgroundColor: WHITE }}>
@@ -564,11 +627,26 @@ function DarkBandsTemplate({ profile }) {
           </View>
         </View>
         <View style={{ flex: 1, paddingHorizontal: DB_PAD, paddingBottom: 24 }}>
+          {profil && (
+            <DBSection title="Profil">
+              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
+            </DBSection>
+          )}
           {hasSchule && (
             <DBSection title="Ausbildung">
               <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>{schulLabel || "Schule"}</Text>
               {klasseLabel ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{klasseLabel}</Text> : null}
               {abschlussLabel ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{abschlussLabel}</Text> : null}
+            </DBSection>
+          )}
+          {weiterbildungen.length > 0 && (
+            <DBSection title="Weiterbildung">
+              {weiterbildungen.map((w, i) => (
+                <View key={i} style={{ marginBottom: 6, flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5, flex: 1 }}>{w.name}</Text>
+                  <Text style={{ fontSize: 8, color: MUTED }}>{[w.institution, w.jahr].filter(Boolean).join(" \u2013 ")}</Text>
+                </View>
+              ))}
             </DBSection>
           )}
           {erfahrungen.length > 0 && (
@@ -582,7 +660,7 @@ function DarkBandsTemplate({ profile }) {
                   {e.organisation ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.organisation}</Text> : null}
                   {(e.bullets || []).filter((b) => b?.trim()).map((b, i) => (
                     <View key={i} style={{ flexDirection: "row", marginTop: 2, marginLeft: 6 }}>
-                      <Text style={{ width: 8, color: MUTED, fontSize: 9 }}>\u203a</Text>
+                      <Text style={{ width: 8, color: MUTED, fontSize: 9 }}>{'\u203a'}</Text>
                       <Text style={{ flex: 1, fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{b}</Text>
                     </View>
                   ))}
@@ -613,6 +691,16 @@ function DarkBandsTemplate({ profile }) {
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {hobbyTags.map((h, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 12, marginBottom: 3 }}>{h}</Text>)}
               </View>
+            </DBSection>
+          )}
+          {aktivitaeten.length > 0 && (
+            <DBSection title="Aktivit\u00e4ten">
+              {aktivitaeten.map((a, i) => (
+                <View key={i} style={{ marginBottom: 6 }}>
+                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{a.name}{a.organisation ? ` \u2014 ${a.organisation}` : ""}</Text>
+                  {a.beschreibung ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{a.beschreibung}</Text> : null}
+                </View>
+              ))}
             </DBSection>
           )}
         </View>
@@ -678,17 +766,17 @@ function TabellarischTemplate({ profile }) {
 
   const nameSubtitle = [schulLabel, klasseLabel].filter(Boolean).join(" · ");
 
-  const erfahrungen = Array.isArray(p.erfahrungen) ? p.erfahrungen : [];
+  const erfahrungen = Array.isArray(p.erfahrungen) ? [...p.erfahrungen].sort((a, b) => (b.von || "").localeCompare(a.von || "")) : [];
   const langs = Array.isArray(p.sprachkenntnisse)
     ? p.sprachkenntnisse.filter((l) => l.sprache?.trim()) : [];
   const skills = Array.isArray(p.faehigkeiten) ? p.faehigkeiten : [];
   const softSkills = skills.filter((sk) => SOFT_SKILLS.has(sk));
   const techSkills = skills.filter((sk) => !SOFT_SKILLS.has(sk));
 
-  const _hobbiesLine = (p.hobbies || "").split("\n")[0] || "";
-  const hobbyTags = (_hobbiesLine.includes(",")
-    ? _hobbiesLine.split(",").map((t) => t.trim().slice(0, 32)).filter(Boolean)
-    : _hobbiesLine.trim() ? [_hobbiesLine.trim().slice(0, 32)] : []);
+  const hobbyRaw = (p.hobbies || "").trim();
+  const hobbyTags = hobbyRaw.includes(",")
+    ? hobbyRaw.split(",").map((t) => t.trim()).filter(Boolean)
+    : hobbyRaw ? [hobbyRaw] : [];
 
   const today = new Date();
   const todayStr = [
@@ -699,6 +787,9 @@ function TabellarischTemplate({ profile }) {
   const ortToday = p.ort ? `${p.ort}, ${todayStr}` : todayStr;
 
   const hasFoto = typeof p.foto === "string" && p.foto.length > 10;
+  const profil = (p.profil || "").trim();
+  const weiterbildungen = Array.isArray(p.weiterbildungen) ? p.weiterbildungen : [];
+  const aktivitaeten = Array.isArray(p.aktivitaeten) ? p.aktivitaeten : [];
 
   return (
     <Document title={`Lebenslauf – ${fullName}`} author={fullName}>
@@ -708,16 +799,12 @@ function TabellarischTemplate({ profile }) {
         <View style={s.sidebar}>
 
           {/* Photo */}
-          {hasFoto ? (
-            <Image style={s.photo} src={p.foto} />
-          ) : (
-            <View style={s.photoPlaceholder} />
-          )}
+          {hasFoto && <Image style={s.photo} src={p.foto} />}
 
           {/* Kontakt */}
           <SideSection title="Kontakt">
             {p.geburtsdatum ? (
-              <SideRow value={fmtIsoDate(p.geburtsdatum)} />
+              <SideRow value={`${fmtIsoDate(p.geburtsdatum)}${p.geburtsort ? `, ${p.geburtsort}` : ""}`} />
             ) : null}
             {adresse ? <SideRow value={adresse} /> : null}
             {tel ? <SideRow value={tel} /> : null}
@@ -775,10 +862,17 @@ function TabellarischTemplate({ profile }) {
             ) : null}
           </View>
 
+          {/* Profil */}
+          {profil && (
+            <MainSection title="Profil">
+              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
+            </MainSection>
+          )}
+
           {/* Ausbildung */}
           {hasSchule && (
             <MainSection title="Ausbildung">
-              <View style={s.entry} wrap={false}>
+              <View style={s.entry}>
                 <View style={s.entryHeader}>
                   <Text style={s.entryTitle}>{schulLabel || "Schule"}</Text>
                   {abschlussLabel ? (
@@ -792,6 +886,20 @@ function TabellarischTemplate({ profile }) {
             </MainSection>
           )}
 
+          {/* Weiterbildung */}
+          {weiterbildungen.length > 0 && (
+            <MainSection title="Weiterbildung">
+              {weiterbildungen.map((w, i) => (
+                <View style={s.entry} key={i}>
+                  <View style={s.entryHeader}>
+                    <Text style={s.entryTitle}>{w.name}</Text>
+                    <Text style={s.entryDate}>{[w.institution, w.jahr].filter(Boolean).join(" \u2013 ")}</Text>
+                  </View>
+                </View>
+              ))}
+            </MainSection>
+          )}
+
           {/* Berufserfahrung */}
           {erfahrungen.length > 0 && (
             <MainSection title="Berufserfahrung">
@@ -800,7 +908,7 @@ function TabellarischTemplate({ profile }) {
                 const orgLine = e.organisation || "";
                 const artLine = e.art || "";
                 return (
-                  <View style={s.entry} key={e.id} wrap={false}>
+                  <View style={s.entry} key={e.id}>
                     <View style={s.entryHeader}>
                       <Text style={s.entryTitle}>
                         {e.titel || e.art || "Tätigkeit"}
@@ -844,6 +952,20 @@ function TabellarischTemplate({ profile }) {
                   <Text key={i} style={s.tag}>{h}</Text>
                 ))}
               </View>
+            </MainSection>
+          )}
+
+          {/* Aktivitäten */}
+          {aktivitaeten.length > 0 && (
+            <MainSection title="Aktivitäten">
+              {aktivitaeten.map((a, i) => (
+                <View style={s.entry} key={i}>
+                  <View style={s.entryHeader}>
+                    <Text style={s.entryTitle}>{a.name}{a.organisation ? ` \u2014 ${a.organisation}` : ""}</Text>
+                  </View>
+                  {a.beschreibung ? <Text style={s.entryOrg}>{a.beschreibung}</Text> : null}
+                </View>
+              ))}
             </MainSection>
           )}
 

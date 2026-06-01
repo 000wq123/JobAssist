@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight, CreditCard, ExternalLink, Zap,
-  Rocket, Crown, Building2, Star,
+  Rocket,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -14,102 +14,7 @@ import { getApiErrorMessage } from "../utils/apiError";
 import { getCleanBillingUrl, getPlanName, getUsageBarState } from "../utils/billingState";
 import { getCvGenState } from "../cv/storage";
 
-// ─── Plan definitions — sourced from pricing page screenshot ──────────────────
-// soon:true = grayed-out "coming soon" feature (shown muted, not crossed out)
-const PLANS = [
-  {
-    key: "basic",
-    name: "Basic",
-    sub: "Zum Ausprobieren",
-    price: "Gratis",
-    period: "",
-    iconCls: "from-slate-400 to-slate-500",
-    borderCls: "border-white/10",
-    badgeCls: "",
-    btnStyle: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-dim)', cursor: 'default' },
-    Icon: Star,
-    features: [
-      { label: "5 Lebenslauf-Analysen / Monat" },
-      { label: "5 Motivationsschreiben / Monat" },
-      { label: "2 Aktive Job-Alerts" },
-      { label: "15 KI-Bewerbungsassistent-Nachrichten / Monat" },
-      { label: "5 Jobsuche / Tag" },
-      { label: "Lebenslauf hochladen",    soon: true },
-      { label: "Job-Suche",               soon: true },
-      { label: "Pipeline-Tracking",       soon: true },
-    ],
-  },
-  {
-    key: "pro",
-    name: "Pro",
-    sub: "Für aktive Bewerber",
-    price: "€4,99",
-    period: "/ Monat",
-    badge: "Beliebt",
-    iconCls: "",
-    borderCls: "border-[var(--color-accent-500)]/40",
-    glowStyle: { boxShadow: 'var(--shadow-glow-brand)' },
-    badgeStyle: { background: 'var(--color-accent-500)', color: 'white' },
-    btnStyle: { background: 'var(--color-accent-500)', color: 'white', boxShadow: 'var(--shadow-brand)' },
-    Icon: Zap,
-    features: [
-      { label: "15 Lebenslauf-Analysen / Monat" },
-      { label: "25 Motivationsschreiben / Monat" },
-      { label: "10 Aktive Job-Alerts" },
-      { label: "200 KI-Bewerbungsassistent-Nachrichten / Monat" },
-      { label: "20 Jobsuche / Tag" },
-      { label: "Prioritäts-Support",      soon: true },
-      { label: "Alles aus Basic",         soon: true },
-    ],
-  },
-  {
-    key: "max",
-    name: "Max",
-    sub: "Unbegrenzte Power",
-    price: "€7,99",
-    period: "/ Monat",
-    badge: "Bestes Angebot",
-    iconCls: "",
-    borderCls: "border-[var(--color-accent-500)]/40",
-    glowStyle: { boxShadow: 'var(--shadow-glow-brand)' },
-    badgeStyle: { background: 'var(--color-accent-500)', color: 'white' },
-    btnStyle: { background: 'var(--color-accent-500)', color: 'white', boxShadow: 'var(--shadow-brand)' },
-    Icon: Crown,
-    features: [
-      { label: "Unbegrenzt Lebenslauf-Analysen / Monat" },
-      { label: "Unbegrenzt Motivationsschreiben / Monat" },
-      { label: "Unbegrenzt Aktive Job-Alerts" },
-      { label: "Unbegrenzt KI-Bewerbungsassistent-Nachrichten / Monat" },
-      { label: "Unbegrenzt Jobsuche / Tag" },
-      { label: "24h Support",             soon: true },
-      { label: "Alles aus Pro",           soon: true },
-      { label: "Unbegrenzte Nutzung",     soon: true },
-    ],
-  },
-  {
-    key: "enterprise",
-    name: "Enterprise",
-    sub: "Für Teams & Agenturen",
-    price: "Auf Anfrage",
-    period: "",
-    iconCls: "from-slate-500 to-slate-700",
-    borderCls: "border-white/10",
-    badgeCls: "",
-    btnStyle: { backgroundColor: 'var(--color-surface-elevated)', color: 'var(--color-ink-primary)', boxShadow: 'var(--shadow-tile)' },
-    btnLabel: "Kontaktiere uns",
-    Icon: Building2,
-    features: [
-      { label: "Unbegrenzt Lebenslauf-Analysen / Monat" },
-      { label: "Unbegrenzt Motivationsschreiben / Monat" },
-      { label: "Unbegrenzt Aktive Job-Alerts" },
-      { label: "Unbegrenzt KI-Bewerbungsassistent-Nachrichten / Monat" },
-      { label: "Unbegrenzt Jobsuche / Tag" },
-      { label: "Dedizierter Manager",     soon: true },
-      { label: "Custom Integrationen",    soon: true },
-      { label: "SLA & Compliance",        soon: true },
-    ],
-  },
-];
+// ─── Plan data is fetched from the backend (single source of truth in plans.py) ─
 
 // ─── Short labels for x-axis ─────────────────────────────────────────────────
 const FEATURE_SHORT = {
@@ -121,9 +26,55 @@ const FEATURE_SHORT = {
   cv_pdf:       "Lebenslauf-PDF",
 };
 
+// ─── Mobile-friendly horizontal bar list ──────────────────────────────────────
+/**
+ * Mobile-optimized usage list: each feature is a row with label, progress bar,
+ * and big fraction numbers. Much more readable than a shrunken vertical chart.
+ * @param {object} props
+ * @param {Array<{feature: string, used: number, limit: number}>} props.usage
+ */
+function MobileUsageBars({ usage }) {
+  const items = usage.filter((u) => u.limit > 0 && u.limit !== -1);
+  if (!items.length) return null;
+
+  return (
+    <div className="space-y-5">
+      {items.map((item) => {
+        const { pct, unlimited } = getUsageBarState(item.feature, item.used, item.limit);
+        const isAtLimit = !unlimited && pct >= 100;
+        const isHigh = !unlimited && pct >= 80 && !isAtLimit;
+        const fillColor = isAtLimit ? "#f87171" : isHigh ? "#fb923c" : "#7c7df0";
+        const shortLabel = FEATURE_SHORT[item.feature] || item.feature;
+
+        return (
+          <div key={item.feature}>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span className="text-[15px] font-medium text-[var(--color-fg)]">{shortLabel}</span>
+              <span className={`text-[15px] font-bold tabular-nums ${isAtLimit ? "text-[#f87171]" : "text-[var(--color-fg-muted)]"}`}>
+                {unlimited ? "∞" : `${item.used}/${item.limit}`}
+              </span>
+            </div>
+            <div className="relative h-3 rounded-full bg-[var(--color-bg-elev-1)] overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                style={{
+                  width: unlimited ? "100%" : `${Math.min(100, pct)}%`,
+                  backgroundColor: unlimited ? "#7c7df0" : fillColor,
+                  opacity: unlimited ? 0.35 : 1,
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── SVG bar chart hero ───────────────────────────────────────────────────────
 /**
- * SVG horizontal bar chart hero section showing per-feature usage vs. limits.
+ * SVG vertical bar chart hero section showing per-feature usage vs. limits.
+ * Desktop only — the horizontal MobileUsageBars is used on small screens.
  * @param {object} props
  * @param {Array<{feature: string, used: number, limit: number}>} props.usage
  */
@@ -131,24 +82,25 @@ function UsageHeroChart({ usage }) {
   const items = usage.filter((u) => u.limit > 0 && u.limit !== -1);
   if (!items.length) return null;
 
-  const vw = 560, vh = 200;
-  const padL = 32, padR = 12, padT = 16, padB = 44;
+  const vw = 1200, vh = 400;
+  const padL = 32, padR = 12, padT = 16, padB = 64;
   const chartW = vw - padL - padR;
   const chartH = vh - padT - padB;
   const n = items.length;
   const step = chartW / n;
-  const barW = Math.min(58, step * 0.72);
+  const barW = Math.min(110, step * 0.82);
 
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 pt-2 pb-1">
-      <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full" style={{ maxHeight: 260 }} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <div className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 sm:px-4 pt-3 pb-3 h-[42vh] sm:h-[52vh] lg:h-[clamp(320px,44vh,480px)] min-h-[300px] overflow-x-auto">
+      <div className="min-w-[700px] sm:min-w-0 h-full">
+        <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         {/* Dashed grid lines */}
         {[25, 50, 75, 100].map((pct) => {
           const y = padT + chartH * (1 - pct / 100);
           return (
             <g key={pct}>
               <line x1={padL} x2={vw - padR} y1={y} y2={y} stroke="#1f2937" strokeWidth="1" strokeDasharray="3 4" />
-              <text x={padL - 5} y={y + 3} textAnchor="end" fontSize="8" fill="#64748b">{pct}%</text>
+              <text x={padL - 5} y={y + 3} textAnchor="end" fontSize="12" fill="#64748b">{pct}%</text>
             </g>
           );
         })}
@@ -170,83 +122,33 @@ function UsageHeroChart({ usage }) {
           const fillOpacity = 1;
           const valColor = "#fafafa";
           const shortLabel = FEATURE_SHORT[item.feature] || item.feature;
-          const labelY = padT + chartH + 14;
+          const labelY = padT + chartH + 22;
 
           return (
             <g key={item.feature}>
               {/* Track */}
-              <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="rgba(255,255,255,0.05)" />
+              <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="rgba(255,255,255,0.08)" />
               {/* Fill */}
               {!unlimited && barH > 1 && (
                 <rect x={x} y={barY} width={barW} height={barH} rx="6" fill={fillColor} fillOpacity={fillOpacity} />
               )}
               {unlimited && (
-                <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="#7c7df0" fillOpacity="0.25" />
+                <rect x={x} y={padT} width={barW} height={chartH} rx="6" fill="#7c7df0" fillOpacity="0.35" />
               )}
               {/* Value + limit on same baseline */}
               <text
-                x={cx} y={Math.max(padT + 14, barY - 5)}
-                textAnchor="middle" fontSize="10" fontWeight="600" fill={valColor}
+                x={cx} y={Math.max(padT + 16, barY - 6)}
+                textAnchor="middle" fontSize="13" fontWeight="600" fill={valColor}
               >
                 {unlimited ? "∞" : `${item.used}/${item.limit}`}
               </text>
               {/* Feature label */}
-              <text x={cx} y={labelY} textAnchor="middle" fontSize="10" fill="#94a3b8">{shortLabel}</text>
+              <text x={cx} y={labelY} textAnchor="middle" fontSize="13" fill="#94a3b8">{shortLabel}</text>
             </g>
           );
         })}
-      </svg>
-    </div>
-  );
-}
-
-// ─── Slim usage detail row ────────────────────────────────────────────────────
-/**
- * Single slim usage row with a labelled progress bar used inside the billing overview.
- * @param {object} props
- * @param {string} props.feature
- * @param {number} props.used
- * @param {number} props.limit
- */
-function _UsageRow({ feature, used, limit }) {
-  const { label, unlimited, pct, displayLimit } = getUsageBarState(feature, used, limit);
-  const isAtLimit = !unlimited && pct >= 100;
-  const isWarn    = !unlimited && pct >= 80 && !isAtLimit;
-
-  const barGradient = isAtLimit
-    ? "linear-gradient(90deg,#fcd34d,#f59e0b)"
-    : isWarn
-    ? "linear-gradient(90deg,#93c5fd,#3b82f6)"
-    : "linear-gradient(90deg,#60a5fa,#3b82f6)";
-
-  // Calm: state the fact, no value judgments. Color only signals limit reached.
-  const badgeText = unlimited ? "Unbegrenzt" : isAtLimit ? "Limit erreicht" : `${Math.round(pct)}%`;
-  const badgeCls  = isAtLimit
-    ? "bg-[var(--color-warning-soft)] text-[var(--color-warning)] border border-[var(--color-warning)]/20"
-    : "bg-[var(--color-bg-elev-1)] text-[var(--color-fg-muted)] border border-[var(--color-border)]";
-
-  const shortName = label.split(" (")[0];
-
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-36 sm:w-44 flex-shrink-0 truncate text-xs text-[var(--color-fg-muted)]">{shortName}</span>
-      <div className="relative flex-1 h-2.5 rounded-full bg-[var(--color-bg-elev-1)] overflow-hidden border border-[var(--color-border)]">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-          style={{
-            width: unlimited ? "100%" : `${Math.min(100, pct)}%`,
-            background: unlimited ? "linear-gradient(90deg,#c7d2fe,#818cf8)" : barGradient,
-            opacity: unlimited ? 0.35 : 1,
-            boxShadow: unlimited ? "none" : "0 0 12px rgba(59,130,246,0.28)",
-          }}
-        />
+        </svg>
       </div>
-      <span className="w-14 flex-shrink-0 text-right text-[10px] tabular-nums text-[var(--color-fg-muted)]">
-        {unlimited ? "∞" : `${used} / ${displayLimit}`}
-      </span>
-      <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeCls}`}>
-        {badgeText}
-      </span>
     </div>
   );
 }
@@ -273,7 +175,7 @@ export default function BillingPage() {
     }
   }, [params]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["billing-overview"],
     queryFn: () => billingApi.overview().then((r) => {
       try { localStorage.setItem("billing", JSON.stringify(r.data)); } catch {}
@@ -290,7 +192,14 @@ export default function BillingPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
+  const { data: initData } = useQuery({ queryKey: ["init"], queryFn: () => Promise.resolve(null), enabled: false });
+
+  const { data: plansData } = useQuery({
+    queryKey: ["billing", "plans"],
+    queryFn: () => billingApi.plans().then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
 
   const handleManage = async () => {
     try {
@@ -317,6 +226,26 @@ export default function BillingPage() {
     );
   }
 
+  if (error && !data) {
+    return (
+      <div className="animate-slide-up">
+        <PageHeader
+          title="Abrechnung & Plan"
+          description="Verwalte deinen Plan, deine Nutzung und den Ausbau deiner KI-Leistung."
+        />
+        <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 text-center">
+          <p className="text-[var(--color-fg-muted)]">Die Daten konnten nicht geladen werden.</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 rounded-lg bg-[var(--color-accent-500)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-400)]"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const sub      = data?.subscription;
   const usage    = initData?.usage || data?.usage || [];
   const planKey  = sub?.plan || initData?.plan || "basic";
@@ -325,27 +254,25 @@ export default function BillingPage() {
   const isMax    = planKey === "max" || planKey === "enterprise";
   const cvGenState = getCvGenState(planKey);
 
-  const _currentPlan = PLANS.find((p) => p.key === planKey) || PLANS[0];
+  const plans = plansData ?? [];
+  const currentPlan = plans.find((p) => p.key === planKey) || plans[0] || {};
 
   const periodEnd = sub?.current_period_end
     ? new Date(sub.current_period_end).toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric" })
     : null;
 
   // Overall usage health: average pct across limited features
-  const limitedItems = usage.filter((u) => u.limit > 0 && u.limit !== -1);
+  const allUsage = [
+    ...usage,
+    { feature: "cv_pdf", used: cvGenState.count, limit: cvGenState.unlimited ? -1 : cvGenState.limit },
+  ];
+  const limitedItems = allUsage.filter((u) => u.limit > 0 && u.limit !== -1);
   const avgUsagePct  = limitedItems.length
     ? Math.round(limitedItems.reduce((s, u) => s + Math.min(100, (u.used / u.limit) * 100), 0) / limitedItems.length)
     : 0;
   const healthColor  = avgUsagePct >= 80 ? "text-[#ef4444]" : "text-[#7c7df0]";
   const healthBarColor = avgUsagePct >= 80 ? "#ef4444" : "#7c7df0";
   const healthLabel  = `${avgUsagePct}% belegt`;
-  const _comparisonRows = [
-    { row: "Lebenslauf-Analysen / Monat", vals: ["5", "15", "Unbegrenzt", "Unbegrenzt"] },
-    { row: "Motivationsschreiben / Monat", vals: ["5", "25", "Unbegrenzt", "Unbegrenzt"] },
-    { row: "Aktive Job-Alerts", vals: ["2", "10", "Unbegrenzt", "Unbegrenzt"] },
-    { row: "KI-Bewerbungsassistent / Monat", vals: ["15", "200", "Unbegrenzt", "Unbegrenzt"] },
-    { row: "Jobsuche / Tag", vals: ["5", "20", "Unbegrenzt", "Unbegrenzt"] },
-  ];
 
   return (
     <div className={`animate-slide-up ${!isMax ? "pb-20 sm:pb-0" : ""}`}>
@@ -356,9 +283,8 @@ export default function BillingPage() {
         description="Verwalte deinen Plan, deine Nutzung und den Ausbau deiner KI-Leistung."
       />
 
-      {/* 2-col on desktop: plan left, usage right ─────────────────────────── */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="lg:col-span-5 flex flex-col gap-5">
+      <div className="mt-6 space-y-6">
+      <div className="flex flex-col gap-5">
 
       {/* ── Plan hero card ───────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]/60 p-5 sm:p-6">
@@ -374,12 +300,6 @@ export default function BillingPage() {
                 ? `Verlängert automatisch am ${periodEnd}`
                 : "Kostenloses Konto mit sicherem Einstieg. Keine Karte erforderlich."}
             </p>
-            {usage.length > 0 && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-[12.5px] text-[var(--color-fg-dim)]">Gesamtnutzung</span>
-                <span className={`text-[13px] font-semibold ${healthColor}`}>{healthLabel}</span>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-col gap-2 sm:items-end">
@@ -402,21 +322,13 @@ export default function BillingPage() {
                 <ArrowRight className="h-4 w-4" />
               </button>
             )}
-            {isPaid && sub?.last4 && (
-              <div className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 py-2">
-                <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)] flex-shrink-0" />
-                <span className="text-sm text-[var(--color-fg-muted)]">•••• {sub.last4}</span>
-                <button onClick={handleManage} className="text-xs font-semibold text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] ml-1 transition-colors">Ändern</button>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      </div>{/* end left column */}
+      </div>
 
-      {/* ─── RIGHT COLUMN ──────────────────────────────────────────────────────── */}
-      <div className="lg:col-span-7 flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
 
       {/* ── Usage chart ───────────────────────────────────────────────── */}
       {usage.length > 0 && (
@@ -444,11 +356,19 @@ export default function BillingPage() {
           </div>
 
           <div className="p-5 sm:p-6">
-          {/* Hero bar chart — includes locally-tracked cv_pdf */}
-          <UsageHeroChart usage={[
-            ...usage,
-            { feature: "cv_pdf", used: cvGenState.count, limit: cvGenState.unlimited ? -1 : cvGenState.limit },
-          ]} />
+          {/* Usage chart — mobile gets readable horizontal bars, desktop gets vertical SVG */}
+          <div className="lg:hidden">
+            <MobileUsageBars usage={[
+              ...usage,
+              { feature: "cv_pdf", used: cvGenState.count, limit: cvGenState.unlimited ? -1 : cvGenState.limit },
+            ]} />
+          </div>
+          <div className="hidden lg:block">
+            <UsageHeroChart usage={[
+              ...usage,
+              { feature: "cv_pdf", used: cvGenState.count, limit: cvGenState.unlimited ? -1 : cvGenState.limit },
+            ]} />
+          </div>
 
           {!isMax && (
             <div
@@ -481,17 +401,19 @@ export default function BillingPage() {
         </div>
       )}
 
-      </div>{/* end right column */}
-      </div>{/* end 2-col grid */}
+      </div>
+      </div>
 
-      {/* ── Payment method (paid users only) ───────────────────────────── */}
-      {isPaid && sub?.last4 && (
-        <div className="grid grid-cols-1 gap-4">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)]">
-            <div className="mb-3 flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)]" />
-              <p className="text-sm font-bold text-white">Zahlungsmethode</p>
-            </div>
+      {/* ── Payment method & Billing summary ───────────────────────────── */}
+      <div className={`mt-6 grid grid-cols-1 gap-4 ${isPaid ? "sm:grid-cols-2" : ""}`}>
+
+        {/* Payment method */}
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)]" />
+            <p className="text-sm font-bold text-[var(--color-fg)]">Zahlungsmethode</p>
+          </div>
+          {isPaid && sub?.last4 ? (
             <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-3 py-3">
               <div className="flex items-center gap-2.5">
                 <span className="rounded-lg border border-[var(--color-border)] bg-black px-2 py-1 text-[10px] font-bold text-[var(--color-fg-muted)] tracking-wider">VISA</span>
@@ -504,33 +426,8 @@ export default function BillingPage() {
                 Bearbeiten
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      <div className="hidden grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-        {/* Payment method */}
-        <div className="card p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-[var(--color-fg-muted)]" />
-            <p className="text-sm font-bold text-[var(--color-fg)]">Zahlungsmethode</p>
-          </div>
-          {isPaid && sub?.last4 ? (
-            <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-3">
-              <div className="flex items-center gap-2.5">
-                <span className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 py-1 text-[10px] font-bold text-[var(--color-fg-muted)] tracking-wider">VISA</span>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-fg)]">•••• •••• •••• {sub.last4}</p>
-                  <p className="text-[11px] text-[var(--color-fg-muted)]">Standardzahlungsmethode</p>
-                </div>
-              </div>
-              <button onClick={handleManage} className="text-xs font-semibold text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors">
-                Bearbeiten
-              </button>
-            </div>
           ) : (
-            <div className="flex items-center gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-4">
+            <div className="flex items-center gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-4 py-4">
               <CreditCard className="h-5 w-5 text-[var(--color-fg-muted)]" />
               <div>
                 <p className="text-sm font-medium text-[var(--color-fg-dim)]">Keine Zahlungsmethode</p>
@@ -541,7 +438,8 @@ export default function BillingPage() {
         </div>
 
         {/* Billing summary */}
-        <div className="card p-5">
+        {isPaid && (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-5">
           <div className="mb-3 flex items-center gap-2">
             <Zap className="h-4 w-4 text-[var(--color-fg-muted)]" />
             <p className="text-sm font-bold text-[var(--color-fg)]">Zusammenfassung</p>
@@ -566,21 +464,24 @@ export default function BillingPage() {
             <div className="flex justify-between text-sm">
               <dt className="text-[var(--color-fg-dim)]">Monatlicher Betrag</dt>
               <dd className="font-semibold text-[var(--color-fg)]">
-                {PLANS.find((p) => p.key === planKey)?.price || "0"}{" "}
-                <span className="font-normal text-[var(--color-fg-muted)]">{isPaid ? "/ Monat" : ""}</span>
+                {currentPlan.price !== null && currentPlan.price !== undefined
+                  ? (currentPlan.price === 0 ? "Gratis" : `€${String(currentPlan.price).replace(".", ",")}`)
+                  : "Auf Anfrage"}{" "}
+                <span className="font-normal text-[var(--color-fg-muted)]">{isPaid && currentPlan.price !== null ? "/ Monat" : ""}</span>
               </dd>
             </div>
           </dl>
           {isPaid && (
             <button
               onClick={handleManage}
-              className="mt-4 btn-secondary w-full justify-center"
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-4 py-2.5 text-sm font-medium text-[var(--color-fg)] transition-colors hover:bg-[var(--color-bg-elev-2)] w-full"
             >
               <ExternalLink className="h-4 w-4" />
               Rechnungen & Verlauf
             </button>
           )}
         </div>
+        )}
       </div>
 
     </div>

@@ -4,6 +4,7 @@ import httpx
 import asyncio
 import time
 from collections import OrderedDict
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import logging
 import re
@@ -236,6 +237,26 @@ def _strip_html(text: str) -> str:
     return " ".join(text.split())
 
 
+def _parse_adzuna_date(raw) -> Optional[datetime]:
+    """Parse Adzuna's `created` field (ISO 8601 or timestamp) to UTC datetime."""
+    if not raw:
+        return None
+    if isinstance(raw, (int, float)):
+        return datetime.fromtimestamp(raw, tz=timezone.utc)
+    if isinstance(raw, str):
+        cleaned = raw.replace("Z", "+00:00")
+        try:
+            return datetime.fromisoformat(cleaned)
+        except ValueError:
+            pass
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(raw, fmt).replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+    return None
+
+
 def _normalise_location(location: Optional[str]) -> str:
     if not location:
         return ""
@@ -305,6 +326,7 @@ async def search_jobs(
         "app_key": app_key,
         "results_per_page": 20,
         "what": search_what,
+        "max_days_old": 60,
     }
     if where:
         params["where"] = where
@@ -337,6 +359,18 @@ async def search_jobs(
         if type_entry and type_entry[1]:
             match_terms = type_entry[1]
             jobs = [j for j in jobs if any(t in j.get("title", "").lower() for t in match_terms)]
+
+        # Exclude listings older than 60 days. Adzuna's max_days_old is a hint,
+        # not a guarantee — some stale listings slip through. We enforce the
+        # cutoff here so users never see 22-month-old postings.
+        cutoff = datetime.now(timezone.utc) - timedelta(days=60)
+        stale_before = len(jobs)
+        def _fresh_enough(j):
+            d = _parse_adzuna_date(j.get("created"))
+            return d is None or d >= cutoff
+        jobs = [j for j in jobs if _fresh_enough(j)]
+        if len(jobs) < stale_before:
+            logger.info("Adzuna: filtered %d stale jobs (>60 days)", stale_before - len(jobs))
 
         logger.info(f"Adzuna: {len(jobs)} jobs (what={search_what!r}, where={where!r})")
 

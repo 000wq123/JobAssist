@@ -15,6 +15,20 @@ logger = logging.getLogger(__name__)
 BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
 
 
+def _mask_email(addr: str) -> str:
+    try:
+        if "@" not in addr:
+            return "***"
+        local, domain = addr.split("@", 1)
+        if not local:
+            return f"*@{domain}"
+        head = local[0]
+        tail = local[-1] if len(local) > 1 else ""
+        masked_local = head + ("*" * max(1, len(local) - 2)) + tail
+        return f"{masked_local}@{domain}"
+    except Exception:
+        return "***"
+
 def get_email_provider_status() -> dict:
     brevo_configured = bool(settings.BREVO_API_KEY)
     smtp_configured = bool(settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD)
@@ -277,12 +291,29 @@ def _send_via_brevo(to_email: str, subject: str, html_body: str, reply_to: str |
                 headers={"api-key": api_key, "Content-Type": "application/json"},
             )
             if not response.is_success:
-                logger.error("Brevo response %s: %s", response.status_code, response.text)
+                logger.error(
+                    "Brevo response error",
+                    extra={
+                        "status_code": response.status_code,
+                        "provider": "brevo",
+                    },
+                )
             response.raise_for_status()
-        logger.info("Email sent via Brevo to %s: %s", to_email, subject)
+        masked = _mask_email(to_email)
+        domain = to_email.split("@", 1)[-1] if "@" in to_email else "-"
+        logger.info(
+            "Email sent via Brevo",
+            extra={"recipient": masked, "to_domain": domain, "subject": subject},
+        )
         return True
     except Exception as exc:
-        logger.error("Failed to send email via Brevo to %s: %s", to_email, exc, exc_info=True)
+        masked = _mask_email(to_email)
+        domain = to_email.split("@", 1)[-1] if "@" in to_email else "-"
+        logger.error(
+            "Email send failed (Brevo)",
+            extra={"recipient": masked, "to_domain": domain, "error": str(exc)},
+            exc_info=True,
+        )
         return False
 
 
@@ -309,10 +340,21 @@ def _send_via_smtp(to_email: str, subject: str, html_body: str, reply_to: str | 
                 server.starttls()
             server.login(smtp_login, settings.SMTP_PASSWORD)
             server.sendmail(from_email, [to_email], message.as_string())
-        logger.info("Email sent via SMTP to %s: %s", to_email, subject)
+        masked = _mask_email(to_email)
+        domain = to_email.split("@", 1)[-1] if "@" in to_email else "-"
+        logger.info(
+            "Email sent via SMTP",
+            extra={"recipient": masked, "to_domain": domain, "subject": subject},
+        )
         return True
     except Exception as exc:
-        logger.error("Failed to send email via SMTP to %s: %s", to_email, exc, exc_info=True)
+        masked = _mask_email(to_email)
+        domain = to_email.split("@", 1)[-1] if "@" in to_email else "-"
+        logger.error(
+            "Email send failed (SMTP)",
+            extra={"recipient": masked, "to_domain": domain, "error": str(exc)},
+            exc_info=True,
+        )
         return False
 
 

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Template Test — 4 Designs</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0b0b0f;
+    color: #ececef;
+    padding: 40px 20px;
+  }
+  h1 {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-size: 32px;
+    font-weight: 400;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    text-align: center;
+    color: #71717a;
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+  .template-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #a1a1aa;
+    margin: 32px 0 12px;
+    text-align: center;
+  }
+
+  /* A4 page wrapper */
+  .a4 {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 40px;
+    background: #fff;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    overflow: hidden;
+    color: #1a1a2e;
+    font-size: 10px;
+    line-height: 1.4;
+    position: relative;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .template-label { display: none; }
+    .a4 { box-shadow: none; margin: 0; page-break-after: always; }
+    .a4:last-child { page-break-after: auto; }
+  }
+
+  /* ── UTILITIES ── */
+  .bold { font-weight: 700; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-start { align-items: flex-start; }
+  .items-end { align-items: flex-end; }
+  .justify-between { justify-content: space-between; }
+  .gap-1 { gap: 4px; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .flex-1 { flex: 1; }
+  .shrink-0 { flex-shrink: 0; }
+  .text-right { text-align: right; }
+  .wrap { flex-wrap: wrap; }
+  .mt-auto { margin-top: auto; }
+
+  /* ── TABELLARISCH (two-column, navy sidebar) ── */
+  .tpl-tab { display: flex; min-height: 297mm; }
+  .tpl-tab .side {
+    width: 185pt;
+    background: #1c3557;
+    padding: 32px 18px;
+    color: rgba(255,255,255,0.9);
+    display: flex;
+    flex-direction: column;
+  }
+  .tpl-tab .photo-placeholder {
+    width: 90px; height: 112px; background: #244069;
+    border-radius: 4px; margin: 0 auto 20px;
+  }
+  .tpl-tab .side-section { margin-bottom: 18px; }
+  .tpl-tab .side-title {
+    font-size: 7.5px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: rgba(255,255,255,0.5);
+    border-bottom: 0.5px solid rgba(255,255,255,0.15);
+    padding-bottom: 4px; margin-bottom: 7px;
+  }
+  .tpl-tab .side-row { display: flex; margin-bottom: 5px; align-items: flex-start; font-size: 8.5px; line-height: 1.4; }
+  .tpl-tab .lang-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 8.5px; }
+  .tpl-tab .lang-level {
+    font-size: 7.5px; color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.12); padding: 1.5px 4px; border-radius: 3px;
+  }
+  .tpl-tab .skill-chip {
+    display: inline-block; font-size: 7.5px; color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.10); padding: 2px 5px; border-radius: 3px;
+    margin: 0 4px 4px 0;
+  }
+  .tpl-tab .main {
+    width: 410pt; padding: 32px 26px; display: flex; flex-direction: column;
+    flex: 1;
+  }
+  .tpl-tab .name-block {
+    margin-bottom: 18px; padding-bottom: 14px;
+    border-bottom: 1.5px solid #1c3557;
+  }
+  .tpl-tab .first-name { font-size: 22px; color: #1a1a2e; letter-spacing: 0.5px; }
+  .tpl-tab .last-name { font-size: 22px; font-weight: 700; color: #1c3557; letter-spacing: 0.5px; }
+  .tpl-tab .name-sub { font-size: 10px; color: #4a5568; letter-spacing: 0.2px; }
+  .tpl-tab .section-title {
+    font-size: 8px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
+    color: #1c3557; border-bottom: 1px solid #1c3557; padding-bottom: 3px; margin-bottom: 9px;
+  }
+  .tpl-tab .entry { margin-bottom: 9px; }
+  .tpl-tab .entry-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+  .tpl-tab .entry-title { font-weight: 700; font-size: 10px; flex: 1; padding-right: 8px; }
+  .tpl-tab .entry-date { font-size: 8.5px; color: #2b6cb0; font-weight: 700; margin-top: 1px; }
+  .tpl-tab .entry-org { font-size: 9px; color: #4a5568; margin-bottom: 3px; }
+  .tpl-tab .bullet { display: flex; margin-left: 6px; margin-top: 2px; }
+  .tpl-tab .bullet-dot { width: 8px; color: #2b6cb0; font-size: 9px; }
+  .tpl-tab .bullet-text { flex: 1; font-size: 9px; color: #4a5568; line-height: 1.4; }
+  .tpl-tab .tag {
+    display: inline-block; font-size: 8.5px; color: #1c3557;
+    background: #f8f9fa; border: 0.5px solid #e2e8f0;
+    padding: 2px 6px; border-radius: 3px; margin: 0 4px 4px 0;
+  }
+  .tpl-tab .sig {
+    display: flex; justify-content: space-between; margin-top: auto;
+    padding-top: 10px; border-top: 0.5px solid #e2e8f0;
+    font-size: 8.5px; color: #718096;
+  }
+
+  /* ── GRAY HEADER ── */
+  .tpl-gh .header {
+    background: #f2f2f2; padding: 28px 36px 20px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 2px solid #4a6fa5;
+  }
+  .tpl-gh .header-name { font-size: 23px; }
+  .tpl-gh .header-name .ln { font-weight: 700; }
+  .tpl-gh .header-sub { font-size: 9px; color: #4a5568; margin-top: 3px; }
+  .tpl-gh .header-contact { text-align: right; font-size: 8px; color: #4a5568; }
+  .tpl-gh .header-contact div { margin-bottom: 2px; }
+  .tpl-gh .body { padding: 22px 36px 20px; min-height: 220mm; }
+  .tpl-gh .gh-section { margin-bottom: 14px; }
+  .tpl-gh .gh-title {
+    font-size: 7.5px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #4a6fa5;
+    border-bottom: 1px solid #4a6fa5; padding-bottom: 3px; margin-bottom: 8px;
+  }
+  .tpl-gh .gh-sch { font-weight: 700; font-size: 10px; }
+  .tpl-gh .gh-meta { font-size: 9px; color: #4a5568; margin-top: 2px; }
+  .tpl-gh .gh-plan { font-size: 8.5px; color: #4a6fa5; margin-top: 1px; }
+  .tpl-gh .gh-chip { display: inline-block; background: #f0f0f0; border-radius: 3px; padding: 2px 5px; font-size: 8.5px; margin: 0 4px 4px 0; }
+  .tpl-gh .gh-skill { display: inline-block; font-size: 9px; color: #4a5568; margin: 0 12px 3px 0; }
+  .tpl-gh .gh-footer {
+    display: flex; justify-content: space-between;
+    padding: 8px 36px; border-top: 0.5px solid #e2e8f0;
+    font-size: 8.5px; color: #718096;
+  }
+
+  /* ── SLIM SIDEBAR ── */
+  .tpl-ss { display: flex; min-height: 297mm; }
+  .tpl-ss .side { width: 148px; min-height: 100%; background: #f0f0f0; padding: 28px 14px; }
+  .tpl-ss .photo-placeholder { width: 80px; height: 96px; background: #d8d8d8; border-radius: 3px; margin: 0 auto 18px; }
+  .tpl-ss .side-title {
+    font-size: 7px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase; color: #999;
+    border-bottom: 0.5px solid #d0d0d0; padding-bottom: 4px; margin-bottom: 8px;
+  }
+  .tpl-ss .side-row { font-size: 8px; color: #444; margin-bottom: 3px; line-height: 1.4; }
+  .tpl-ss .main { flex: 1; padding: 28px 22px; display: flex; flex-direction: column; }
+  .tpl-ss .name-area { margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
+  .tpl-ss .name-area .fn { font-size: 20px; margin-right: 5px; }
+  .tpl-ss .name-area .ln { font-size: 20px; font-weight: 700; }
+  .tpl-ss .name-sub { font-size: 9px; color: #4a5568; margin-top: 3px; }
+  .tpl-ss .sec-title {
+    font-size: 7.5px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase; color: #999;
+    border-bottom: 0.5px solid #ddd; padding-bottom: 3px; margin-bottom: 8px;
+  }
+  .tpl-ss .entry-title { font-weight: 700; font-size: 10px; }
+  .tpl-ss .entry-org { font-size: 9px; color: #4a5568; margin-top: 1px; }
+  .tpl-ss .entry-date { font-size: 8.5px; color: #4a5568; }
+  .tpl-ss .chip { display: inline-block; background: #e8e8e8; border-radius: 3px; padding: 2px 5px; font-size: 8.5px; margin: 0 4px 4px 0; }
+  .tpl-ss .tag { display: inline-block; font-size: 9px; color: #4a5568; margin: 0 10px 3px 0; }
+  .tpl-ss .sig {
+    display: flex; justify-content: space-between; margin-top: auto;
+    padding-top: 10px; border-top: 0.5px solid #e2e8f0;
+    font-size: 8.5px; color: #718096;
+  }
+
+  /* ── DARK BANDS ── */
+  .tpl-db .top {
+    background: #1a1a1a; padding: 26px 32px 22px;
+  }
+  .tpl-db .top-name { font-size: 22px; color: #fff; }
+  .tpl-db .top-name .ln { font-weight: 700; }
+  .tpl-db .top-sub { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+  .tpl-db .top-contact { display: flex; margin-top: 10px; gap: 16px; }
+  .tpl-db .top-contact span { font-size: 8px; color: rgba(255,255,255,0.45); }
+  .tpl-db .body { padding: 0 32px 24px; min-height: 210mm; }
+  .tpl-db .band {
+    background: #f5f5f5; padding: 5px 0 5px 32px;
+    margin: 12px -32px 10px; font-size: 7.5px; font-weight: 700;
+    letter-spacing: 1.4px; text-transform: uppercase; color: #888;
+  }
+  .tpl-db .entry-title { font-weight: 700; font-size: 10px; }
+  .tpl-db .entry-org { font-size: 9px; color: #4a5568; margin-top: 1px; }
+  .tpl-db .entry-date { font-size: 8.5px; color: #4a5568; }
+  .tpl-db .chip { display: inline-block; background: #f0f0f0; border-radius: 2px; padding: 2px 5px; font-size: 8.5px; margin: 0 4px 4px 0; }
+  .tpl-db .tag { display: inline-block; font-size: 9px; color: #4a5568; margin: 0 12px 3px 0; }
+  .tpl-db .bullet { display: flex; margin-left: 6px; margin-top: 2px; }
+  .tpl-db .bullet-dot { width: 8px; color: #4a5568; font-size: 9px; }
+  .tpl-db .bullet-text { flex: 1; font-size: 9px; color: #4a5568; line-height: 1.4; }
+  .tpl-db .footer {
+    display: flex; justify-content: space-between;
+    padding: 8px 32px; border-top: 0.5px solid #e2e8f0;
+    font-size: 8.5px; color: #718096;
+  }
+</style>
+</head>
+<body>
+
+<h1>CV Template Test</h1>
+<p class="subtitle">4 Designs mit realistischen fiktiven Daten</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 1. TABELLARISCH (two-column, navy sidebar)                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="template-label">Template 1 — Tabellarisch (Navy Sidebar)</div>
+<div class="a4 tpl-tab">
+  <div class="side">
+    <div class="photo-placeholder"></div>
+    <div class="side-section">
+      <div class="side-title">Kontakt</div>
+      <div class="side-row">15.03.2008</div>
+      <div class="side-row">Musterstraße 12, 1010 Wien</div>
+      <div class="side-row">+43 664 1234567</div>
+      <div class="side-row">lisa.mayer@email.at</div>
+      <div class="side-row">Österreich</div>
+    </div>
+    <div class="side-section">
+      <div class="side-title">Sprachen</div>
+      <div class="lang-row"><span>Deutsch</span><span class="lang-level">Muttersprache</span></div>
+      <div class="lang-row"><span>Englisch</span><span class="lang-level">C1</span></div>
+      <div class="lang-row"><span>Spanisch</span><span class="lang-level">B1</span></div>
+    </div>
+    <div class="side-section">
+      <div class="side-title">EDV / Tools</div>
+      <div>
+        <span class="skill-chip">Microsoft Office</span>
+        <span class="skill-chip">Adobe Photoshop</span>
+        <span class="skill-chip">Canva</span>
+        <span class="skill-chip">HTML/CSS</span>
+        <span class="skill-chip">Google Workspace</span>
+      </div>
+    </div>
+    <div class="side-section">
+      <div class="side-title">Führerschein</div>
+      <div class="side-row">L17 (begleitetes Fahren)</div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="name-block">
+      <div><span class="first-name">Lisa </span><span class="last-name">Mayer</span></div>
+      <div class="name-sub">HTL Wien — Klasse 11</div>
+    </div>
+    <div>
+      <div class="section-title">Ausbildung</div>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">HTL Wien — Informatik</span>
+          <span class="entry-date">Abschluss geplant 2026</span>
+        </div>
+        <div class="entry-org">Klasse 11</div>
+      </div>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">NMS Musterstadt</span>
+          <span class="entry-date">2019 – 2023</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Berufserfahrung</div>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">Praktikum — Webentwicklung</span>
+          <span class="entry-date">07.2024 – 08.2024</span>
+        </div>
+        <div class="entry-org">Digital-Agentur GmbH, Wien</div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Unterstützung bei der Frontend-Entwicklung mit HTML, CSS und JavaScript</span></div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Erstellung von Wireframes und Prototypen in Figma</span></div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Pflege von WordPress-Websites und Content-Updates</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">Babysitten</span>
+          <span class="entry-date">09.2023 – laufend</span>
+        </div>
+        <div class="entry-org">Privat, Wien</div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Regelmäßige Betreuung von zwei Kindern (5 und 8 Jahre) nach der Schule</span></div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Hausaufgabenbetreuung und gemeinsames Kochen</span></div>
+      </div>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">Ferialjob — Verkauf</span>
+          <span class="entry-date">07.2023 – 08.2023</span>
+        </div>
+        <div class="entry-org">MediaMarkt, Wien</div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Kundenberatung im Bereich Smartphones und Zubehör</span></div>
+        <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Warenannahme und Inventurunterstützung</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Stärken</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="tag">Teamfähigkeit</span>
+        <span class="tag">Lernbereitschaft</span>
+        <span class="tag">Selbstständigkeit</span>
+        <span class="tag">Organisationstalent</span>
+        <span class="tag">Kreativität</span>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Interessen</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="tag">Fotografie und Bildbearbeitung</span>
+        <span class="tag">Webdesign und UX</span>
+        <span class="tag">Retro-Gaming und Emulation</span>
+        <span class="tag">Kochen und Backen</span>
+        <span class="tag">Wandern in den Alpen</span>
+      </div>
+    </div>
+    <div class="sig">
+      <span>Wien, 29.05.2026</span>
+      <span>Lisa Mayer</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 2. GRAY HEADER                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="template-label">Template 2 — Grau-Header</div>
+<div class="a4 tpl-gh">
+  <div class="header">
+    <div>
+      <div class="header-name"><span>Lisa </span><span class="ln">Mayer</span></div>
+      <div class="header-sub">HTL Wien — Klasse 11</div>
+    </div>
+    <div class="header-contact">
+      <div>Musterstraße 12, 1010 Wien</div>
+      <div>+43 664 1234567</div>
+      <div>lisa.mayer@email.at</div>
+      <div>Österreich</div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="gh-section">
+      <div class="gh-title">Ausbildung</div>
+      <div class="gh-sch">HTL Wien — Informatik</div>
+      <div class="gh-meta">Klasse 11</div>
+      <div class="gh-plan">Abschluss geplant 2026</div>
+    </div>
+    <div class="gh-section">
+      <div class="gh-title">Berufserfahrung</div>
+      <div style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">Praktikum — Webentwicklung</span>
+          <span style="font-size:8.5px;color:#4a6fa5;">07.2024 – 08.2024</span>
+        </div>
+        <div style="font-size:9px;color:#4a5568;margin-top:1px;">Digital-Agentur GmbH, Wien</div>
+        <div class="bullet"><span class="bullet-dot" style="width:8px;color:#4a6fa5;font-size:9px;">›</span><span style="flex:1;font-size:9px;color:#4a5568;line-height:1.4;">Unterstützung bei der Frontend-Entwicklung mit HTML, CSS und JavaScript</span></div>
+        <div class="bullet"><span class="bullet-dot" style="width:8px;color:#4a6fa5;font-size:9px;">›</span><span style="flex:1;font-size:9px;color:#4a5568;line-height:1.4;">Erstellung von Wireframes und Prototypen in Figma</span></div>
+      </div>
+      <div style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">Babysitten</span>
+          <span style="font-size:8.5px;color:#4a6fa5;">09.2023 – laufend</span>
+        </div>
+        <div style="font-size:9px;color:#4a5568;margin-top:1px;">Privat, Wien</div>
+      </div>
+      <div style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">Ferialjob — Verkauf</span>
+          <span style="font-size:8.5px;color:#4a6fa5;">07.2023 – 08.2023</span>
+        </div>
+        <div style="font-size:9px;color:#4a5568;margin-top:1px;">MediaMarkt, Wien</div>
+      </div>
+    </div>
+    <div class="gh-section">
+      <div class="gh-title">Sprachen</div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;">
+        <span style="font-size:9px;">Deutsch — Muttersprache</span>
+        <span style="font-size:9px;">Englisch — C1</span>
+        <span style="font-size:9px;">Spanisch — B1</span>
+      </div>
+    </div>
+    <div class="gh-section">
+      <div class="gh-title">EDV / Tools</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="gh-chip">Microsoft Office</span>
+        <span class="gh-chip">Adobe Photoshop</span>
+        <span class="gh-chip">Canva</span>
+        <span class="gh-chip">HTML/CSS</span>
+        <span class="gh-chip">Google Workspace</span>
+      </div>
+    </div>
+    <div class="gh-section">
+      <div class="gh-title">Stärken</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="gh-skill">Teamfähigkeit</span>
+        <span class="gh-skill">Lernbereitschaft</span>
+        <span class="gh-skill">Selbstständigkeit</span>
+        <span class="gh-skill">Organisationstalent</span>
+        <span class="gh-skill">Kreativität</span>
+      </div>
+    </div>
+    <div class="gh-section">
+      <div class="gh-title">Interessen</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="gh-skill">Fotografie und Bildbearbeitung</span>
+        <span class="gh-skill">Webdesign und UX</span>
+        <span class="gh-skill">Retro-Gaming und Emulation</span>
+        <span class="gh-skill">Kochen und Backen</span>
+        <span class="gh-skill">Wandern in den Alpen</span>
+      </div>
+    </div>
+  </div>
+  <div class="gh-footer">
+    <span>Wien, 29.05.2026</span>
+    <span>Lisa Mayer</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 3. SLIM SIDEBAR                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="template-label">Template 3 — Schlanke Leiste</div>
+<div class="a4 tpl-ss">
+  <div class="side">
+    <div class="photo-placeholder"></div>
+    <div style="margin-bottom:16px;">
+      <div class="side-title">Kontakt</div>
+      <div class="side-row">15.03.2008</div>
+      <div class="side-row">Musterstraße 12, 1010 Wien</div>
+      <div class="side-row">+43 664 1234567</div>
+      <div class="side-row">lisa.mayer@email.at</div>
+      <div class="side-row">Österreich</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div class="side-title">Sprachen</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:8px;color:#333;">Deutsch</span><span style="font-size:7px;color:#999;">Muttersprache</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:8px;color:#333;">Englisch</span><span style="font-size:7px;color:#999;">C1</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:8px;color:#333;">Spanisch</span><span style="font-size:7px;color:#999;">B1</span></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div class="side-title">EDV</div>
+      <div class="side-row">Microsoft Office</div>
+      <div class="side-row">Adobe Photoshop</div>
+      <div class="side-row">Canva</div>
+      <div class="side-row">HTML/CSS</div>
+      <div class="side-row">Google Workspace</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div class="side-title">Führerschein</div>
+      <div class="side-row">L17 (begleitetes Fahren)</div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="name-area">
+      <div><span class="fn">Lisa </span><span class="ln">Mayer</span></div>
+      <div class="name-sub">HTL Wien — Klasse 11</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="sec-title">Ausbildung</div>
+      <div class="entry-title">HTL Wien — Informatik</div>
+      <div class="entry-org">Klasse 11</div>
+      <div style="font-size:8.5px;color:#4a5568;margin-top:1px;">Abschluss geplant 2026</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="sec-title">Berufserfahrung</div>
+      <div style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span class="entry-title" style="flex:1;padding-right:8px;">Praktikum — Webentwicklung</span>
+          <span class="entry-date">07.2024 – 08.2024</span>
+        </div>
+        <div class="entry-org">Digital-Agentur GmbH, Wien</div>
+      </div>
+      <div style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span class="entry-title" style="flex:1;padding-right:8px;">Babysitten</span>
+          <span class="entry-date">09.2023 – laufend</span>
+        </div>
+        <div class="entry-org">Privat, Wien</div>
+      </div>
+      <div style="margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span class="entry-title" style="flex:1;padding-right:8px;">Ferialjob — Verkauf</span>
+          <span class="entry-date">07.2023 – 08.2023</span>
+        </div>
+        <div class="entry-org">MediaMarkt, Wien</div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="sec-title">Stärken</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="chip">Teamfähigkeit</span>
+        <span class="chip">Lernbereitschaft</span>
+        <span class="chip">Selbstständigkeit</span>
+        <span class="chip">Organisationstalent</span>
+        <span class="chip">Kreativität</span>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="sec-title">Interessen</div>
+      <div style="display:flex;flex-wrap:wrap;">
+        <span class="tag">Fotografie und Bildbearbeitung</span>
+        <span class="tag">Webdesign und UX</span>
+        <span class="tag">Retro-Gaming und Emulation</span>
+        <span class="tag">Kochen und Backen</span>
+        <span class="tag">Wandern in den Alpen</span>
+      </div>
+    </div>
+    <div class="sig">
+      <span>Wien, 29.05.2026</span>
+      <span>Lisa Mayer</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 4. DARK BANDS                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="template-label">Template 4 — Dunkle Bänder</div>
+<div class="a4 tpl-db">
+  <div class="top">
+    <div><span style="font-size:22px;color:#fff;margin-right:6px;">Lisa </span><span class="top-name ln">Mayer</span></div>
+    <div class="top-sub">HTL Wien — Klasse 11</div>
+    <div class="top-contact">
+      <span>Musterstraße 12, 1010 Wien</span>
+      <span>+43 664 1234567</span>
+      <span>lisa.mayer@email.at</span>
+    </div>
+  </div>
+  <div class="body">
+    <div class="band">Ausbildung</div>
+    <div style="margin-bottom:9px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">HTL Wien — Informatik</span>
+        <span style="font-size:8.5px;color:#4a5568;">Abschluss geplant 2026</span>
+      </div>
+      <div style="font-size:9px;color:#4a5568;margin-top:2px;">Klasse 11</div>
+    </div>
+
+    <div class="band">Berufserfahrung</div>
+    <div style="margin-bottom:9px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">Praktikum — Webentwicklung</span>
+        <span style="font-size:8.5px;color:#4a5568;">07.2024 – 08.2024</span>
+      </div>
+      <div style="font-size:9px;color:#4a5568;margin-top:1px;">Digital-Agentur GmbH, Wien</div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Unterstützung bei der Frontend-Entwicklung mit HTML, CSS und JavaScript</span></div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Erstellung von Wireframes und Prototypen in Figma</span></div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Pflege von WordPress-Websites und Content-Updates</span></div>
+    </div>
+    <div style="margin-bottom:9px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">Babysitten</span>
+        <span style="font-size:8.5px;color:#4a5568;">09.2023 – laufend</span>
+      </div>
+      <div style="font-size:9px;color:#4a5568;margin-top:1px;">Privat, Wien</div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Regelmäßige Betreuung von zwei Kindern (5 und 8 Jahre) nach der Schule</span></div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Hausaufgabenbetreuung und gemeinsames Kochen</span></div>
+    </div>
+    <div style="margin-bottom:9px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span style="font-weight:700;font-size:10px;flex:1;padding-right:8px;">Ferialjob — Verkauf</span>
+        <span style="font-size:8.5px;color:#4a5568;">07.2023 – 08.2023</span>
+      </div>
+      <div style="font-size:9px;color:#4a5568;margin-top:1px;">MediaMarkt, Wien</div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Kundenberatung im Bereich Smartphones und Zubehör</span></div>
+      <div class="bullet"><span class="bullet-dot">›</span><span class="bullet-text">Warenannahme und Inventurunterstützung</span></div>
+    </div>
+
+    <div class="band">Kenntnisse & Sprachen</div>
+    <div style="display:flex;flex-wrap:wrap;">
+      <span class="chip">Deutsch — Muttersprache</span>
+      <span class="chip">Englisch — C1</span>
+      <span class="chip">Spanisch — B1</span>
+      <span class="chip">Microsoft Office</span>
+      <span class="chip">Adobe Photoshop</span>
+      <span class="chip">Canva</span>
+      <span class="chip">HTML/CSS</span>
+      <span class="chip">Google Workspace</span>
+    </div>
+
+    <div class="band">Stärken</div>
+    <div style="display:flex;flex-wrap:wrap;">
+      <span class="tag">Teamfähigkeit</span>
+      <span class="tag">Lernbereitschaft</span>
+      <span class="tag">Selbstständigkeit</span>
+      <span class="tag">Organisationstalent</span>
+      <span class="tag">Kreativität</span>
+    </div>
+
+    <div class="band">Interessen</div>
+    <div style="display:flex;flex-wrap:wrap;">
+      <span class="tag">Fotografie und Bildbearbeitung</span>
+      <span class="tag">Webdesign und UX</span>
+      <span class="tag">Retro-Gaming und Emulation</span>
+      <span class="tag">Kochen und Backen</span>
+      <span class="tag">Wandern in den Alpen</span>
+    </div>
+  </div>
+  <div class="footer">
+    <span>Wien, 29.05.2026</span>
+    <span>Lisa Mayer</span>
+  </div>
+</div>
+
+</body>
+</html>

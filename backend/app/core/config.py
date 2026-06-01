@@ -1,7 +1,11 @@
 import json
 from typing import List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+_INSECURE_SECRET_KEY = "change-me-in-production"
 
 
 class Settings(BaseSettings):
@@ -29,6 +33,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def _reject_default_secret(cls, v: str, info) -> str:
+        if v == _INSECURE_SECRET_KEY and not info.data.get("DEBUG"):
+            raise ValueError(
+                "SECRET_KEY is using the insecure default value. "
+                "Set a strong random secret via the SECRET_KEY environment variable."
+            )
+        return v
 
     # API Keys
     GROQ_API_KEY: str = ""
@@ -64,7 +78,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:4173,https://jobassist.tech,https://www.jobassist.tech"
     # Optional regex for dynamic origins like Vercel previews, e.g. "https://job-assist-.*\.vercel\.app"
     # Default covers any 127.0.0.1 port (local dev proxies such as Windsurf browser preview).
-    ALLOWED_ORIGIN_REGEX: str = r"http://127\.0\.0\.1:\d+"
+    ALLOWED_ORIGIN_REGEX: str = r"https?://127\.0\.0\.1:\d+"
 
     # ── Auth cookies ─────────────────────────────────────────────────────────
     # Refresh token is stored in an httpOnly cookie (XSS-proof). Access token
@@ -116,3 +130,12 @@ if settings.SECRET_KEY == _INSECURE_DEFAULT_KEY:
             "Set a strong random SECRET_KEY in your environment before going to production.",
             stacklevel=1,
         )
+
+# Enforce secure cookies in production when SameSite=None (cross-site).
+if not settings.DEBUG and (settings.COOKIE_SAMESITE or "").lower() == "none" and not settings.COOKIE_SECURE:
+    import sys
+    print(
+        "FATAL: COOKIE_SAMESITE is 'none' but COOKIE_SECURE=false. Set COOKIE_SECURE=true in production.",
+        file=sys.stderr,
+    )
+    sys.exit(1)

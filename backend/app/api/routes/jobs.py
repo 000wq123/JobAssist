@@ -3,8 +3,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import func as sa_func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -15,21 +17,12 @@ from app.models.resume import Resume
 from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.schemas.job import JobCreate, JobListResponse, JobOut, JobStatusUpdate, JobNotesUpdate, JobDeadlineUpdate, JobUrlUpdate, JobResearchUpdate, PipelineStats, MatchRequest, CoursesRequest
-from app.services.job_enrich import extract_metadata, extract_metadata_ai
+from app.services.job_enrich import extract_metadata
 from app.services.job_search import search_jobs, search_jobs_by_preferences
 from app.services.claude_service import match_resume_to_job_async, suggest_courses_for_job
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-# In-memory marker of jobs whose AI fallback has already been attempted in
-# this process. Prevents re-hitting Groq on every GET when the description
-# genuinely contains no extractable salary/location/deadline (extraction
-# returns all-None → nothing is persisted → without this guard the route
-# would call the LLM on every refresh). Resets on process restart, which is
-# acceptable: at most one redundant attempt per job per restart.
-_AI_ATTEMPTED: set[int] = set()
-
 
 async def _get_resume_text(resume_id: int, user_id: int, db: AsyncSession) -> str:
     result = await db.execute(
@@ -59,10 +52,16 @@ async def create_job(
         if not r.scalar_one_or_none():
             raise HTTPException(status_code=403, detail="Resume not found")
 
-    # Upsert: return existing job if same URL already saved for this user
+    # Upsert: return existing job if same URL or source_id already saved
+    # for this user. Fast path avoids the INSERT entirely when possible.
+    dup_conditions = []
     if payload.url:
+        dup_conditions.append((Job.user_id == current_user.id) & (Job.url == payload.url))
+    if payload.source_id:
+        dup_conditions.append((Job.user_id == current_user.id) & (Job.source_id == payload.source_id))
+    if dup_conditions:
         existing = await db.execute(
-            select(Job).where(Job.user_id == current_user.id, Job.url == payload.url)
+            select(Job).where(or_(*dup_conditions))
         )
         existing_job = existing.scalar_one_or_none()
         if existing_job:
@@ -114,8 +113,37 @@ async def create_job(
         category=extracted["category"] or "other",
     )
     db.add(job)
-    await db.commit()
-    await db.refresh(job)
+    try:
+        await db.commit()
+        await db.refresh(job)
+    except IntegrityError:
+        # Race condition: another request (or tab) saved this job between
+        # the upsert check and the INSERT. Roll back and return the existing
+        # row so the user sees success, not a crash.
+        await db.rollback()
+        if payload.source_id:
+            existing = await db.execute(
+                select(Job).where(
+                    Job.user_id == current_user.id,
+                    Job.source_id == payload.source_id,
+                )
+            )
+        elif payload.url:
+            existing = await db.execute(
+                select(Job).where(
+                    Job.user_id == current_user.id,
+                    Job.url == payload.url,
+                )
+            )
+        else:
+            raise HTTPException(status_code=409, detail="Duplicate job")
+        existing_job = existing.scalar_one_or_none()
+        if existing_job:
+            return JSONResponse(
+                status_code=200,
+                content=JobOut.model_validate(existing_job).model_dump(mode="json"),
+            )
+        raise HTTPException(status_code=409, detail="Duplicate job")
     return job
 
 
@@ -139,6 +167,15 @@ async def list_jobs(
 
     result = await db.execute(
         select(Job)
+        .options(
+            defer(Job.description),
+            defer(Job.match_feedback),
+            defer(Job.cover_letter),
+            defer(Job.interview_qa),
+            defer(Job.suggested_courses),
+            defer(Job.research_data),
+            defer(Job.notes),
+        )
         .where(*base_filter)
         .order_by(Job.created_at.desc())
         .offset((page - 1) * page_size)
@@ -191,14 +228,14 @@ async def search_recommended_jobs(
 ) -> dict:
     """Search jobs based on user's preferences. Usage is only charged when results are found."""
     try:
-        logger.info(f"Recommended job search for user {current_user.email}")
+        logger.info("Recommended job search", extra={"user_id": current_user.id})
         result = await db.execute(
             select(UserProfile).where(UserProfile.user_id == current_user.id)
         )
         profile = result.scalar_one_or_none()
 
         if not profile:
-            logger.warning(f"No profile found for user {current_user.email}")
+            logger.warning("No profile found", extra={"user_id": current_user.id})
             return {"jobs": [], "total_count": 0, "error": "Bitte richte zuerst deine Jobpräferenzen in den Einstellungen ein."}
 
         profile_dict = {
@@ -207,10 +244,17 @@ async def search_recommended_jobs(
             "experience_level": profile.experience_level,
         }
 
-        logger.info(f"Profile preferences: locations={profile_dict['desired_locations']}, types={profile_dict['job_types']}")
+        logger.info(
+            "Profile preferences",
+            extra={
+                "user_id": current_user.id,
+                "locations": profile_dict["desired_locations"],
+                "job_types": profile_dict["job_types"],
+            },
+        )
         results = await search_jobs_by_preferences(profile_dict, page)
         job_count = len(results.get("jobs", []))
-        logger.info(f"Search results: {job_count} jobs found")
+        logger.info("Search results", extra={"user_id": current_user.id, "job_count": job_count})
         if job_count > 0:
             await increment_usage(db, current_user.id, "job_search")
         return results
@@ -231,7 +275,15 @@ async def search_custom_jobs(
 ) -> dict:
     """Search jobs with custom parameters. Usage is only charged when results are found."""
     try:
-        logger.info(f"Custom job search: keywords={keywords}, location={location}, job_type={job_type}, user={current_user.email}")
+        logger.info(
+            "Custom job search",
+            extra={
+                "user_id": current_user.id,
+                "keywords": keywords,
+                "location": location,
+                "job_type": job_type,
+            },
+        )
         results = await search_jobs(
             keywords=keywords,
             location=location,
@@ -239,7 +291,7 @@ async def search_custom_jobs(
             page=page,
         )
         job_count = len(results.get("jobs", []))
-        logger.info(f"Search results: {job_count} jobs found")
+        logger.info("Search results", extra={"user_id": current_user.id, "job_count": job_count})
         if job_count > 0:
             await increment_usage(db, current_user.id, "job_search")
         return results
@@ -263,33 +315,17 @@ async def get_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    # Lazy backfill — jobs saved before the scraper-field pipeline was wired
-    # arrive with salary_text / location / expires_at all NULL but a perfectly
-    # good description sitting right there. We do this in two phases:
-    #   1. Regex (microseconds) runs every time — cheap, idempotent.
-    #   2. Groq AI fallback runs at most once per job per process lifetime,
-    #      tracked by `_AI_ATTEMPTED`. Without this guard, jobs whose
-    #      descriptions genuinely lack the data would re-call the LLM on
-    #      every GET (regex returns None → nothing persists → next request
-    #      sees the same NULL fields and triggers AI again).
-    # `category="other"` is the model default — treat it as "untried"
-    # alongside NULL when deciding whether to enrich.
+    # Fast regex backfill — jobs saved before the scraper-field pipeline
+    # arrive with salary_text / location / expires_at all NULL.
+    # Regex extraction is microseconds-fast; AI fallback is removed from
+    # the read path to keep GET instantaneous. Enrichment now happens at
+    # create time (extract_metadata is called in create_job) and regex
+    # fills any remaining gaps here without blocking the response.
     category_unset = (job.category or "other") == "other"
-    structured_complete = (
-        job.salary_text and job.location and job.expires_at and not category_unset
-    )
-
     dirty = False
 
-    if job.description and not structured_complete:
-        # Phase 1: regex — always safe, always fast.
+    if job.description:
         regex_out = extract_metadata(job.description, role=job.role)
-        logger.info(
-            "job_enrich: job_id=%s regex salary=%r location=%r expires_at=%r category=%r",
-            job.id, regex_out["salary_text"], regex_out["location"],
-            regex_out["expires_at"], regex_out.get("category"),
-        )
-
         if not job.salary_text and regex_out["salary_text"]:
             job.salary_text = regex_out["salary_text"]; dirty = True
         if not job.location and regex_out["location"]:
@@ -298,46 +334,8 @@ async def get_job(
             job.expires_at = regex_out["expires_at"]; dirty = True
         if category_unset and regex_out.get("category"):
             job.category = regex_out["category"]; dirty = True
-            category_unset = False
-
-        # Re-check completeness after regex pass.
-        structured_complete = (
-            job.salary_text and job.location and job.expires_at and not category_unset
-        )
-
-        # Phase 2: AI fallback — gated by per-process attempt set so we never
-        # re-call Groq for the same job in this process.
-        if not structured_complete and job.id not in _AI_ATTEMPTED:
-            _AI_ATTEMPTED.add(job.id)
-            try:
-                ai_out = await extract_metadata_ai(job.description, role=job.role)
-            except Exception as e:                            # noqa: BLE001
-                logger.warning("job_enrich: job_id=%s AI raised: %s", job.id, e)
-                ai_out = {
-                    "salary_text": None, "location": None,
-                    "expires_at": None, "category": None,
-                }
-            logger.info(
-                "job_enrich: job_id=%s AI salary=%r location=%r expires_at=%r category=%r",
-                job.id, ai_out["salary_text"], ai_out["location"],
-                ai_out["expires_at"], ai_out.get("category"),
-            )
-            if not job.salary_text and ai_out["salary_text"]:
-                job.salary_text = ai_out["salary_text"]; dirty = True
-            if not job.location and ai_out["location"]:
-                job.location = ai_out["location"]; dirty = True
-            if not job.expires_at and ai_out["expires_at"]:
-                job.expires_at = ai_out["expires_at"]; dirty = True
-            if category_unset and ai_out.get("category"):
-                job.category = ai_out["category"]; dirty = True
-        elif not structured_complete:
-            logger.info(
-                "job_enrich: job_id=%s AI skipped (already attempted this process)",
-                job.id,
-            )
 
     if dirty:
-        logger.info("job_enrich: job_id=%s persisting enrichment", job.id)
         await db.commit()
         await db.refresh(job)
 
@@ -382,7 +380,10 @@ async def update_job_status(
     job.status = payload.status
     await db.commit()
     await db.refresh(job)
-    logger.info(f"Job {job_id} status updated to {payload.status} by user {current_user.email}")
+    logger.info(
+        "Job status updated",
+        extra={"job_id": job_id, "status": payload.status, "user_id": current_user.id},
+    )
     return job
 
 
@@ -406,7 +407,7 @@ async def update_job_notes(
     job.notes = payload.notes
     await db.commit()
     await db.refresh(job)
-    logger.info(f"Job {job_id} notes updated by user {current_user.email}")
+    logger.info("Job notes updated", extra={"job_id": job_id, "user_id": current_user.id})
     return job
 
 
@@ -430,7 +431,7 @@ async def update_job_deadline(
     job.deadline = payload.deadline
     await db.commit()
     await db.refresh(job)
-    logger.info(f"Job {job_id} deadline updated by user {current_user.email}")
+    logger.info("Job deadline updated", extra={"job_id": job_id, "user_id": current_user.id})
     return job
 
 
@@ -525,7 +526,7 @@ async def run_match_score(
     }, ensure_ascii=False)
     await db.commit()
     await db.refresh(job)
-    logger.info("match: job_id=%s score=%s user=%s", job_id, job.match_score, current_user.email)
+    logger.info("match", extra={"job_id": job_id, "score": job.match_score, "user_id": current_user.id})
     return job
 
 
@@ -568,5 +569,8 @@ async def generate_courses(
     job.suggested_courses = __import__("json").dumps(courses, ensure_ascii=False)
     await db.commit()
     await db.refresh(job)
-    logger.info("courses: job_id=%s count=%s user=%s", job_id, len(courses), current_user.email)
+    logger.info(
+        "courses",
+        extra={"job_id": job_id, "count": len(courses), "user_id": current_user.id},
+    )
     return job

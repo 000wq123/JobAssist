@@ -1,0 +1,15 @@
+# Allow all crawlers broad indexing access.
+# JobAssist — Austria-focused AI job and career companion.
+
+User-agent: *
+Allow: /
+
+# Disallow non-essential paths that do not carry SEO value.
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /billing
+Disallow: /settings
+
+# Sitemap (generate and expose at build time if available)
+# Sitemap: https://jobassist.at/sitemap.xml

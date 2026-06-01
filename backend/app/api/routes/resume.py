@@ -6,7 +6,7 @@ import json
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.core.usage import require_usage
+from app.core.usage import require_usage, require_usage_or_trial
 from app.models.user import User
 from app.models.resume import Resume
 from app.models.job import Job
@@ -111,6 +111,7 @@ async def analyze_resume(
     resume_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    _usage=Depends(require_usage_or_trial("cv_analysis")),
 ) -> ResumeSkillAnalysis:
     result = await db.execute(
         select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)

@@ -5,6 +5,7 @@ import {
   FileText,
   Briefcase,
   Bell,
+  Calendar,
   Settings,
   CreditCard,
   LogOut,
@@ -22,11 +23,12 @@ const PRIMARY = [
   { to: "/jobs",         label: "Stellen",    icon: Briefcase },
   { to: "/lebenslauf",   label: "Lebenslauf", icon: FileText },
   { to: "/job-alerts",   label: "Alerts",     icon: Bell },
+  { to: "/kalender",     label: "Kalender",   icon: Calendar },
 ];
 
 const SECONDARY = [
   { to: "/settings", label: "Einstellungen", icon: Settings },
-  { to: "/billing",  label: "Abonnement",    icon: CreditCard },
+  { to: "/billing",  label: "Mein Plan",    icon: CreditCard },
 ];
 
 function isMac() {

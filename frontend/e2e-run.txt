@@ -1,0 +1,282 @@
+
+Running 13 tests using 8 workers
+
+[1A[2K[1/13] [chromium] › e2e/jobs.spec.js:34:1 › jobs page can search and save a result into applications
+[1A[2K[2/13] [chromium] › e2e/auth.spec.js:3:1 › register page validates required fields
+[1A[2K[3/13] [chromium] › e2e/settings.spec.js:34:1 › settings save sends both preferences and profile updates
+[1A[2K[4/13] [chromium] › e2e/job-detail.spec.js:34:1 › job detail can generate interview preparation
+[1A[2K[5/13] [chromium] › e2e/smoke.spec.js:3:1 › login page renders
+[1A[2K[6/13] [chromium] › e2e/job-alerts.spec.js:43:1 › job alerts can be created and deleted in the UI
+[1A[2K[7/13] [chromium] › e2e/billing.spec.js:35:1 › billing page renders usage and clears checkout query params
+[1A[2K[8/13] [chromium] › e2e/applications.spec.js:34:1 › applications list can update status and autosave notes
+[1A[2K[9/13] [chromium] › e2e/auth.spec.js:12:1 › verify email success state renders for guests
+[1A[2K  1) [chromium] › e2e/auth.spec.js:12:1 › verify email success state renders for guests ────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('link', { name: /zum login/i })
+    Expected: visible
+    Error: strict mode violation: getByRole('link', { name: /zum login/i }) resolved to 2 elements:
+        1) <a href="/login" class="col-span-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors">…</a> aka getByRole('banner').getByRole('link', { name: 'Zum Login' })
+        2) <a href="/login" class="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors">…</a> aka getByRole('main').getByRole('link', { name: 'Zum Login' })
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByRole('link', { name: /zum login/i })[22m
+
+
+      22 |
+      23 |   await expect(page.getByRole("heading", { name: /e-mail bestätigt/i })).toBeVisible();
+    > 24 |   await expect(page.getByRole("link", { name: /zum login/i })).toBeVisible();
+         |                                                                ^
+      25 | });
+      26 |
+      27 | test("verify email error state renders for invalid token", async ({ page }) => {
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/auth.spec.js:24:64
+
+    Error Context: test-results/auth-verify-email-success-state-renders-for-guests-chromium/error-context.md
+
+
+[1A[2K[10/13] [chromium] › e2e/auth.spec.js:27:1 › verify email error state renders for invalid token
+[1A[2K  2) [chromium] › e2e/billing.spec.js:35:1 › billing page renders usage and clears checkout query params 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: /abrechnung/i })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByRole('heading', { name: /abrechnung/i })[22m
+
+
+      71 |   await page.goto("/billing?success=true#plan");
+      72 |
+    > 73 |   await expect(page.getByRole("heading", { name: /abrechnung/i })).toBeVisible();
+         |                                                                    ^
+      74 |   await expect(page.getByText(/jobsuchen \(heute\)/i)).toBeVisible();
+      75 |   await expect(page.getByText(/2 \/ 5/i)).toBeVisible();
+      76 |   await expect(page).toHaveURL(/\/billing#plan$/);
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js:73:68
+
+    Error Context: test-results/billing-billing-page-rende-2cca9-lears-checkout-query-params-chromium/error-context.md
+
+
+[1A[2K  3) [chromium] › e2e/smoke.spec.js:3:1 › login page renders ───────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByPlaceholder(/dein passwort eingeben/i)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByPlaceholder(/dein passwort eingeben/i)[22m
+
+
+       6 |   await expect(page.getByRole("heading", { name: /willkommen zurück/i })).toBeVisible();
+       7 |   await expect(page.getByPlaceholder(/du@beispiel\.at/i)).toBeVisible();
+    >  8 |   await expect(page.getByPlaceholder(/dein passwort eingeben/i)).toBeVisible();
+         |                                                                  ^
+       9 |   await expect(page.getByRole("button", { name: /anmelden/i })).toBeVisible();
+      10 | });
+      11 |
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/smoke.spec.js:8:66
+
+    Error Context: test-results/smoke-login-page-renders-chromium/error-context.md
+
+
+[1A[2K  4) [chromium] › e2e/applications.spec.js:34:1 › applications list can update status and autosave notes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('QA Engineer')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByText('QA Engineer')[22m
+
+
+      135 |
+      136 |   await page.goto("/jobs");
+    > 137 |   await expect(page.getByText("QA Engineer")).toBeVisible();
+          |                                               ^
+      138 |
+      139 |   const card = page.locator("div.overflow-hidden.rounded-xl.border").filter({ hasText: "QA Engineer" }).first();
+      140 |   await page.getByRole("button", { name: /als beworben markieren/i }).click();
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/applications.spec.js:137:47
+
+    Error Context: test-results/applications-applications--569d9-e-status-and-autosave-notes-chromium/error-context.md
+
+
+[1A[2K  5) [chromium] › e2e/settings.spec.js:34:1 › settings save sends both preferences and profile updates 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      108 |   await page.locator('button[type="submit"]').click();
+      109 |
+    > 110 |   await expect.poll(() => profileSaved).toBe(true);
+          |   ^
+      111 |   await expect.poll(() => preferencesSaved).toBe(true);
+      112 | });
+      113 |
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js:110:3
+
+    Error Context: test-results/settings-settings-save-sen-ad926-erences-and-profile-updates-chromium/error-context.md
+
+
+[1A[2K[11/13] [chromium] › e2e/billing.spec.js:79:1 › pricing page starts checkout for a paid plan
+[1A[2K[12/13] [chromium] › e2e/settings.spec.js:114:1 › settings delete-account flow redirects to login
+[1A[2K  6) [chromium] › e2e/jobs.spec.js:34:1 › jobs page can search and save a result into applications ─
+
+    [31mTest timeout of 45000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 45000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /stellen finden/i })[22m
+
+
+      108 |
+      109 |   await page.goto("/jobs");
+    > 110 |   await page.getByRole("button", { name: /stellen finden/i }).click();
+          |                                                               ^
+      111 |   await page.getByRole("button", { name: /^stellen suchen$/i }).click();
+      112 |   await page.getByRole("button", { name: /eigene suche/i }).click();
+      113 |   await page.getByPlaceholder(/verkauf, gastro, it, praktikum/i).fill("QA Engineer");
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/jobs.spec.js:110:63
+
+    Error Context: test-results/jobs-jobs-page-can-search--9560d--a-result-into-applications-chromium/error-context.md
+
+
+[1A[2K  7) [chromium] › e2e/job-detail.spec.js:34:1 › job detail can generate interview preparation ──────
+
+    [31mTest timeout of 45000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 45000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('div.animate-slide-up.mb-8.flex.flex-wrap.gap-3 button').nth(2)[22m
+
+
+      115 |
+      116 |   const actionButtons = page.locator("div.animate-slide-up.mb-8.flex.flex-wrap.gap-3 button");
+    > 117 |   await actionButtons.nth(2).click();
+          |                              ^
+      118 |
+      119 |   await expect(page.getByText(/wie strukturierst du einen regressionstest/i)).toBeVisible();
+      120 |   await expect(page.getByRole("button", { name: /q1/i })).toBeVisible();
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/job-detail.spec.js:117:30
+
+    Error Context: test-results/job-detail-job-detail-can-generate-interview-preparation-chromium/error-context.md
+
+
+[1A[2K  8) [chromium] › e2e/job-alerts.spec.js:43:1 › job alerts can be created and deleted in the UI ────
+
+    [31mTest timeout of 45000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 45000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /neuer alert/i })[22m
+
+
+      131 |
+      132 |   await page.goto("/job-alerts");
+    > 133 |   await page.getByRole("button", { name: /neuer alert/i }).click();
+          |                                                            ^
+      134 |   await page.getByPlaceholder(/software engineer/i).fill("QA Alert");
+      135 |   await page.getByRole("button", { name: /^alert erstellen$/i }).click();
+      136 |
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/job-alerts.spec.js:133:60
+
+    Error Context: test-results/job-alerts-job-alerts-can-be-created-and-deleted-in-the-UI-chromium/error-context.md
+
+
+[1A[2K[13/13] [chromium] › e2e/job-alerts.spec.js:145:1 › run-now updates the shared refresh counter
+[1A[2K  9) [chromium] › e2e/billing.spec.js:79:1 › pricing page starts checkout for a paid plan ──────────
+
+    [31mTest timeout of 45000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 45000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /jetzt upgraden/i }).first()[22m
+
+
+      110 |
+      111 |   await page.goto("/pricing");
+    > 112 |   await page.getByRole("button", { name: /jetzt upgraden/i }).first().click();
+          |                                                                       ^
+      113 |   await expect.poll(() => checkoutRequested).toBe(true);
+      114 | });
+      115 |
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js:112:71
+
+    Error Context: test-results/billing-pricing-page-starts-checkout-for-a-paid-plan-chromium/error-context.md
+
+
+[1A[2K  10) [chromium] › e2e/settings.spec.js:114:1 › settings delete-account flow redirects to login ────
+
+    [31mTest timeout of 45000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 45000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /konto .*löschen/i })[22m
+
+
+      169 |
+      170 |   await page.goto("/settings");
+    > 171 |   await page.getByRole("button", { name: /konto .*löschen/i }).click();
+          |                                                                ^
+      172 |   await page.getByPlaceholder(/dein aktuelles passwort/i).fill("secret123");
+      173 |   await page.getByRole("button", { name: /unwiderruflich löschen/i }).click();
+      174 |
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js:171:64
+
+    Error Context: test-results/settings-settings-delete-account-flow-redirects-to-login-chromium/error-context.md
+
+
+[1A[2K  11) [chromium] › e2e/job-alerts.spec.js:145:1 › run-now updates the shared refresh counter ───────
+
+    [31mTest timeout of 45000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 45000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('div').filter({ hasText: 'Frontend Engineer' }).first().locator('button[title="Jetzt ausführen"]')[22m
+
+
+      212 |   await page.goto("/job-alerts");
+      213 |   const card = page.locator("div").filter({ hasText: "Frontend Engineer" }).first();
+    > 214 |   await card.locator('button[title="Jetzt ausführen"]').click();
+          |                                                         ^
+      215 |
+      216 |   await expect(page.getByText(/2 Aktualisierung(en)? heute/i)).toBeVisible();
+      217 | });
+        at /home/davorrr/Documents/JobAssist-main/frontend/e2e/job-alerts.spec.js:214:57
+
+    Error Context: test-results/job-alerts-run-now-updates-the-shared-refresh-counter-chromium/error-context.md
+
+
+[1A[2K  11 failed
+    [chromium] › e2e/applications.spec.js:34:1 › applications list can update status and autosave notes 
+    [chromium] › e2e/auth.spec.js:12:1 › verify email success state renders for guests ─────────────
+    [chromium] › e2e/billing.spec.js:35:1 › billing page renders usage and clears checkout query params 
+    [chromium] › e2e/billing.spec.js:79:1 › pricing page starts checkout for a paid plan ───────────
+    [chromium] › e2e/job-alerts.spec.js:43:1 › job alerts can be created and deleted in the UI ─────
+    [chromium] › e2e/job-alerts.spec.js:145:1 › run-now updates the shared refresh counter ─────────
+    [chromium] › e2e/job-detail.spec.js:34:1 › job detail can generate interview preparation ───────
+    [chromium] › e2e/jobs.spec.js:34:1 › jobs page can search and save a result into applications ──
+    [chromium] › e2e/settings.spec.js:34:1 › settings save sends both preferences and profile updates 
+    [chromium] › e2e/settings.spec.js:114:1 › settings delete-account flow redirects to login ──────
+    [chromium] › e2e/smoke.spec.js:3:1 › login page renders ────────────────────────────────────────
+  2 passed (1.6m)

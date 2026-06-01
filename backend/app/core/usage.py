@@ -152,7 +152,8 @@ def require_usage(feature: str):
                     "error": "usage_limit",
                     "feature": feature,
                     "plan": plan,
-                    "used": limit,
+                    # Reflect the actual used count on failure for clearer UX.
+                    "used": await get_usage_count(db, current_user.id, feature),
                     "limit": limit,
                     "message": f"Du hast dein Limit für diese Funktion erreicht ({limit}/{limit}). Bitte upgrade deinen Plan.",
                 },
@@ -160,6 +161,40 @@ def require_usage(feature: str):
 
         if _is_pg:
             await db.commit()
+
+    return _check
+
+
+def require_usage_or_trial(feature: str, max_trials: int = 1):
+    """Dependency: enforce usage limits, but allow unverified users a limited trial.
+
+    If the user is verified, this behaves exactly like `require_usage`.
+    If unverified and trial_used < max_trials, consume one trial and allow.
+    If unverified and trial exhausted, raise 403 demanding email verification.
+    """
+    async def _check(
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
+        if current_user.is_verified:
+            # Delegate to standard usage check for verified users
+            checker = require_usage(feature)
+            await checker(db=db, current_user=current_user)
+            return
+
+        # Unverified user — trial layer
+        if current_user.trial_used:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "email_not_verified",
+                    "message": "Bitte bestätige zuerst deine E-Mail-Adresse, um diese Funktion nutzen zu können.",
+                },
+            )
+
+        # Consume the single trial
+        current_user.trial_used = True
+        await db.commit()
 
     return _check
 
@@ -214,9 +249,11 @@ async def get_all_usage(db: AsyncSession, user_id: int, plan: str) -> list[dict]
 
     monthly_features = [f for f in features if f not in DAILY_FEATURES]
     daily_features_list = [f for f in features if f in DAILY_FEATURES]
-    counts = {}
 
-    if monthly_features:
+    # Run all count queries concurrently.
+    async def _monthly():
+        if not monthly_features:
+            return []
         rows = await db.execute(
             select(UsageRecord.feature, UsageRecord.count).where(
                 UsageRecord.user_id == user_id,
@@ -224,9 +261,11 @@ async def get_all_usage(db: AsyncSession, user_id: int, plan: str) -> list[dict]
                 UsageRecord.period_start == monthly_period,
             )
         )
-        counts.update({row.feature: row.count for row in rows})
+        return rows
 
-    if daily_features_list:
+    async def _daily():
+        if not daily_features_list:
+            return []
         rows = await db.execute(
             select(UsageRecord.feature, UsageRecord.count).where(
                 UsageRecord.user_id == user_id,
@@ -234,9 +273,20 @@ async def get_all_usage(db: AsyncSession, user_id: int, plan: str) -> list[dict]
                 UsageRecord.period_start == daily_period,
             )
         )
-        counts.update({row.feature: row.count for row in rows})
+        return rows
 
-    alert_count_result = await db.execute(select(sa_func.count()).where(JobAlert.user_id == user_id))
+    monthly_rows, daily_rows, alert_count_result = await asyncio.gather(
+        _monthly(),
+        _daily(),
+        db.execute(select(sa_func.count()).where(JobAlert.user_id == user_id)),
+    )
+
+    counts = {
+        row.feature: row.count
+        for rows in (monthly_rows, daily_rows)
+        for row in rows
+    }
+
     alert_count = alert_count_result.scalar() or 0
 
     result = []

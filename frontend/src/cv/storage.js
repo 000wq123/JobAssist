@@ -61,6 +61,30 @@ export function deleteFromLibrary(id) {
   writeJson(STORAGE_KEYS.CV_LIBRARY, loadLibrary().filter((e) => e.id !== id));
 }
 
+/** Duplicate an entry with a new id and a "(Kopie)" suffix on the name. */
+export function duplicateInLibrary(id) {
+  const lib = loadLibrary();
+  const entry = lib.find((e) => e.id === id);
+  if (!entry) return;
+  const copy = {
+    ...entry,
+    id: Math.random().toString(36).slice(2, 12),
+    name: `${entry.name} (Kopie)`,
+    createdAt: new Date().toISOString(),
+  };
+  writeJson(STORAGE_KEYS.CV_LIBRARY, [copy, ...lib].slice(0, 10));
+  return copy;
+}
+
+/** Rename an entry by id. */
+export function renameInLibrary(id, newName) {
+  const lib = loadLibrary();
+  const entry = lib.find((e) => e.id === id);
+  if (!entry) return;
+  entry.name = newName;
+  writeJson(STORAGE_KEYS.CV_LIBRARY, lib);
+}
+
 // ─── CV Generation rate-limiting (frontend guard, basic = 1 total lifetime) ─────
 
 export const CV_GEN_LIMITS = {

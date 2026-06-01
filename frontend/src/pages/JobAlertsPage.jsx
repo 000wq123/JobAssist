@@ -1,13 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertCircle,
   Bell,
-  Lock,
   Pencil,
-  Play,
   Plus,
-  RefreshCw,
   Trash2,
   X,
   MoreHorizontal,
@@ -17,13 +15,14 @@ import toast from "react-hot-toast";
 import useUsageGuard from "../hooks/useUsageGuard";
 import { jobAlertsApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
-import { getRewriteState, getRunState, getCreationState, updateUsageList } from "../utils/jobAlertsState";
+import { getRewriteState, updateUsageList } from "../utils/jobAlertsState";
 
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import EmptyState from "../components/ui/EmptyState";
 import Skeleton from "../components/ui/Skeleton";
+import Popover from "../components/ui/Popover";
 import PageHeader from "../components/ui/PageHeader";
 
 const JOB_TYPES = [
@@ -64,57 +63,68 @@ function syncStoredAlerts(data) {
 }
 
 /**
- * relativeTimeShort — German short relative time, e.g. "vor 3 Tagen", "heute".
+ * fmtAlertDate — precise German date, e.g. "22. Mai 2025".
+ * Falls back to relative only for today/yesterday.
  */
-function relativeTimeShort(value) {
+function fmtAlertDate(value) {
   if (!value) return null;
-  const ms = Date.now() - new Date(value).getTime();
+  const d = new Date(value);
+  const ms = Date.now() - d.getTime();
   const day = 24 * 60 * 60 * 1000;
   const days = Math.floor(ms / day);
   if (days <= 0) return "heute";
   if (days === 1) return "gestern";
-  if (days < 7) return `vor ${days} Tagen`;
-  if (days < 30) return `vor ${Math.floor(days / 7)} Wochen`;
-  if (days < 365) return `vor ${Math.floor(days / 30)} Monaten`;
-  return `vor ${Math.floor(days / 365)} Jahren`;
+  return d.toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric" });
 }
 
 /**
  * AlertRow — flat full-width card. Replaces the old master/detail layout.
  * Shows all info inline + action buttons on the right. No selection model.
  */
-function AlertRow({ alert, onDelete, onRunNow, onEdit, isRunning, runState, creationState }) {
+function AlertRow({ alert, onDelete, onEdit, onToggleActive }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuBtnRef = useRef(null);
   const typeLabel = JOB_TYPES.find((t) => t.value === alert.job_type)?.label || "Alle Arten";
   const freqLabel = FREQUENCIES.find((f) => f.value === alert.frequency)?.label || alert.frequency;
-  const runDisabled = isRunning || runState.atLimit;
-  const lastSent = alert.last_sent_at ? relativeTimeShort(alert.last_sent_at) : null;
+  const lastSent = alert.last_sent_at ? fmtAlertDate(alert.last_sent_at) : null;
 
   return (
     <article className="relative grid grid-cols-12 gap-4 items-center rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] px-5 py-5 mb-3 last:mb-0 transition-opacity duration-200">
       {/* "..." — always top-right */}
       <div className="absolute top-3 right-3">
-        {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="relative z-50 w-8 h-8 grid place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
+          className="w-8 h-8 grid place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
           aria-label="Mehr"
+          aria-expanded={menuOpen}
+          ref={(el) => { menuBtnRef.current = el; }}
         >
           <MoreHorizontal className="w-3.5 h-3.5" />
         </button>
-        {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-1 shadow-lg">
-            <button
-              type="button"
-              onClick={() => { onDelete(alert.id); setMenuOpen(false); }}
-              className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-            >
-              <Trash2 className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Löschen</span>
-            </button>
-          </div>
-        )}
+        <Popover
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          anchorRef={menuBtnRef}
+          align="right"
+          className="min-w-[160px] rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-1 shadow-lg mt-1"
+        >
+          <button
+            type="button"
+            onClick={() => { onToggleActive(alert.id, !alert.is_active); setMenuOpen(false); }}
+            className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded text-[13px] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]"
+          >
+            <span>{alert.is_active ? "Pausieren" : "Aktivieren"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { onDelete(alert.id); setMenuOpen(false); }}
+            className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          >
+            <Trash2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Löschen</span>
+          </button>
+        </Popover>
       </div>
 
       {/* Title + meta */}
@@ -127,10 +137,10 @@ function AlertRow({ alert, onDelete, onRunNow, onEdit, isRunning, runState, crea
             {alert.keywords}
           </h2>
           <span
-            className={`inline-flex items-center h-5 px-2.5 rounded-full text-[11px] font-medium ${
+            className={`inline-flex items-center h-5 px-2.5 rounded-full text-[11px] font-medium border ${
               alert.is_active
-                ? "bg-[var(--color-success-soft)] text-[var(--color-success)] border border-[var(--color-success)]/20"
-                : "bg-[var(--color-bg-elev-2)] text-[var(--color-fg-dim)] border border-[var(--color-border-subtle)]"
+                ? "bg-[var(--color-bg-elev-2)] text-[var(--color-fg-muted)] border-[var(--color-border-subtle)]"
+                : "bg-[var(--color-bg-elev-2)] text-[var(--color-fg-dim)] border-[var(--color-border-subtle)] opacity-60"
             }`}
           >
             {alert.is_active ? "Aktiv" : "Pausiert"}
@@ -140,40 +150,15 @@ function AlertRow({ alert, onDelete, onRunNow, onEdit, isRunning, runState, crea
           {[alert.location || "Überall", typeLabel, freqLabel].join(" · ")}
         </p>
         <p className="mt-1 text-[12px] text-[var(--color-fg-dim)]">
-          {lastSent ? `Letzte E-Mail ${lastSent}` : "Noch keine E-Mail verschickt"}
+          {lastSent ? `Letzte Mail: ${lastSent}` : "Noch keine Mail verschickt"}
         </p>
       </div>
 
       {/* Inline actions */}
       <div className="col-span-12 sm:col-span-5 flex items-center sm:justify-end gap-2 flex-wrap">
-        {runState.limit === 0
-          ? (
-            <span
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold text-[var(--color-accent-400)] border border-[var(--color-accent-500)]/30 bg-[var(--color-accent-500)]/10 cursor-default"
-              title="Manuelle Ausführungen sind nur für Pro verfügbar"
-            >
-              <Lock className="w-3 h-3" />
-              Pro
-            </span>
-          ) : (
-            <Button
-              variant="secondary"
-              onClick={() => !runDisabled && onRunNow(alert.id)}
-              disabled={runDisabled}
-              title={runState.atLimit ? `Tageslimit (${runState.used}/${runState.limit}) — Reset um 00:00 UTC` : "Jetzt prüfen"}
-            >
-              {isRunning
-                ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                : runState.atLimit
-                ? <Lock className="w-3.5 h-3.5" />
-                : <Play className="w-3.5 h-3.5" />}
-              Jetzt prüfen
-            </Button>
-          )}
         <Button
           variant="ghost"
           onClick={() => onEdit(alert)}
-          disabled={creationState.atLimit}
         >
           <Pencil className="w-3.5 h-3.5" />
           Bearbeiten
@@ -196,6 +181,14 @@ function CreateAlertModal({ onClose, onSubmit, defaultEmail, initialData, title 
   });
 
   const setVal = (key, val) => setForm((p) => ({ ...p, [key]: val }));
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -319,8 +312,6 @@ export default function JobAlertsPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [editingAlert, setEditingAlert] = useState(null);
-  const [runningId, setRunningId] = useState(null);
-  const runningRef = useRef(false);
 
   const { data: initData } = useQuery({
     queryKey: ["init"],
@@ -334,9 +325,9 @@ export default function JobAlertsPage() {
   });
 
   const me = initData?.me;
-  const { guardedRun } = useUsageGuard("job_alerts");
+  const { guardedRun, atLimit: planAtLimit } = useUsageGuard("job_alerts");
 
-  const { data: alertsData, isFetching } = useQuery({
+  const { data: alertsData, isFetching, isError, error } = useQuery({
     queryKey: ["job-alerts"],
     queryFn: () => jobAlertsApi.list().then((r) => { syncStoredAlerts(r.data); return r.data; }),
     initialData: () => queryClient.getQueryData(["job-alerts"]) ?? loadStoredAlerts(),
@@ -345,8 +336,6 @@ export default function JobAlertsPage() {
   });
 
   const alerts = useMemo(() => alertsData?.alerts ?? [], [alertsData?.alerts]);
-  const runState = getRunState(alertsData ?? {});
-  const creationState = getCreationState(alertsData ?? {});
 
   const createMutation = useMutation({
     mutationFn: (data) => jobAlertsApi.create(data),
@@ -365,13 +354,7 @@ export default function JobAlertsPage() {
     },
     onError: (err) => {
       const detail = err.response?.data?.detail;
-      if (err.response?.status === 403) {
-        if (detail?.error === "usage_limit") return;
-        if (detail?.error === "daily_creation_limit") {
-          toast.error(`Tageslimit erreicht (${detail.used}/${detail.limit}). Reset um 00:00 UTC.`);
-          return;
-        }
-      }
+      if (err.response?.status === 403 && detail?.error === "usage_limit") return;
       toast.error(getApiErrorMessage(err, "Alert konnte nicht erstellt werden"));
     },
   });
@@ -392,6 +375,7 @@ export default function JobAlertsPage() {
         return next;
       });
       setEditingAlert(null);
+      toast.success("Alert aktualisiert");
       return { prev };
     },
     onError: (err, _v, ctx) => {
@@ -400,10 +384,7 @@ export default function JobAlertsPage() {
         syncStoredAlerts(ctx.prev);
       }
       const detail = err.response?.data?.detail;
-      if (err.response?.status === 403 && detail?.error === "daily_creation_limit") {
-        toast.error(`Tageslimit erreicht (${detail.used}/${detail.limit}). Reset um 00:00 UTC.`);
-        return;
-      }
+      if (err.response?.status === 403 && detail?.error === "usage_limit") return;
       toast.error(getApiErrorMessage(err, "Alert konnte nicht aktualisiert werden"));
     },
     onSuccess: (res) => {
@@ -415,7 +396,6 @@ export default function JobAlertsPage() {
         syncStoredAlerts(next);
         return next;
       });
-      toast.success("Alert aktualisiert");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["job-alerts"] }),
   });
@@ -455,55 +435,13 @@ export default function JobAlertsPage() {
     },
   });
 
-  const handleRunNow = async (id) => {
-    if (runningRef.current || runningId) return;
-    runningRef.current = true;
-    if (runState.atLimit) {
-      toast.error(`Tageslimit erreicht (${runState.used}/${runState.limit}). Reset um 00:00 UTC.`);
-      return;
-    }
-    setRunningId(id);
-    try {
-      await jobAlertsApi.runNow(id);
-      queryClient.setQueryData(["job-alerts"], (old) =>
-        old ? { ...old, daily_manual_run_count: (old.daily_manual_run_count ?? 0) + 1 } : old,
-      );
-      toast.success("Suche gestartet. Du erhältst bald eine E-Mail.", { duration: 5000 });
-    } catch (err) {
-      const detail = err.response?.data?.detail;
-      if (err.response?.status === 403) {
-        if (detail?.error === "daily_run_limit") {
-          toast.error(`Tageslimit erreicht (${detail.used}/${detail.limit}). Reset um 00:00 UTC.`);
-          queryClient.setQueryData(["job-alerts"], (old) =>
-            old ? { ...old, daily_manual_run_count: detail.used } : old,
-          );
-          return;
-        }
-        if (detail?.error === "usage_limit") return;
-      }
-      toast.error(getApiErrorMessage(err, "Suche konnte nicht gestartet werden"));
-    } finally {
-      runningRef.current = false;
-      setRunningId(null);
-    }
-  };
+  // Removed manual run-now functionality for alerts.
 
   const handleOpenCreate = () => {
-    if (creationState.atLimit) {
-      toast.error(
-        `Tageslimit erreicht (${creationState.used}/${creationState.limit}). Upgrade auf Pro oder warte bis 00:00 UTC.`,
-        { duration: 6000 },
-      );
-      return;
-    }
     guardedRun(() => setShowCreate(true));
   };
 
   const handleOpenEdit = (current) => {
-    if (creationState.atLimit) {
-      toast.error(`Tageslimit für Bearbeitungen erreicht (${creationState.used}/${creationState.limit}).`);
-      return;
-    }
     const { canRewrite, remainingMin } = getRewriteState(current);
     if (!canRewrite) {
       toast.error(`Du kannst diesen Alert in ${remainingMin} Minuten erneut bearbeiten.`);
@@ -516,10 +454,43 @@ export default function JobAlertsPage() {
 
   // ── Empty state ─────────────────────────────────────────────
   if (alerts.length === 0) {
-    if (isFetching) {
+    if (isFetching && !alertsData) {
       return (
         <div className="grid grid-cols-1 gap-3 animate-slide-up">
           {[0, 1, 2].map((i) => <Skeleton key={i} className="h-20" />)}
+        </div>
+      );
+    }
+    if (isError) {
+      return (
+        <div className="grid grid-cols-12 gap-5 md:gap-6 animate-slide-up">
+          <PageHeader
+            className="col-span-12"
+            title="Alerts"
+            description="Lass dir passende Stellen per E-Mail schicken."
+          />
+          <Card className="col-span-12 p-6 flex flex-col items-center text-center">
+            <AlertCircle className="w-8 h-8 text-[var(--color-error)] mb-3" />
+            <p className="text-[15px] font-medium text-[var(--color-fg)]">
+              Alerts konnten nicht geladen werden
+            </p>
+            <p className="mt-1 text-[13px] text-[var(--color-fg-muted)]">
+              {getApiErrorMessage(error, "Bitte versuche es später erneut.")}
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["job-alerts"] })}
+            >
+              Erneut versuchen
+            </Button>
+          </Card>
+          {showCreate && (
+            <CreateAlertModal
+              onClose={() => setShowCreate(false)}
+              onSubmit={(data) => createMutation.mutate(data)}
+              defaultEmail={me?.email || ""}
+            />
+          )}
         </div>
       );
     }
@@ -536,10 +507,12 @@ export default function JobAlertsPage() {
             title="Noch keine Alerts"
             description="Erstelle deinen ersten Alert — passende Stellen kommen automatisch per E-Mail."
             action={
-              <Button onClick={handleOpenCreate} disabled={creationState.atLimit}>
-                <Plus className="w-3.5 h-3.5" />
-                Alert erstellen
-              </Button>
+              (
+                <Button onClick={handleOpenCreate} disabled={planAtLimit}>
+                  <Plus className="w-3.5 h-3.5" />
+                  Alert erstellen
+                </Button>
+              )
             }
           />
         </Card>
@@ -562,52 +535,16 @@ export default function JobAlertsPage() {
         description={`${alerts.length} ${alerts.length === 1 ? "Alert" : "Alerts"} · ${activeCount} aktiv`}
         className="mb-6"
         actions={
-          <Button onClick={handleOpenCreate} disabled={creationState.atLimit}>
-            {creationState.atLimit ? <Lock className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          <Button
+            onClick={handleOpenCreate}
+            disabled={planAtLimit}
+            title={planAtLimit ? "Upgrade auf Pro oder Max für mehr Alerts" : undefined}
+          >
+            <Plus className="w-3.5 h-3.5" />
             Neuer Alert
           </Button>
         }
       />
-
-      {/* Account-level usage strip — only show run counter when user actually has manual runs (Pro+) */}
-      {!runState.unlimited && runState.limit > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] px-4 py-2.5">
-          <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-fg-muted)]">
-            <Play className="w-3 h-3 text-[var(--color-fg-dim)]" />
-            <span>Prüfungen heute:</span>
-            <span className={`font-semibold ${runState.atLimit ? "text-[var(--color-warning)]" : "text-[var(--color-fg)]"}`}>
-              {runState.used}&thinsp;/&thinsp;{runState.limit}
-            </span>
-          </div>
-          {!creationState.unlimited && (
-            <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-fg-muted)]">
-              <Plus className="w-3 h-3 text-[var(--color-fg-dim)]" />
-              <span>Erstellungen heute:</span>
-              <span className={`font-semibold ${creationState.atLimit ? "text-[var(--color-warning)]" : "text-[var(--color-fg)]"}`}>
-                {creationState.used}&thinsp;/&thinsp;{creationState.limit}
-              </span>
-            </div>
-          )}
-          <span className="text-[11px] text-[var(--color-fg-dim)] ml-auto">Täglich zurückgesetzt</span>
-        </div>
-      )}
-      {runState.atLimit && runState.limit > 0 && (
-        <div className="mb-4 grid grid-cols-12 items-start gap-3 rounded-md border border-[var(--color-warning)]/20 bg-[var(--color-warning-soft)] px-4 py-3">
-          <Lock className="col-span-1 w-4 h-4 text-[var(--color-warning)]" />
-          <div className="col-span-11 text-[12.5px] text-[var(--color-fg)]">
-            Tageslimit für manuelle Ausführungen erreicht. Reset um 00:00 UTC.
-          </div>
-        </div>
-      )}
-      {creationState.atLimit && (
-        <div className="mb-4 grid grid-cols-12 items-start gap-3 rounded-md border border-[var(--color-warning)]/20 bg-[var(--color-warning-soft)] px-4 py-3">
-          <Lock className="col-span-1 w-4 h-4 text-[var(--color-warning)]" />
-          <div className="col-span-11 text-[12.5px] text-[var(--color-fg)]">
-            Tageslimit für Erstellungen erreicht.{" "}
-            <span className="font-semibold">Upgrade auf Pro</span> für mehr Kapazität.
-          </div>
-        </div>
-      )}
 
       {/* Flat list of alert cards */}
       <div>
@@ -616,11 +553,8 @@ export default function JobAlertsPage() {
             key={alert.id}
             alert={alert}
             onDelete={(id) => deleteMutation.mutate(id)}
-            onRunNow={handleRunNow}
             onEdit={handleOpenEdit}
-            isRunning={runningId === alert.id}
-            runState={runState}
-            creationState={creationState}
+            onToggleActive={(id, nextActive) => updateMutation.mutate({ id, data: { is_active: nextActive } })}
           />
         ))}
       </div>

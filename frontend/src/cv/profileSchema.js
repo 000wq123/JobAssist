@@ -19,6 +19,7 @@
  * @property {string} vorname
  * @property {string} nachname
  * @property {string} geburtsdatum     - ISO "YYYY-MM-DD" (rendered as DD.MM.YYYY in PDF)
+ * @property {string} geburtsort
  * @property {string} strasse
  * @property {string} plz
  * @property {string} ort
@@ -40,6 +41,9 @@
  * @property {string[]} branchen
  * @property {string} verfuegbarAb     - "YYYY-MM-DD"
  * @property {string} foto             - data URL or "" (optional, AT-CV norm)
+ * @property {string} profil           - Personal statement / Über mich
+ * @property {{name:string,institution:string,jahr:string}[]} weiterbildungen
+ * @property {{name:string,organisation:string,beschreibung:string,von:string,bis:string}[]} aktivitaeten
  * @property {number} _version
  */
 
@@ -51,6 +55,7 @@ export function emptyProfile() {
     vorname: "",
     nachname: "",
     geburtsdatum: "",
+    geburtsort: "",
     strasse: "",
     plz: "",
     ort: "",
@@ -72,6 +77,9 @@ export function emptyProfile() {
     branchen: [],
     verfuegbarAb: "",
     foto: "",
+    profil: "",
+    weiterbildungen: [],
+    aktivitaeten: [],
     templateId: "tabellarisch",
     _version: CV_PROFILE_VERSION,
   };

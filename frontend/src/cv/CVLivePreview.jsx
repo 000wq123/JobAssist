@@ -102,10 +102,10 @@ export default function CVLivePreview({ profile, width = 320 }) {
   const softSkills = skills.filter((sk) => SOFT_SKILLS_SET.has(sk));
   const techSkills = skills.filter((sk) => !SOFT_SKILLS_SET.has(sk));
 
-  const hobbyLine = (p.hobbies || "").split("\n")[0] || "";
-  const hobbyTags = hobbyLine.includes(",")
-    ? hobbyLine.split(",").map((t) => t.trim().slice(0, 28)).filter(Boolean)
-    : hobbyLine.trim() ? [hobbyLine.trim().slice(0, 28)] : [];
+  const hobbyRaw = (p.hobbies || "").trim();
+  const hobbyTags = hobbyRaw.includes(",")
+    ? hobbyRaw.split(",").map((t) => t.trim()).filter(Boolean)
+    : hobbyRaw ? [hobbyRaw] : [];
 
   const hasFoto = typeof p.foto === "string" && p.foto.length > 10;
 

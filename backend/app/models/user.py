@@ -29,6 +29,9 @@ class User(Base):
     location: Mapped[str] = mapped_column(String, default="United States", nullable=False)  # Country/City
     language: Mapped[str] = mapped_column(String, default="en", nullable=False)  # en, es, fr
 
+    # Trial tracking for unverified users (e.g., 1 free cv_analysis before email verification)
+    trial_used: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
     # v1 additions
     plan: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
     notification_channel: Mapped[str] = mapped_column(String(20), default="email", nullable=False)

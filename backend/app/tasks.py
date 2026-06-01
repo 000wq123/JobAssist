@@ -196,9 +196,11 @@ async def _run_due_job_alerts_inner() -> None:
 
 
 async def job_alert_scheduler_loop() -> None:
-    """Check for due alerts every hour."""
+    """Check for due alerts every hour.
+
+    Runs immediately on startup so alerts are not delayed by up to an hour
+    after a server restart or deployment."""
     while True:
-        await asyncio.sleep(60 * 60)
         try:
             await run_due_job_alerts()
             metrics.inc(
@@ -211,6 +213,7 @@ async def job_alert_scheduler_loop() -> None:
                 labels={"task": "job_alert", "outcome": "error"},
             )
             traceback.print_exc()
+        await asyncio.sleep(60 * 60)
 
 
 # ── Daily usage-counter reset ────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -16,10 +16,12 @@ import {
 } from "lucide-react";
 import { authApi, resumeApi, settingsApi } from "../services/api";
 import useAuthStore from "../hooks/useAuthStore";
-import { useI18n } from "../context/I18nContext";
 import { getApiErrorMessage } from "../utils/apiError";
 import Button from "../components/ui/Button";
 import PageHeader from "../components/ui/PageHeader";
+import Input from "../components/ui/Input";
+import Skeleton from "../components/ui/Skeleton";
+import Popover from "../components/ui/Popover";
 
 const loadStored = (key) => {
   try {
@@ -113,15 +115,7 @@ const LABEL_STYLE = {
 
 function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Auswählen…" }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const anchorRef = useRef(null);
 
   const toggle = (option) => {
     const next = value.includes(option)
@@ -136,8 +130,9 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div>
       <div
+        ref={anchorRef}
         onClick={() => setOpen((o) => !o)}
         className="min-h-10 w-full rounded-xl border px-2 py-1.5 text-sm cursor-pointer flex flex-wrap gap-1 items-center focus:outline-none hover:border-[var(--color-border-strong)] transition-colors"
         style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-primary)' }}
@@ -167,8 +162,14 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
               style={{ color: 'var(--color-ink-dim)' }}
         />
       </div>
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border shadow-xl overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-elevated)' }}>
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={anchorRef}
+        align="left"
+        className="w-[min(100%,320px)] rounded-xl border shadow-xl overflow-hidden mt-1"
+        >
+        <div style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-elevated)' }}>
           {options.map((option) => (
             <label
               key={option}
@@ -184,15 +185,14 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
             </label>
           ))}
         </div>
-      )}
+      </Popover>
     </div>
   );
 }
 
-/** User settings page: profile photo, personal info, notification toggles, and account deletion. */
+/** User settings page: profile photo, job preferences, CV upload, and account deletion. */
 export default function SettingsPage() {
   const queryClient = useQueryClient();
-  const { setLanguage, releaseLanguageLock } = useI18n();
   const fileInputRef = useRef(null);
   const [avatar, setAvatar] = useState(null);
 
@@ -208,19 +208,7 @@ export default function SettingsPage() {
     staleTime: 1000 * 60 * 3,
   });
 
-  const { data: preferences, isLoading: _preferencesLoading } = useQuery({
-    queryKey: ["preferences"],
-    queryFn: () =>
-      settingsApi.getPreferences().then((res) => {
-        saveStored("preferences", res.data);
-        return res.data;
-      }),
-    initialData: () => loadStored("preferences"),
-    initialDataUpdatedAt: 0,
-    staleTime: 1000 * 60 * 3,
-  });
-
-  // Compute form values as soon as either query has data — don't wait for both.
+  // Compute form values as soon as profile query has data.
   const formValues = {
     desired_locations: profile?.desired_locations ?? [],
     salary_min: profile?.salary_min ?? null,
@@ -229,9 +217,6 @@ export default function SettingsPage() {
     industries: profile?.industries ?? [],
     experience_level: profile?.experience_level ?? "",
     is_open_to_relocation: profile?.is_open_to_relocation ?? false,
-    currency: preferences?.currency ?? "EUR",
-    location: preferences?.location ?? "Österreich",
-    language: preferences?.language ?? "de",
   };
 
   useEffect(() => {
@@ -246,14 +231,19 @@ export default function SettingsPage() {
     values: formValues,
   });
 
+  const watchedSalaryMin = useWatch({ control, name: "salary_min" });
+  const watchedSalaryMax = useWatch({ control, name: "salary_max" });
+  const salaryError =
+    watchedSalaryMin != null && watchedSalaryMax != null && watchedSalaryMin > watchedSalaryMax
+      ? "Mindestgehalt darf nicht höher als das Maximalgehalt sein"
+      : null;
+
   const onSubmit = async (data) => {
     if (isSubmitting) return;
-
-    const preferencesPayload = {
-      currency: data.currency,
-      location: data.location,
-      language: data.language,
-    };
+    if (salaryError) {
+      toast.error(salaryError);
+      return;
+    }
 
     const profilePayload = {
       desired_locations: data.desired_locations,
@@ -270,10 +260,7 @@ export default function SettingsPage() {
     const abortTimer = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const [preferencesResult, profileResult] = await Promise.allSettled([
-        settingsApi.updatePreferences(preferencesPayload, { signal: controller.signal }),
-        settingsApi.updateProfile(profilePayload, { signal: controller.signal }),
-      ]);
+      await settingsApi.updateProfile(profilePayload, { signal: controller.signal });
 
       const newAvatar = avatar ?? null;
       queryClient.setQueryData(["profile"], (old) =>
@@ -296,37 +283,18 @@ export default function SettingsPage() {
 
       await Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: ["profile"] }),
-        queryClient.invalidateQueries({ queryKey: ["preferences"] }),
         queryClient.invalidateQueries({ queryKey: ["init"] }),
       ]);
 
-      const preferencesFailed = preferencesResult.status === "rejected";
-      const profileFailed = profileResult.status === "rejected";
-
-      if (preferencesFailed && profileFailed) {
-        toast.error(
-          controller.signal.aborted
-            ? "Zeitüberschreitung – bitte erneut versuchen"
-            : "Einstellungen konnten nicht gespeichert werden"
-        );
-        return;
-      }
-      if (preferencesFailed) {
-        toast.error("App-Einstellungen konnten nicht gespeichert werden");
-        toast.success("Jobpräferenzen gespeichert");
-        return;
-      }
-      if (profileFailed) {
-        toast.error("Jobpräferenzen konnten nicht gespeichert werden");
-        toast.success("App-Einstellungen gespeichert");
-        return;
-      }
-
-      if (data.language) setLanguage(data.language);
       toast.success("Einstellungen gespeichert");
+    } catch (err) {
+      toast.error(
+        controller.signal.aborted
+          ? "Zeitüberschreitung – bitte erneut versuchen"
+          : getApiErrorMessage(err, "Einstellungen konnten nicht gespeichert werden")
+      );
     } finally {
       clearTimeout(abortTimer);
-      releaseLanguageLock();
     }
   };
 
@@ -349,6 +317,54 @@ export default function SettingsPage() {
     }
   };
 
+  const isLoading = _profileLoading && !profile;
+
+  if (isLoading) {
+    return (
+      <div className="animate-slide-up">
+        <PageHeader
+          title="Einstellungen"
+          description="Profil und Jobpräferenzen anpassen"
+          className="mb-6"
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+          <div className="lg:col-span-4 flex flex-col gap-10">
+            <section>
+              <h2 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4">Profilfoto</h2>
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-2xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-8 w-28 rounded-xl" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+              </div>
+            </section>
+            <section>
+              <h2 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4">Lebenslauf</h2>
+              <Skeleton className="h-24 w-full rounded-xl" />
+            </section>
+          </div>
+          <div className="lg:col-span-8 flex flex-col gap-10">
+            <section className="flex flex-col gap-4">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Skeleton className="h-10 w-full max-w-[160px] rounded-xl" />
+                <Skeleton className="h-10 w-full max-w-[160px] rounded-xl" />
+              </div>
+            </section>
+            <section className="flex flex-col gap-4">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-slide-up">
       <PageHeader
@@ -370,10 +386,10 @@ export default function SettingsPage() {
       />
 
       <form id="settings-form" onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-10 lg:gap-14 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
 
           {/* ── LEFT COLUMN ─────────────────────────────────── */}
-          <div className="flex flex-col gap-10">
+          <div className="flex flex-col gap-10 lg:col-span-4">
 
             {/* Profilfoto */}
             <section>
@@ -448,7 +464,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ── RIGHT COLUMN ──────────────────────────────── */}
-          <div className="flex flex-col gap-10">
+          <div className="flex flex-col gap-10 lg:col-span-8">
 
             {/* Jobsuche — Orte + Gehalt combined */}
             <section className="flex flex-col gap-4">
@@ -462,16 +478,15 @@ export default function SettingsPage() {
                 render={({ field }) => (
                   <div>
                     <label style={LABEL_STYLE}>Arbeitsorte</label>
-                    <input
+                    <Input
                       {...field}
+                      size="md"
                       value={field.value?.join(", ") || ""}
                       onChange={(e) =>
                         field.onChange(
                           e.target.value ? e.target.value.split(",").map((p) => p.trim()) : []
                         )
                       }
-                      className={INPUT_CLS}
-                        style={INPUT_STYLE}
                       placeholder="Wien, Graz…"
                     />
                   </div>
@@ -485,7 +500,7 @@ export default function SettingsPage() {
                   render={({ field }) => (
                     <div>
                       <label style={LABEL_STYLE}>Mindestgehalt (€ / Monat)</label>
-                      <input {...field} type="number" className="w-full max-w-[160px] rounded-xl border px-3 py-2 text-sm h-10 focus:outline-none focus:border-[var(--color-accent-500)]/50 focus:ring-0 transition-colors" style={INPUT_STYLE} placeholder="30" value={field.value || ""} />
+                      <Input {...field} type="number" size="md" className="max-w-[160px]" invalid={!!salaryError} placeholder="30" value={field.value || ""} />
                     </div>
                   )}
                 />
@@ -495,11 +510,14 @@ export default function SettingsPage() {
                   render={({ field }) => (
                     <div>
                       <label style={LABEL_STYLE}>Maximalgehalt (€ / Monat)</label>
-                      <input {...field} type="number" className="w-full max-w-[160px] rounded-xl border px-3 py-2 text-sm h-10 focus:outline-none focus:border-[var(--color-accent-500)]/50 focus:ring-0 transition-colors" style={INPUT_STYLE} placeholder="50" value={field.value || ""} />
+                      <Input {...field} type="number" size="md" className="max-w-[160px]" invalid={!!salaryError} placeholder="50" value={field.value || ""} />
                     </div>
                   )}
                 />
               </div>
+              {salaryError && (
+                <p className="text-xs text-[var(--color-error)] mt-1">{salaryError}</p>
+              )}
             </section>
 
             {/* Stellenarten + Erfahrung + Branchen combined */}
@@ -577,6 +595,9 @@ export default function SettingsPage() {
                     </div>
                     <button
                       type="button"
+                      role="switch"
+                      aria-checked={!!field.value}
+                      aria-label="Umzugsbereitschaft"
                       onClick={() => field.onChange(!field.value)}
                       className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors overflow-hidden [transform:translateZ(0)] ${
                         field.value ? "bg-[var(--color-accent-500)]" : "bg-[var(--color-bg-elev-3)]"

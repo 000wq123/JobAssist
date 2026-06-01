@@ -16,6 +16,7 @@
  */
 import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatEuro } from "../../utils/format";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -145,7 +146,7 @@ function KvBar({ hourly, kvMin }) {
   const kvPct  = Math.min(100, (kvMin   / top) * 100);
   const jobPct = Math.min(100, (hourly  / top) * 100);
   const above  = hourly > kvMin;
-  const diff   = (hourly - kvMin).toFixed(2);
+  const diff   = hourly - kvMin;
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-4">
       <div className="flex items-baseline justify-between">
@@ -155,7 +156,7 @@ function KvBar({ hourly, kvMin }) {
             above ? "text-emerald-400" : "text-[var(--color-warning)]"
           }`}
         >
-          {above ? "+" : ""}€{diff}/h
+          {above ? "+" : ""}{formatEuro(diff)}/h
         </p>
       </div>
       <div className="relative mt-3 h-2 rounded-full bg-[var(--color-bg-elev-3)] overflow-hidden">
@@ -166,11 +167,11 @@ function KvBar({ hourly, kvMin }) {
         />
       </div>
       <div className="mt-2 flex justify-between tabular-nums text-[10.5px] text-[var(--color-fg-dim)]">
-        <span>Min €{kvMin.toFixed(2)}</span>
+        <span>Min {formatEuro(kvMin)}</span>
         <span className={above ? "text-emerald-400 font-medium" : "text-[var(--color-fg)] font-medium"}>
-          €{hourly.toFixed(2)} hier
+          {formatEuro(hourly)} hier
         </span>
-        <span>Top €{top.toFixed(2)}</span>
+        <span>Top {formatEuro(top)}</span>
       </div>
       <p className="mt-2 text-[10.5px] text-[var(--color-fg-dim)]">
         Mocked benchmark — wird durch echte KV-Daten ersetzt.
@@ -350,7 +351,7 @@ export default function JobDetailHero({ job, statusBadge, onDelete, deletePendin
             <span className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[11.5px] tabular-nums text-emerald-300 font-medium">
-                +€{(hourly - kvMin).toFixed(2)} über KV-Minimum
+                +${formatEuro(hourly - kvMin)} über KV-Minimum
               </span>
             </span>
           ) : null}

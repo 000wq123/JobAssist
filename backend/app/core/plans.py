@@ -3,8 +3,9 @@
 PLAN_LIMITS = {
     "basic": {
         "cv_analysis": 5,
+        "cv_generate": 1,
         "cover_letter": 5,
-        "job_alerts": 2,
+        "job_alerts": 1,
         "ai_chat": 15,
         "job_search": 5,
         "daily_manual_runs": 3,   # manual "Run Now" clicks per day
@@ -12,6 +13,7 @@ PLAN_LIMITS = {
     },
     "pro": {
         "cv_analysis": 15,
+        "cv_generate": 5,
         "cover_letter": 25,
         "job_alerts": 10,
         "ai_chat": 200,
@@ -21,6 +23,7 @@ PLAN_LIMITS = {
     },
     "max": {
         "cv_analysis": -1,  # unlimited
+        "cv_generate": -1,
         "cover_letter": -1,
         "job_alerts": -1,
         "ai_chat": -1,
@@ -30,6 +33,7 @@ PLAN_LIMITS = {
     },
     "enterprise": {
         "cv_analysis": -1,
+        "cv_generate": -1,
         "cover_letter": -1,
         "job_alerts": -1,
         "ai_chat": -1,

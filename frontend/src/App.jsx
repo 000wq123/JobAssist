@@ -7,6 +7,7 @@ import AppShell from "./components/shell/AppShell";
 import UpgradeModal from "./components/UpgradeModal";
 import useAuthStore from "./hooks/useAuthStore";
 import queryClient from "./queryClient";
+import { authApi } from "./services/api";
 
 const loadLandingPage = () => import("./pages/LandingPage");
 const loadLoginPage = () => import("./pages/LoginPage");
@@ -30,6 +31,7 @@ const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
 const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadVerifyEmailPage = () => import("./pages/VerifyEmailPage");
 const loadUnsubscribePage = () => import("./pages/UnsubscribePage");
+const loadCalendarPage = () => import("./pages/CalendarPage");
 
 const LandingPage = lazy(loadLandingPage);
 const LoginPage = lazy(loadLoginPage);
@@ -52,6 +54,7 @@ const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
 const VerifyEmailPage = lazy(loadVerifyEmailPage);
 const UnsubscribePage = lazy(loadUnsubscribePage);
+const CalendarPage = lazy(loadCalendarPage);
 
 const preloaders = [
   loadDashboardPage,
@@ -66,6 +69,8 @@ const preloaders = [
  */
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  if (!isHydrated) return null;
   return token ? children : <Navigate to="/login" replace />;
 }
 
@@ -116,17 +121,18 @@ function AppRoutes() {
             </PrivateRoute>
           }
         >
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/lebenslauf" element={<CVBuilderPage />} />
+          <Route path="/dashboard" element={<Suspense fallback={null}><DashboardPage /></Suspense>} />
+          <Route path="/lebenslauf" element={<Suspense fallback={null}><CVBuilderPage /></Suspense>} />
           <Route path="/lebenslauf/analyse" element={<Suspense fallback={null}><ResumePage /></Suspense>} />
           <Route path="/resume" element={<Navigate to="/lebenslauf" replace />} />
           <Route path="/finden" element={<Suspense fallback={null}><FindenPage /></Suspense>} />
           <Route path="/jobs" element={<Suspense fallback={null}><JobsLayout /></Suspense>}>
             <Route path=":jobId" element={<Suspense fallback={null}><JobDetailPage /></Suspense>} />
           </Route>
-          <Route path="/job-alerts" element={<JobAlertsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/billing" element={<BillingPage />} />
+          <Route path="/job-alerts" element={<Suspense fallback={null}><JobAlertsPage /></Suspense>} />
+          <Route path="/kalender" element={<Suspense fallback={null}><CalendarPage /></Suspense>} />
+          <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
+          <Route path="/billing" element={<Suspense fallback={null}><BillingPage /></Suspense>} />
         </Route>
       </Routes>
     </ErrorBoundary>
@@ -135,6 +141,7 @@ function AppRoutes() {
 
 /** Root application component — sets up QueryClient, Router, and global providers. */
 export default function App() {
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
   useEffect(() => {
     const warm = () => preloaders.forEach((load) => load().catch(() => {}));
 
@@ -146,6 +153,38 @@ export default function App() {
     const timer = window.setTimeout(warm, 3000);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      console.time("[perf] auth/refresh");
+      try {
+        const res = await authApi.refresh();
+        console.timeEnd("[perf] auth/refresh");
+        const { access_token } = res.data || {};
+        if (access_token && active) setAccessToken(access_token);
+      } catch {
+        console.timeEnd("[perf] auth/refresh");
+        // Silent refresh failed — the interceptor will retry on the next 401.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [setAccessToken]);
+
+  // Pre-emptive refresh every 30 min so the access token never expires
+  // during user actions (saves, status changes, etc.). Prevents the
+  // 401 → refresh → retry latency that makes clicks feel slow.
+  useEffect(() => {
+    const id = setInterval(() => {
+      authApi.refresh().then((res) => {
+        const { access_token } = res.data || {};
+        if (access_token) setAccessToken(access_token);
+      }).catch(() => {});
+    }, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [setAccessToken]);
 
   return (
     <>

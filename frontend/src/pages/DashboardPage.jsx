@@ -3,50 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { Bookmark, FileText, Bell, SendHorizonal } from "lucide-react";
-import { jobApi, resumeApi, settingsApi, jobAlertsApi } from "../services/api";
+import { authApi, jobApi, resumeApi, jobAlertsApi } from "../services/api";
+import { DARK as C } from "../utils/colors";
 
 // ─── Constants ────────────────────────────────────────────────────────
 const WEEKDAYS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-const WEEKDAYS_SHORT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const MONTHS = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
 
 const DAY = 86400 * 1000;
 
-// Platform-wide benchmarks shown alongside the user's numbers. Hardcoded
+// Platform-wide benchmark shown alongside the user's numbers. Hardcoded
 // for v1 — replace with real telemetry once backend tracking lands.
-const BENCHMARK_RESPONSE_RATE = 28; // %
 const BENCHMARK_RESPONSE_DAYS = 8;
-const BENCHMARK_APPLY_RATE = 31; // % saved → applied
 
-// Static tips. Each is a single data point + practical takeaway. The tone
-// rule: factual, never preachy, never "you should". Tone references are
-// in /demo/heute-light/index.html.
-const TIPS = [
-  {
-    eyebrow: "Montag",
-    accent: "#818cf8",
-    accentBg: "rgba(129,140,248,0.20)",
-    number: "+18 %",
-    title: "Bewerbungen montags werden öfter gelesen.",
-    body: "Schreib die Bewerbung am Wochenende, schick sie Montag früh ab.",
-  },
-  {
-    eyebrow: "Anschreiben",
-    accent: "#4ade80",
-    accentBg: "rgba(74,222,128,0.18)",
-    number: "3 Absätze",
-    title: "Kurz und klar — das funktioniert besser als lang.",
-    body: "Schreib warum die Stelle dich interessiert, was du kannst, und wann du kannst.",
-  },
-  {
-    eyebrow: "Geduld",
-    accent: "#fbbf24",
-    accentBg: "rgba(251,191,36,0.18)",
-    number: "1–2 Wo.",
-    title: "Eine Antwort braucht meist 1–2 Wochen.",
-    body: "Wenn nach 2 Wochen nichts kommt, kannst du kurz nachfragen — das ist okay.",
-  },
-];
 
 /**
  * Context-aware greeting. Varies by last-visit gap, time of day, weekday,
@@ -125,15 +94,6 @@ function pickGreeting(hour, name, { weekday = 0, daysSinceVisit = 0, jobsCount =
   return opts[(weekday + Math.min(jobsCount, 3)) % opts.length];
 }
 
-/** "Morgen" / "Mittag" / "Nachmittag" / "Abend" / "Nacht". */
-function getTimeBucket(hour) {
-  if (hour < 5) return "Nacht";
-  if (hour < 11) return "Morgen";
-  if (hour < 14) return "Mittag";
-  if (hour < 18) return "Nachmittag";
-  if (hour < 22) return "Abend";
-  return "Nacht";
-}
 
 /** "vor 2 Tagen", "vor 3 Std.", "gerade eben". Returns null for invalid. */
 function relativeShort(when, now) {
@@ -255,39 +215,16 @@ function readDismissed() {
   try { return JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]"); } catch { return []; }
 }
 
-// Dark palette — matches the rest of the app shell.
-const C = {
-  bg:        "#09090b",
-  surface1:  "#111113",
-  surface2:  "#18181b",
-  surface3:  "#212124",
-  ink:       "#fafafa",
-  inkMuted:  "#a1a1aa",
-  inkDim:    "#71717a",
-  inkFaint:  "#71717a",
-  line:      "rgba(255,255,255,0.10)",
-  lineSubtle:"rgba(255,255,255,0.06)",
-  accent:    "#7c7df0",
-  accentSoft:  "rgba(99,102,241,0.22)",
-  accentLight: "#a5b4fc",
-  ok:        "#4ade80",
-  okSoft:    "rgba(74,222,128,0.20)",
-  warn:      "#fbbf24",
-  warnSoft:  "rgba(251,191,36,0.20)",
-};
-
 const SERIF = '"Instrument Serif", ui-serif, Georgia, serif';
 
 /**
  * DashboardPage — light, data-rich "Heute" overview.
  *
- * Six sections, in order:
- *   1. Hero (serif anchor + 3 KPI tiles: match avg, response rate, next deadline)
+ * Four sections, in order:
+ *   1. Hero (serif anchor + time-of-day greeting)
  *   2. Vorschläge — never empty, prioritized by urgency
- *   3. Statistiken — pipeline funnel + 7-day activity bars
- *   4. Tipps — three static data-backed cards
- *   5. Deine Liste — 5-status strip with sparkline + last-touched stamp
- *   6. Fristen + Neu für dich — split row
+ *   3. Deine Liste — 5-status strip with last-touched stamp
+ *   4. Schnellzugriff widgets + Zuletzt aktiv list
  *
  * Surface colors are scoped here (NOT global). AppShell flips its right-column
  * background to {@link C.bg} for `/dashboard`; everything else stays dark.
@@ -297,17 +234,28 @@ export default function DashboardPage() {
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ["jobs"],
-    queryFn: () => jobApi.list().then((r) => {
-      const items = r.data?.items ?? r.data ?? [];
-      try {
-        localStorage.setItem("jobs", JSON.stringify(items));
-        localStorage.setItem("jobs_ts", String(Date.now()));
-      } catch { /* quota */ }
-      return items;
-    }),
+    queryFn: () => {
+      console.time("[perf] /jobs list");
+      return jobApi.list(1, 100).then((r) => {
+        console.timeEnd("[perf] /jobs list");
+        const items = r.data?.items ?? r.data ?? [];
+        try {
+          localStorage.setItem("jobs", JSON.stringify(items));
+          localStorage.setItem("jobs_ts", String(Date.now()));
+        } catch { /* quota */ }
+        return items;
+      });
+    },
     staleTime: 1000 * 60 * 2,
     initialData: () => {
-      try { const r = localStorage.getItem("jobs"); return r ? JSON.parse(r) : undefined; } catch { return undefined; }
+      try {
+        const r = localStorage.getItem("jobs");
+        if (r) {
+          console.log("[perf] jobs initialData from localStorage");
+          return JSON.parse(r);
+        }
+      } catch {}
+      return undefined;
     },
     initialDataUpdatedAt: () => {
       try { return parseInt(localStorage.getItem("jobs_ts") || "0", 10); } catch { return 0; }
@@ -328,15 +276,18 @@ export default function DashboardPage() {
     try { localStorage.setItem("dashboard_resumes", JSON.stringify(resumes)); } catch { /* quota */ }
   }, [resumes]);
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => settingsApi.getProfile().then((r) => r.data),
-    staleTime: 1000 * 60 * 2,
+  const { data: me } = useQuery({
+    queryKey: ["auth-me"],
+    queryFn: () => authApi.me().then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
     initialData: () => {
-      try { const r = localStorage.getItem("profile"); return r ? JSON.parse(r) : undefined; } catch { return undefined; }
+      try { const r = localStorage.getItem("auth_me"); return r ? JSON.parse(r) : undefined; } catch { return undefined; }
     },
     initialDataUpdatedAt: 0,
   });
+  useEffect(() => {
+    try { localStorage.setItem("auth_me", JSON.stringify(me)); } catch { /* quota */ }
+  }, [me]);
 
   const { data: jobAlertsData } = useQuery({
     queryKey: ["job-alerts"],
@@ -370,9 +321,8 @@ export default function DashboardPage() {
   const today = useMemo(() => new Date(now), [now]);
   const hour = today.getHours();
   const weekday = today.getDay();
-  const timeBucket = getTimeBucket(hour);
   const hasResume = resumesLoading ? true : resumes.length > 0;
-  const userName = profile?.full_name?.split(" ")[0] || "";
+  const userName = me?.full_name?.split(" ")[0] || "";
 
   // Track last visit; compute gap once on mount.
   const daysSinceVisit = useMemo(() => {
@@ -407,46 +357,11 @@ export default function DashboardPage() {
     return out;
   }, [jobs]);
 
-  // ─── Sparklines per bucket: 7 day-counts of jobs entering/touching that bucket
-  // Approximation: groups jobs by day-of-update where status currently matches.
-  // Not perfect history, but a directionally-correct activity pulse.
-  const sparklines = useMemo(() => {
-    const startMs = now - 7 * DAY;
-    const out = {};
-    STATUS_BUCKETS.forEach((b) => { out[b.key] = new Array(7).fill(0); });
-    jobs.forEach((j) => {
-      const t = new Date(j.updated_at || j.created_at).getTime();
-      if (!Number.isFinite(t) || t < startMs) return;
-      const dayIdx = 6 - Math.min(6, Math.floor((now - t) / DAY));
-      STATUS_BUCKETS.forEach((b) => { if (b.match(j.status)) out[b.key][dayIdx] += 1; });
-    });
-    return out;
-  }, [jobs, now]);
 
-  // ─── 7-day total activity bars (Statistiken section) ────────────
-  const weeklyActivity = useMemo(() => {
-    const startMs = now - 6 * DAY; // include today
-    const counts = new Array(7).fill(0);
-    jobs.forEach((j) => {
-      const t = new Date(j.updated_at || j.created_at).getTime();
-      if (!Number.isFinite(t) || t < startMs - DAY) return;
-      const idx = 6 - Math.min(6, Math.floor((now - t) / DAY));
-      if (idx >= 0 && idx < 7) counts[idx] += 1;
-    });
-    return counts;
-  }, [jobs, now]);
 
-  // ─── KPIs ───────────────────────────────────────────────────────
-  const kpis = useMemo(() => {
-    const scored = jobs.filter((j) => j.match_score != null);
-    const avgMatch = scored.length > 0 ? Math.round(scored.reduce((s, j) => s + j.match_score, 0) / scored.length) : null;
-
-    const applied = statusCounts.applied + statusCounts.interviewing + statusCounts.offered + statusCounts.rejected;
-    const responded = statusCounts.interviewing + statusCounts.offered + statusCounts.rejected;
-    const responseRate = applied > 0 ? Math.round((responded / applied) * 100) : null;
-
-    // Nearest deadline within next 30 days. Schemas vary; check expires_at + deadline.
-    const deadlineCandidates = jobs
+  // ─── Nearest deadline within next 30 days ─────────────────────────
+  const nextDeadline = useMemo(() => {
+    const candidates = jobs
       .map((j) => {
         const raw = j.expires_at || j.deadline;
         if (!raw) return null;
@@ -457,11 +372,8 @@ export default function DashboardPage() {
       })
       .filter(Boolean)
       .sort((a, b) => a.ms - b.ms);
-    const nextDeadline = deadlineCandidates[0] || null;
-
-    const activeApps = statusCounts.applied + statusCounts.interviewing;
-    return { avgMatch, responseRate, applied, responded, nextDeadline, deadlines: deadlineCandidates, activeApps };
-  }, [jobs, statusCounts, now]);
+    return candidates[0] || null;
+  }, [jobs, now]);
 
   // ─── Best bookmarked job for greeting ────────────────────────────
   const bestBookmarked = useMemo(() => {
@@ -487,9 +399,17 @@ export default function DashboardPage() {
     return latest ? Math.floor((now - latest) / DAY) : null;
   }, [jobs, now]);
 
+  const hasInterviewSoon = useMemo(() => {
+    const interviewing = jobs.filter((j) => j.status === "interviewing");
+    if (!interviewing.length) return null;
+    return [...interviewing].sort(
+      (a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+    )[0];
+  }, [jobs]);
+
   const heroAnchor = pickHeroAnchor({
     hasOffer: statusCounts.offered > 0,
-    hasInterviewSoon: null, // upcoming interview integration is post-v1
+    hasInterviewSoon,
     hasResume,
     hour,
     weekday,
@@ -504,8 +424,8 @@ export default function DashboardPage() {
     const out = [];
 
     // 0. Nearest deadline (HIGHEST URGENCY).
-    if (kpis.nextDeadline && kpis.nextDeadline.days <= 7) {
-      const { job, days } = kpis.nextDeadline;
+    if (nextDeadline && nextDeadline.days <= 7) {
+      const { job, days } = nextDeadline;
       out.push({
         id: `deadline-${job.id}`,
         kind: "warn",
@@ -594,19 +514,6 @@ export default function DashboardPage() {
     return out.filter((s) => !dismissed.includes(s.id)).slice(0, 2);
   })();
 
-  // ─── "Neu für dich" — fresh high-match jobs ─────────────────────
-  const neuFuerDich = (() => {
-    const WEEK = 7 * DAY;
-    const fresh = jobs
-      .filter((j) => j.match_score != null && j.match_score >= 60)
-      .filter((j) => j.created_at && now - new Date(j.created_at).getTime() < WEEK)
-      .sort((a, b) => b.match_score - a.match_score);
-    if (fresh.length >= 2) return fresh.slice(0, 4);
-    return [...jobs]
-      .filter((j) => j.match_score != null)
-      .sort((a, b) => b.match_score - a.match_score)
-      .slice(0, 4);
-  })();
 
   const isEmpty = !jobsLoading && jobs.length === 0 && suggestions.length === 0;
 
@@ -647,55 +554,60 @@ export default function DashboardPage() {
       )}
 
       {/* ── DEINE LISTE (full width) ──────────────────────────────────────── */}
-      {(jobs.length > 0 || jobsLoading) && (
-        <section>
-          <div className="flex items-baseline justify-between mb-4">
-            <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: C.inkDim }}>Deine Liste</p>
-            <button type="button" onClick={() => navigate("/jobs")} className="text-[12px] hover:underline" style={{ color: C.inkMuted }}>
-              Alle ansehen →
-            </button>
-          </div>
-          <div className="grid grid-cols-5 rounded-xl overflow-hidden overflow-x-auto" style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}>
-            {jobsLoading && jobs.length === 0
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="px-3 py-4 sm:px-5 sm:py-5 animate-pulse">
-                    <div className="h-7 w-8 rounded bg-white/[0.06] mb-2" />
-                    <div className="h-3 w-14 rounded bg-white/[0.04]" />
-                  </div>
-                ))
-              : STATUS_BUCKETS.map((b) => (
-              <button
-                key={b.key}
-                type="button"
-                onClick={() => navigate(`/jobs?status=${b.key}`)}
-                className="px-3 py-4 sm:px-5 sm:py-5 text-left transition-colors hover:bg-white/[0.05]"
+      <section>
+        <div className="flex items-baseline justify-between mb-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: C.inkDim }}>Deine Liste</p>
+          <button type="button" onClick={() => navigate("/jobs")} className="text-[12px] hover:underline" style={{ color: C.inkMuted }}>
+            Alle ansehen →
+          </button>
+        </div>
+        <div className="grid grid-cols-5 rounded-xl overflow-hidden overflow-x-auto" style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}>
+          {STATUS_BUCKETS.map((b) => (
+            <button
+              key={b.key}
+              type="button"
+              onClick={() => navigate(`/jobs?status=${b.key}`)}
+              className="px-3 py-4 sm:px-5 sm:py-5 text-left transition-colors hover:bg-white/[0.05]"
+            >
+              <p
+                className="text-[22px] sm:text-[28px] tabular-nums leading-none font-semibold"
+                style={{ color: statusCounts[b.key] > 0 ? C.ink : C.inkMuted }}
               >
-                <p
-                  className="text-[22px] sm:text-[28px] tabular-nums leading-none font-semibold"
-                  style={{ color: statusCounts[b.key] > 0 ? C.ink : C.inkMuted }}
-                >
-                  {statusCounts[b.key]}
+                {statusCounts[b.key] ?? 0}
+              </p>
+              <p className="mt-2 text-[10px] sm:text-[12px]" style={{ color: C.inkMuted }}>{b.label}</p>
+              {lastTouched[b.key] && (
+                <p className="hidden sm:block mt-0.5 text-[11px] tabular-nums truncate whitespace-nowrap" style={{ color: C.inkFaint }}>
+                  {relativeShort(lastTouched[b.key], now)}
                 </p>
-                <p className="mt-2 text-[10px] sm:text-[12px]" style={{ color: C.inkMuted }}>{b.label}</p>
-                {lastTouched[b.key] && (
-                  <p className="hidden sm:block mt-0.5 text-[11px] tabular-nums truncate whitespace-nowrap" style={{ color: C.inkFaint }}>
-                    {relativeShort(lastTouched[b.key], now)}
-                  </p>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+              )}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* ── WIDGETS (left) + ZULETZT AKTIV (right) ───────────────────────── */}
       {(jobs.length > 0 || jobsLoading) && (() => {
-        const recent = [...jobs]
-          .sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime())
-          .slice(0, 5);
-        const STATUS_LABEL = { bookmarked: "Gemerkt", applied: "Beworben", interviewing: "Im Gespräch", offered: "Angebot", rejected: "Abgelehnt" };
+        // Deterministic daily shuffle: stable within a day, varied across days.
+        const daySeed = today.getDate() + today.getMonth() * 31;
+        const shuffle = (arr) => {
+          const out = [...arr];
+          let s = daySeed;
+          for (let i = out.length - 1; i > 0; i--) {
+            s = (s * 16807 + 0) % 2147483647; // LCG
+            const j = s % (i + 1);
+            [out[i], out[j]] = [out[j], out[i]];
+          }
+          return out;
+        };
+        const recent = shuffle(
+          [...jobs].sort(
+            (a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+          )
+        ).slice(0, 5);
+        const STATUS_LABEL = { bookmarked: "Gemerkt", applied: "Beworben", interviewing: "Im Gespräch", offered: "Angebot", rejected: "Erledigt" };
         const STATUS_COLOR = { bookmarked: "#f59e0b", applied: C.accent, interviewing: "#60a5fa", offered: C.ok, rejected: C.warn };
-        const active = (statusCounts.applied || 0) + (statusCounts.interviewing || 0) + (statusCounts.offered || 0);
+        const active = (statusCounts.applied || 0) + (statusCounts.interviewing || 0);
         return (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
@@ -863,27 +775,6 @@ export default function DashboardPage() {
   );
 }
 
-/**
- * KpiTile — coloured-background headline number with eyebrow + small hint.
- * Used for the 3-tile strip below the hero.
- */
-function KpiTile({ eyebrow, value, unit, badge, hint, accent, accentBg }) {
-  return (
-    <div className="rounded-xl px-5 py-4" style={{ background: accentBg, border: `1px solid ${accent}33` }}>
-      <p className="text-[11px] uppercase tracking-[0.12em] font-semibold" style={{ color: accent }}>
-        {eyebrow}
-      </p>
-      <div className="mt-1.5 flex items-baseline gap-2">
-        <p className="text-[36px] tabular-nums leading-none" style={{ fontFamily: SERIF }}>
-          {value}
-          {unit && <span className="text-[14px] ml-0.5" style={{ color: accent }}>{unit}</span>}
-        </p>
-        {badge && <span className="text-[11.5px] font-medium" style={{ color: accent }}>{badge}</span>}
-      </div>
-      {hint && <p className="mt-1 text-[11.5px]" style={{ color: C.inkMuted }}>{hint}</p>}
-    </div>
-  );
-}
 
 /**
  * SuggestionRow — single Vorschläge entry. Has a colored eyebrow dot per
@@ -925,163 +816,8 @@ function SuggestionRow({ suggestion: s, onDismiss }) {
   );
 }
 
-/**
- * FunnelRow — one stage of the pipeline funnel. Bar width is `count / total`,
- * coloured indigo at decreasing opacity to imply tapering volume.
- */
-function FunnelRow({ label, count, total, opacity }) {
-  const pct = total > 0 ? Math.max(2, Math.round((count / total) * 100)) : 2;
-  return (
-    <div className="grid grid-cols-[110px_1fr_50px] gap-3 items-center">
-      <span className="text-[12.5px]" style={{ color: C.inkMuted }}>{label}</span>
-      <div className="h-[26px] rounded" style={{ width: `${pct}%`, background: C.accent, opacity }} />
-      <span className="text-[12.5px] tabular-nums text-right font-medium" style={{ color: count > 0 ? C.ink : C.inkDim }}>
-        {count}
-      </span>
-    </div>
-  );
-}
 
-/**
- * WeekBars — 7-day activity bar chart. Today is rendered in dark ink so
- * it stands out against the accent indigo bars of the other days.
- */
-function WeekBars({ data, weekday }) {
-  const max = Math.max(1, ...data);
-  const todayIdx = 6;
-  const [hoveredIdx, setHoveredIdx] = useState(null);
-  const labels = [];
-  for (let i = 6; i >= 0; i--) {
-    const day = (weekday - i + 7) % 7;
-    labels.push(WEEKDAYS_SHORT[day]);
-  }
-  return (
-    <div className="relative">
-      <div className="mt-5 grid grid-cols-7 gap-2 h-[110px] items-end">
-        {data.map((n, i) => {
-          const h = Math.max(2, (n / max) * 100);
-          const isToday = i === todayIdx;
-          return (
-            <div
-              key={i}
-              className="flex h-full items-end relative cursor-default"
-              onMouseEnter={() => setHoveredIdx(i)}
-              onMouseLeave={() => setHoveredIdx(null)}
-            >
-              <div
-                className="w-full rounded"
-                style={{
-                  height: `${h}%`,
-                  background: isToday ? C.ink : (n === 0 ? "rgba(255,255,255,0.12)" : C.accent),
-                  opacity: hoveredIdx === i ? 0.8 : (n === 0 ? 0.6 : 1),
-                  transition: "opacity 0.1s",
-                }}
-              />
-              {hoveredIdx === i && (
-                <div
-                  className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-10 pointer-events-none text-center"
-                  style={{ minWidth: 72 }}
-                >
-                  <div
-                    className="rounded-md px-2.5 py-1.5 whitespace-nowrap text-[11px] font-medium"
-                    style={{ background: C.surface2, color: C.ink, border: `1px solid ${C.line}`, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}
-                  >
-                    <span style={{ color: C.accent, fontWeight: 700 }}>{n}</span>
-                    <span style={{ color: C.inkMuted }}> {n === 1 ? "Aktion" : "Aktionen"}</span>
-                    <div style={{ color: C.inkFaint, fontSize: "10px", marginTop: 1 }}>
-                      {isToday ? "heute" : labels[i]}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-2 grid grid-cols-7 gap-2 text-center">
-        {labels.map((lbl, i) => (
-          <span
-            key={i}
-            className="text-[10px]"
-            style={{ color: i === todayIdx ? C.ink : C.inkFaint, fontWeight: i === todayIdx ? 600 : 400 }}
-          >
-            {i === todayIdx ? "heute" : lbl}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-/**
- * Sparkline — 7 vertical bars for the status strip. Lit when activity > 0.
- * No counts shown (the count is the headline number to the left).
- */
-function Sparkline({ data, accent }) {
-  const max = Math.max(1, ...data);
-  return (
-    <span className="inline-flex items-end gap-[2px] h-[16px]">
-      {data.map((n, i) => (
-        <i
-          key={i}
-          className="block w-[3px] rounded-sm"
-          style={{
-            height: `${n > 0 ? Math.max(20, (n / max) * 100) : 0}%`,
-            background: n > 0 ? accent : "rgba(24,24,27,0.18)",
-            minHeight: 2,
-          }}
-        />
-      ))}
-    </span>
-  );
-}
 
-/**
- * TipCard — colored eyebrow + serif headline number + supporting copy.
- */
-function TipCard({ tip }) {
-  return (
-    <article className="rounded-xl p-5" style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}>
-      <p className="text-[11px] uppercase tracking-[0.12em] font-semibold" style={{ color: tip.accent }}>
-        {tip.eyebrow}
-      </p>
-      <p className="mt-3 text-[24px] leading-tight" style={{ fontFamily: SERIF, color: C.ink, letterSpacing: "-0.02em" }}>
-        {tip.number}
-      </p>
-      <p className="mt-2 text-[13px] font-medium leading-snug" style={{ color: C.ink }}>{tip.title}</p>
-      <p className="mt-2 text-[11.5px] leading-relaxed" style={{ color: C.inkMuted }}>{tip.body}</p>
-    </article>
-  );
-}
 
-/**
- * MatchCard — calm tile for "Neu für dich" grid (lighter v2).
- */
-function MatchCard({ job, onClick }) {
-  const company = job.company || "Unbekannt";
-  const meta = [job.job_type, job.location].filter(Boolean).join(" · ");
-  const wage = job.salary_text || null;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left rounded-xl p-4 transition-colors hover:border-[rgba(24,24,27,0.16)]"
-      style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}
-    >
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[11px] truncate" style={{ color: C.inkDim }}>{meta || "Stelle"}</span>
-        <span className="text-[15px] font-semibold tabular-nums shrink-0" style={{ color: job.match_score >= 80 ? C.accent : C.ink }}>
-          {job.match_score}
-          <span className="text-[10.5px] ml-0.5" style={{ color: C.inkDim }}>%</span>
-        </span>
-      </div>
-      <p className="mt-2 text-[13.5px] font-medium leading-snug line-clamp-2" style={{ color: C.ink }}>
-        {job.role || job.title || company}
-      </p>
-      <p className="mt-0.5 text-[12px] truncate" style={{ color: C.inkMuted }}>
-        {company}{wage ? ` · ${wage}` : ""}
-      </p>
-    </button>
-  );
-}
 

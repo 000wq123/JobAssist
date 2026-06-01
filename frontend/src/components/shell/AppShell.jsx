@@ -2,7 +2,7 @@ import { useState, useEffect, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Mail, LayoutDashboard, FileText, Briefcase, Bell, X, User, LogOut, Settings, CreditCard, Sparkles } from "lucide-react";
+import { Mail, LayoutDashboard, FileText, Briefcase, Bell, Calendar, X, User, LogOut, Settings, CreditCard, Sparkles } from "lucide-react";
 import clsx from "clsx";
 
 import useAuthStore from "../../hooks/useAuthStore";
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { to: "/jobs",         label: "Stellen",   icon: Briefcase },
   { to: "/lebenslauf",   label: "Lebenslauf",icon: FileText },
   { to: "/job-alerts",   label: "Alerts",    icon: Bell },
+  { to: "/kalender",     label: "Kalender",  icon: Calendar },
 ];
 
 /**
@@ -222,16 +223,26 @@ export default function AppShell() {
 
   const { data: initData } = useQuery({
     queryKey: ["init"],
-    queryFn: () => initApi.fetch().then((r) => {
-      try { localStorage.setItem("init", JSON.stringify(r.data)); } catch { /* ignore quota */ }
-      setUser(r.data.me);
-      return r.data;
-    }),
+    queryFn: () => {
+      console.time("[perf] /api/init");
+      return initApi.fetch().then((r) => {
+        console.timeEnd("[perf] /api/init");
+        try { localStorage.setItem("init", JSON.stringify(r.data)); } catch { /* ignore quota */ }
+        setUser(r.data.me);
+        return r.data;
+      });
+    },
     initialData: () => {
       try {
         const saved = localStorage.getItem("init");
-        return saved ? JSON.parse(saved) : undefined;
-      } catch { return undefined; }
+        if (saved) {
+          console.log("[perf] init initialData from localStorage");
+          const parsed = JSON.parse(saved);
+          if (parsed?.me) setUser(parsed.me);
+          return parsed;
+        }
+      } catch {}
+      return undefined;
     },
     staleTime: 1000 * 60 * 2,
   });
@@ -299,25 +310,30 @@ export default function AppShell() {
           className="md:hidden sticky bottom-0 left-0 right-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="grid grid-cols-4 h-14">
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-              const active = location.pathname === to || location.pathname.startsWith(to + "/");
-              return (
-                <a
-                  key={to}
-                  href={to}
-                  onClick={(e) => { e.preventDefault(); navigate(to); }}
-                  className={clsx(
-                    "flex flex-col items-center justify-center gap-0.5 transition-colors",
-                    active ? "text-[var(--color-accent-300)]" : "text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]",
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-[10px] font-medium">{label}</span>
-                </a>
-              );
-            })}
-          </div>
+          {(() => {
+            const items = NAV_ITEMS.filter((item) => item.to !== "/kalender").slice(0, 4);
+            return (
+              <div className="grid grid-cols-4 h-14">
+                {items.map(({ to, label, icon: Icon }) => {
+                  const active = location.pathname === to || location.pathname.startsWith(to + "/");
+                  return (
+                    <a
+                      key={to}
+                      href={to}
+                      onClick={(e) => { e.preventDefault(); navigate(to); }}
+                      className={clsx(
+                        "flex flex-col items-center justify-center gap-0.5 transition-colors",
+                        active ? "text-[var(--color-accent-300)]" : "text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]",
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-[10px] font-medium">{label}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </nav>
       </div>
     </div>

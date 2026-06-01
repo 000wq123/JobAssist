@@ -122,6 +122,7 @@ async def init(
 ):
     """Single endpoint that returns all bootstrap data so the SPA loads in
     one round-trip instead of `/me` + `/profile` + `/resumes` + `/usage`."""
+    # 1. Ensure profile exists (must be sequential — create path mutates db).
     profile_result = await db.execute(
         select(UserProfile).where(UserProfile.user_id == current_user.id)
     )
@@ -132,20 +133,30 @@ async def init(
         await db.commit()
         await db.refresh(profile)
 
-    resumes_count_result = await db.execute(
-        select(func.count()).select_from(Resume).where(Resume.user_id == current_user.id)
-    )
-    resumes_total = resumes_count_result.scalar() or 0
+    # 2. Fire independent reads concurrently.
+    async def _resumes():
+        result = await db.execute(
+            select(Resume)
+            .where(Resume.user_id == current_user.id)
+            .order_by(Resume.created_at.desc())
+            .limit(50)
+        )
+        return result.scalars().all()
 
-    resumes_result = await db.execute(
-        select(Resume)
-        .where(Resume.user_id == current_user.id)
-        .order_by(Resume.created_at.desc())
-        .limit(50)
-    )
-    resumes = resumes_result.scalars().all()
+    async def _resumes_total():
+        result = await db.execute(
+            select(func.count()).select_from(Resume).where(Resume.user_id == current_user.id)
+        )
+        return result.scalar() or 0
 
-    plan = await get_user_plan(db, current_user.id)
+    async def _plan():
+        return await get_user_plan(db, current_user.id)
+
+    resumes, resumes_total, plan = await asyncio.gather(
+        _resumes(), _resumes_total(), _plan()
+    )
+
+    # 3. Usage depends on plan, so it runs after.
     usage = await get_all_usage(db, current_user.id, plan)
 
     return {

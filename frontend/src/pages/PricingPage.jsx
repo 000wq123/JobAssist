@@ -24,56 +24,49 @@ function formatLimit(value) {
   return value === -1 ? "Unbegrenzt" : value;
 }
 
-const PLANS = [
-  {
-    key: "basic",
-    name: "Basic",
+/** Purely presentational UI metadata keyed to plan keys. All business data
+    (prices, limits) is fetched from the backend so there is one source of truth. */
+const PLAN_UI = {
+  basic: {
     subtitle: "Zum Ausprobieren",
-    price: "0",
-    period: "",
     icon: Star,
     highlighted: false,
     badge: null,
-    limits: { cv_analysis: 5, cover_letter: 5, job_alerts: 2, ai_chat: 15, job_search: 5 },
     extras: ["Lebenslauf hochladen", "Job-Suche", "Pipeline-Tracking"],
   },
-  {
-    key: "pro",
-    name: "Pro",
+  pro: {
     subtitle: "Für aktive Bewerber",
-    price: "4,99",
-    period: "/ Monat",
     icon: Zap,
     highlighted: true,
     badge: "Beliebt",
-    limits: { cv_analysis: 15, cover_letter: 25, job_alerts: 10, ai_chat: 200, job_search: 20 },
     extras: ["Prioritäts-Support", "Alles aus Basic"],
   },
-  {
-    key: "max",
-    name: "Max",
+  max: {
     subtitle: "Unbegrenzte Power",
-    price: "7,99",
-    period: "/ Monat",
     icon: Crown,
     highlighted: false,
     badge: "Bestes Angebot",
-    limits: { cv_analysis: -1, cover_letter: -1, job_alerts: -1, ai_chat: -1, job_search: -1 },
     extras: ["24h Support", "Alles aus Pro", "Unbegrenzte Nutzung"],
   },
-  {
-    key: "enterprise",
-    name: "Enterprise",
+  enterprise: {
     subtitle: "Für Teams & Agenturen",
-    price: null,
-    period: "",
     icon: Building2,
     highlighted: false,
     badge: null,
-    limits: { cv_analysis: -1, cover_letter: -1, job_alerts: -1, ai_chat: -1, job_search: -1 },
     extras: ["Dedizierter Manager", "Custom Integrationen", "SLA & Compliance"],
   },
-];
+};
+
+function usePlans() {
+  return useQuery({
+    queryKey: ["billing", "plans"],
+    queryFn: async () => {
+      const res = await billingApi.plans();
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
 
 /** Pricing page — 4 plan cards with upgrade CTAs through Stripe checkout. */
 export default function PricingPage() {
@@ -84,6 +77,14 @@ export default function PricingPage() {
   const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
   const currentPlan = initData?.plan || "basic";
   const [loadingPlan, setLoadingPlan] = useState(null);
+  const { data: plansData, isLoading: plansLoading, error: plansError } = usePlans();
+
+  const plans = plansData ?? [];
+  if (plansError) {
+    // Non-blocking: we still render the layout even if the API flakes.
+    // eslint-disable-next-line no-console
+    console.error("Failed to load plans", plansError);
+  }
 
   const handleUpgrade = async (planKey) => {
     if (!token) {
@@ -113,10 +114,17 @@ export default function PricingPage() {
       subtitle="Alle Pläne ohne MwSt. · Jederzeit kündbar · Keine versteckten Kosten"
     >
       <div className="grid grid-cols-12 gap-5">
-        {PLANS.map((plan) => {
-          const Icon = plan.icon;
+        {plansLoading && (
+          <div className="col-span-12 flex items-center justify-center py-12 text-[var(--color-fg-muted)]">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            Pläne werden geladen…
+          </div>
+        )}
+        {!plansLoading && plans.map((plan) => {
+          const ui = PLAN_UI[plan.key] || {};
+          const Icon = ui.icon || Star;
           const isCurrent = currentPlan === plan.key;
-          const isHighlighted = plan.highlighted;
+          const isHighlighted = ui.highlighted;
 
           return (
             <div
@@ -127,7 +135,7 @@ export default function PricingPage() {
                   : "border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 hover:border-[var(--color-accent-500)]/40"
               }`}
             >
-              {plan.badge && (
+              {ui.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span
                     className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-md ${
@@ -136,7 +144,7 @@ export default function PricingPage() {
                         : "bg-[var(--color-bg-elev-2)] text-[var(--color-accent-300)] border border-[var(--color-accent-500)]/30"
                     }`}
                   >
-                    {plan.badge}
+                    {ui.badge}
                   </span>
                 </div>
               )}
@@ -155,7 +163,7 @@ export default function PricingPage() {
                 </div>
                 <div>
                   <h3 className="text-[16px] font-semibold text-[var(--color-fg)] leading-tight">{plan.name}</h3>
-                  <p className="text-[11px] text-[var(--color-fg-muted)]">{plan.subtitle}</p>
+                  <p className="text-[11px] text-[var(--color-fg-muted)]">{ui.subtitle}</p>
                 </div>
               </div>
 
@@ -163,10 +171,10 @@ export default function PricingPage() {
                 {plan.price !== null ? (
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[34px] font-bold tracking-tight tabular-nums text-[var(--color-fg)] leading-none">
-                      {plan.price === "0" ? "Gratis" : `€${plan.price}`}
+                      {plan.price === 0 ? "Gratis" : `€${String(plan.price).replace(".", ",")}`}
                     </span>
-                    {plan.period && (
-                      <span className="text-[12px] font-medium text-[var(--color-fg-muted)]">{plan.period}</span>
+                    {plan.price !== 0 && (
+                      <span className="text-[12px] font-medium text-[var(--color-fg-muted)]">/ Monat</span>
                     )}
                   </div>
                 ) : (
@@ -186,7 +194,7 @@ export default function PricingPage() {
                     </span>
                   </li>
                 ))}
-                {plan.extras.map((extra) => (
+                {ui.extras?.map((extra) => (
                   <li key={extra} className="flex items-start gap-2.5 text-[13px] leading-snug">
                     <Check className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-[var(--color-fg-dim)]" />
                     <span className="min-w-0 text-[var(--color-fg-muted)]">{extra}</span>

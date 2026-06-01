@@ -62,6 +62,17 @@ export default [
       "react/no-unescaped-entities": "off",
       // Hard-fail on console statements outside of warn/error in production code.
       "no-console": ["warn", { allow: ["warn", "error"] }],
+      // AGENTS.md guard — absolute positioning must not be used for layout blocks.
+      "no-restricted-syntax": ["warn",
+        {
+          selector: "JSXAttribute[name.name='className'] > Literal[value=/\\babsolute\\b.*\\b(inset-0|inset-x-0|inset-y-0|left-0|right-0|top-0|bottom-0|w-full|h-full)\\b/]",
+          message: "AGENTS.md: absolute positioning is not allowed for layout blocks.",
+        },
+        {
+          selector: "JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name='position'] > Literal[value='absolute']",
+          message: "AGENTS.md: inline absolute positioning is not allowed for layout blocks.",
+        },
+      ],
     },
   },
 ];

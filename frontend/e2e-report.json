@@ -1,0 +1,858 @@
+{
+  "config": {
+    "configFile": "/home/davorrr/Documents/JobAssist-main/frontend/playwright.config.js",
+    "rootDir": "/home/davorrr/Documents/JobAssist-main/frontend/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/davorrr/Documents/JobAssist-main/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/davorrr/Documents/JobAssist-main/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 14,
+    "webServer": {
+      "command": "npm run preview -- --host 127.0.0.1 --port 4173",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "applications.spec.js",
+      "file": "applications.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "applications list can update status and autosave notes",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6031,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('QA Engineer')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('QA Engineer')\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('QA Engineer')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('QA Engineer')\u001b[22m\n\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/applications.spec.js:137:47",
+                    "location": {
+                      "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/applications.spec.js",
+                      "column": 47,
+                      "line": 137
+                    },
+                    "snippet": "  135 |\n  136 |   await page.goto(\"/jobs\");\n> 137 |   await expect(page.getByText(\"QA Engineer\")).toBeVisible();\n      |                                               ^\n  138 |\n  139 |   const card = page.locator(\"div.overflow-hidden.rounded-xl.border\").filter({ hasText: \"QA Engineer\" }).first();\n  140 |   await page.getByRole(\"button\", { name: /als beworben markieren/i }).click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/applications.spec.js",
+                        "column": 47,
+                        "line": 137
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('QA Engineer')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('QA Engineer')\u001b[22m\n\n\n  135 |\n  136 |   await page.goto(\"/jobs\");\n> 137 |   await expect(page.getByText(\"QA Engineer\")).toBeVisible();\n      |                                               ^\n  138 |\n  139 |   const card = page.locator(\"div.overflow-hidden.rounded-xl.border\").filter({ hasText: \"QA Engineer\" }).first();\n  140 |   await page.getByRole(\"button\", { name: /als beworben markieren/i }).click();\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/applications.spec.js:137:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.935Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/applications-applications--569d9-e-status-and-autosave-notes-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/applications.spec.js",
+                    "column": 47,
+                    "line": 137
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "5de98bcd9e5852fbdcab-3adf44ab5b617cdebfb9",
+          "file": "applications.spec.js",
+          "line": 34,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "auth.spec.js",
+      "file": "auth.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "register page validates required fields",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1556,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:54.102Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d5ed79a6b333c2ba7209-3bf766216cfb130579b6",
+          "file": "auth.spec.js",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "verify email success state renders for guests",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "failed",
+                  "duration": 1071,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /zum login/i })\nExpected: visible\nError: strict mode violation: getByRole('link', { name: /zum login/i }) resolved to 2 elements:\n    1) <a href=\"/login\" class=\"col-span-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors\">…</a> aka getByRole('banner').getByRole('link', { name: 'Zum Login' })\n    2) <a href=\"/login\" class=\"mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors\">…</a> aka getByRole('main').getByRole('link', { name: 'Zum Login' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /zum login/i })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /zum login/i })\nExpected: visible\nError: strict mode violation: getByRole('link', { name: /zum login/i }) resolved to 2 elements:\n    1) <a href=\"/login\" class=\"col-span-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors\">…</a> aka getByRole('banner').getByRole('link', { name: 'Zum Login' })\n    2) <a href=\"/login\" class=\"mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors\">…</a> aka getByRole('main').getByRole('link', { name: 'Zum Login' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /zum login/i })\u001b[22m\n\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/auth.spec.js:24:64",
+                    "location": {
+                      "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/auth.spec.js",
+                      "column": 64,
+                      "line": 24
+                    },
+                    "snippet": "  22 |\n  23 |   await expect(page.getByRole(\"heading\", { name: /e-mail bestätigt/i })).toBeVisible();\n> 24 |   await expect(page.getByRole(\"link\", { name: /zum login/i })).toBeVisible();\n     |                                                                ^\n  25 | });\n  26 |\n  27 | test(\"verify email error state renders for invalid token\", async ({ page }) => {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/auth.spec.js",
+                        "column": 64,
+                        "line": 24
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('link', { name: /zum login/i })\nExpected: visible\nError: strict mode violation: getByRole('link', { name: /zum login/i }) resolved to 2 elements:\n    1) <a href=\"/login\" class=\"col-span-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors\">…</a> aka getByRole('banner').getByRole('link', { name: 'Zum Login' })\n    2) <a href=\"/login\" class=\"mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors\">…</a> aka getByRole('main').getByRole('link', { name: 'Zum Login' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /zum login/i })\u001b[22m\n\n\n  22 |\n  23 |   await expect(page.getByRole(\"heading\", { name: /e-mail bestätigt/i })).toBeVisible();\n> 24 |   await expect(page.getByRole(\"link\", { name: /zum login/i })).toBeVisible();\n     |                                                                ^\n  25 | });\n  26 |\n  27 | test(\"verify email error state renders for invalid token\", async ({ page }) => {\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/auth.spec.js:24:64"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:55.730Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/auth-verify-email-success-state-renders-for-guests-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/auth.spec.js",
+                    "column": 64,
+                    "line": 24
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d5ed79a6b333c2ba7209-cf644300959906740f8f",
+          "file": "auth.spec.js",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "verify email error state renders for invalid token",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 995,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:57.914Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d5ed79a6b333c2ba7209-3744ffbb9c21299da944",
+          "file": "auth.spec.js",
+          "line": 27,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "billing.spec.js",
+      "file": "billing.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "billing page renders usage and clears checkout query params",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "failed",
+                  "duration": 5742,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: /abrechnung/i })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: /abrechnung/i })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: /abrechnung/i })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: /abrechnung/i })\u001b[22m\n\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js:73:68",
+                    "location": {
+                      "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js",
+                      "column": 68,
+                      "line": 73
+                    },
+                    "snippet": "  71 |   await page.goto(\"/billing?success=true#plan\");\n  72 |\n> 73 |   await expect(page.getByRole(\"heading\", { name: /abrechnung/i })).toBeVisible();\n     |                                                                    ^\n  74 |   await expect(page.getByText(/jobsuchen \\(heute\\)/i)).toBeVisible();\n  75 |   await expect(page.getByText(/2 \\/ 5/i)).toBeVisible();\n  76 |   await expect(page).toHaveURL(/\\/billing#plan$/);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js",
+                        "column": 68,
+                        "line": 73
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: /abrechnung/i })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: /abrechnung/i })\u001b[22m\n\n\n  71 |   await page.goto(\"/billing?success=true#plan\");\n  72 |\n> 73 |   await expect(page.getByRole(\"heading\", { name: /abrechnung/i })).toBeVisible();\n     |                                                                    ^\n  74 |   await expect(page.getByText(/jobsuchen \\(heute\\)/i)).toBeVisible();\n  75 |   await expect(page.getByText(/2 \\/ 5/i)).toBeVisible();\n  76 |   await expect(page).toHaveURL(/\\/billing#plan$/);\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js:73:68"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.776Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/billing-billing-page-rende-2cca9-lears-checkout-query-params-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js",
+                    "column": 68,
+                    "line": 73
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "0b0fccf3417b7f161eaf-ea70d2613c973a672105",
+          "file": "billing.spec.js",
+          "line": 35,
+          "column": 1
+        },
+        {
+          "title": "pricing page starts checkout for a paid plan",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 45017,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js",
+                        "column": 71,
+                        "line": 112
+                      },
+                      "message": "Error: locator.click: Test timeout of 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /jetzt upgraden/i }).first()\u001b[22m\n\n\n  110 |\n  111 |   await page.goto(\"/pricing\");\n> 112 |   await page.getByRole(\"button\", { name: /jetzt upgraden/i }).first().click();\n      |                                                                       ^\n  113 |   await expect.poll(() => checkoutRequested).toBe(true);\n  114 | });\n  115 |\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/billing.spec.js:112:71"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:49:00.551Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/billing-pricing-page-starts-checkout-for-a-paid-plan-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "0b0fccf3417b7f161eaf-0e13ce41c5b6308057ef",
+          "file": "billing.spec.js",
+          "line": 79,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "job-alerts.spec.js",
+      "file": "job-alerts.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "job alerts can be created and deleted in the UI",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "timedOut",
+                  "duration": 45021,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/job-alerts.spec.js",
+                        "column": 60,
+                        "line": 133
+                      },
+                      "message": "Error: locator.click: Test timeout of 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /neuer alert/i })\u001b[22m\n\n\n  131 |\n  132 |   await page.goto(\"/job-alerts\");\n> 133 |   await page.getByRole(\"button\", { name: /neuer alert/i }).click();\n      |                                                            ^\n  134 |   await page.getByPlaceholder(/software engineer/i).fill(\"QA Alert\");\n  135 |   await page.getByRole(\"button\", { name: /^alert erstellen$/i }).click();\n  136 |\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/job-alerts.spec.js:133:60"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.797Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/job-alerts-job-alerts-can-be-created-and-deleted-in-the-UI-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f515a81ce4abcb66829-23e4ab9974770a6be57d",
+          "file": "job-alerts.spec.js",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "run-now updates the shared refresh counter",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 11,
+                  "parallelIndex": 2,
+                  "status": "timedOut",
+                  "duration": 45026,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/job-alerts.spec.js",
+                        "column": 57,
+                        "line": 214
+                      },
+                      "message": "Error: locator.click: Test timeout of 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ hasText: 'Frontend Engineer' }).first().locator('button[title=\"Jetzt ausführen\"]')\u001b[22m\n\n\n  212 |   await page.goto(\"/job-alerts\");\n  213 |   const card = page.locator(\"div\").filter({ hasText: \"Frontend Engineer\" }).first();\n> 214 |   await card.locator('button[title=\"Jetzt ausführen\"]').click();\n      |                                                         ^\n  215 |\n  216 |   await expect(page.getByText(/2 Aktualisierung(en)? heute/i)).toBeVisible();\n  217 | });\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/job-alerts.spec.js:214:57"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:49:39.984Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/job-alerts-run-now-updates-the-shared-refresh-counter-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f515a81ce4abcb66829-40b4e94eb73dfe99f1d2",
+          "file": "job-alerts.spec.js",
+          "line": 145,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "job-detail.spec.js",
+      "file": "job-detail.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "job detail can generate interview preparation",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 4,
+                  "status": "timedOut",
+                  "duration": 45015,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/job-detail.spec.js",
+                        "column": 30,
+                        "line": 117
+                      },
+                      "message": "Error: locator.click: Test timeout of 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div.animate-slide-up.mb-8.flex.flex-wrap.gap-3 button').nth(2)\u001b[22m\n\n\n  115 |\n  116 |   const actionButtons = page.locator(\"div.animate-slide-up.mb-8.flex.flex-wrap.gap-3 button\");\n> 117 |   await actionButtons.nth(2).click();\n      |                              ^\n  118 |\n  119 |   await expect(page.getByText(/wie strukturierst du einen regressionstest/i)).toBeVisible();\n  120 |   await expect(page.getByRole(\"button\", { name: /q1/i })).toBeVisible();\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/job-detail.spec.js:117:30"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.825Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/job-detail-job-detail-can-generate-interview-preparation-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7d94dcbaf5dbe4c6b091-2ad750efc099b43bf2de",
+          "file": "job-detail.spec.js",
+          "line": 34,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "jobs.spec.js",
+      "file": "jobs.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "jobs page can search and save a result into applications",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 5,
+                  "status": "timedOut",
+                  "duration": 45014,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/jobs.spec.js",
+                        "column": 63,
+                        "line": 110
+                      },
+                      "message": "Error: locator.click: Test timeout of 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /stellen finden/i })\u001b[22m\n\n\n  108 |\n  109 |   await page.goto(\"/jobs\");\n> 110 |   await page.getByRole(\"button\", { name: /stellen finden/i }).click();\n      |                                                               ^\n  111 |   await page.getByRole(\"button\", { name: /^stellen suchen$/i }).click();\n  112 |   await page.getByRole(\"button\", { name: /eigene suche/i }).click();\n  113 |   await page.getByPlaceholder(/verkauf, gastro, it, praktikum/i).fill(\"QA Engineer\");\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/jobs.spec.js:110:63"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.917Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/jobs-jobs-page-can-search--9560d--a-result-into-applications-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7d25ea94ca683ffe0b70-d79ddc76fd95d39efe0e",
+          "file": "jobs.spec.js",
+          "line": 34,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "settings.spec.js",
+      "file": "settings.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "settings save sends both preferences and profile updates",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 6,
+                  "status": "failed",
+                  "duration": 6384,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js:110:3",
+                    "location": {
+                      "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js",
+                      "column": 3,
+                      "line": 110
+                    },
+                    "snippet": "  108 |   await page.locator('button[type=\"submit\"]').click();\n  109 |\n> 110 |   await expect.poll(() => profileSaved).toBe(true);\n      |   ^\n  111 |   await expect.poll(() => preferencesSaved).toBe(true);\n  112 | });\n  113 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js",
+                        "column": 3,
+                        "line": 110
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  108 |   await page.locator('button[type=\"submit\"]').click();\n  109 |\n> 110 |   await expect.poll(() => profileSaved).toBe(true);\n      |   ^\n  111 |   await expect.poll(() => preferencesSaved).toBe(true);\n  112 | });\n  113 |\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js:110:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.813Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/settings-settings-save-sen-ad926-erences-and-profile-updates-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js",
+                    "column": 3,
+                    "line": 110
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "90e6e24ee78bd89d0a34-ac23c49c53fa4084c107",
+          "file": "settings.spec.js",
+          "line": 34,
+          "column": 1
+        },
+        {
+          "title": "settings delete-account flow redirects to login",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 45024,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 45000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js",
+                        "column": 64,
+                        "line": 171
+                      },
+                      "message": "Error: locator.click: Test timeout of 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /konto .*löschen/i })\u001b[22m\n\n\n  169 |\n  170 |   await page.goto(\"/settings\");\n> 171 |   await page.getByRole(\"button\", { name: /konto .*löschen/i }).click();\n      |                                                                ^\n  172 |   await page.getByPlaceholder(/dein aktuelles passwort/i).fill(\"secret123\");\n  173 |   await page.getByRole(\"button\", { name: /unwiderruflich löschen/i }).click();\n  174 |\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/settings.spec.js:171:64"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:49:01.149Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/settings-settings-delete-account-flow-redirects-to-login-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "90e6e24ee78bd89d0a34-55316b8816bf607bc841",
+          "file": "settings.spec.js",
+          "line": 114,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "smoke.spec.js",
+      "file": "smoke.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "login page renders",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 7,
+                  "status": "failed",
+                  "duration": 6092,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByPlaceholder(/dein passwort eingeben/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByPlaceholder(/dein passwort eingeben/i)\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByPlaceholder(/dein passwort eingeben/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByPlaceholder(/dein passwort eingeben/i)\u001b[22m\n\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/smoke.spec.js:8:66",
+                    "location": {
+                      "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/smoke.spec.js",
+                      "column": 66,
+                      "line": 8
+                    },
+                    "snippet": "   6 |   await expect(page.getByRole(\"heading\", { name: /willkommen zurück/i })).toBeVisible();\n   7 |   await expect(page.getByPlaceholder(/du@beispiel\\.at/i)).toBeVisible();\n>  8 |   await expect(page.getByPlaceholder(/dein passwort eingeben/i)).toBeVisible();\n     |                                                                  ^\n   9 |   await expect(page.getByRole(\"button\", { name: /anmelden/i })).toBeVisible();\n  10 | });\n  11 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/smoke.spec.js",
+                        "column": 66,
+                        "line": 8
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByPlaceholder(/dein passwort eingeben/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByPlaceholder(/dein passwort eingeben/i)\u001b[22m\n\n\n   6 |   await expect(page.getByRole(\"heading\", { name: /willkommen zurück/i })).toBeVisible();\n   7 |   await expect(page.getByPlaceholder(/du@beispiel\\.at/i)).toBeVisible();\n>  8 |   await expect(page.getByPlaceholder(/dein passwort eingeben/i)).toBeVisible();\n     |                                                                  ^\n   9 |   await expect(page.getByRole(\"button\", { name: /anmelden/i })).toBeVisible();\n  10 | });\n  11 |\n    at /home/davorrr/Documents/JobAssist-main/frontend/e2e/smoke.spec.js:8:66"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-30T19:48:53.872Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/home/davorrr/Documents/JobAssist-main/frontend/test-results/smoke-login-page-renders-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/davorrr/Documents/JobAssist-main/frontend/e2e/smoke.spec.js",
+                    "column": 66,
+                    "line": 8
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "2c14808d47b386fba9eb-bbe5ea75cfd0d9f24557",
+          "file": "smoke.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-30T19:48:51.943Z",
+    "duration": 93202.553,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 11,
+    "flaky": 0
+  }
+}

@@ -37,6 +37,7 @@ from app.api.routes import (
     jobs,
     logo_proxy,
     motivationsschreiben,
+    profile,
     research,
     resume,
 )
@@ -163,4 +164,5 @@ app.include_router(billing.router,              prefix="/api/billing",          
 app.include_router(contact.router,              prefix="/api/contact",              tags=["Contact"])
 app.include_router(admin.router,                prefix="/api/admin",                tags=["Admin"])
 app.include_router(logo_proxy.router,           prefix="/api",                      tags=["Utils"])
+app.include_router(profile.router,              prefix="/api/profile",              tags=["Profile"])
 app.include_router(health.router,                                                   tags=["Health"])

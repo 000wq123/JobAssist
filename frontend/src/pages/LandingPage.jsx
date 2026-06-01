@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, Sparkles, Briefcase, FileText, Bell, Wand2,
@@ -5,6 +6,7 @@ import {
   ChevronRight, Star, Quote, Twitter, Instagram, Youtube,
 } from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
+import { billingApi } from "../services/api";
 
 /* ════════════════════════════════════════════════════════════════════════
    Landing page — Phase 2 redesign.
@@ -853,28 +855,59 @@ function BigQuote() {
 }
 
 /* ─── Section 10: Pricing teaser (Cron pattern — 3 plans + final CTA) ─── */
-const PLANS = [
-  {
-    name: "Basic", price: "€0", suffix: "",        desc: "Zum Ausprobieren",
-    features: ["3 Bewerbungen", "5 KI-Anfragen/Monat", "1 Lebenslauf"],
-    cta: "Kostenlos starten", popular: false,
-  },
-  {
-    name: "Pro",   price: "€4,99", suffix: "/Monat", desc: "Für aktive Bewerber",
-    features: ["Unbegrenzte Bewerbungen", "100 KI-Anfragen/Monat", "Job-Alerts", "Interview-Prep"],
-    cta: "Pro 7 Tage testen", popular: true,
-  },
-  {
-    name: "Max",   price: "€7,99", suffix: "/Monat", desc: "Unbegrenzte Power",
-    features: ["Alles aus Pro", "Unbegrenzte KI-Anfragen", "Firmen-Insights", "Priority-Support"],
-    cta: "Max wählen", popular: false,
-  },
-];
+
+const LIMIT_LABELS = {
+  cv_analysis: (v) => (v === -1 ? "Unbegrenzt Lebenslauf-Analysen" : `${v} Lebenslauf-Analysen / Monat`),
+  cover_letter: (v) => (v === -1 ? "Unbegrenzt Anschreiben" : `${v} Anschreiben / Monat`),
+  job_alerts: (v) => (v === -1 ? "Unbegrenzt Job-Alerts" : `${v} Job-Alerts`),
+  ai_chat: (v) => (v === -1 ? "Unbegrenzt KI-Nachrichten" : `${v} KI-Nachrichten / Monat`),
+  job_search: (v) => (v === -1 ? "Unbegrenzt Jobsuche" : `${v} Jobsuche / Tag`),
+};
+
+function formatPrice(price) {
+  if (price === null || price === undefined) return { text: "Auf Anfrage", suffix: "" };
+  if (price === 0) return { text: "€0", suffix: "" };
+  return { text: `€${String(price).replace(".", ",")}`, suffix: "/Monat" };
+}
+
+function buildFeatures(plan) {
+  const feats = Object.entries(plan.limits || {})
+    .map(([key, val]) => LIMIT_LABELS[key]?.(val))
+    .filter(Boolean);
+  if (plan.key === "max") {
+    feats.push("Firmen-Insights", "Priority-Support");
+  } else if (plan.key === "pro") {
+    feats.push("Interview-Prep");
+  }
+  return feats;
+}
 
 /**
  * Pricing teaser with 3 plans and a "see all" link.
+ * Fetches plan limits/prices from the backend so marketing copy never drifts
+ * from the single source of truth in plans.py.
  */
 function Pricing() {
+  const [plans, setPlans] = useState([]);
+
+  useEffect(() => {
+    billingApi.plans()
+      .then((res) => {
+        // Landing page only shows basic/pro/max (not enterprise)
+        const order = ["basic", "pro", "max"];
+        const ordered = order
+          .map((k) => res.data.find((p) => p.key === k))
+          .filter(Boolean);
+        setPlans(ordered);
+      })
+      .catch(() => {
+        // Graceful fallback: render nothing if the API is unavailable
+        setPlans([]);
+      });
+  }, []);
+
+  if (!plans.length) return null;
+
   return (
     <section
       id="faq"
@@ -890,47 +923,55 @@ function Pricing() {
           </h2>
         </div>
         <div className="grid grid-cols-12 gap-4">
-          {PLANS.map((p) => (
-            <div
-              key={p.name}
-              className={`col-span-12 md:col-span-4 rounded-2xl border p-7 flex flex-col ${
-                p.popular
-                  ? "border-[var(--color-accent-400)] bg-[var(--color-bg)]"
-                  : "border-[var(--color-border)] bg-[var(--color-bg)]"
-              }`}
-            >
-              {p.popular && (
-                <span className="self-start mb-3 inline-flex rounded-full bg-[var(--color-accent-500)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-300)]">
-                  Beliebt
-                </span>
-              )}
-              <h3 className="text-[16px] font-semibold text-[var(--color-fg)]">{p.name}</h3>
-              <p className="text-[13px] text-[var(--color-fg-muted)]">{p.desc}</p>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-[40px] font-bold tracking-tight text-[var(--color-fg)]">{p.price}</span>
-                {p.suffix && <span className="text-[13px] text-[var(--color-fg-dim)]">{p.suffix}</span>}
-              </div>
-              <ul className="mt-6 space-y-2.5 flex-1">
-                {p.features.map((f) => (
-                  <li key={f} className="grid grid-cols-12 gap-2 text-[13px] text-[var(--color-fg-muted)]">
-                    <CheckCircle2 className="col-span-1 h-4 w-4 text-[var(--color-accent-400)] mt-0.5" />
-                    <span className="col-span-11">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/register"
-                className={`mt-7 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors ${
-                  p.popular
-                    ? "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-400)]"
-                    : "border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+          {plans.map((p) => {
+            const price = formatPrice(p.price);
+            const features = buildFeatures(p);
+            const isPopular = p.key === "pro";
+            const cta = isPopular ? "Pro 7 Tage testen" : p.key === "max" ? "Max wählen" : "Kostenlos starten";
+            return (
+              <div
+                key={p.key}
+                className={`col-span-12 md:col-span-4 rounded-2xl border p-7 flex flex-col ${
+                  isPopular
+                    ? "border-[var(--color-accent-400)] bg-[var(--color-bg)]"
+                    : "border-[var(--color-border)] bg-[var(--color-bg)]"
                 }`}
               >
-                {p.cta}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          ))}
+                {isPopular && (
+                  <span className="self-start mb-3 inline-flex rounded-full bg-[var(--color-accent-500)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-300)]">
+                    Beliebt
+                  </span>
+                )}
+                <h3 className="text-[16px] font-semibold text-[var(--color-fg)]">{p.name}</h3>
+                <p className="text-[13px] text-[var(--color-fg-muted)]">
+                  {p.key === "basic" ? "Zum Ausprobieren" : p.key === "pro" ? "Für aktive Bewerber" : "Unbegrenzte Power"}
+                </p>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-[40px] font-bold tracking-tight text-[var(--color-fg)]">{price.text}</span>
+                  {price.suffix && <span className="text-[13px] text-[var(--color-fg-dim)]">{price.suffix}</span>}
+                </div>
+                <ul className="mt-6 space-y-2.5 flex-1">
+                  {features.map((f) => (
+                    <li key={f} className="grid grid-cols-12 gap-2 text-[13px] text-[var(--color-fg-muted)]">
+                      <CheckCircle2 className="col-span-1 h-4 w-4 text-[var(--color-accent-400)] mt-0.5" />
+                      <span className="col-span-11">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/register"
+                  className={`mt-7 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+                    isPopular
+                      ? "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-400)]"
+                      : "border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+                  }`}
+                >
+                  {cta}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            );
+          })}
         </div>
         <div className="mt-10 text-center">
           <Link to="/pricing" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)]">
@@ -1036,7 +1077,7 @@ function Footer() {
                   key={l}
                   href={href}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="grid place-items-center h-8 w-8 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[var(--color-fg-muted)] hover:text-[var(--color-accent-300)] hover:border-[var(--color-accent-500)]/40 transition-colors"
                   aria-label={l}
                 >

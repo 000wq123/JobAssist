@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 from app.core.security import get_current_user
 from app.core.rate_limit import limiter
+from app.core.usage import require_usage
 from app.models.user import User
 from app.services.claude_service import polish_text
 
@@ -24,6 +25,7 @@ async def polish(
     request: Request,
     payload: PolishRequest,
     current_user: User = Depends(get_current_user),
+    _usage=Depends(require_usage("ai_chat")),
 ) -> PolishResponse:
     """Improve a short CV text snippet (hobbies line, job bullet, etc.)."""
     improved = await polish_text(payload.text.strip(), payload.context)

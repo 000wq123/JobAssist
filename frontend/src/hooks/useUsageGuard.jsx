@@ -34,7 +34,7 @@ export default function useUsageGuard(feature) {
   const entry = usageList.find((u) => u.feature === feature);
 
   const used = entry?.used ?? 0;
-  const limit = entry?.limit ?? 0;
+  const limit = entry?.limit ?? -1;
   const remaining = entry?.remaining ?? 0;
   const unlimited = limit === -1;
   const atLimit = !unlimited && remaining <= 0;

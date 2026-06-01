@@ -5,6 +5,7 @@ import {
   FileText,
   Briefcase,
   Bell,
+  Calendar,
   Settings,
   CreditCard,
   LogOut,
@@ -16,17 +17,19 @@ import {
 import clsx from "clsx";
 import useAuthStore from "../../hooks/useAuthStore";
 import { authApi } from "../../services/api";
+import Popover from "../ui/Popover";
 
 const NAV_ITEMS = [
   { to: "/dashboard",    label: "Dashboard",    icon: LayoutDashboard },
   { to: "/jobs",         label: "Stellen",      icon: Briefcase },
   { to: "/lebenslauf",   label: "Lebenslauf",   icon: FileText },
   { to: "/job-alerts",   label: "Alerts",       icon: Bell },
+  { to: "/kalender",     label: "Kalender",     icon: Calendar },
 ];
 
 const USER_MENU = [
   { to: "/settings", label: "Einstellungen", icon: Settings },
-  { to: "/billing",  label: "Abonnement",    icon: CreditCard },
+  { to: "/billing",  label: "Mein Plan",    icon: CreditCard },
 ];
 
 /**
@@ -63,17 +66,19 @@ function isMac() {
  */
 export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+  const menuBtnRef = useRef(null);
   const navigate = useNavigate();
   const mac = isMac();
 
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (!menuBtnRef.current) return;
+      // Popover handles overlay click; here we only close on window blur to be safe
+      if (document.hidden) setMenuOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
   }, [menuOpen]);
 
   const handleLogout = async () => {
@@ -146,7 +151,7 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
             </kbd>
           </button>
 
-          <div className="relative" ref={menuRef}>
+          <div>
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
@@ -158,6 +163,7 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
               )}
               aria-label="Benutzermenü"
               aria-expanded={menuOpen}
+              ref={menuBtnRef}
             >
               {profile?.avatar ? (
                 <img src={profile.avatar} alt="" className="w-6 h-6 rounded object-cover" />
@@ -169,40 +175,40 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
               <ChevronDown className={clsx("w-3 h-3 text-[var(--color-fg-dim)] transition-transform", menuOpen && "rotate-180")} />
             </button>
 
-            {menuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full mt-1.5 w-60 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-1 z-50 animate-slide-up"
-                style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}
-              >
-                <div className="px-2.5 py-2 mb-1 border-b border-[var(--color-border-subtle)]">
-                  <p className="text-[13px] font-semibold text-[var(--color-fg)] truncate">{userName}</p>
-                  <p className="text-[11.5px] text-[var(--color-fg-dim)] truncate">{me?.email}</p>
-                </div>
-                {USER_MENU.map(({ to, label, icon: Icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    role="menuitem"
-                    onClick={() => setMenuOpen(false)}
-                    className="grid grid-cols-12 items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
-                  >
-                    <Icon className="col-span-1 w-3.5 h-3.5" />
-                    <span className="col-span-11">{label}</span>
-                  </NavLink>
-                ))}
-                <div className="my-1 h-px bg-[var(--color-border-subtle)]" />
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => { setMenuOpen(false); handleLogout(); }}
-                  className="grid grid-cols-12 items-center gap-2 w-full px-2.5 py-2 rounded-md text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
-                >
-                  <LogOut className="col-span-1 w-3.5 h-3.5" />
-                  <span className="col-span-11 text-left">Abmelden</span>
-                </button>
+            <Popover
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              anchorRef={menuBtnRef}
+              align="right"
+              className="w-60 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-1 animate-slide-up"
+            >
+              <div className="px-2.5 py-2 mb-1 border-b border-[var(--color-border-subtle)]">
+                <p className="text-[13px] font-semibold text-[var(--color-fg)] truncate">{userName}</p>
+                <p className="text-[11.5px] text-[var(--color-fg-dim)] truncate">{me?.email}</p>
               </div>
-            )}
+              {USER_MENU.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                  className="grid grid-cols-12 items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
+                >
+                  <Icon className="col-span-1 w-3.5 h-3.5" />
+                  <span className="col-span-11">{label}</span>
+                </NavLink>
+              ))}
+              <div className="my-1 h-px bg-[var(--color-border-subtle)]" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+                className="grid grid-cols-12 items-center gap-2 w-full px-2.5 py-2 rounded-md text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+              >
+                <LogOut className="col-span-1 w-3.5 h-3.5" />
+                <span className="col-span-11 text-left">Abmelden</span>
+              </button>
+            </Popover>
           </div>
         </div>
       </div>
