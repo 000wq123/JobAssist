@@ -161,6 +161,28 @@ export default function JobDetailPage() {
     onError: (err) => toast.error(err.response?.data?.detail || "Aktualisierung fehlgeschlagen"),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: (status) => jobApi.updateStatus(jobId, status),
+    onMutate: (status) => {
+      const prev = queryClient.getQueryData(["jobs", jobId]);
+      const prevList = queryClient.getQueryData(["jobs"]);
+      const optimistic = { ...(prev || job || {}), status };
+      queryClient.setQueryData(["jobs", jobId], optimistic);
+      queryClient.setQueryData(["jobs", Number(jobId)], optimistic);
+      queryClient.setQueryData(["jobs"], (old = []) => old.map((e) => String(e.id) === String(jobId) ? optimistic : e));
+      return { prev, prevList };
+    },
+    onSuccess: (res) => { if (res?.data) updateJobCaches(res.data); },
+    onError: (err, _status, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(["jobs", jobId], ctx.prev);
+        queryClient.setQueryData(["jobs", Number(jobId)], ctx.prev);
+      }
+      if (ctx?.prevList) queryClient.setQueryData(["jobs"], ctx.prevList);
+      toast.error(err.response?.data?.detail || "Status konnte nicht aktualisiert werden");
+    },
+  });
+
   const handleResearch = async () => {
     if (job?.research_data) { setResearchData(JSON.parse(job.research_data)); setResearchOpen(true); return; }
     setResearchData(null); setResearchOpen(true); setResearchLoading(true);
@@ -229,7 +251,29 @@ export default function JobDetailPage() {
                 <button type="button" onClick={() => setMobileToolOpen((o) => !o)} aria-label="Mehr Aktionen" className="inline-flex flex-col items-center justify-center gap-0.5 h-10 px-2 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors min-w-[32px]" ref={mobileToolBtnRef}>
                   <MoreHorizontal className="w-4 h-4" aria-hidden="true" /><span className="text-[9px] font-medium leading-none">Mehr</span>
                 </button>
-                <Popover open={mobileToolOpen} onClose={() => setMobileToolOpen(false)} anchorRef={mobileToolBtnRef} align="right" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] shadow-xl shadow-black/40 py-1 min-w-[160px] animate-slide-up">
+                <Popover open={mobileToolOpen} onClose={() => setMobileToolOpen(false)} anchorRef={mobileToolBtnRef} align="right" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] shadow-xl shadow-black/40 py-1 min-w-[180px] animate-slide-up">
+                  <div className="px-1">
+                    <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-[var(--color-fg-faint)] font-medium">Status ändern</p>
+                    {[
+                      { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0" },
+                      { key: "offered",      label: "Angebot",     dot: "#4ade80" },
+                      { key: "applied",      label: "Beworben",    dot: "#60a5fa" },
+                      { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b" },
+                      { key: "rejected",     label: "Erledigt",    dot: "#52525b" },
+                    ].map((s) => (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() => { statusMutation.mutate(s.key); setMobileToolOpen(false); }}
+                        disabled={statusMutation.isPending || job?.status === s.key}
+                        className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] disabled:opacity-40"
+                      >
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
                   <button type="button" onClick={() => { setEditOpen(true); setMobileToolOpen(false); }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]"><Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> Bearbeiten</button>
                   <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
                   <button type="button" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) { setMobileToolOpen(false); deleteMutation.mutate(); } }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]"><Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen</button>

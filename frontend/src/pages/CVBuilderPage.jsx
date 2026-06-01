@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
-  Sparkles, ArrowLeft, Trash2, ChevronRight, Download, CheckCircle2, Upload, Copy, Pencil,
+  Sparkles, ArrowLeft, Trash2, ChevronRight, Download, CheckCircle2, Upload, Copy, Pencil, Edit3,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
@@ -105,20 +105,22 @@ function mapParsedResumeToProfile(parsed) {
 function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRename, busy }) {
   const meta = TMPL_META[entry.templateId] || TMPL_META["tabellarisch"];
   return (
-    <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] hover:border-[var(--color-border-strong)] transition-colors">
-      <div style={{ width: 8, height: 40, borderRadius: 3, background: meta.color, flexShrink: 0 }} />
-      <div className="flex-1 min-w-0">
-        <p className="text-[15px] font-semibold text-[var(--color-fg)] truncate">{entry.name}</p>
-        <p className="text-[12px] text-[var(--color-fg-faint)] mt-0.5">
-          {meta.label} · {formatDate(entry.createdAt)}
-        </p>
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] hover:border-[var(--color-border-strong)] transition-colors">
+      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+        <div style={{ width: 8, height: 40, borderRadius: 3, background: meta.color, flexShrink: 0 }} />
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-[var(--color-fg)] truncate">{entry.name}</p>
+          <p className="text-[12px] text-[var(--color-fg-faint)] mt-0.5">
+            {meta.label} · {formatDate(entry.createdAt)}
+          </p>
+        </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto flex-shrink-0">
         <button
           type="button"
           onClick={() => onDownload(entry)}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-semibold transition-all disabled:opacity-50"
           style={{ background: "var(--color-accent-500)", color: "#0b0b14" }}
         >
           <Download className="w-3 h-3" />
@@ -127,15 +129,17 @@ function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRen
         <button
           type="button"
           onClick={() => onEdit(entry)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
+          className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-medium border transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
           style={{ borderColor: "rgba(255,255,255,0.10)", color: "var(--color-fg-muted)" }}
         >
-          Bearbeiten
+          <Edit3 className="w-3 h-3 sm:hidden" />
+          <span className="hidden sm:inline">Bearbeiten</span>
+          <span className="sm:hidden">Bearb.</span>
         </button>
         <button
           type="button"
           onClick={() => onDuplicate(entry)}
-          className="p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
+          className="p-1 sm:p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
           title="Duplizieren"
           aria-label="Duplizieren"
         >
@@ -144,7 +148,7 @@ function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRen
         <button
           type="button"
           onClick={() => onRename(entry)}
-          className="p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
+          className="p-1 sm:p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
           title="Umbenennen"
           aria-label="Umbenennen"
         >
@@ -153,7 +157,7 @@ function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRen
         <button
           type="button"
           onClick={() => onDelete(entry.id)}
-          className="p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-error)] transition-colors"
+          className="p-1 sm:p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-error)] transition-colors"
           aria-label="Entfernen"
         >
           <Trash2 className="w-4 h-4" />
