@@ -145,7 +145,7 @@ function pickHeuteAction(jobs, mutedIds) {
     return {
       job: best,
       action: "Vorstellung vorbereiten.",
-      sub: best.match_score != null ? `${Math.round(best.match_score)} % Passung` : null,
+      sub: best.match_score != null ? `${Math.round(best.match_score)} % Passung` : null,
     };
   }
 

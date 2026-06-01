@@ -160,7 +160,7 @@ function KvBar({ hourly, kvMin }) {
         </p>
       </div>
       <div className="relative mt-3 h-2 rounded-full bg-[var(--color-bg-elev-3)] overflow-hidden">
-        <div className="absolute inset-y-0 left-0 bg-[var(--color-accent-500)]/30" style={{ width: `${kvPct}%` }} />
+        <div className="h-full rounded-l-full bg-[var(--color-accent-500)]/30" style={{ width: `${kvPct}%` }} />
         <div
           className="absolute top-1/2 w-3 h-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-[var(--color-fg)]"
           style={{ left: `${jobPct}%` }}

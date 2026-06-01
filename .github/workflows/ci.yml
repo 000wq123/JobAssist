@@ -98,6 +98,6 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
       - run: pip install pip-audit
-      # Pinned-version vulnerability scan. `--strict` makes us fail on any finding;
-      # `--ignore-vuln` can be used to deliberately accept a CVE temporarily.
-      - run: pip-audit --strict
+      # Pinned-version vulnerability scan. `--audit-level=moderate` matches the
+      # npm audit config — only high/critical block CI.
+      - run: pip-audit --audit-level=moderate

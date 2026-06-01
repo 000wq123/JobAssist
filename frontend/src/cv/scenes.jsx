@@ -720,7 +720,6 @@ function Foto({ profile, onChange }) {
       <div className="flex flex-col items-center gap-3">
         {profile.foto ? (
           <div className="flex flex-col items-center gap-2">
-            { /* eslint-disable-next-line jsx-a11y/img-redundant-alt */ }
             <img src={profile.foto} alt="Bewerbungsfoto" className="w-[170px] h-[212px] object-cover rounded-[14px] border border-[var(--color-border)]" />
             <button type="button" onClick={() => onChange({ foto: "" })} className="text-[12.5px] text-[var(--color-fg-faint)] hover:text-[var(--color-error)]">Foto entfernen</button>
           </div>

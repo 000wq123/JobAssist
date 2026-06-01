@@ -3,7 +3,6 @@
  */
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 
 export const ANNOT = "text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium";
 

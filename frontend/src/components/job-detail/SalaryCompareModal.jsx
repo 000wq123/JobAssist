@@ -10,6 +10,8 @@ import { formatEuro } from "../../utils/format";
 import { parseSalary, kvMinimumFor } from "./domain";
 
 export default function SalaryCompareModal({ open, onClose, currentJob, allJobs }) {
+  const [tipIdx] = useState(() => Math.floor(Math.random() * 4));
+
   if (!open) return null;
 
   const current = parseSalary(currentJob.salary_text);
@@ -31,7 +33,6 @@ export default function SalaryCompareModal({ open, onClose, currentJob, allJobs 
   const currentHourly = current?.unit === "hour" ? current.amount : null;
   const aboveKv = currentHourly !== null ? currentHourly > kvMin : null;
 
-  const [tipIdx] = useState(() => Math.floor(Math.random() * 4));
   const tips = [
     "Frage ruhig nach dem Gehalt — die meisten Stellen haben Spielraum.",
     `Der gesetzliche Mindestlohn für diese Kategorie liegt bei ${formatEuro(kvMin)}/h. Branchen-KV ist oft höher.`,
