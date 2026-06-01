@@ -304,8 +304,8 @@ export default function JobDetailPage() {
           <div className="mt-5 grid grid-cols-2 lg:grid-cols-3 gap-2">
             <button type="button" onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) coverLetterMutation.mutate(); else { toast("Lebenslauf hochladen, um ein Anschreiben zu erstellen."); navigate("/lebenslauf"); } }} disabled={coverLetterMutation.isPending} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]" style={{ background: "rgba(124,125,240,0.07)", borderColor: "rgba(124,125,240,0.22)", color: "var(--color-accent-300)" }}><FileText className="w-3 h-3" />{coverLetterMutation.isPending ? "Wird erstellt…" : job.cover_letter ? "Anschreiben ansehen" : "Anschreiben erstellen"}</button>
             <button type="button" onClick={() => setInterviewOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(96,165,250,0.07)", borderColor: "rgba(96,165,250,0.22)", color: "#93c5fd" }}><MessageSquare className="w-3 h-3" />Vorbereitung</button>
-            <button type="button" onClick={() => { if (resumeId) matchMutation.mutate(); else toast.error("Waehle zuerst einen Lebenslauf"); }} disabled={matchMutation.isPending} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]" style={{ background: "rgba(74,222,128,0.07)", borderColor: "rgba(74,222,128,0.22)", color: "#86efac" }}>{matchMutation.isPending ? <span className="animate-spin inline-block h-3 w-3 border-2 border-current border-t-transparent rounded-full" /> : <SearchCheck className="w-3 h-3" />}{matchMutation.isPending ? "Wird berechnet…" : "Passung pruefen"}</button>
-            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(167,139,250,0.07)", borderColor: "rgba(167,139,250,0.22)", color: "#c4b5fd" }}><FileText className="w-3 h-3" />Lebenslauf waehlen</button>
+            <button type="button" onClick={() => { if (resumeId) matchMutation.mutate(); else toast.error("Wähle zuerst einen Lebenslauf"); }} disabled={matchMutation.isPending} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]" style={{ background: "rgba(74,222,128,0.07)", borderColor: "rgba(74,222,128,0.22)", color: "#86efac" }}>{matchMutation.isPending ? <span className="animate-spin inline-block h-3 w-3 border-2 border-current border-t-transparent rounded-full" /> : <SearchCheck className="w-3 h-3" />}{matchMutation.isPending ? "Wird berechnet…" : "Passung prüfen"}</button>
+            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(167,139,250,0.07)", borderColor: "rgba(167,139,250,0.22)", color: "#c4b5fd" }}><FileText className="w-3 h-3" />Lebenslauf wählen</button>
             <button type="button" onClick={handleResearch} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(56,189,248,0.07)", borderColor: "rgba(56,189,248,0.22)", color: "#7dd3fc" }}><SearchCheck className="w-3 h-3" />Recherche</button>
             <button type="button" onClick={() => setSalaryCompareOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(251,191,36,0.07)", borderColor: "rgba(251,191,36,0.22)", color: "#fde68a" }}><BarChart2 className="w-3 h-3" />Gehaltsvergleich</button>
           </div>
@@ -320,7 +320,7 @@ export default function JobDetailPage() {
                 </p>
                 <p className="text-[14px] text-[var(--color-fg-muted)] pb-2">{salary.unit === "hour" ? `/Stunde · KV ${categoryLabel(job.category)}` : salary.unit === "month" ? "/Monat brutto" : "/Jahr brutto"}</p>
               </div>
-              {salary.unit === "hour" && monthlyEst ? <p className="mt-3 text-[14px] text-[var(--color-fg-muted)] leading-relaxed max-w-md">Bei <span className="text-[var(--color-fg)]">8 Stunden pro Woche</span> sind das rund <span className="text-[var(--color-fg)]">{monthlyEst} im Monat</span> — ohne Sonn- oder Feiertagszuschlag.</p> : salary.unit === "year" && salary.hourly ? <p className="mt-3 text-[14px] text-[var(--color-fg-muted)] leading-relaxed max-w-md">Entspricht ungefaehr <span className="text-[var(--color-fg)]">{salary.hourly.toFixed(2)}/Stunde</span> bei 38,5 h/Woche.</p> : null}
+              {salary.unit === "hour" && monthlyEst ? <p className="mt-3 text-[14px] text-[var(--color-fg-muted)] leading-relaxed max-w-md">Bei <span className="text-[var(--color-fg)]">8 Stunden pro Woche</span> sind das rund <span className="text-[var(--color-fg)]">{monthlyEst} im Monat</span> — ohne Sonn- oder Feiertagszuschlag.</p> : salary.unit === "year" && salary.hourly ? <p className="mt-3 text-[14px] text-[var(--color-fg-muted)] leading-relaxed max-w-md">Entspricht ungefähr <span className="text-[var(--color-fg)]">{salary.hourly.toFixed(2)}/Stunde</span> bei 38,5 h/Woche.</p> : null}
             </section>
           ) : null}
 
@@ -329,7 +329,7 @@ export default function JobDetailPage() {
             <section className="mt-6 flex flex-wrap gap-3">
               {job.location ? <KpiTile label="Standort" value={city || job.location} hint={locRest || null} /> : null}
               {job.category ? <KpiTile label="Typ" value={categoryLabel(job.category)} hint={job.job_type || null} /> : null}
-              {showDeadline ? <KpiTile label="Frist" tone={deadlineWarn ? "warn" : "default"} value={deadlineDays >= 0 ? <>{deadlineDays}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1.5 align-middle">Tage</span></> : <>{Math.abs(deadlineDays)}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1.5 align-middle">T ueberfaellig</span></>} hint={job.deadline ? new Date(job.deadline).toLocaleDateString("de-AT") : (job.expires_at ? new Date(job.expires_at).toLocaleDateString("de-AT") : null)} /> : null}
+              {showDeadline ? <KpiTile label="Frist" tone={deadlineWarn ? "warn" : "default"} value={deadlineDays >= 0 ? <>{deadlineDays}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1.5 align-middle">Tage</span></> : <>{Math.abs(deadlineDays)}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1.5 align-middle">T überfällig</span></>} hint={job.deadline ? new Date(job.deadline).toLocaleDateString("de-AT") : (job.expires_at ? new Date(job.expires_at).toLocaleDateString("de-AT") : null)} /> : null}
               {job.salary_text && !salary ? <KpiTile label="Gehalt" value={job.salary_text} /> : null}
               {daysSaved !== null ? <KpiTile label="Gespeichert" value={<>{daysSaved}<span className="text-[14px] text-[var(--color-fg-dim)] ml-1">T</span></>} hint={savedAt ? `am ${new Date(savedAt).toLocaleDateString("de-AT", { day: "2-digit", month: "numeric" })}` : null} /> : null}
             </section>
@@ -338,7 +338,7 @@ export default function JobDetailPage() {
           {/* KV bar */}
           {salary?.hourly ? <section className="mt-4"><KvBar hourly={salary.hourly} kvMin={kvMin} category={job.category} /></section> : null}
 
-          {/* Aehnliche Stellen */}
+          {/* Ähnliche Stellen */}
           {salary?.hourly ? <section className="mt-4"><SimilarJobsCard currentHourly={salary.hourly} jobs={allJobs} currentId={jobId} /></section> : null}
 
           {/* KV estimate */}
@@ -346,7 +346,7 @@ export default function JobDetailPage() {
             <section className="mt-4">
               <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
-                  <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Gehalt · Einschaetzung</p>
+                  <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Gehalt · Einschätzung</p>
                   <span className="text-[11px] text-[var(--color-fg-dim)]">KV Angestellte 2024</span>
                 </div>
                 <div className="px-5 py-5">
@@ -364,7 +364,7 @@ export default function JobDetailPage() {
                     <span className="font-medium" style={{ color: "var(--color-warning)" }}>€{kvMin.toFixed(2)} KV-Richtwert</span>
                     <span>€14,00 Top 10 %</span>
                   </div>
-                  <p className="mt-3 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">Schaetzung auf Basis des KV (WKO, 01/2024) — keine Firmenangabe.</p>
+                  <p className="mt-3 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">Schätzung auf Basis des KV (WKO, 01/2024) — keine Firmenangabe.</p>
                 </div>
               </div>
             </section>
@@ -378,8 +378,8 @@ export default function JobDetailPage() {
 
           {/* Kontext footer */}
           <section className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-5">
-            <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Einschaetzung</p>
-            <p className="mt-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">Rueckmeldungen dauern bei {job.company || "den meisten Betrieben"} erfahrungsgemaess <span className="text-[var(--color-fg)]">7–14 Werktage</span>. Keine Antwort in dieser Zeit ist haeufig und sagt nichts ueber deine Bewerbung aus.</p>
+            <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Einschätzung</p>
+            <p className="mt-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">Rückmeldungen dauern bei {job.company || "den meisten Betrieben"} erfahrungsgemäß <span className="text-[var(--color-fg)]">7–14 Werktage</span>. Keine Antwort in dieser Zeit ist häufig und sagt nichts über deine Bewerbung aus.</p>
           </section>
 
           {/* Notizen */}
