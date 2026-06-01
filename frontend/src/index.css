@@ -404,7 +404,7 @@
     display: flex;
     gap: 3rem;
     align-items: center;
-    animation: logoStripScroll 40s linear infinite;
+    animation: logoStripScroll 20s linear infinite;
   }
   @keyframes logoStripScroll {
     0%   { transform: translateX(0); }
