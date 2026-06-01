@@ -98,6 +98,6 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
       - run: pip install pip-audit
-      # Pinned-version vulnerability scan. `--audit-level=moderate` matches the
+      # Pinned-version vulnerability scan. `--audit-level=high` matches the
       # npm audit config — only high/critical block CI.
-      - run: pip-audit --audit-level=moderate
+      - run: pip-audit --audit-level=high

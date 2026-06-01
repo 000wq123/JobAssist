@@ -5,7 +5,7 @@
 
 import { Info } from "lucide-react";
 import { formatEuro } from "../../utils/format";
-import { categoryLabel, kvMinimumFor } from "./domain";
+import { categoryLabel } from "./domain";
 import { ANNOT } from "./ui";
 
 export default function KvBar({ hourly, kvMin, category }) {
@@ -25,7 +25,7 @@ export default function KvBar({ hourly, kvMin, category }) {
         </p>
       </div>
       <div className="relative mt-5 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-        <div className="absolute inset-y-0 left-0 bg-[var(--color-accent-500)]/35" style={{ width: `${kvPct}%` }} />
+        <div className="h-full rounded-l-full bg-[var(--color-accent-500)]/35" style={{ width: `${kvPct}%` }} />
         <div
           className="absolute top-1/2 w-2.5 h-2.5 -translate-y-1/2 -translate-x-1/2 rounded-full bg-[var(--color-fg)] ring-2 ring-[var(--color-bg)]"
           style={{ left: `${jobPct}%` }}

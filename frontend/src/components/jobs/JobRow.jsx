@@ -48,12 +48,12 @@ function getCompanyInitials(name) {
 function CompanyLogo({ company, url }) {
   const [imgState, setImgState] = useState("loading");
   const initials = getCompanyInitials(company);
-  const tileClass = "relative h-10 w-10 flex-shrink-0 rounded-xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] overflow-hidden transition-colors duration-150";
+  const tileClass = "relative grid h-10 w-10 flex-shrink-0 rounded-xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] overflow-hidden transition-colors duration-150";
   const src = company ? `${defaultBaseURL}/proxy/logo/best?company=${encodeURIComponent(company)}&url=${encodeURIComponent(url || "")}` : null;
 
   return (
     <div aria-hidden="true" className={tileClass}>
-      <span className="absolute inset-0 grid place-items-center text-[12px] font-semibold tracking-tight text-[var(--color-fg-muted)]">
+      <span className="col-start-1 row-start-1 grid place-items-center text-[12px] font-semibold tracking-tight text-[var(--color-fg-muted)]">
         {initials}
       </span>
       {src && imgState !== "failed" && (
@@ -63,7 +63,7 @@ function CompanyLogo({ company, url }) {
           loading="lazy"
           onLoad={() => setImgState("loaded")}
           onError={() => setImgState("failed")}
-          className="absolute inset-0 h-full w-full object-contain p-1 rounded-xl"
+          className="col-start-1 row-start-1 h-full w-full object-contain p-1 rounded-xl"
           style={{ opacity: imgState === "loaded" ? 1 : 0, transition: "opacity 0.25s" }}
         />
       )}

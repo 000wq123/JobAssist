@@ -157,14 +157,14 @@ export default function App() {
   useEffect(() => {
     let active = true;
     (async () => {
-      console.time("[perf] auth/refresh");
+      console.warn("[perf] auth/refresh start");
       try {
         const res = await authApi.refresh();
-        console.timeEnd("[perf] auth/refresh");
+        console.warn("[perf] auth/refresh end");
         const { access_token } = res.data || {};
         if (access_token && active) setAccessToken(access_token);
       } catch {
-        console.timeEnd("[perf] auth/refresh");
+        console.warn("[perf] auth/refresh failed");
         // Silent refresh failed — the interceptor will retry on the next 401.
       }
     })();

@@ -19,7 +19,7 @@ export default function FunnelChart({ stages }) {
           </div>
           <div className="col-span-6 sm:col-span-7 relative h-1 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
             <div
-              className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
+              className="h-full rounded-l-full transition-[width] duration-500"
               style={{
                 width: `${Math.max(2, Math.min(100, s.percent))}%`,
                 background: "var(--color-fg)",

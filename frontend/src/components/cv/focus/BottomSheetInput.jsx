@@ -49,9 +49,9 @@ export default function BottomSheetInput({
         type="button"
         aria-label="Schließen"
         onClick={onCancel}
-        className="absolute inset-0 bg-black/60"
+        className="fixed inset-0 bg-black/60"
       />
-      <div className="absolute left-0 right-0 bottom-0 mx-auto max-w-[480px] bg-[var(--color-bg-elev-1)] border-t border-[var(--color-border)] rounded-t-[20px] p-5 pb-7 animate-[slideUp_0.22s_ease]">
+      <div className="fixed left-0 right-0 bottom-0 mx-auto max-w-[480px] bg-[var(--color-bg-elev-1)] border-t border-[var(--color-border)] rounded-t-[20px] p-5 pb-7 animate-[slideUp_0.22s_ease]">
         <p className="text-[13px] text-[var(--color-fg-muted)] mb-3">{title}</p>
         <form
           onSubmit={(e) => { e.preventDefault(); onSubmit(v); }}
