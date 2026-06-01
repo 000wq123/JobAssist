@@ -29,6 +29,9 @@ const useAuthStore = create((set) => ({
   token: _sessionToken,
   user: readJson(STORAGE_KEYS.AUTH_USER),
   isHydrated: true,
+  // True until the initial silent-refresh attempt finishes.
+  // PrivateRoute uses this to avoid flashing /login while we check cookies.
+  isBooting: true,
 
   /**
    * Persist a fresh login. The legacy `refreshToken` argument is accepted
@@ -77,6 +80,7 @@ const useAuthStore = create((set) => ({
   },
 
   setHydrated: (v) => set({ isHydrated: !!v }),
+  setBooting: (v) => set({ isBooting: !!v }),
 }));
 
 export default useAuthStore;

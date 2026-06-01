@@ -53,13 +53,8 @@ const api = axios.create({
   withCredentials: true,
 });
 
-try {
-  const bootToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-  if (bootToken && !useAuthStore.getState().token) {
-    useAuthStore.getState().setAccessToken(bootToken);
-    removeKey(STORAGE_KEYS.ACCESS_TOKEN);
-  }
-} catch {}
+// Access tokens live only in sessionStorage / Zustand (memory).
+// Refresh tokens are httpOnly cookies set by the backend.
 
 const USAGE_FEATURES = [
   { match: "/resume/analyze", feature: "cv_analysis" },

@@ -70,7 +70,8 @@ const preloaders = [
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token);
   const isHydrated = useAuthStore((s) => s.isHydrated);
-  if (!isHydrated) return null;
+  const isBooting = useAuthStore((s) => s.isBooting);
+  if (!isHydrated || (isBooting && !token)) return null;
   return token ? children : <Navigate to="/login" replace />;
 }
 
@@ -156,16 +157,18 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    const finishBoot = () => {
+      if (active) useAuthStore.getState().setBooting(false);
+    };
     (async () => {
-      console.warn("[perf] auth/refresh start");
       try {
         const res = await authApi.refresh();
-        console.warn("[perf] auth/refresh end");
         const { access_token } = res.data || {};
         if (access_token && active) setAccessToken(access_token);
       } catch {
-        console.warn("[perf] auth/refresh failed");
         // Silent refresh failed — the interceptor will retry on the next 401.
+      } finally {
+        finishBoot();
       }
     })();
     return () => {

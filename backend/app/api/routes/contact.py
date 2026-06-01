@@ -9,7 +9,7 @@ from app.services.email_service import send_transactional_email
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-SUPPORT_EMAIL = "jobassistsupport@gmail.com"
+SUPPORT_EMAIL = "support@jobassist.tech"
 
 
 class ContactRequest(BaseModel):

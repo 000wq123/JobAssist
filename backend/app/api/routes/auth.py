@@ -132,6 +132,15 @@ async def login(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Konto ist deaktiviert")
 
+    # One account per device: store fingerprint if this user doesn't have one yet.
+    if payload.fingerprint and not user.fingerprint:
+        user.fingerprint = payload.fingerprint
+
+    # One active session per user: revoke all old refresh tokens before issuing a new one.
+    await db.execute(
+        sa_delete(RefreshToken).where(RefreshToken.user_id == user.id)
+    )
+
     access_token = create_access_token({"sub": str(user.id)})
     raw_refresh, refresh_hash = generate_refresh_token()
     rt = RefreshToken(

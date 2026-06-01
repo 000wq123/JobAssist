@@ -27,6 +27,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    fingerprint: Optional[str] = Field(None, max_length=200)
 
 
 class UserOut(BaseModel):

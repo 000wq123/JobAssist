@@ -13,8 +13,11 @@ import urllib.parse
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
+
+from app.core.security import get_current_user
+from app.models.user import User
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -157,6 +160,7 @@ async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
 async def proxy_logo_best(
     company: str = Query(default=""),
     url: str = Query(default=""),
+    current_user: User = Depends(get_current_user),
 ):
     """Single call: resolve company → domains → fetch first valid logo image."""
     cache_key = f"best:{company}:{url}"
@@ -185,7 +189,10 @@ async def proxy_logo_best(
 
 
 @router.get("/proxy/logo")
-async def proxy_logo(url: str = Query(...)):
+async def proxy_logo(
+    url: str = Query(...),
+    current_user: User = Depends(get_current_user),
+):
     """Proxy a single apple-touch-icon.png or favicon.ico URL."""
     if not _ALLOWED.match(url):
         raise HTTPException(status_code=400, detail="URL not permitted")

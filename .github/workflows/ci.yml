@@ -9,7 +9,6 @@ on:
 jobs:
   frontend:
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: frontend
@@ -45,7 +44,6 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: backend
