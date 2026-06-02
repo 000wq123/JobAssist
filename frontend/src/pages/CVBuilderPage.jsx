@@ -7,8 +7,7 @@ import {
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
-import FocusModeWizard from "../components/cv/focus/FocusModeWizard";
-import { SCENES } from "../cv/scenes.jsx";
+import CVSimpleBuilder from "../components/cv/CVSimpleBuilder";
 import { emptyProfile } from "../cv/profileSchema";
 import {
   loadDraft, makeDebouncedSave, saveDraftNow, saveToLibrary,
@@ -554,7 +553,7 @@ export default function CVBuilderPage() {
             <button
               type="button"
               onClick={() => setMode("wizard")}
-              className="w-full lg:max-w-[480px] lg:mx-auto h-[52px] rounded-[14px] inline-flex items-center justify-center gap-2 font-semibold text-[15px] tracking-[0.01em] bg-white/90 hover:bg-white text-[#0b0b10] transition-all"
+              className="w-full lg:max-w-[480px] lg:mx-auto h-[52px] rounded-[14px] inline-flex items-center justify-center gap-2 font-semibold text-[15px] tracking-[0.01em] bg-[var(--color-accent-500)] text-white hover:opacity-90 transition-all"
             >
               Weiter zum Formular
               <ChevronRight className="w-4 h-4" />
@@ -600,7 +599,7 @@ export default function CVBuilderPage() {
               type="button"
               onClick={handleDownload}
               disabled={pdfBusy}
-              className="w-full h-[56px] rounded-[14px] inline-flex items-center justify-center gap-2 font-semibold text-[16px] tracking-[0.01em] bg-white/90 hover:bg-white text-[#0b0b10] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              className="w-full h-[56px] rounded-[14px] inline-flex items-center justify-center gap-2 font-semibold text-[16px] tracking-[0.01em] bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             >
               {pdfBusy ? "Wird erstellt…" : "PDF herunterladen"}
               <Download className="w-5 h-5" />
@@ -632,26 +631,13 @@ export default function CVBuilderPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--color-bg)]">
-      {/* Back to landing */}
-      <div className="px-4 pt-3 pb-0">
-        <button
-          type="button"
-          onClick={handleBackToLanding}
-          className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Übersicht
-        </button>
-      </div>
-      <FocusModeWizard
-        scenes={SCENES}
-        profile={profile}
-        onChange={patch}
-        onComplete={onComplete}
-        completeBusy={false}
-        completeError=""
-      />
-    </div>
+    <CVSimpleBuilder
+      profile={profile}
+      onChange={patch}
+      onBack={handleBackToLanding}
+      onDownload={handleDownload}
+      pdfBusy={pdfBusy}
+      pdfError={pdfError}
+    />
   );
 }

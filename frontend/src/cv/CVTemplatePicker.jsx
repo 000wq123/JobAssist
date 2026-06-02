@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import SceneShell from "../components/cv/focus/SceneShell";
 
 /**
  * Template definitions shown in the picker.
@@ -532,12 +531,12 @@ export function CVTemplatePicker({ profile, onChange }) {
   }, []);
 
   return (
-    <SceneShell
-      eyebrow="Vorlage"
-      question="Welches Layout gefällt dir?"
-      hint="Tippe zum Auswählen — Lupe für Vollbild-Vorschau."
-    >
-      <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 pt-2">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-[24px] sm:text-[28px] font-semibold leading-[1.15] text-[var(--color-fg)]">Wähle eine Vorlage</h2>
+        <p className="text-[13px] text-[var(--color-fg-muted)]">Tippe zum Auswählen — Lupe für Vollbild-Vorschau.</p>
+      </div>
+      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
         {TEMPLATES.map((tmpl) => {
           const Render = CV_RENDERS[tmpl.id];
           if (!Render) return null;
@@ -602,6 +601,6 @@ export function CVTemplatePicker({ profile, onChange }) {
           onSelect={(id) => onChange({ templateId: id })}
         />
       )}
-    </SceneShell>
+    </div>
   );
 }
