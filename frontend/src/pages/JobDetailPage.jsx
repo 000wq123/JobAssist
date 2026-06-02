@@ -22,6 +22,7 @@ import ResearchModal from "../components/ResearchModal";
 import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
 } from "../components/job-detail/domain";
+import { formatEuro } from "../utils/format";
 
 /** Lookup cached KV wage for a category. Falls back to hardcoded floor. */
 function useKvWage(category) {
