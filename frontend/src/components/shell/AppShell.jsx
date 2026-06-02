@@ -224,9 +224,7 @@ export default function AppShell() {
   const { data: initData } = useQuery({
     queryKey: ["init"],
     queryFn: () => {
-      console.time("[perf] /api/init");
       return initApi.fetch().then((r) => {
-        console.timeEnd("[perf] /api/init");
         try { localStorage.setItem("init", JSON.stringify(r.data)); } catch { /* ignore quota */ }
         setUser(r.data.me);
         return r.data;
@@ -236,7 +234,6 @@ export default function AppShell() {
       try {
         const saved = localStorage.getItem("init");
         if (saved) {
-          console.log("[perf] init initialData from localStorage");
           const parsed = JSON.parse(saved);
           if (parsed?.me) setUser(parsed.me);
           return parsed;

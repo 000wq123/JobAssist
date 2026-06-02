@@ -12,7 +12,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Search, Sparkles, ChevronDown } from "lucide-react";
+import { Search, Sparkles, Globe, Building2, ShoppingBag, Landmark } from "lucide-react";
 
 import { jobApi } from "../services/api";
 import useUsageGuard from "../hooks/useUsageGuard";
@@ -73,6 +73,24 @@ export default function FindenPage() {
   const [recommendedEnabled, setRecommendedEnabled] = useState(false);
   const [savedSearchIds, setSavedSearchIds] = useState(() => new Set());
 
+  // Jooble search state
+  const [joobleKeywords, setJoobleKeywords] = useState("");
+  const [joobleLocation, setJoobleLocation] = useState("");
+  const [joobleSubmitted, setJoobleSubmitted] = useState(null);
+
+  // Scraper search states
+  const [karriereKeywords, setKarriereKeywords] = useState("");
+  const [karriereLocation, setKarriereLocation] = useState("");
+  const [karriereSubmitted, setKarriereSubmitted] = useState(null);
+
+  const [willhabenKeywords, setWillhabenKeywords] = useState("");
+  const [willhabenLocation, setWillhabenLocation] = useState("");
+  const [willhabenSubmitted, setWillhabenSubmitted] = useState(null);
+
+  const [amsKeywords, setAmsKeywords] = useState("");
+  const [amsLocation, setAmsLocation] = useState("");
+  const [amsSubmitted, setAmsSubmitted] = useState(null);
+
   const { data: recommendedData, isFetching: recommendedLoading } = useQuery({
     queryKey: ["search", "recommended"],
     queryFn: () => jobApi.searchRecommended(1).then((r) => r.data),
@@ -96,10 +114,78 @@ export default function FindenPage() {
     retry: 1,
   });
 
-  const activeData     = searchTab === "recommended" ? recommendedData : customData;
-  const searchResults  = activeData?.jobs || [];
-  const searchError    = activeData?.error || null;
-  const searchLoading  = searchTab === "recommended" ? recommendedLoading : customLoading;
+  const { data: joobleData, isFetching: joobleLoading } = useQuery({
+    queryKey: ["search", "jooble", joobleSubmitted],
+    enabled: !!joobleSubmitted,
+    queryFn: () => {
+      if (!joobleSubmitted) return null;
+      return jobApi
+        .searchJooble(joobleSubmitted.keywords, joobleSubmitted.location, 1)
+        .then((r) => r.data);
+    },
+    placeholderData: (prev) => prev,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const { data: karriereData, isFetching: karriereLoading } = useQuery({
+    queryKey: ["search", "karriere", karriereSubmitted],
+    enabled: !!karriereSubmitted,
+    queryFn: () => {
+      if (!karriereSubmitted) return null;
+      return jobApi
+        .searchKarriere(karriereSubmitted.keywords, karriereSubmitted.location, 1)
+        .then((r) => r.data);
+    },
+    placeholderData: (prev) => prev,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const { data: willhabenData, isFetching: willhabenLoading } = useQuery({
+    queryKey: ["search", "willhaben", willhabenSubmitted],
+    enabled: !!willhabenSubmitted,
+    queryFn: () => {
+      if (!willhabenSubmitted) return null;
+      return jobApi
+        .searchWillhaben(willhabenSubmitted.keywords, willhabenSubmitted.location, 1)
+        .then((r) => r.data);
+    },
+    placeholderData: (prev) => prev,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const { data: amsData, isFetching: amsLoading } = useQuery({
+    queryKey: ["search", "ams", amsSubmitted],
+    enabled: !!amsSubmitted,
+    queryFn: () => {
+      if (!amsSubmitted) return null;
+      return jobApi
+        .searchAms(amsSubmitted.keywords, amsSubmitted.location, 1)
+        .then((r) => r.data);
+    },
+    placeholderData: (prev) => prev,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const activeData =
+    searchTab === "recommended" ? recommendedData :
+    searchTab === "jooble" ? joobleData :
+    searchTab === "karriere" ? karriereData :
+    searchTab === "willhaben" ? willhabenData :
+    searchTab === "ams" ? amsData :
+    customData;
+  const searchResults = activeData?.jobs || [];
+  const searchError = activeData?.error || null;
+  const searchLoading =
+    searchTab === "recommended" ? recommendedLoading :
+    searchTab === "jooble" ? joobleLoading :
+    searchTab === "karriere" ? karriereLoading :
+    searchTab === "willhaben" ? willhabenLoading :
+    searchTab === "ams" ? amsLoading :
+    customLoading;
 
   const saveJobMutation = useMutation({
     mutationFn: jobApi.create,
@@ -140,6 +226,50 @@ export default function FindenPage() {
     }
     guardSearch(() => {
       setSubmittedParams({ keywords: keywords.trim(), location: location.trim(), jobType });
+    });
+  };
+
+  const handleJoobleSubmit = (e) => {
+    e.preventDefault();
+    if (!joobleKeywords.trim()) {
+      toast.error("Bitte Suchbegriffe eingeben");
+      return;
+    }
+    guardSearch(() => {
+      setJoobleSubmitted({ keywords: joobleKeywords.trim(), location: joobleLocation.trim() });
+    });
+  };
+
+  const handleKarriereSubmit = (e) => {
+    e.preventDefault();
+    if (!karriereKeywords.trim()) {
+      toast.error("Bitte Suchbegriffe eingeben");
+      return;
+    }
+    guardSearch(() => {
+      setKarriereSubmitted({ keywords: karriereKeywords.trim(), location: karriereLocation.trim() });
+    });
+  };
+
+  const handleWillhabenSubmit = (e) => {
+    e.preventDefault();
+    if (!willhabenKeywords.trim()) {
+      toast.error("Bitte Suchbegriffe eingeben");
+      return;
+    }
+    guardSearch(() => {
+      setWillhabenSubmitted({ keywords: willhabenKeywords.trim(), location: willhabenLocation.trim() });
+    });
+  };
+
+  const handleAmsSubmit = (e) => {
+    e.preventDefault();
+    if (!amsKeywords.trim()) {
+      toast.error("Bitte Suchbegriffe eingeben");
+      return;
+    }
+    guardSearch(() => {
+      setAmsSubmitted({ keywords: amsKeywords.trim(), location: amsLocation.trim() });
     });
   };
 
@@ -189,6 +319,14 @@ export default function FindenPage() {
             <p className="mt-1 text-[12.5px] text-[var(--color-fg-muted)]">
               {searchTab === "recommended"
                 ? "KI-Empfehlungen aus deinem Profil und Lebenslauf."
+                : searchTab === "jooble"
+                ? "Jooble durchsucht karriere.at, stepstone.at und weitere Quellen."
+                : searchTab === "karriere"
+                ? "Österreichs größte Jobbörse — direkt durchsuchen."
+                : searchTab === "willhaben"
+                ? "Kleinanzeigen-Plattform — gut für Minijobs und Teilzeit."
+                : searchTab === "ams"
+                ? "Arbeitsmarktservice — offizielle Stellen der Regierung."
                 : "Eigene Suche — Begriffe, Ort und Art der Stelle frei wählen."}
             </p>
           </div>
@@ -196,6 +334,10 @@ export default function FindenPage() {
             items={[
               { value: "recommended", label: "Empfohlen", icon: Sparkles },
               { value: "custom",      label: "Eigene Suche", icon: Search },
+              { value: "karriere",    label: "karriere.at", icon: Building2 },
+              { value: "willhaben",   label: "willhaben", icon: ShoppingBag },
+              { value: "ams",         label: "AMS", icon: Landmark },
+              { value: "jooble",      label: "Jooble", icon: Globe },
             ]}
             value={searchTab}
             onChange={setSearchTab}
@@ -224,6 +366,154 @@ export default function FindenPage() {
                 </Button>
               </div>
             </div>
+          ) : searchTab === "jooble" ? (
+            <form onSubmit={handleJoobleSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12 sm:col-span-7">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
+                <Input
+                  type="text"
+                  placeholder="z.B. React, Verkauf, Praktikum"
+                  value={joobleKeywords}
+                  onChange={(e) => setJoobleKeywords(e.target.value)}
+                  leadingIcon={<Search className="w-3.5 h-3.5" />}
+                />
+              </div>
+              <div className="col-span-12 sm:col-span-5">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Ort</label>
+                <Input
+                  type="text"
+                  placeholder="Wien, Graz, Linz…"
+                  value={joobleLocation}
+                  onChange={(e) => setJoobleLocation(e.target.value)}
+                />
+              </div>
+              <div className="col-span-12">
+                <Button type="submit" disabled={joobleLoading || !joobleKeywords.trim()}>
+                  {joobleLoading ? (
+                    <>
+                      <span className="inline-block w-3.5 h-3.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                      Suche läuft…
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="w-3.5 h-3.5" />
+                      Jooble durchsuchen
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : searchTab === "karriere" ? (
+            <form onSubmit={handleKarriereSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12 sm:col-span-7">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
+                <Input
+                  type="text"
+                  placeholder="z.B. Software, Verkauf, Praktikum"
+                  value={karriereKeywords}
+                  onChange={(e) => setKarriereKeywords(e.target.value)}
+                  leadingIcon={<Search className="w-3.5 h-3.5" />}
+                />
+              </div>
+              <div className="col-span-12 sm:col-span-5">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Ort</label>
+                <Input
+                  type="text"
+                  placeholder="Wien, Graz, Linz…"
+                  value={karriereLocation}
+                  onChange={(e) => setKarriereLocation(e.target.value)}
+                />
+              </div>
+              <div className="col-span-12">
+                <Button type="submit" disabled={karriereLoading || !karriereKeywords.trim()}>
+                  {karriereLoading ? (
+                    <>
+                      <span className="inline-block w-3.5 h-3.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                      Suche läuft…
+                    </>
+                  ) : (
+                    <>
+                      <Building2 className="w-3.5 h-3.5" />
+                      karriere.at durchsuchen
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : searchTab === "willhaben" ? (
+            <form onSubmit={handleWillhabenSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12 sm:col-span-7">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
+                <Input
+                  type="text"
+                  placeholder="z.B. Aushilfe, Kellner, Minijob"
+                  value={willhabenKeywords}
+                  onChange={(e) => setWillhabenKeywords(e.target.value)}
+                  leadingIcon={<Search className="w-3.5 h-3.5" />}
+                />
+              </div>
+              <div className="col-span-12 sm:col-span-5">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Ort</label>
+                <Input
+                  type="text"
+                  placeholder="Wien, Graz, Linz…"
+                  value={willhabenLocation}
+                  onChange={(e) => setWillhabenLocation(e.target.value)}
+                />
+              </div>
+              <div className="col-span-12">
+                <Button type="submit" disabled={willhabenLoading || !willhabenKeywords.trim()}>
+                  {willhabenLoading ? (
+                    <>
+                      <span className="inline-block w-3.5 h-3.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                      Suche läuft…
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      willhaben durchsuchen
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : searchTab === "ams" ? (
+            <form onSubmit={handleAmsSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12 sm:col-span-7">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
+                <Input
+                  type="text"
+                  placeholder="z.B. Software, Pflege, Verwaltung"
+                  value={amsKeywords}
+                  onChange={(e) => setAmsKeywords(e.target.value)}
+                  leadingIcon={<Search className="w-3.5 h-3.5" />}
+                />
+              </div>
+              <div className="col-span-12 sm:col-span-5">
+                <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Ort</label>
+                <Input
+                  type="text"
+                  placeholder="Wien, Graz, Linz…"
+                  value={amsLocation}
+                  onChange={(e) => setAmsLocation(e.target.value)}
+                />
+              </div>
+              <div className="col-span-12">
+                <Button type="submit" disabled={amsLoading || !amsKeywords.trim()}>
+                  {amsLoading ? (
+                    <>
+                      <span className="inline-block w-3.5 h-3.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                      Suche läuft…
+                    </>
+                  ) : (
+                    <>
+                      <Landmark className="w-3.5 h-3.5" />
+                      AMS durchsuchen
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           ) : (
             <form onSubmit={handleCustomSubmit} className="grid grid-cols-12 gap-3">
               <div className="col-span-12 sm:col-span-7">

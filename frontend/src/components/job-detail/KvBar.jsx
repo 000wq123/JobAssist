@@ -1,6 +1,6 @@
 /**
  * KV-benchmark bar — compares the parsed hourly rate against the Austrian
- * statutory minimum wage floor (2025).
+ * KV minimum (Kollektivvertrag) for the job category.
  */
 
 import { Info } from "lucide-react";
@@ -8,8 +8,8 @@ import { formatEuro } from "../../utils/format";
 import { categoryLabel } from "./domain";
 import { ANNOT } from "./ui";
 
-export default function KvBar({ hourly, kvMin, category }) {
-  const top = Math.max(hourly * 1.18, kvMin * 1.35);
+export default function KvBar({ hourly, kvMin, kvMax, kvName, category }) {
+  const top = Math.max(hourly * 1.18, kvMax ? kvMax * 1.15 : kvMin * 1.35);
   const kvPct  = Math.min(100, (kvMin  / top) * 100);
   const jobPct = Math.min(100, (hourly / top) * 100);
   const above  = hourly > kvMin;
@@ -37,7 +37,7 @@ export default function KvBar({ hourly, kvMin, category }) {
         <span>{formatEuro(top)} Top</span>
       </div>
       <p className="mt-2 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">
-        <Info className="w-2.5 h-2.5" aria-hidden="true" /> Basierend auf österreichischem Mindestlohn 2025. Branchen-KV kann höher liegen.
+        <Info className="w-2.5 h-2.5" aria-hidden="true" /> Basierend auf {kvName || "österreichischem Mindestlohn"} (2025).
       </p>
     </div>
   );

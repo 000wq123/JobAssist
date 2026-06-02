@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "JobAssist — Job speichern",
+  "version": "1.0.0",
+  "description": "Speichere Stellenangebote direkt in JobAssist.",
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "https://www.karriere.at/*",
+    "https://www.willhaben.at/*",
+    "https://jobs.ams.at/*",
+    "https://jobassist.at/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.karriere.at/jobs/*",
+        "https://www.willhaben.at/iad/kaufen-und-verkaufen/marktplatz/jobs-karriere/*",
+        "https://jobs.ams.at/public/emas/jobsuchdetail/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

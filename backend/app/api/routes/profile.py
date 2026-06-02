@@ -61,10 +61,22 @@ async def patch_my_profile(
         if hasattr(profile, field):
             setattr(profile, field, value)
 
-    # Simple completion heuristic
-    required_fields = ["vorname", "nachname", "schulname", "schultyp"]
-    filled = sum(1 for f in required_fields if getattr(profile, f))
-    profile.completion_pct = min(100, int((filled / len(required_fields)) * 100))
+    # Completion heuristic — kept in sync with frontend cv/completion.js
+    _arr = lambda v: v if v is not None else []
+    slots = [
+        profile.vorname, profile.nachname, profile.geburtsdatum,
+        profile.plz and profile.ort,
+        profile.telefon, profile.email,
+        profile.schulname, profile.schultyp,
+        _arr(profile.erfahrungen) if len(_arr(profile.erfahrungen)) > 0 else None,
+        _arr(profile.sprachkenntnisse) if len(_arr(profile.sprachkenntnisse)) > 0 else None,
+        _arr(profile.faehigkeiten) if len(_arr(profile.faehigkeiten)) > 0 else None,
+        profile.hobbies,
+        _arr(profile.jobArten) if len(_arr(profile.jobArten)) > 0 else None,
+        _arr(profile.branchen) if len(_arr(profile.branchen)) > 0 else None,
+    ]
+    filled = sum(1 for s in slots if s)
+    profile.completion_pct = min(100, int((filled / len(slots)) * 100))
 
     await db.commit()
     await db.refresh(profile)

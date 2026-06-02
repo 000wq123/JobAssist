@@ -417,8 +417,9 @@ export default function CVBuilderPage() {
     if (!authUser) return;
     if (backendSaveTimer.current) clearTimeout(backendSaveTimer.current);
     backendSaveTimer.current = setTimeout(() => {
-      profileApi.patch(profile).catch(() => {
-        // Silently fail — localStorage is the source of truth; backend is a backup.
+      profileApi.patch(profile).catch((err) => {
+        const msg = getApiErrorMessage(err, "Speichern fehlgeschlagen");
+        toast.error(msg);
       });
     }, 2000);
     return () => clearTimeout(backendSaveTimer.current);
@@ -444,6 +445,9 @@ export default function CVBuilderPage() {
   const handleDownload = useCallback(async () => {
     setPdfError("");
     setPdfBusy(true);
+    // Always save the CV to local library first — regardless of PDF limit.
+    saveDraftNow(profile);
+    saveToLibrary(profile);
     try {
       // Ask the server for permission (increments usage counter).
       await profileApi.generateCv();
@@ -454,12 +458,10 @@ export default function CVBuilderPage() {
       return;
     }
     try {
-      saveDraftNow(profile);
       const { downloadCVPdf } = await import("../cv/exportPdf.jsx");
       await downloadCVPdf(profile);
       // Also sync completion to backend
       profileApi.patch(profile).catch(() => {});
-      saveToLibrary(profile);
       toast.success("PDF heruntergeladen — dein Lebenslauf wurde gespeichert.");
       setMode("landing");
     } catch (err) {

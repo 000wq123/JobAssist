@@ -14,8 +14,9 @@ export default function Tabs({ items, value, onChange, className = "" }) {
     <div
       role="tablist"
       className={clsx(
-        "inline-flex items-center gap-1 p-1 rounded-md",
+        "inline-flex items-center gap-1 p-1 rounded-md overflow-x-auto",
         "bg-[var(--color-bg-elev-1)] border border-[var(--color-border-subtle)]",
+        "scrollbar-hide",
         className,
       )}
     >
@@ -28,7 +29,7 @@ export default function Tabs({ items, value, onChange, className = "" }) {
             aria-selected={active}
             onClick={() => onChange(v)}
             className={clsx(
-              "inline-flex items-center gap-1.5 h-7 px-3 rounded text-[13px] font-medium",
+              "inline-flex items-center gap-1.5 h-7 px-3 rounded text-[13px] font-medium whitespace-nowrap",
               "transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent-400)]",
               active
                 ? "bg-[var(--color-bg-elev-3)] text-[var(--color-fg)] shadow-[inset_0_0_0_1px_var(--color-border-subtle)]"

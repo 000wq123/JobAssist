@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
 import {
   ArrowLeft, ArrowRight, Check, Download, Loader2, MessageSquare, Play, ThumbsUp, AlertCircle, X,
 } from "lucide-react";
@@ -63,7 +64,8 @@ export default function InterviewSheet({ open, onClose, job, mutate, pending, re
         currentQ.answer,
       );
       setRatings((prev) => ({ ...prev, [idx]: { status: "done", ...res.data } }));
-    } catch {
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Bewertung fehlgeschlagen. Bitte versuche es erneut.");
       setRatings((prev) => ({ ...prev, [idx]: { status: "fallback" } }));
     }
   };

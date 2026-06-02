@@ -65,6 +65,10 @@ const USAGE_FEATURES = [
   { match: "/research/", feature: "ai_chat" },
   { match: "/jobs/search/recommended", feature: "job_search" },
   { match: "/jobs/search/custom", feature: "job_search" },
+  { match: "/jobs/search/jooble", feature: "job_search" },
+  { match: "/jobs/search/karriere", feature: "job_search" },
+  { match: "/jobs/search/willhaben", feature: "job_search" },
+  { match: "/jobs/search/ams", feature: "job_search" },
 ];
 
 function updateUsageList(usage = [], feature, delta = 1) {
@@ -275,6 +279,22 @@ export const jobApi = {
     const params = new URLSearchParams({ keywords, location, job_type: jobType, page });
     return api.get(`/jobs/search/custom?${params.toString()}`);
   },
+  searchJooble: (keywords, location = "", page = 1) => {
+    const params = new URLSearchParams({ keywords, location, page });
+    return api.get(`/jobs/search/jooble?${params.toString()}`);
+  },
+  searchKarriere: (keywords, location = "", page = 1) => {
+    const params = new URLSearchParams({ keywords, location, page });
+    return api.get(`/jobs/search/karriere?${params.toString()}`);
+  },
+  searchWillhaben: (keywords, location = "", page = 1) => {
+    const params = new URLSearchParams({ keywords, location, page });
+    return api.get(`/jobs/search/willhaben?${params.toString()}`);
+  },
+  searchAms: (keywords, location = "", page = 1) => {
+    const params = new URLSearchParams({ keywords, location, page });
+    return api.get(`/jobs/search/ams?${params.toString()}`);
+  },
 };
 
 // --- Cover Letter ---
@@ -357,6 +377,12 @@ export const settingsApi = {
   updateProfile: (data, config) => api.put("/settings/profile", data, config),
   getPreferences: () => api.get("/settings/preferences"),
   updatePreferences: (data, config) => api.put("/settings/preferences", data, config),
+};
+
+// --- KV Wages (Lohnrechner) ---
+export const kvWageApi = {
+  list: (year = 2025) => api.get(`/kv-wages?year=${year}`),
+  get: (category, year = 2025) => api.get(`/kv-wages/${category}?year=${year}`),
 };
 
 

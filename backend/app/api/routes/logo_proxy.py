@@ -130,7 +130,7 @@ async def _try_url(client: httpx.AsyncClient, url: str, min_size: int = 64) -> t
 
 
 async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
-    """Try direct paths then DuckDuckGo favicon for each domain; return first valid image."""
+    """Try direct paths, DuckDuckGo, and Google favicon for each domain; return first valid image."""
     async with httpx.AsyncClient(follow_redirects=True, timeout=3.5) as client:
         # Pass 1: direct standard paths (top candidates only for speed)
         for domain in domains[:6]:
@@ -139,7 +139,7 @@ async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
                 if result:
                     return result
 
-        # Pass 2: DuckDuckGo favicon proxy (parses HTML, catches non-standard favicon paths)
+        # Pass 2: DuckDuckGo favicon proxy
         seen_ddg: set[str] = set()
         for domain in domains:
             root = ".".join(domain.split(".")[-2:]) if domain.count(".") >= 2 else domain
@@ -150,6 +150,20 @@ async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
                 break
             ddg_url = f"https://icons.duckduckgo.com/ip3/{root}.ico"
             result = await _try_url(client, ddg_url, min_size=100)
+            if result:
+                return result
+
+        # Pass 3: Google favicon service (png, higher quality)
+        seen_google: set[str] = set()
+        for domain in domains:
+            root = ".".join(domain.split(".")[-2:]) if domain.count(".") >= 2 else domain
+            if root in seen_google:
+                continue
+            seen_google.add(root)
+            if len(seen_google) > 3:
+                break
+            google_url = f"https://www.google.com/s2/favicons?domain={root}&sz=128"
+            result = await _try_url(client, google_url, min_size=100)
             if result:
                 return result
 

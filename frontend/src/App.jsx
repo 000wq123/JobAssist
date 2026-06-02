@@ -179,7 +179,10 @@ export default function App() {
   // Pre-emptive refresh every 30 min so the access token never expires
   // during user actions (saves, status changes, etc.). Prevents the
   // 401 → refresh → retry latency that makes clicks feel slow.
+  // Only runs when the user is actually logged in.
+  const token = useAuthStore((s) => s.token);
   useEffect(() => {
+    if (!token) return;
     const id = setInterval(() => {
       authApi.refresh().then((res) => {
         const { access_token } = res.data || {};
@@ -187,7 +190,7 @@ export default function App() {
       }).catch(() => {});
     }, 30 * 60 * 1000);
     return () => clearInterval(id);
-  }, [setAccessToken]);
+  }, [setAccessToken, token]);
 
   return (
     <>

@@ -46,7 +46,7 @@ class ProfileV2Update(BaseModel):
     plz: Optional[str] = None
     ort: Optional[str] = None
     telefon: Optional[str] = None
-    email_kontakt: Optional[str] = None
+    email: Optional[str] = None
     staatsbuergerschaft: Optional[str] = None
     arbeitserlaubnis: Optional[bool] = None
     schulname: Optional[str] = None
@@ -82,7 +82,7 @@ class ProfileV2Out(BaseModel):
     plz: Optional[str]
     ort: Optional[str]
     telefon: Optional[str]
-    email_kontakt: Optional[str]
+    email: Optional[str]
     staatsbuergerschaft: str
     arbeitserlaubnis: Optional[bool]
     schulname: Optional[str]

@@ -156,7 +156,7 @@ function clampVb(vb) {
  * @param {string|null} props.selected - Currently selected district name.
  */
 export default function CityMap({ cityKey, onSelect, selected }) {
-  const config = CITY_DATA[cityKey];
+  const config = useMemo(() => CITY_DATA[cityKey], [cityKey]);
   const [collapsed, setCollapsed] = useState(true);
   const [districts, setDistricts] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -246,7 +246,7 @@ export default function CityMap({ cityKey, onSelect, selected }) {
         setError("Kartendaten konnten nicht geladen werden.");
         setLoading(false);
       });
-  }, [collapsed, cityKey, config, districts]);
+  }, [collapsed, cityKey, districts]);
 
   const sortedDistricts = districts
     ? [...districts].sort((a, b) => shoelaceArea(b.path) - shoelaceArea(a.path))

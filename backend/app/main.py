@@ -35,6 +35,7 @@ from app.api.routes import (
     interview,
     job_alerts,
     jobs,
+    kv_wage,
     logo_proxy,
     motivationsschreiben,
     profile,
@@ -160,6 +161,7 @@ app.include_router(motivationsschreiben.router, prefix="/api/motivationsschreibe
 app.include_router(ai_assistant.router,         prefix="/api/ai-assistant",         tags=["KI-Assistent"])
 app.include_router(job_alerts.router,           prefix="/api/job-alerts",           tags=["Job Alerts"])
 app.include_router(research.router,             prefix="/api/research",             tags=["Research"])
+app.include_router(kv_wage.router,              prefix="/api/kv-wages",           tags=["KV Wages"])
 app.include_router(billing.router,              prefix="/api/billing",              tags=["Billing"])
 app.include_router(contact.router,              prefix="/api/contact",              tags=["Contact"])
 app.include_router(admin.router,                prefix="/api/admin",                tags=["Admin"])

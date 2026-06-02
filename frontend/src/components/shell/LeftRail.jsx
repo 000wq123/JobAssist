@@ -224,15 +224,6 @@ export default function LeftRail({ me, profile, onCommandClick }) {
               className="absolute left-0 right-0 bottom-full mb-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-1 z-50 animate-slide-up"
               style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}
             >
-              <NavLink
-                to="/settings"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="grid grid-cols-[16px_1fr] items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Profil</span>
-              </NavLink>
               <button
                 type="button"
                 role="menuitem"

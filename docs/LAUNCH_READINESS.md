@@ -14,6 +14,9 @@ This document tracks what's done, what's blocked on you, and what to do next.
 | File upload validation | Done | PDF magic bytes check, 5MB limit |
 | Security headers + CSP | Done | Via middleware + Vercel headers |
 | Stripe billing integration | Done | Checkout, portal, webhooks |
+| CV Builder wizard | Done | 6-step wizard, autosave, PDF export, 5 templates |
+| Jooble job search | Done | Aggregates karriere.at, stepstone.at, etc. via API |
+| Native scrapers (karriere.at, willhaben, AMS) | Done | Direct HTML scraping with rate limiting and graceful degradation |
 | Backend tests | Done | 19 test files covering auth, billing, jobs, IDOR |
 | Frontend tests | Done | Vitest + Testing Library configured, auth store tests added |
 | CI/CD pipeline | Done | GitHub Actions with lint, test, audit |
@@ -26,6 +29,7 @@ This document tracks what's done, what's blocked on you, and what to do next.
 - [ ] Set `SECRET_KEY` — run `python -c "import secrets; print(secrets.token_urlsafe(48))"`
 - [ ] Set `DATABASE_URL` (Railway Postgres auto-creates this)
 - [ ] Set `GROQ_API_KEY` (get from groq.com)
+- [ ] Set `JOOBLE_API_KEY` (get from jooble.org/api — free tier: 500 req/day)
 - [ ] Set `BREVO_API_KEY` (get from brevo.com)
 - [ ] Set `FRONTEND_URL=https://jobassist.tech`
 - [ ] Set `ALLOWED_ORIGINS=https://jobassist.tech,https://www.jobassist.tech`
@@ -75,8 +79,6 @@ After everything is deployed, run through:
 ## Features NOT in v1 (backlog for later)
 
 These are explicitly out of scope for launch:
-- CV Builder wizard (P1)
-- Job scrapers (karriere.at, willhaben, AMS) (P0)
 - Job Inbox with AI rules (P3)
 - "Lohnt sich das?" wage checker (P4)
 - Bewerbungsfristen calendar (P5)
@@ -87,4 +89,4 @@ These are explicitly out of scope for launch:
 
 ## Current State
 
-**This codebase is ready for a closed beta.** Core auth, job tracking, billing, and AI features work. What's missing is mostly the Austrian-specific scrapers and the CV builder — the features that differentiate this from a generic job tracker. Ship to friends first, gather feedback, then build the Austrian scraper.
+**This codebase is ready for a closed beta.** Core auth, job tracking, billing, AI features, CV builder, Jooble search, and native scrapers (karriere.at, willhaben.at, jobs.ams.at) are complete. Austrian job board coverage is now comprehensive — both aggregated (Jooble) and direct (scrapers). Ship to friends first, gather feedback, then iterate.

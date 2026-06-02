@@ -2,11 +2,15 @@ from app.core.config import settings
 from app.services.claude_service import get_groq_provider_status
 from app.services.email_service import get_email_provider_status
 from app.services.job_search import get_adzuna_provider_status
+from app.services.jooble_service import get_jooble_provider_status
+from app.services.scrapers import get_scraper_provider_status
 
 
 def get_provider_health() -> dict:
     groq = get_groq_provider_status()
     adzuna = get_adzuna_provider_status()
+    jooble = get_jooble_provider_status()
+    scrapers = get_scraper_provider_status()
     email = get_email_provider_status()
 
     stripe = {
@@ -23,6 +27,8 @@ def get_provider_health() -> dict:
     return {
         "groq": groq,
         "adzuna": adzuna,
+        "jooble": jooble,
+        "scrapers": scrapers,
         "email": email,
         "stripe": stripe,
         "sentry": sentry,

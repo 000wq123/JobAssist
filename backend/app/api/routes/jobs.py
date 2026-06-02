@@ -19,6 +19,8 @@ from app.models.user_profile import UserProfile
 from app.schemas.job import JobCreate, JobListResponse, JobOut, JobStatusUpdate, JobNotesUpdate, JobDeadlineUpdate, JobUrlUpdate, JobResearchUpdate, PipelineStats, MatchRequest, CoursesRequest
 from app.services.job_enrich import extract_metadata
 from app.services.job_search import search_jobs, search_jobs_by_preferences
+from app.services.jooble_service import search_jooble
+from app.services.scrapers import search_karriere, search_willhaben, search_ams
 from app.services.claude_service import match_resume_to_job_async, suggest_courses_for_job
 
 logger = logging.getLogger(__name__)
@@ -298,6 +300,101 @@ async def search_custom_jobs(
     except Exception as e:
         logger.error(f"Search error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Suche fehlgeschlagen. Bitte versuche es später erneut.")
+
+
+@router.get("/search/jooble", response_model=dict)
+async def search_jooble_jobs(
+    keywords: str = Query(..., description="Job title or keywords", min_length=1, max_length=200),
+    location: str = Query("", description="City/location", max_length=100),
+    page: int = Query(1, ge=1, le=10),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _usage_ctx=Depends(check_usage_limit("job_search")),
+) -> dict:
+    """Search jobs via Jooble (aggregates karriere.at, stepstone.at, etc.)."""
+    try:
+        logger.info(
+            "Jooble job search",
+            extra={"user_id": current_user.id, "keywords": keywords, "location": location},
+        )
+        results = await search_jooble(keywords=keywords, location=location, page=page)
+        job_count = len(results.get("jobs", []))
+        logger.info("Jooble results", extra={"user_id": current_user.id, "job_count": job_count})
+        if job_count > 0:
+            await increment_usage(db, current_user.id, "job_search")
+        return results
+    except Exception as e:
+        logger.error(f"Jooble search error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Jooble-Suche fehlgeschlagen. Bitte versuche es später erneut.")
+
+
+@router.get("/search/karriere", response_model=dict)
+async def search_karriere_jobs(
+    keywords: str = Query(..., description="Job title or keywords", min_length=1, max_length=200),
+    location: str = Query("", description="City/location", max_length=100),
+    page: int = Query(1, ge=1, le=5),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _usage_ctx=Depends(check_usage_limit("job_search")),
+) -> dict:
+    """Search karriere.at (largest Austrian job board)."""
+    try:
+        logger.info("karriere.at search", extra={"user_id": current_user.id, "keywords": keywords, "location": location})
+        results = await search_karriere(keywords=keywords, location=location, page=page)
+        job_count = len(results.get("jobs", []))
+        logger.info("karriere.at results", extra={"user_id": current_user.id, "job_count": job_count})
+        if job_count > 0:
+            await increment_usage(db, current_user.id, "job_search")
+        return results
+    except Exception as e:
+        logger.error(f"karriere.at search error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="karriere.at-Suche fehlgeschlagen. Bitte versuche es später erneut.")
+
+
+@router.get("/search/willhaben", response_model=dict)
+async def search_willhaben_jobs(
+    keywords: str = Query(..., description="Job title or keywords", min_length=1, max_length=200),
+    location: str = Query("", description="City/location", max_length=100),
+    page: int = Query(1, ge=1, le=5),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _usage_ctx=Depends(check_usage_limit("job_search")),
+) -> dict:
+    """Search willhaben.at jobs (classifieds — great for mini-jobs and part-time)."""
+    try:
+        logger.info("willhaben.at search", extra={"user_id": current_user.id, "keywords": keywords, "location": location})
+        results = await search_willhaben(keywords=keywords, location=location, page=page)
+        job_count = len(results.get("jobs", []))
+        logger.info("willhaben.at results", extra={"user_id": current_user.id, "job_count": job_count})
+        if job_count > 0:
+            await increment_usage(db, current_user.id, "job_search")
+        return results
+    except Exception as e:
+        logger.error(f"willhaben.at search error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="willhaben.at-Suche fehlgeschlagen. Bitte versuche es später erneut.")
+
+
+@router.get("/search/ams", response_model=dict)
+async def search_ams_jobs(
+    keywords: str = Query(..., description="Job title or keywords", min_length=1, max_length=200),
+    location: str = Query("", description="City/location", max_length=100),
+    page: int = Query(1, ge=1, le=5),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _usage_ctx=Depends(check_usage_limit("job_search")),
+) -> dict:
+    """Search jobs.ams.at (public employment service — official government listings)."""
+    try:
+        logger.info("jobs.ams.at search", extra={"user_id": current_user.id, "keywords": keywords, "location": location})
+        results = await search_ams(keywords=keywords, location=location, page=page)
+        job_count = len(results.get("jobs", []))
+        logger.info("jobs.ams.at results", extra={"user_id": current_user.id, "job_count": job_count})
+        if job_count > 0:
+            await increment_usage(db, current_user.id, "job_search")
+        return results
+    except Exception as e:
+        logger.error(f"jobs.ams.at search error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="jobs.ams.at-Suche fehlgeschlagen. Bitte versuche es später erneut.")
 
 
 # ── Dynamic /{job_id} routes AFTER all static routes ──────────────────────────

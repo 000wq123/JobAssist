@@ -251,7 +251,6 @@ export default function DashboardPage() {
       try {
         const r = localStorage.getItem("jobs");
         if (r) {
-          console.log("[perf] jobs initialData from localStorage");
           return JSON.parse(r);
         }
       } catch {}

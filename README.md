@@ -33,7 +33,8 @@ backend/      FastAPI service, SQLAlchemy models, Alembic migrations, pytest sui
 frontend/     React SPA, Vitest unit/component tests, Playwright e2e tests
 docs/         Long-form docs — start with docs/README.md
 scripts/      One-shot maintenance scripts
-render.yaml   Render.com deployment manifest
+extension/    Chrome Extension (Manifest V3) — "Save to JobAssist" button
+railway.toml  Railway deployment manifest
 vercel.json   Vercel deployment config for the SPA
 ```
 

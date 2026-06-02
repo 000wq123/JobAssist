@@ -12,16 +12,27 @@ import toast from "react-hot-toast";
 import {
   ChevronLeft, ChevronRight, ExternalLink, Trash2,
   FileText, MessageSquare, SearchCheck, BarChart2,
-  MoreHorizontal, Edit3,
+  MoreHorizontal, Edit3, ChevronDown,
 } from "lucide-react";
 
 import {
-  coverLetterApi, jobApi, researchApi, resumeApi,
+  coverLetterApi, jobApi, kvWageApi, researchApi, resumeApi,
 } from "../services/api";
 import ResearchModal from "../components/ResearchModal";
 import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
 } from "../components/job-detail/domain";
+
+/** Lookup cached KV wage for a category. Falls back to hardcoded floor. */
+function useKvWage(category) {
+  const { data } = useQuery({
+    queryKey: ["kv-wages"],
+    queryFn: () => kvWageApi.list().then((r) => r.data),
+    staleTime: Infinity,
+  });
+  const found = data?.find((w) => w.category === (category || "").toLowerCase());
+  return found ? { min: found.hourly_min, max: found.hourly_max, kv: found.kollektivvertrag } : { min: kvMinimumFor(category), max: null, kv: "KV" };
+}
 import {
   Spinner, ToolBtn, KpiTile, DescriptionBody,
 } from "../components/job-detail/ui";
@@ -72,8 +83,10 @@ export default function JobDetailPage() {
   const [researchLoading, setResearchLoading] = useState(false);
   const [mobileToolOpen, setMobileToolOpen] = useState(false);
   const [salaryCompareOpen, setSalaryCompareOpen] = useState(false);
+  const [desktopStatusOpen, setDesktopStatusOpen] = useState(false);
   const matchCardRef = useRef(null);
   const mobileToolBtnRef = useRef(null);
+  const desktopStatusBtnRef = useRef(null);
 
   const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
 
@@ -119,7 +132,7 @@ export default function JobDetailPage() {
   });
 
   const interviewMutation = useMutation({
-    mutationFn: () => jobApi.interview(Number(jobId), resumeId),
+    mutationFn: () => jobApi.generateInterviewPrep(Number(jobId), resumeId),
     onSuccess: (res) => {
       updateJobCaches({ ...(queryClient.getQueryData(["jobs", jobId]) || job || {}), ...res.data });
       invalidateJobs();
@@ -212,7 +225,10 @@ export default function JobDetailPage() {
   const allJobs = queryClient.getQueryData(["jobs"]) || loadStored("jobs") || [];
   const salary       = parseSalary(job.salary_text);
   const hourly       = salary?.unit === "hour" ? salary.amount : null;
-  const kvMin        = kvMinimumFor(job.category);
+  const kvData       = useKvWage(job.category);
+  const kvMin        = kvData.min;
+  const kvMax        = kvData.max;
+  const kvName       = kvData.kv;
   const monthlyEst   = hourly ? Math.round(hourly * 8 * 4.3) : null;
   const deadlineDays = daysUntil(job.deadline || job.expires_at);
   const showDeadline = deadlineDays !== null;
@@ -231,6 +247,7 @@ export default function JobDetailPage() {
   const savedAt   = job.created_at;
   const daysSaved = savedAt ? Math.max(0, Math.floor((Date.now() - new Date(savedAt).getTime()) / (1000 * 60 * 60 * 24))) : null;
   const kvMonthly = !salary ? Math.round(kvMin * 15 * 4.3) : null;
+  const kvCeiling = kvMax || kvMin * 1.2;
 
 
   return (
@@ -281,6 +298,39 @@ export default function JobDetailPage() {
               </div>
               <div className="hidden sm:block w-px h-4 mx-1 bg-[var(--color-border-subtle)]" aria-hidden="true" />
               <div className="hidden sm:flex items-center gap-0.5">
+                <button
+                  ref={desktopStatusBtnRef}
+                  type="button"
+                  onClick={() => setDesktopStatusOpen((o) => !o)}
+                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[12px] font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ background: { interviewing: "#7c7df0", offered: "#4ade80", applied: "#60a5fa", bookmarked: "#f59e0b", rejected: "#52525b" }[job?.status] || "#a1a1aa" }} />
+                  Status ändern
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                <Popover open={desktopStatusOpen} onClose={() => setDesktopStatusOpen(false)} anchorRef={desktopStatusBtnRef} align="right" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] shadow-xl shadow-black/40 py-1 min-w-[180px] animate-slide-up">
+                  <div className="px-1">
+                    <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-[var(--color-fg-faint)] font-medium">Status ändern</p>
+                    {[
+                      { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0" },
+                      { key: "offered",      label: "Angebot",     dot: "#4ade80" },
+                      { key: "applied",      label: "Beworben",    dot: "#60a5fa" },
+                      { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b" },
+                      { key: "rejected",     label: "Erledigt",    dot: "#52525b" },
+                    ].map((s) => (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() => { statusMutation.mutate(s.key); setDesktopStatusOpen(false); }}
+                        disabled={statusMutation.isPending || job?.status === s.key}
+                        className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] disabled:opacity-40"
+                      >
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </Popover>
                 <ToolBtn icon={Edit3} label="Notizen & Lebenslauf" shortLabel="Bearbeiten" onClick={() => setEditOpen(true)} />
                 <ToolBtn icon={Trash2} label="Stelle löschen" shortLabel="Löschen" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) deleteMutation.mutate(); }} danger disabled={deleteMutation.isPending} />
               </div>
@@ -316,7 +366,7 @@ export default function JobDetailPage() {
               <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">{salary.unit === "hour" ? "Verdienst pro Stunde" : salary.unit === "month" ? "Verdienst pro Monat" : "Jahresgehalt"}</p>
               <div className="mt-2 flex items-baseline gap-3 flex-wrap">
                 <p className="leading-none text-[var(--color-fg)]" style={{ fontFamily: '"Instrument Serif", ui-serif, Georgia, serif', fontSize: "clamp(48px, 8.5vw, 84px)", letterSpacing: "-0.02em" }}>
-                  {salary.unit === "hour" ? <>{Math.trunc(salary.amount)}<span className="text-[var(--color-fg-dim)]">,{String(Math.round((salary.amount - Math.trunc(salary.amount)) * 100)).padStart(2, "0")}</span></> : salary.max ? <>{Math.round(salary.amount / 1000)}k<span className="text-[var(--color-fg-dim)]"> – </span>{Math.round(salary.max / 1000)}k</> : <>{Math.round(salary.amount / 1000)}k</>}
+                  {salary.unit === "hour" ? <>€{Math.trunc(salary.amount)}<span className="text-[var(--color-fg-dim)]">,{String(Math.round((salary.amount - Math.trunc(salary.amount)) * 100)).padStart(2, "0")}</span></> : salary.max ? <>{Math.round(salary.amount / 1000)}k<span className="text-[var(--color-fg-dim)]"> – </span>{Math.round(salary.max / 1000)}k</> : <>{Math.round(salary.amount / 1000)}k</>}
                 </p>
                 <p className="text-[14px] text-[var(--color-fg-muted)] pb-2">{salary.unit === "hour" ? `/Stunde · KV ${categoryLabel(job.category)}` : salary.unit === "month" ? "/Monat brutto" : "/Jahr brutto"}</p>
               </div>
@@ -336,7 +386,11 @@ export default function JobDetailPage() {
           ) : null}
 
           {/* KV bar */}
-          {salary?.hourly ? <section className="mt-4"><KvBar hourly={salary.hourly} kvMin={kvMin} category={job.category} /></section> : null}
+          {salary?.hourly ? (
+            <section className="mt-4">
+              <KvBar hourly={salary.hourly} kvMin={kvMin} kvMax={kvMax} kvName={kvName} category={job.category} />
+            </section>
+          ) : null}
 
           {/* Ähnliche Stellen */}
           {salary?.hourly ? <section className="mt-4"><SimilarJobsCard currentHourly={salary.hourly} jobs={allJobs} currentId={jobId} /></section> : null}
@@ -347,24 +401,22 @@ export default function JobDetailPage() {
               <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
                   <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Gehalt · Einschätzung</p>
-                  <span className="text-[11px] text-[var(--color-fg-dim)]">KV Angestellte 2024</span>
+                  <span className="text-[11px] text-[var(--color-fg-dim)]">{kvName} 2025</span>
                 </div>
                 <div className="px-5 py-5">
-                  <p className="text-[12px] text-[var(--color-fg-dim)] mb-4">Kein Gehalt angegeben — Richtwert laut Kollektivvertrag:</p>
-                  <div className="flex items-end gap-5 mb-5">
+                  <p className="text-[12px] text-[var(--color-fg-dim)] mb-4">Kein Gehalt angegeben — Richtwert laut {kvName}:</p>
+                  <div className="flex items-end gap-5 mb-5 max-sm:flex-col max-sm:items-start max-sm:gap-2">
                     <p className="leading-none" style={{ fontFamily: '"Instrument Serif", ui-serif, Georgia, serif', fontSize: "52px", letterSpacing: "-0.02em", color: "var(--color-warning)" }}>{kvMin.toFixed(2)}<span className="text-[20px] text-[var(--color-fg-dim)] ml-1.5">/h</span></p>
-                    {kvMonthly ? <div className="pb-1"><p className="text-[14px] font-semibold text-[var(--color-fg)]">~ {kvMonthly} / Monat</p><p className="text-[12px] text-[var(--color-fg-dim)] mt-0.5">bei 15 h / Woche</p></div> : null}
+                    {kvMonthly ? <div className="pb-1 max-sm:pb-0"><p className="text-[14px] font-semibold text-[var(--color-fg)]">~ {kvMonthly} / Monat</p><p className="text-[12px] text-[var(--color-fg-dim)] mt-0.5">bei 15 h / Woche</p></div> : null}
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.06] relative mb-2">
-                    <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: "49%", background: "var(--color-warning)" }} />
-                    <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[var(--color-fg)] ring-2 ring-[var(--color-bg)]" style={{ left: "49%" }} />
+                  <div className="mt-2 flex items-center gap-3 text-[11px] text-[var(--color-fg-dim)] tabular-nums">
+                    <span>{formatEuro(kvMin)} KV-Min.</span>
+                    <span className="inline-block w-px h-3 bg-[var(--color-border-subtle)]" />
+                    <span className="text-[var(--color-fg)] font-medium">{formatEuro(kvMin)} Richtwert</span>
+                    <span className="inline-block w-px h-3 bg-[var(--color-border-subtle)]" />
+                    <span>{formatEuro(kvCeiling)} KV-Max.</span>
                   </div>
-                  <div className="flex justify-between tabular-nums text-[11px] text-[var(--color-fg-dim)]">
-                    <span>€9,27 gesetzl. Minimum</span>
-                    <span className="font-medium" style={{ color: "var(--color-warning)" }}>€{kvMin.toFixed(2)} KV-Richtwert</span>
-                    <span>€14,00 Top 10 %</span>
-                  </div>
-                  <p className="mt-3 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">Schätzung auf Basis des KV (WKO, 01/2024) — keine Firmenangabe.</p>
+                  <p className="mt-3 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">Schätzung auf Basis des {kvName} (2025) — keine Firmenangabe.</p>
                 </div>
               </div>
             </section>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>JobAssist</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 260px;
+      padding: 20px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0A0A0A;
+      color: #F0F0F5;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      color: #fafafa;
+    }
+    .tagline {
+      font-size: 12px;
+      color: #a1a1aa;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 16px 0;
+    }
+    .sites {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .site {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #d4d4d8;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      flex-shrink: 0;
+    }
+    .cta {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 10px 0;
+      background: #7c7df0;
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .cta:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="logo">JobAssist</div>
+  <div class="tagline">Speichere Stellenangebote direkt aus dem Browser.</div>
+  <div class="divider"></div>
+  <div class="sites">
+    <div class="site"><span class="dot"></span> karriere.at</div>
+    <div class="site"><span class="dot"></span> willhaben.at</div>
+    <div class="site"><span class="dot"></span> jobs.ams.at</div>
+  </div>
+  <a class="cta" href="https://jobassist.at" target="_blank">Zum Dashboard</a>
+</body>
+</html>

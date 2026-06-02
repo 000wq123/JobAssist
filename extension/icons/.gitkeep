@@ -1,0 +1,4 @@
+# Placeholder — generate PNG icons from the SVG source in this folder.
+# Use a tool like https://favicon.io/favicon-converter/ or:
+#   npx svg-to-png src/icon.svg --output icons/
+# Sizes needed: 16x16, 32x32, 48x48, 128x128
