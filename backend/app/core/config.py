@@ -27,6 +27,8 @@ class Settings(BaseSettings):
 
     # Database — must be set via environment variable (no insecure default)
     DATABASE_URL: str
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
 
     # Auth (JWT)
     SECRET_KEY: str = "change-me-in-production"
