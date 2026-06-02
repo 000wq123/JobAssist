@@ -8,7 +8,7 @@ import { formatEuro } from "../../utils/format";
 import { categoryLabel } from "./domain";
 import { ANNOT } from "./ui";
 
-export default function KvBar({ hourly, kvMin, kvMax, kvName, category }) {
+export default function KvBar({ hourly, kvMin, kvMax, kvName, category, kvUrl }) {
   const top = Math.max(hourly * 1.18, kvMax ? kvMax * 1.15 : kvMin * 1.35);
   const kvPct  = Math.min(100, (kvMin  / top) * 100);
   const jobPct = Math.min(100, (hourly / top) * 100);
@@ -37,7 +37,21 @@ export default function KvBar({ hourly, kvMin, kvMax, kvName, category }) {
         <span>{formatEuro(top)} Top</span>
       </div>
       <p className="mt-2 text-[10.5px] text-[var(--color-fg-faint)] flex items-center gap-1">
-        <Info className="w-2.5 h-2.5" aria-hidden="true" /> Basierend auf {kvName || "österreichischem Mindestlohn"} (2025).
+        <Info className="w-2.5 h-2.5" aria-hidden="true" /> Basierend auf {kvName || "österreichischem Mindestlohn"} (2025)
+        {kvUrl ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <a
+              className="underline text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]"
+              href={kvUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Quelle
+            </a>
+          </>
+        ) : null}
+        .
       </p>
     </div>
   );

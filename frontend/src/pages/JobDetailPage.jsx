@@ -22,17 +22,22 @@ import ResearchModal from "../components/ResearchModal";
 import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
 } from "../components/job-detail/domain";
+import {
+  estimateCommuteMinutes, mentionsLateShift, mentionsSplitShift,
+} from "../components/job-detail/commute";
 import { formatEuro } from "../utils/format";
 
-/** Lookup cached KV wage for a category. Falls back to hardcoded floor. */
+/** Fetch KV wage for a category (direct endpoint). Falls back to hardcoded floor. */
 function useKvWage(category) {
   const { data } = useQuery({
-    queryKey: ["kv-wages"],
-    queryFn: () => kvWageApi.list().then((r) => r.data),
+    queryKey: ["kv-wage", (category || "").toLowerCase(), 2025],
+    queryFn: () => kvWageApi.get((category || "").toLowerCase(), 2025).then((r) => r.data),
+    enabled: !!category,
     staleTime: Infinity,
   });
-  const found = data?.find((w) => w.category === (category || "").toLowerCase());
-  return found ? { min: found.hourly_min, max: found.hourly_max, kv: found.kollektivvertrag } : { min: kvMinimumFor(category), max: null, kv: "KV" };
+  return data
+    ? { min: data.hourly_min, max: data.hourly_max, kv: data.kollektivvertrag, url: data.source_url }
+    : { min: kvMinimumFor(category), max: null, kv: "KV", url: null };
 }
 import {
   Spinner, ToolBtn, KpiTile, DescriptionBody,
@@ -47,6 +52,41 @@ import InterviewSheet from "../components/job-detail/InterviewSheet";
 import CoverLetterModal from "../components/job-detail/CoverLetterModal";
 import CoursesCard from "../components/job-detail/CoursesCard";
 import Popover from "../components/ui/Popover";
+
+function CommuteSafetyCard({ job, me }) {
+  const commuteMinutes = estimateCommuteMinutes(me?.location, job.location);
+  const lateShift = mentionsLateShift(job.description);
+  const splitShift = mentionsSplitShift(job.description);
+
+  if (commuteMinutes == null && !lateShift && !splitShift) return null;
+
+  return (
+    <section className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+        <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Kontext</p>
+      </div>
+      <div className="px-5 py-4 space-y-2">
+        {commuteMinutes != null && (
+          <p className="text-[13px] text-[var(--color-fg-muted)]">
+            Geschätzte Anfahrt: <span className="text-[var(--color-fg)]">{commuteMinutes} Min.</span>
+            {commuteMinutes > 60 && " — überlege, ob das im Alltag passt."}
+          </p>
+        )}
+        {lateShift && (
+          <p className="text-[13px] text-[var(--color-fg-muted)]">
+            <span className="text-[var(--color-warning)]">Spätschicht</span> erwähnt.
+            Unter 18: Nachtarbeit ist nur unter bestimmten Bedingungen erlaubt.
+          </p>
+        )}
+        {splitShift && (
+          <p className="text-[13px] text-[var(--color-fg-muted)]">
+            <span className="text-[var(--color-warning)]">Geteilter Dienst</span> erwähnt — prüfe, ob das mit deinem Tagesablauf passt.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 // ─── Local storage helpers ───────────────────────────────────────────────────
 
@@ -90,6 +130,12 @@ export default function JobDetailPage() {
   const desktopStatusBtnRef = useRef(null);
 
   const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
+
+  const { data: baselines } = useQuery({
+    queryKey: ["response-baselines"],
+    queryFn: () => jobApi.getResponseBaselines().then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
+  });
 
   const updateJobCaches = (nextJob) => {
     if (!nextJob) return;
@@ -386,10 +432,15 @@ export default function JobDetailPage() {
             </section>
           ) : null}
 
+          {/* Commute + safety overlay */}
+          {import.meta.env.VITE_ENABLE_COMMUTE_OVERLAY !== "false" && (
+            <CommuteSafetyCard job={job} me={initData?.me} />
+          )}
+
           {/* KV bar */}
           {salary?.hourly ? (
             <section className="mt-4">
-              <KvBar hourly={salary.hourly} kvMin={kvMin} kvMax={kvMax} kvName={kvName} category={job.category} />
+              <KvBar hourly={salary.hourly} kvMin={kvMin} kvMax={kvMax} kvName={kvName} category={job.category} kvUrl={kvData.url} />
             </section>
           ) : null}
 
@@ -432,7 +483,21 @@ export default function JobDetailPage() {
           {/* Kontext footer */}
           <section className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-5">
             <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Einschätzung</p>
-            <p className="mt-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">Rückmeldungen dauern bei {job.company || "den meisten Betrieben"} erfahrungsgemäß <span className="text-[var(--color-fg)]">7–14 Werktage</span>. Keine Antwort in dieser Zeit ist häufig und sagt nichts über deine Bewerbung aus.</p>
+            <p className="mt-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
+              {job.status === "applied" && job.applied_at ? (
+                <>
+                  Vor {Math.max(0, Math.floor((Date.now() - new Date(job.applied_at).getTime()) / (1000 * 60 * 60 * 24)))} Tagen beworben.
+                  {" "}
+                  Schnitt: {Math.round(baselines?.median_days ?? 8)} Tage.
+                  {" "}
+                  Nachfragen ist nach {Math.round((baselines?.p75_days ?? 14) + 2)} Tagen okay.
+                </>
+              ) : (
+                <>
+                  Rückmeldungen dauern bei {job.company || "den meisten Betrieben"} erfahrungsgemäß <span className="text-[var(--color-fg)]">{Math.round(baselines?.median_days ?? 8)}–{Math.round(baselines?.p75_days ?? 14)} Werktage</span>. Keine Antwort in dieser Zeit ist häufig und sagt nichts über deine Bewerbung aus.
+                </>
+              )}
+            </p>
           </section>
 
           {/* Notizen */}
@@ -479,7 +544,7 @@ export default function JobDetailPage() {
       {/* Modals & sheets */}
       <BearbeitenSheet open={editOpen} onClose={() => setEditOpen(false)} job={job} resumes={resumes} selectedResume={resumeId} onChangeResume={setSelectedResume} onSaveMeta={(payload) => updateMetaMutation.mutate(payload)} savingMeta={updateMetaMutation.isPending} />
       <InterviewSheet open={interviewOpen} onClose={() => setInterviewOpen(false)} job={job} mutate={interviewMutation.mutate} pending={interviewMutation.isPending} resumeId={resumeId} />
-      <CoverLetterModal open={coverLetterOpen} onClose={() => setCoverLetterOpen(false)} job={job} />
+      <CoverLetterModal open={coverLetterOpen} onClose={() => setCoverLetterOpen(false)} job={job} followUpDays={Math.round((baselines?.p75_days ?? 14) + 2)} />
       {researchOpen ? <ResearchModal companyName={job.company || ""} data={researchData} loading={researchLoading} jobId={job.id} onRefresh={handleResearch} onClose={() => { setResearchOpen(false); setResearchData(null); }} /> : null}
       <SalaryCompareModal open={salaryCompareOpen} onClose={() => setSalaryCompareOpen(false)} currentJob={job} allJobs={allJobs} />
     </>
