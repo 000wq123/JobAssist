@@ -25,6 +25,7 @@ import Skeleton from "../components/ui/Skeleton";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MUTED_KEY = "muted-jobs";
+const COLLAPSED_KEY = "collapsed-groups";
 
 const STATUS_GROUPS = [
   { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0" },
@@ -549,6 +550,20 @@ export default function JobsPage() {
   const openJob = (jobId) => { scrollSaveRef.current = true; navigate(`/jobs/${jobId}`); };
 
   const total = savedJobs.length;
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set(loadStored(COLLAPSED_KEY) || []));
+  useEffect(() => {
+    saveStored(COLLAPSED_KEY, Array.from(collapsedGroups));
+  }, [collapsedGroups]);
+
+  const toggleGroup = (key) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const [showDone, setShowDone] = useState(false);
 
   const visibleGroups = activeFilter === "alle"
@@ -592,8 +607,8 @@ export default function JobsPage() {
 
       {/* ── Filter chips + sort toggle ───────────────────────────── */}
       {total > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex flex-wrap gap-1.5 flex-1">
+        <div className="flex items-start gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
             {FILTER_CHIPS.map(({ key, label, dot, activeBg, activeBorder }) => {
               const count = key === "alle" ? total : (grouped[key]?.length ?? 0);
               const isActive = activeFilter === key;
@@ -652,10 +667,18 @@ export default function JobsPage() {
           {visibleGroups.map(({ key, label, dot }) => {
             const jobs = grouped[key];
             if (!jobs || jobs.length === 0) return null;
+            const isCollapsed = collapsedGroups.has(key);
             return (
               <div key={key}>
-                <SectionLabel label={label} count={jobs.length} dot={dot} />
-                {jobs.map((job, i) => (
+                <SectionLabel
+                  label={label}
+                  count={jobs.length}
+                  dot={dot}
+                  collapsible
+                  collapsed={isCollapsed}
+                  onToggle={() => toggleGroup(key)}
+                />
+                {!isCollapsed && jobs.map((job, i) => (
                   <ThreadRow
                     key={job.id}
                     job={job}

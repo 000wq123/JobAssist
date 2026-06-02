@@ -351,7 +351,7 @@ export default function JobDetailHero({ job, statusBadge, onDelete, deletePendin
             <span className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[11.5px] tabular-nums text-emerald-300 font-medium">
-                +${formatEuro(hourly - kvMin)} über KV-Minimum
+                +{formatEuro(hourly - kvMin)} über KV-Minimum
               </span>
             </span>
           ) : null}
