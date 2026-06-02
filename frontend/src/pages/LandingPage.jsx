@@ -629,7 +629,7 @@ function FeatureCardVisual({ variant }) {
 function PastelSpaces() {
   return (
     <section
-      className="surface-light relative overflow-hidden"
+      className="surface-dark relative overflow-hidden"
       style={{ background: "linear-gradient(180deg, #F6EFD8 0%, #FBC8B5 100%)" }}
     >
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">

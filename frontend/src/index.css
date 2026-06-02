@@ -19,21 +19,21 @@
   --color-accent-800: #3F2890;
   --color-accent-900: #2A1A66;
 
-  /* ── Neutrals (dark) ──────────────────────────────────────────── */
-  --color-bg:        #0B0B0F;
-  --color-bg-elev-1: #131318;
-  --color-bg-elev-2: #1B1B22;
-  --color-bg-elev-3: #24242C;
-  --color-bg-input:  #0F0F14;
+  /* ── Neutrals (light default) ─────────────────────────────────── */
+  --color-bg:        #FAFAF7;
+  --color-bg-elev-1: #FFFFFF;
+  --color-bg-elev-2: #F4F4F0;
+  --color-bg-elev-3: #ECECE6;
+  --color-bg-input:  #FFFFFF;
 
-  --color-border:        #2A2A33;
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border:        #E5E5DF;
+  --color-border-subtle: rgba(10, 10, 15, 0.06);
+  --color-border-strong: rgba(10, 10, 15, 0.14);
 
-  --color-fg:       #ECECEF;
-  --color-fg-muted: #A1A1AA;
-  --color-fg-dim:   #71717A;
-  --color-fg-faint: #52525B;
+  --color-fg:       #0B0B0F;
+  --color-fg-muted: #46464D;
+  --color-fg-dim:   #6B6B72;
+  --color-fg-faint: #9A9AA0;
 
   /* ── Semantic (use sparingly) ─────────────────────────────────── */
   --color-success:      #34D399;
@@ -75,20 +75,18 @@
   --color-skill-soft: #FBBF24;
   --color-skill-lang: #F472B6;
 
-  /* ── Light-mode tokens (used by alternating "white" sections) ─── */
-  /* Mirrors the dark palette so any component can opt into a light
-     surface by toggling the `.surface-light` utility on a wrapper. */
-  --color-light-bg:        #FAFAF7;
-  --color-light-bg-elev-1: #FFFFFF;
-  --color-light-bg-elev-2: #F4F4F0;
-  --color-light-bg-elev-3: #ECECE6;
-  --color-light-border:        #E5E5DF;
-  --color-light-border-subtle: rgba(10, 10, 15, 0.06);
-  --color-light-border-strong: rgba(10, 10, 15, 0.14);
-  --color-light-fg:       #0B0B0F;
-  --color-light-fg-muted: #46464D;
-  --color-light-fg-dim:   #6B6B72;
-  --color-light-fg-faint: #9A9AA0;
+  /* ── Dark-mode tokens (for `.surface-dark` override) ─────────── */
+  --color-dark-bg:        #0B0B0F;
+  --color-dark-bg-elev-1: #131318;
+  --color-dark-bg-elev-2: #1B1B22;
+  --color-dark-bg-elev-3: #24242C;
+  --color-dark-border:        #2A2A33;
+  --color-dark-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-dark-border-strong: rgba(255, 255, 255, 0.12);
+  --color-dark-fg:       #ECECEF;
+  --color-dark-fg-muted: #A1A1AA;
+  --color-dark-fg-dim:   #71717A;
+  --color-dark-fg-faint: #52525B;
 
   /* ── Pastel accents (for Arc/Dia-style soft sections) ─────────── */
   --color-pastel-peach: #FBC8B5;
@@ -335,24 +333,21 @@
     letter-spacing: -0.01em;
   }
 
-  /* ── Light surface wrapper ────────────────────────────────────── */
-  /* Apply on any section to flip into a Plain/Cluely-style white
-     section. All `--color-bg*`, `--color-fg*`, and `--color-border*`
-     tokens resolve to their light-mode equivalents inside. */
-  .surface-light {
-    background-color: var(--color-light-bg);
-    color: var(--color-light-fg);
-    --color-bg:            var(--color-light-bg);
-    --color-bg-elev-1:     var(--color-light-bg-elev-1);
-    --color-bg-elev-2:     var(--color-light-bg-elev-2);
-    --color-bg-elev-3:     var(--color-light-bg-elev-3);
-    --color-border:        var(--color-light-border);
-    --color-border-subtle: var(--color-light-border-subtle);
-    --color-border-strong: var(--color-light-border-strong);
-    --color-fg:            var(--color-light-fg);
-    --color-fg-muted:      var(--color-light-fg-muted);
-    --color-fg-dim:        var(--color-light-fg-dim);
-    --color-fg-faint:      var(--color-light-fg-faint);
+  /* ── Dark surface wrapper ───────────────────────────────────── */
+  .surface-dark {
+    background-color: var(--color-dark-bg);
+    color: var(--color-dark-fg);
+    --color-bg:            var(--color-dark-bg);
+    --color-bg-elev-1:     var(--color-dark-bg-elev-1);
+    --color-bg-elev-2:     var(--color-dark-bg-elev-2);
+    --color-bg-elev-3:     var(--color-dark-bg-elev-3);
+    --color-border:        var(--color-dark-border);
+    --color-border-subtle: var(--color-dark-border-subtle);
+    --color-border-strong: var(--color-dark-border-strong);
+    --color-fg:            var(--color-dark-fg);
+    --color-fg-muted:      var(--color-dark-fg-muted);
+    --color-fg-dim:        var(--color-dark-fg-dim);
+    --color-fg-faint:      var(--color-dark-fg-faint);
   }
 
   /* ── Browser mockup chrome (Cluely / Arc / Plain pattern) ─────── */
