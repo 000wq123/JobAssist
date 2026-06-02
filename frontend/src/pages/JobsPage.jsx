@@ -43,15 +43,15 @@ const ALL_STATUSES = [
   { key: "rejected", label: "Erledigt", dot: "#52525b" },
 ];
 
-const C = { ...DARK, surface3: "#27272a", inkFaint: "#52525b" };
+const C = { ...DARK };
 
 const FILTER_CHIPS = [
-  { key: "alle",         label: "Alle",        dot: "#71717a", activeBg: "#18181b",                    activeBorder: "rgba(255,255,255,0.10)" },
-  { key: "interviewing", label: "Gespräch",    dot: "#7c7df0", activeBg: "rgba(124,125,240,0.10)",    activeBorder: "rgba(124,125,240,0.30)" },
-  { key: "offered",      label: "Angebot",     dot: "#4ade80", activeBg: "rgba(74,222,128,0.08)",     activeBorder: "rgba(74,222,128,0.25)" },
-  { key: "applied",      label: "Antwort ausständig", dot: "#60a5fa", activeBg: "rgba(96,165,250,0.08)",     activeBorder: "rgba(96,165,250,0.25)" },
-  { key: "bookmarked",   label: "Bewerben",    dot: "#f59e0b", activeBg: "rgba(245,158,11,0.08)",     activeBorder: "rgba(245,158,11,0.30)" },
-  { key: "rejected",     label: "Erledigt",    dot: "#52525b", activeBg: "rgba(82,82,91,0.10)",      activeBorder: "rgba(82,82,91,0.25)" },
+  { key: "alle",         label: "Alle",        dot: "#6B6B72" },
+  { key: "interviewing", label: "Gespräch",    dot: "#7c7df0" },
+  { key: "offered",      label: "Angebot",     dot: "#4ade80" },
+  { key: "applied",      label: "Beworben",    dot: "#60a5fa" },
+  { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b" },
+  { key: "rejected",     label: "Erledigt",    dot: "#9A9AA0" },
 ];
 
 const loadStored = (key) => {
@@ -135,65 +135,39 @@ function SectionLabel({ label, count, dot, collapsible, collapsed, onToggle }) {
 }
 
 /**
- * ThreadRow — flat grid row: 2px accent bar · content · meta.
- * Supports multi-select via Shift+click (desktop) or long-press (mobile).
+ * JobCard — clean card row: logo · title · company · status pill.
  */
-function ThreadRow({ job, muted = false, isFirst = false, onOpen, onStatusChange }) {
+function JobCard({ job, onOpen, onStatusChange }) {
   const role     = job.role || job.title || "Stelle";
   const company  = job.company || "";
   const location = job.location ? job.location.split(",")[0] : null;
-  const meta     = [company, location].filter(Boolean).join(" \u00b7 ");
   const timeLabel = timeAgoShort(job.updated_at || job.created_at);
 
-  const statusGroup = STATUS_GROUPS.find((g) => g.key === job.status);
-  const statusDot = statusGroup?.dot ?? C.inkDim;
-  const statusLabel = statusGroup?.label ?? job.status ?? "Unbekannt";
-
-  const rawScore   = Number.isFinite(job.match_score) ? Math.round(job.match_score) : null;
-  const matchScore = rawScore !== null ? rawScore : null;
-  const matchColor = matchScore !== null
-    ? (matchScore >= 80 ? "#34d399" : matchScore >= 65 ? "#2dd4bf" : matchScore >= 45 ? "#94a3b8" : "#52525b") : null;
-  const matchBg = matchScore !== null
-    ? (matchScore >= 80 ? "rgba(52,211,153,0.13)" : matchScore >= 65 ? "rgba(45,212,191,0.11)" : matchScore >= 45 ? "rgba(148,163,184,0.09)" : "rgba(82,82,91,0.06)") : null;
+  const statusConfig = ALL_STATUSES.find((s) => s.key === job.status) || ALL_STATUSES[0];
 
   return (
     <div
-      className={`group grid cursor-pointer transition-colors hover:bg-white/[0.03] ${muted ? "opacity-40" : ""}`}
-      style={{ gridTemplateColumns: "2px minmax(0, 1fr) auto", borderTop: isFirst ? "none" : `1px solid ${C.lineSubtle}` }}
+      onClick={() => onOpen()}
+      className="group flex items-start gap-3 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] cursor-pointer transition-all hover:border-[var(--color-accent-400)] hover:shadow-sm"
     >
-      <div
-        className="self-stretch transition-opacity opacity-[0.22] group-hover:opacity-90"
-        style={{ background: statusDot }}
-        role="img"
-        aria-label={`Status: ${statusLabel}`}
-      />
-      <button
-        type="button"
-        aria-label={`${role} bei ${company || "Unbekannt"} — ${statusLabel}`}
-        onClick={() => onOpen()}
-        className="min-w-0 text-left px-3 py-3 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent-400)] rounded-sm"
-      >
-        <p className="text-[13.5px] font-semibold leading-snug truncate" style={{ color: C.ink }}>{role}</p>
-        {meta && <p className="mt-0.5 text-[11.5px] truncate" style={{ color: C.inkMuted }}>{meta}</p>}
-      </button>
-      <div className="flex items-center gap-1.5 pr-3 flex-shrink-0">
-        {matchScore !== null && (
-          <span className="text-[10.5px] font-bold tabular-nums px-1.5 py-0.5 rounded"
-            style={{ color: matchColor, background: matchBg }}>{matchScore}%</span>
-        )}
-        {/* Mobile-only status chip — opens bottom sheet */}
-        {onStatusChange && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onStatusChange(job.id, null); }}
-            className="sm:hidden text-[10px] font-medium px-1.5 py-0.5 rounded border"
-            style={{ borderColor: statusDot + "55", color: statusDot, background: statusDot + "15" }}
-          >
-            {statusLabel}
-          </button>
-        )}
+      <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] flex items-center justify-center text-sm font-bold text-[var(--color-fg-muted)] flex-shrink-0">
+        {company.slice(0, 2).toUpperCase() || "JB"}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-[14px] font-semibold text-[var(--color-fg)] truncate">{role}</h3>
+        <p className="text-[12px] text-[var(--color-fg-muted)] mt-0.5">
+          {company}{location ? ` · ${location}` : ""}
+        </p>
+      </div>
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        <span
+          className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+          style={{ background: statusConfig.dot + "18", color: statusConfig.dot }}
+        >
+          {statusConfig.label}
+        </span>
         {timeLabel && (
-          <span className="text-[11px] tabular-nums" style={{ color: C.inkFaint, minWidth: 36, textAlign: "right" }}>{timeLabel}</span>
+          <span className="text-[11px] text-[var(--color-fg-faint)]">{timeLabel}</span>
         )}
       </div>
     </div>
@@ -233,40 +207,33 @@ function RowSkeleton() {
 
   if (totalCached === 0) {
     return (
-      <div className="flex flex-col gap-5">
-        {[0, 1].map((s) => (
-          <div key={s}>
-            <div className="flex items-center gap-1.5 pb-1.5 mb-0.5" style={{ borderBottom: `1px solid ${C.lineSubtle}` }}>
-              <Skeleton className="w-1.5 h-1.5 rounded-full" />
-              <Skeleton className="h-2.5 w-20" />
-            </div>
-            {[0, 1, 2].map((r) => (
-              <div key={r} className="px-3 py-3" style={{ borderTop: r > 0 ? `1px solid ${C.lineSubtle}` : "none" }}>
-                <Skeleton className="h-3 w-2/3 mb-1.5" />
-                <Skeleton className="h-2.5 w-1/2" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]">
+            <div className="flex items-start gap-3">
+              <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
-            ))}
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
-  const activeGroups = groups.filter((g) => counts[g]);
   return (
-    <div className="flex flex-col gap-5">
-      {activeGroups.map((g) => (
-        <div key={g}>
-          <div className="flex items-center gap-1.5 pb-1.5 mb-0.5" style={{ borderBottom: `1px solid ${C.lineSubtle}` }}>
-            <Skeleton className="w-1.5 h-1.5 rounded-full" />
-            <Skeleton className="h-2.5 w-20" />
-          </div>
-          {Array.from({ length: counts[g] }).map((_, r) => (
-            <div key={r} className="px-3 py-3" style={{ borderTop: r > 0 ? `1px solid ${C.lineSubtle}` : "none" }}>
-              <Skeleton className="h-3 w-2/3 mb-1.5" />
-              <Skeleton className="h-2.5 w-1/2" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {Array.from({ length: totalCached }).map((_, i) => (
+        <div key={i} className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]">
+          <div className="flex items-start gap-3">
+            <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-3 w-1/2" />
             </div>
-          ))}
+          </div>
         </div>
       ))}
     </div>
@@ -357,20 +324,21 @@ export default function JobsPage() {
     setSearchParams(next, { replace: true });
   };
 
-  const grouped = useMemo(() => {
-    const out = { interviewing: [], offered: [], applied: [], bookmarked: [], rejected: [] };
+  const { activeJobs, rejectedJobs } = useMemo(() => {
+    const active = [];
+    const rejected = [];
     savedJobs.forEach((j) => {
-      const key = j.status in out ? j.status : "bookmarked";
-      out[key].push(j);
+      if (j.status === "rejected") rejected.push(j);
+      else active.push(j);
     });
-    Object.values(out).forEach((arr) =>
-      arr.sort((a, b) => {
-        const da = new Date(a.updated_at || a.created_at).getTime() || 0;
-        const db = new Date(b.updated_at || b.created_at).getTime() || 0;
-        return db - da;
-      }),
-    );
-    return out;
+    const sortByDate = (a, b) => {
+      const da = new Date(a.updated_at || a.created_at).getTime() || 0;
+      const db = new Date(b.updated_at || b.created_at).getTime() || 0;
+      return db - da;
+    };
+    active.sort(sortByDate);
+    rejected.sort(sortByDate);
+    return { activeJobs: active, rejectedJobs: rejected };
   }, [savedJobs]);
 
   const scrollSaveRef = useRef(false);
@@ -431,13 +399,13 @@ export default function JobsPage() {
     statusMutation.mutate({ id: jobId, status: nextStatus });
   };
 
-  const visibleGroups = activeFilter === "alle"
-    ? STATUS_GROUPS
-    : STATUS_GROUPS.filter((g) => g.key === activeFilter);
-
-  const hasVisibleRejected = (activeFilter === "alle" || activeFilter === "rejected") && grouped.rejected.length > 0;
-  const hasAnyVisible = visibleGroups.some((g) => grouped[g.key]?.length > 0)
-    || (hasVisibleRejected && (showDone || activeFilter === "rejected"));
+  const filteredActive = activeFilter === "alle" || activeFilter === "rejected"
+    ? activeJobs
+    : activeJobs.filter((j) => j.status === activeFilter);
+  const filteredRejected = activeFilter === "alle" || activeFilter === "rejected"
+    ? rejectedJobs
+    : [];
+  const hasAnyVisible = filteredActive.length > 0 || filteredRejected.length > 0;
 
   return (
     <div className="flex flex-col gap-5 animate-slide-up">
@@ -470,34 +438,26 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* ── Filter chips + sort toggle ───────────────────────────── */}
-      {total > 0 && (
-        <div className="flex items-start gap-2 flex-wrap">
-          <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-            {FILTER_CHIPS.map(({ key, label, dot, activeBg, activeBorder }) => {
-              const count = key === "alle" ? total : (grouped[key]?.length ?? 0);
-              const isActive = activeFilter === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => setFilter(key)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-all"
-                  style={isActive
-                    ? { background: activeBg, border: `1px solid ${activeBorder}`, color: C.ink }
-                    : { background: "transparent", border: `1px solid ${C.lineSubtle}`, color: C.inkDim }}
-                >
-                  <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: dot }} />
-                  {label}
-                  <span
-                    className="text-[10.5px] font-semibold tabular-nums px-1 rounded"
-                    style={{ background: isActive ? "rgba(255,255,255,0.08)" : C.surface3, color: isActive ? C.inkMuted : C.inkFaint }}
-                  >{count}</span>
-                </button>
-              );
-            })}
-          </div>
+      {/* ── Filter chips ───────────────────────────── */}
+      {total >= 10 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {FILTER_CHIPS.map(({ key, label, dot }) => {
+            const count = key === "alle" ? total : (grouped[key]?.length ?? 0);
+            const isActive = activeFilter === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setFilter(key)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-all border ${isActive ? "border-[var(--color-accent-400)] text-[var(--color-accent-600)] bg-[var(--color-accent-50)]" : "border-[var(--color-border)] text-[var(--color-fg-dim)] hover:border-[var(--color-border-strong)]"}`}
+              >
+                <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: dot }} />
+                {label}
+                <span className="text-[10.5px] font-semibold tabular-nums">{count}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -513,56 +473,53 @@ export default function JobsPage() {
           action={<Button onClick={() => navigate("/finden")}><Search className="w-3.5 h-3.5" />Stelle finden</Button>}
         />
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
 
-          {visibleGroups.map(({ key, label, dot }) => {
-            const jobs = grouped[key];
-            if (!jobs || jobs.length === 0) return null;
-            const isCollapsed = collapsedGroups.has(key);
-            return (
-              <div key={key}>
-                <SectionLabel
-                  label={label}
-                  count={jobs.length}
-                  dot={dot}
-                  collapsible
-                  collapsed={isCollapsed}
-                  onToggle={() => toggleGroup(key)}
-                />
-                {!isCollapsed && jobs.map((job, i) => (
-                  <ThreadRow
+          {/* Aktiv */}
+          {filteredActive.length > 0 && (
+            <div>
+              <SectionLabel
+                label={activeFilter === "alle" ? "Aktiv" : FILTER_CHIPS.find(c => c.key === activeFilter)?.label || "Aktiv"}
+                count={filteredActive.length}
+                dot={activeFilter === "alle" ? "#7c7df0" : FILTER_CHIPS.find(c => c.key === activeFilter)?.dot || "#7c7df0"}
+                collapsible={false}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                {filteredActive.map((job) => (
+                  <JobCard
                     key={job.id}
                     job={job}
-                    isFirst={i === 0}
-                    muted={mutedIds.has(job.id)}
                     onOpen={() => openJob(job.id)}
                     onStatusChange={handleStatusChange}
                   />
                 ))}
               </div>
-            );
-          })}
+            </div>
+          )}
 
-          {(activeFilter === "alle" || activeFilter === "rejected") && grouped.rejected.length > 0 && (
+          {/* Erledigt */}
+          {filteredRejected.length > 0 && (
             <div>
               <SectionLabel
                 label="Erledigt"
-                count={grouped.rejected.length}
-                dot={C.inkFaint}
+                count={filteredRejected.length}
+                dot="#9A9AA0"
                 collapsible={activeFilter === "alle"}
                 collapsed={activeFilter === "alle" ? !showDone : false}
                 onToggle={() => setShowDone((v) => !v)}
               />
-              {(showDone || activeFilter === "rejected") && grouped.rejected.map((job, i) => (
-                <ThreadRow
-                  key={job.id}
-                  job={job}
-                  isFirst={i === 0}
-                  muted={mutedIds.has(job.id)}
-                  onOpen={() => openJob(job.id)}
-                  onStatusChange={handleStatusChange}
-                />
-              ))}
+              {(showDone || activeFilter === "rejected") && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                  {filteredRejected.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      onOpen={() => openJob(job.id)}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
