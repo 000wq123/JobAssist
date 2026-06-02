@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     STRIPE_PRICE_MAX: str = ""   # Stripe Price ID for Max plan
     FRONTEND_URL: str = "https://jobassist.tech"
 
+    KV_DEFAULT_SOURCE_URL: str = ""
+
     # Email — Brevo HTTP API (replaces SMTP, works on Railway free tier)
     BREVO_API_KEY: str = ""
     EMAILS_FROM_EMAIL: str = "jobassistalert@gmail.com"
