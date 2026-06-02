@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { X, Zap } from "lucide-react";
+import { X, Zap, Check } from "lucide-react";
 import toast from "react-hot-toast";
 
 import Button from "./ui/Button";
@@ -82,8 +82,25 @@ export default function UpgradeModal() {
           Du hast <strong className="text-[var(--color-fg)]">{data.used}/{data.limit}</strong> {featureLabel} in deinem{" "}
           <strong className="text-[var(--color-fg)]">{data.plan === "basic" ? "Basic" : data.plan}</strong>-Plan verwendet.
         </p>
-        <p className="mb-6 text-sm text-[var(--color-fg-muted)]">
-          Upgrade auf Pro oder Max, um mehr Funktionen freizuschalten.
+
+        <div className="mb-5 space-y-2">
+          <p className="text-[11px] uppercase tracking-wider text-[var(--color-fg-faint)] font-medium">Warum Pro?</p>
+          {[
+            "Unbegrenzte KI-Anschreiben",
+            "Unbegrenzte Lebenslauf-Analysen",
+            "Bis zu 10 Job-Alerts",
+            "Unbegrenzte Jobsuche",
+            "KI-Gesprächsvorbereitung",
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-2 text-[12.5px] text-[var(--color-fg-muted)]">
+              <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <p className="mb-6 text-[11.5px] text-[var(--color-fg-dim)]">
+          14 Tage Geld-zurück-Garantie. Jederzeit kündbar.
         </p>
 
         <div className="flex gap-3">

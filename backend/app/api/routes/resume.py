@@ -19,6 +19,14 @@ router = APIRouter()
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 MAX_RAW_TEXT_LENGTH = 100_000  # 100k chars — prevents unbounded DB growth
+MAX_RESUMES_PER_USER = 10
+
+
+def _sanitize_filename(name: str) -> str:
+    """Strip path traversal and control characters from uploaded filenames."""
+    import os, re
+    base = os.path.basename(name)
+    return re.sub(r"[^\w.\-]", "_", base)[:120]
 
 
 @router.post("/upload", response_model=ResumeOut)
@@ -66,9 +74,16 @@ async def upload_resume(
     # Parse with Claude
     parsed = await asyncio.to_thread(parse_resume, raw_text)
 
+    # Enforce per-user resume count limit
+    count_result = await db.execute(
+        select(Resume).where(Resume.user_id == current_user.id)
+    )
+    if len(count_result.scalars().all()) >= MAX_RESUMES_PER_USER:
+        raise HTTPException(status_code=429, detail=f"Maximal {MAX_RESUMES_PER_USER} Lebensläufe erlaubt. Lösche einen alten, um einen neuen hochzuladen.")
+
     resume = Resume(
         user_id=current_user.id,
-        filename=file.filename,
+        filename=_sanitize_filename(file.filename),
         raw_text=raw_text,
         parsed_json=json.dumps(parsed),
     )

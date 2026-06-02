@@ -19,6 +19,7 @@ from app.core.database import AsyncSessionLocal, get_db
 from app.core.provider_health import get_provider_health
 from app.core.security import get_current_user
 from app.core.usage import get_all_usage, get_user_plan
+from app.models.job import Job
 from app.models.resume import Resume
 from app.models.user import User
 from app.models.user_profile import UserProfile
@@ -205,4 +206,21 @@ async def init(
         "resumes_total": resumes_total,
         "plan": plan,
         "usage": usage,
+    }
+
+
+@router.get("/metrics")
+async def metrics(db: AsyncSession = Depends(get_db)) -> dict:
+    """Public lightweight metrics for monitoring dashboards. No auth required."""
+    user_count = await db.execute(select(func.count(User.id)))
+    job_count = await db.execute(select(func.count(Job.id)))
+    resume_count = await db.execute(select(func.count(Resume.id)))
+    job_statuses = await db.execute(
+        select(Job.status, func.count(Job.id)).group_by(Job.status)
+    )
+    return {
+        "users_total": user_count.scalar(),
+        "jobs_total": job_count.scalar(),
+        "resumes_total": resume_count.scalar(),
+        "jobs_by_status": {status: count for status, count in job_statuses.all()},
     }

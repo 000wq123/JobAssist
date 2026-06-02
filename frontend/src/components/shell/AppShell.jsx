@@ -2,7 +2,7 @@ import { useState, useEffect, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Mail, LayoutDashboard, FileText, Briefcase, Bell, Calendar, X, User, LogOut, Settings, CreditCard, Sparkles } from "lucide-react";
+import { Mail, LayoutDashboard, FileText, Briefcase, Bell, X, User, LogOut, Settings, CreditCard, Sparkles } from "lucide-react";
 import clsx from "clsx";
 
 import useAuthStore from "../../hooks/useAuthStore";
@@ -19,7 +19,6 @@ const NAV_ITEMS = [
   { to: "/jobs",         label: "Stellen",   icon: Briefcase },
   { to: "/lebenslauf",   label: "Lebenslauf",icon: FileText },
   { to: "/job-alerts",   label: "Alerts",    icon: Bell },
-  { to: "/kalender",     label: "Kalender",  icon: Calendar },
 ];
 
 /**

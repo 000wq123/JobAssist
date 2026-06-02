@@ -5,7 +5,6 @@ import {
   FileText,
   Briefcase,
   Bell,
-  Calendar,
   Settings,
   CreditCard,
   LogOut,
@@ -23,7 +22,6 @@ const PRIMARY = [
   { to: "/jobs",         label: "Stellen",    icon: Briefcase },
   { to: "/lebenslauf",   label: "Lebenslauf", icon: FileText },
   { to: "/job-alerts",   label: "Alerts",     icon: Bell },
-  { to: "/kalender",     label: "Kalender",   icon: Calendar },
 ];
 
 const SECONDARY = [

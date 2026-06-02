@@ -92,6 +92,9 @@ jobs:
       - name: Smoke /health/dependencies
         run: |
           curl -fsS 'http://127.0.0.1:8000/health/dependencies?deep=true' | jq -e '.ready == true or .ready == false'
+      - name: Smoke /metrics
+        run: |
+          curl -fsS http://127.0.0.1:8000/metrics | jq -e '.users_total >= 0'
 
   backend-audit:
     runs-on: ubuntu-latest

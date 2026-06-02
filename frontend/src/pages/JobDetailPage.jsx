@@ -11,14 +11,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   ChevronLeft, ChevronRight, ExternalLink, Trash2,
-  FileText, MessageSquare, SearchCheck, BarChart2,
-  MoreHorizontal, Edit3, ChevronDown,
+  FileText, MoreHorizontal, Edit3, ChevronDown,
 } from "lucide-react";
 
 import {
-  coverLetterApi, jobApi, kvWageApi, researchApi, resumeApi,
+  coverLetterApi, jobApi, kvWageApi, resumeApi,
 } from "../services/api";
-import ResearchModal from "../components/ResearchModal";
 import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
 } from "../components/job-detail/domain";
@@ -45,12 +43,9 @@ import {
 import CompanyLogo from "../components/job-detail/CompanyLogo";
 import KvBar from "../components/job-detail/KvBar";
 import SimilarJobsCard from "../components/job-detail/SimilarJobsCard";
-import SalaryCompareModal from "../components/job-detail/SalaryCompareModal";
 import MatchCard from "../components/job-detail/MatchCard";
 import BearbeitenSheet from "../components/job-detail/BearbeitenSheet";
-import InterviewSheet from "../components/job-detail/InterviewSheet";
 import CoverLetterModal from "../components/job-detail/CoverLetterModal";
-import CoursesCard from "../components/job-detail/CoursesCard";
 import Popover from "../components/ui/Popover";
 
 function CommuteSafetyCard({ job, me }) {
@@ -117,13 +112,8 @@ export default function JobDetailPage() {
 
   const [selectedResume, setSelectedResume] = useState(null);
   const [coverLetterOpen, setCoverLetterOpen] = useState(false);
-  const [interviewOpen, setInterviewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [researchOpen, setResearchOpen] = useState(false);
-  const [researchData, setResearchData] = useState(null);
-  const [researchLoading, setResearchLoading] = useState(false);
   const [mobileToolOpen, setMobileToolOpen] = useState(false);
-  const [salaryCompareOpen, setSalaryCompareOpen] = useState(false);
   const [desktopStatusOpen, setDesktopStatusOpen] = useState(false);
   const matchCardRef = useRef(null);
   const mobileToolBtnRef = useRef(null);
@@ -178,16 +168,6 @@ export default function JobDetailPage() {
     onError: (err) => toast.error(err.response?.data?.detail || "Anschreiben konnte nicht erstellt werden"),
   });
 
-  const interviewMutation = useMutation({
-    mutationFn: () => jobApi.generateInterviewPrep(Number(jobId), resumeId),
-    onSuccess: (res) => {
-      updateJobCaches({ ...(queryClient.getQueryData(["jobs", jobId]) || job || {}), ...res.data });
-      invalidateJobs();
-      toast.success("Gesprächsvorbereitung erstellt");
-    },
-    onError: (err) => toast.error(err.response?.data?.detail || "Gesprächsvorbereitung fehlgeschlagen"),
-  });
-
   const matchMutation = useMutation({
     mutationFn: () => {
       if (!resumeId) throw new Error("Kein Lebenslauf ausgewählt");
@@ -195,12 +175,6 @@ export default function JobDetailPage() {
     },
     onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); toast.success("Passung berechnet"); },
     onError: (err) => toast.error(err.response?.data?.detail || "Passung konnte nicht berechnet werden"),
-  });
-
-  const coursesMutation = useMutation({
-    mutationFn: () => jobApi.courses(Number(jobId), resumeId ?? null),
-    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); toast.success("Kursvorschläge erstellt"); },
-    onError: (err) => toast.error(err.response?.data?.detail || "Kursvorschläge konnten nicht erstellt werden"),
   });
 
   const deleteMutation = useMutation({
@@ -242,21 +216,6 @@ export default function JobDetailPage() {
       toast.error(err.response?.data?.detail || "Status konnte nicht aktualisiert werden");
     },
   });
-
-  const handleResearch = async () => {
-    if (job?.research_data) { setResearchData(JSON.parse(job.research_data)); setResearchOpen(true); return; }
-    setResearchData(null); setResearchOpen(true); setResearchLoading(true);
-    try {
-      const res = await researchApi.research(job?.company || "", job?.description || "");
-      setResearchData(res.data);
-      updateJobCaches({ ...job, research_data: JSON.stringify(res.data) });
-    } catch (err) {
-      if (!(err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") && err.response?.status !== 429) {
-        toast.error(err.response?.data?.detail || "Recherche fehlgeschlagen");
-      }
-      setResearchOpen(false);
-    } finally { setResearchLoading(false); }
-  };
 
   if (isLoading) {
     return (
@@ -339,7 +298,6 @@ export default function JobDetailPage() {
                   </div>
                   <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
                   <button type="button" onClick={() => { setEditOpen(true); setMobileToolOpen(false); }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]"><Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> Bearbeiten</button>
-                  <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
                   <button type="button" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) { setMobileToolOpen(false); deleteMutation.mutate(); } }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]"><Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen</button>
                 </Popover>
               </div>
@@ -395,16 +353,6 @@ export default function JobDetailPage() {
               <h1 className="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)] break-words" style={{ letterSpacing: "-0.025em" }}>{job.role || "Ohne Titel"}</h1>
               <p className="mt-1.5 text-[13px] text-[var(--color-fg-muted)] leading-snug">{job.company || "—"}{job.location ? ` · ${job.location}` : ""}{job.salary_text && !salary ? ` · ${job.salary_text}` : ""}</p>
             </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="mt-5 grid grid-cols-2 lg:grid-cols-3 gap-2">
-            <button type="button" onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) coverLetterMutation.mutate(); else { toast("Lebenslauf hochladen, um ein Anschreiben zu erstellen."); navigate("/lebenslauf"); } }} disabled={coverLetterMutation.isPending} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]" style={{ background: "rgba(124,125,240,0.07)", borderColor: "rgba(124,125,240,0.22)", color: "var(--color-accent-300)" }}><FileText className="w-3 h-3" />{coverLetterMutation.isPending ? "Wird erstellt…" : job.cover_letter ? "Anschreiben ansehen" : "Anschreiben erstellen"}</button>
-            <button type="button" onClick={() => setInterviewOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(96,165,250,0.07)", borderColor: "rgba(96,165,250,0.22)", color: "#93c5fd" }}><MessageSquare className="w-3 h-3" />Vorbereitung</button>
-            <button type="button" onClick={() => { if (resumeId) matchMutation.mutate(); else toast.error("Wähle zuerst einen Lebenslauf"); }} disabled={matchMutation.isPending} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 w-full border hover:bg-white/[0.08]" style={{ background: "rgba(74,222,128,0.07)", borderColor: "rgba(74,222,128,0.22)", color: "#86efac" }}>{matchMutation.isPending ? <span className="animate-spin inline-block h-3 w-3 border-2 border-current border-t-transparent rounded-full" /> : <SearchCheck className="w-3 h-3" />}{matchMutation.isPending ? "Wird berechnet…" : "Passung prüfen"}</button>
-            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(167,139,250,0.07)", borderColor: "rgba(167,139,250,0.22)", color: "#c4b5fd" }}><FileText className="w-3 h-3" />Lebenslauf wählen</button>
-            <button type="button" onClick={handleResearch} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(56,189,248,0.07)", borderColor: "rgba(56,189,248,0.22)", color: "#7dd3fc" }}><SearchCheck className="w-3 h-3" />Recherche</button>
-            <button type="button" onClick={() => setSalaryCompareOpen(true)} className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors w-full border hover:bg-white/[0.08]" style={{ background: "rgba(251,191,36,0.07)", borderColor: "rgba(251,191,36,0.22)", color: "#fde68a" }}><BarChart2 className="w-3 h-3" />Gehaltsvergleich</button>
           </div>
 
           {/* Story hero */}
@@ -515,15 +463,11 @@ export default function JobDetailPage() {
 
           {/* Beschreibung */}
           {job.description ? (
-            <section className="mt-4">
-              <details className="group rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]">
-                <summary className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-5 py-3.5 cursor-pointer list-none">
-                  <ChevronRight className="w-3.5 h-3.5 text-[var(--color-fg-dim)] group-open:rotate-90 transition-transform" aria-hidden="true" />
-                  <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Stellenbeschreibung</p>
-                  <span className="text-[11px] text-[var(--color-fg-dim)]">Einblenden</span>
-                </summary>
-                <DescriptionBody text={job.description} />
-              </details>
+            <section className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] overflow-hidden">
+              <div className="px-5 py-3 border-b border-[var(--color-border-subtle)]">
+                <p className="text-[10.5px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">Stellenbeschreibung</p>
+              </div>
+              <DescriptionBody text={job.description} />
             </section>
           ) : null}
 
@@ -543,10 +487,7 @@ export default function JobDetailPage() {
 
       {/* Modals & sheets */}
       <BearbeitenSheet open={editOpen} onClose={() => setEditOpen(false)} job={job} resumes={resumes} selectedResume={resumeId} onChangeResume={setSelectedResume} onSaveMeta={(payload) => updateMetaMutation.mutate(payload)} savingMeta={updateMetaMutation.isPending} />
-      <InterviewSheet open={interviewOpen} onClose={() => setInterviewOpen(false)} job={job} mutate={interviewMutation.mutate} pending={interviewMutation.isPending} resumeId={resumeId} />
       <CoverLetterModal open={coverLetterOpen} onClose={() => setCoverLetterOpen(false)} job={job} followUpDays={Math.round((baselines?.p75_days ?? 14) + 2)} />
-      {researchOpen ? <ResearchModal companyName={job.company || ""} data={researchData} loading={researchLoading} jobId={job.id} onRefresh={handleResearch} onClose={() => { setResearchOpen(false); setResearchData(null); }} /> : null}
-      <SalaryCompareModal open={salaryCompareOpen} onClose={() => setSalaryCompareOpen(false)} currentJob={job} allJobs={allJobs} />
     </>
   );
 }

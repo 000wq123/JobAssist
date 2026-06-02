@@ -31,7 +31,6 @@ const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
 const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadVerifyEmailPage = () => import("./pages/VerifyEmailPage");
 const loadUnsubscribePage = () => import("./pages/UnsubscribePage");
-const loadCalendarPage = () => import("./pages/CalendarPage");
 
 const LandingPage = lazy(loadLandingPage);
 const LoginPage = lazy(loadLoginPage);
@@ -54,7 +53,6 @@ const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
 const VerifyEmailPage = lazy(loadVerifyEmailPage);
 const UnsubscribePage = lazy(loadUnsubscribePage);
-const CalendarPage = lazy(loadCalendarPage);
 
 const preloaders = [
   loadDashboardPage,
@@ -131,7 +129,6 @@ function AppRoutes() {
             <Route path=":jobId" element={<Suspense fallback={null}><JobDetailPage /></Suspense>} />
           </Route>
           <Route path="/job-alerts" element={<Suspense fallback={null}><JobAlertsPage /></Suspense>} />
-          <Route path="/kalender" element={<Suspense fallback={null}><CalendarPage /></Suspense>} />
           <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
           <Route path="/billing" element={<Suspense fallback={null}><BillingPage /></Suspense>} />
         </Route>

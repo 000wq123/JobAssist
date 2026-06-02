@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
 import useFocusTrap from "../hooks/useFocusTrap";
@@ -25,19 +24,19 @@ const SLIDES = [
     eyebrow: "Lebenslauf",
     heading: "Lade deinen Lebenslauf hoch.",
     body: "In den Einstellungen kannst du deinen Lebenslauf hinterlegen. Die KI berechnet damit Matches, prüft deine Passung und erstellt Anschreiben für dich.",
-    cta: { label: "Einstellungen öffnen", to: "/settings" },
+    cta: null,
   },
   {
     eyebrow: "Stellen",
     heading: "Suche, merke, bewirb dich.",
     body: "Unter Finden entdeckst du passende Stellen in deiner Nähe. Merke sie, wechsle den Status und behalte den Überblick über alle laufenden Bewerbungen.",
-    cta: { label: "Jobs ansehen", to: "/finden" },
+    cta: null,
   },
   {
     eyebrow: "Lebenslauf erstellen",
     heading: "Professionelles PDF in drei Minuten.",
     body: "Beantworte ein paar kurze Fragen — JobAssist erstellt dir sofort einen fertigen Lebenslauf im österreichischen Format als PDF. Kostenlos, direkt im Browser.",
-    cta: { label: "Jetzt starten", to: "/lebenslauf" },
+    cta: null,
   },
 ];
 
@@ -49,7 +48,6 @@ const SLIDES = [
  * @param {{ onDone: () => void }} props
  */
 function OnboardingModalInner({ onDone }) {
-  const navigate = useNavigate();
   const [idx, setIdx] = useState(0);
   const slide = SLIDES[idx];
   const isLast = idx === SLIDES.length - 1;
@@ -64,11 +62,6 @@ function OnboardingModalInner({ onDone }) {
   const advance = () => {
     if (isLast) { close(); return; }
     setIdx((i) => i + 1);
-  };
-
-  const handleCta = () => {
-    close();
-    if (slide.cta?.to) navigate(slide.cta.to);
   };
 
   return (
@@ -125,48 +118,19 @@ function OnboardingModalInner({ onDone }) {
 
         {/* Footer */}
         <div className="px-8 pb-8 flex flex-col gap-3">
-          {/* Primary CTA or Next */}
-          {slide.cta ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleCta}
-                className="flex-1 h-11 rounded-xl inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-all hover:-translate-y-px"
-                style={{
-                  background: "var(--color-accent-500)",
-                  color: "#0b0b14",
-                  boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.18)",
-                }}
-              >
-                {slide.cta.label}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              {!isLast && (
-                <button
-                  type="button"
-                  onClick={advance}
-                  className="h-11 px-4 rounded-xl text-[14px] font-medium border transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
-                  style={{ borderColor: "rgba(255,255,255,0.10)", color: "var(--color-fg-muted)" }}
-                >
-                  Weiter
-                </button>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={advance}
-              className="w-full h-11 rounded-xl inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-all hover:-translate-y-px"
-              style={{
-                background: "var(--color-accent-500)",
-                color: "#0b0b14",
-                boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.18)",
-              }}
-            >
-              {isLast ? "Loslegen" : "Weiter"}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={advance}
+            className="w-full h-11 rounded-xl inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-all hover:-translate-y-px"
+            style={{
+              background: "var(--color-accent-500)",
+              color: "#0b0b14",
+              boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.18)",
+            }}
+          >
+            {isLast ? "Loslegen" : "Weiter"}
+            <ArrowRight className="w-4 h-4" />
+          </button>
 
           {/* Skip (only on non-last slides) */}
           {!isLast && (

@@ -16,7 +16,7 @@ JobAssist is an AI-assisted job-search and application-tracking SaaS aimed at Ge
 
 | Layer | Technology | Assessment |
 |---|---|---|
-| **Frontend** | React 18 + Vite + Tailwind CSS + TanStack Query | Modern, well-structured. Code-splitting via `React.lazy`. Sentry for error tracking. |
+| **Frontend** | React 19 + Vite + Tailwind CSS + TanStack Query | Modern, well-structured. Code-splitting via `React.lazy`. Sentry for error tracking. |
 | **Backend** | FastAPI (Python 3.11), async SQLAlchemy 2.0, Alembic | Professional. Uses `Mapped` types, proper `AsyncSession` handling, Pydantic v2 validation. |
 | **Database** | PostgreSQL (prod) / SQLite (tests) | Appropriate. Alembic migrations are current. |
 | **Auth** | JWT (access) + refresh token rotation in httpOnly cookies | Strong. One-session-per-user enforced. Device fingerprinting blocks duplicate registration. |

@@ -13,7 +13,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Search, Sparkles, Trash2, Plus, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Search, Sparkles, Plus, ChevronDown } from "lucide-react";
 
 import { jobApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -27,21 +27,6 @@ import BottomSheet from "../components/ui/BottomSheet";
 
 const MUTED_KEY = "muted-jobs";
 const COLLAPSED_KEY = "collapsed-groups";
-const NEGATIVE_FILTERS_KEY = "negative-filters";
-
-const CHAIN_NAMES = new Set([
-  "mcdonald's", "mcdonalds", "burger king", "kfc", "subway", "starbucks",
-  "dm", "billa", "spar", "hofer", "lidl", "aldi", "merkur", "penny",
-  "h&m", "zara", "c&a", "new yorker", "primark", "decathlon",
-  "media markt", "saturn", "libro", "thalia", "müller",
-]);
-
-const DEFAULT_NEGATIVE_FILTERS = {
-  hideChains: false,
-  hideUnpaidInternships: false,
-  minHourlyRate: null,
-  maxCommuteMinutes: null,
-};
 
 const STATUS_GROUPS = [
   { key: "interviewing", label: "Gespräch",    dot: "#7c7df0" },
@@ -122,129 +107,7 @@ function timeAgoShort(input) {
 }
 
 
-/**
- * Pick the single most urgent saved job to render as the Heute-Karte.
- * Priority: overdue/near deadline → applied 10+ days no response → interview.
- *
- * @param {Array<object>} jobs
- * @param {Set<number>} mutedIds
- * @returns {{ job: object, action: string, sub: string } | null}
- */
-function passesNegativeFilters(job, filters) {
-  if (!job || !filters) return true;
-  const company = (job.company || "").toLowerCase().trim();
-  if (filters.hideChains && CHAIN_NAMES.has(company)) return false;
-  if (filters.hideUnpaidInternships && job.category === "praktikum" && !job.salary_text) return false;
-  if (filters.minHourlyRate && job.salary_text) {
-    const match = job.salary_text.match(/(\d+[.,]?\d*)\s*€?\s*\/(?:h|std)/i);
-    if (match) {
-      const rate = parseFloat(match[1].replace(",", "."));
-      if (!Number.isNaN(rate) && rate < filters.minHourlyRate) return false;
-    }
-  }
-  return true;
-}
-
-function pickHeuteAction(jobs, mutedIds) {
-  const candidates = jobs.filter((j) =>
-    !mutedIds.has(j.id) && j.status !== "offered" && j.status !== "rejected",
-  );
-
-  const byDeadline = candidates
-    .map((j) => ({ j, d: daysUntil(j.deadline || j.expires_at) }))
-    .filter((x) => x.d !== null && x.d <= 3)
-    .sort((a, b) => a.d - b.d);
-  if (byDeadline.length) {
-    const { j, d } = byDeadline[0];
-    return {
-      job: j,
-      action: j.status === "bookmarked" ? "Bewerbung schreiben." : "Schritt erledigen.",
-      sub: d < 0
-        ? `Frist vor ${Math.abs(d)} Tagen abgelaufen.`
-        : d === 0 ? "Frist heute." : `Frist in ${d} ${d === 1 ? "Tag" : "Tagen"}.`,
-    };
-  }
-
-  const stale = candidates
-    .filter((j) => j.status === "applied")
-    .map((j) => ({ j, days: daysSince(j.updated_at || j.created_at) }))
-    .filter((x) => x.days !== null && x.days >= 10)
-    .sort((a, b) => b.days - a.days);
-  if (stale.length) {
-    const { j, days } = stale[0];
-    return {
-      job: j,
-      action: "Nachfragen.",
-      sub: `${days} Tage seit deiner Bewerbung.`,
-    };
-  }
-
-  const interviews = candidates.filter((j) => j.status === "interviewing");
-  if (interviews.length) {
-    const best = [...interviews].sort((a, b) => (b.match_score ?? -1) - (a.match_score ?? -1))[0];
-    return {
-      job: best,
-      action: "Vorstellung vorbereiten.",
-      sub: best.match_score != null ? `${Math.round(best.match_score)} % Passung` : null,
-    };
-  }
-
-  return null;
-}
-
-function ToggleChip({ label, active, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-all border ${active ? "border-[var(--color-accent-500)]/40 text-[var(--color-accent-300)]" : "border-[var(--color-border-subtle)] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]"}`}
-      style={active ? { background: "rgba(124,125,240,0.10)" } : { background: "transparent" }}
-    >
-      <span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 ${active ? "bg-[var(--color-accent-500)]" : "bg-[var(--color-fg-faint)]"}`} />
-      {label}
-    </button>
-  );
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-/**
- * HeuteCard — prominent serif action card at the top of the list.
- */
-function HeuteCard({ heute, onOpen }) {
-  const { job, action, sub } = heute;
-  const company = job.company || job.role || "Stelle";
-  const roleName = company !== (job.role || "") ? (job.role || "") : "";
-  const meta = [company, roleName].filter(Boolean).join(" \u00b7 ");
-  return (
-    <div
-      className="overflow-hidden"
-      style={{ background: C.surface1, border: `1px solid ${C.line}`, borderRadius: 12, display: "grid", gridTemplateColumns: "3px 1fr" }}
-    >
-      <div style={{ background: "#fbbf24" }} />
-      <div className="flex flex-col gap-3 px-5 py-[18px]">
-        <div className="min-w-0">
-          <p className="text-[11.5px] mb-1.5 truncate" style={{ color: C.inkDim }}>
-            <strong style={{ color: C.inkMuted, fontWeight: 500 }}>{meta}</strong>
-            {sub ? ` \u2014 ${sub}` : ""}
-          </p>
-          <p className="text-[19px] sm:text-[22px] leading-[1.2]" style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: C.ink, letterSpacing: "-0.015em" }}>
-            {action}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onOpen(job.id)}
-          className="self-start text-[12.5px] font-bold px-4 py-2 rounded-lg transition-all hover:-translate-y-px"
-          style={{ background: "#fbbf24", color: "#000", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-        >
-          Stelle öffnen →
-        </button>
-      </div>
-    </div>
-  );
-}
-
 
 /**
  * SectionLabel — minimal flat section header: dot · LABEL · count badge · hairline.
@@ -274,9 +137,8 @@ function SectionLabel({ label, count, dot, collapsible, collapsed, onToggle }) {
 /**
  * ThreadRow — flat grid row: 2px accent bar · content · meta.
  * Supports multi-select via Shift+click (desktop) or long-press (mobile).
- * Mobile-only swipe: left = mark applied, right = mark rejected.
  */
-function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSelect, selectMode, onStatusChange }) {
+function ThreadRow({ job, muted = false, isFirst = false, onOpen, onStatusChange }) {
   const role     = job.role || job.title || "Stelle";
   const company  = job.company || "";
   const location = job.location ? job.location.split(",")[0] : null;
@@ -294,45 +156,10 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSe
   const matchBg = matchScore !== null
     ? (matchScore >= 80 ? "rgba(52,211,153,0.13)" : matchScore >= 65 ? "rgba(45,212,191,0.11)" : matchScore >= 45 ? "rgba(148,163,184,0.09)" : "rgba(82,82,91,0.06)") : null;
 
-  const longPressRef = useRef(null);
-  const touchStartRef = useRef(null);
-
-  const handlePointerDown = () => {
-    longPressRef.current = setTimeout(() => { onSelect(job.id, true); }, 500);
-  };
-  const handlePointerUp = () => { clearTimeout(longPressRef.current); };
-
-  const onTouchStart = (e) => {
-    const t = e.changedTouches[0];
-    touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
-  };
-
-  const onTouchEnd = (e) => {
-    if (!touchStartRef.current || !onStatusChange) return;
-    const start = touchStartRef.current;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    const dt = Date.now() - start.t;
-    if (dt < 400 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) {
-        onStatusChange(job.id, "applied");
-      } else {
-        onStatusChange(job.id, "rejected");
-      }
-    }
-    touchStartRef.current = null;
-  };
-
   return (
     <div
-      className={`group grid cursor-pointer transition-colors hover:bg-white/[0.03] ${muted ? "opacity-40" : ""} ${selected ? "bg-white/[0.04]" : ""}`}
-      style={{ gridTemplateColumns: selectMode ? "2px 40px minmax(0, 1fr) auto" : "2px minmax(0, 1fr) auto", borderTop: isFirst ? "none" : `1px solid ${C.lineSubtle}` }}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
+      className={`group grid cursor-pointer transition-colors hover:bg-white/[0.03] ${muted ? "opacity-40" : ""}`}
+      style={{ gridTemplateColumns: "2px minmax(0, 1fr) auto", borderTop: isFirst ? "none" : `1px solid ${C.lineSubtle}` }}
     >
       <div
         className="self-stretch transition-opacity opacity-[0.22] group-hover:opacity-90"
@@ -340,23 +167,10 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSe
         role="img"
         aria-label={`Status: ${statusLabel}`}
       />
-      {selectMode && (
-        <div className="flex items-center justify-center">
-          <div
-            className={`w-[18px] h-[18px] rounded border ${selected ? "border-[var(--color-accent-400)] bg-[var(--color-accent-400)]" : "border-[var(--color-border)]"} flex items-center justify-center transition-colors`}
-          >
-            {selected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
-          </div>
-        </div>
-      )}
       <button
         type="button"
         aria-label={`${role} bei ${company || "Unbekannt"} — ${statusLabel}`}
-        onClick={(e) => {
-          if (selectMode) { onSelect(job.id); return; }
-          if (e.shiftKey) { onSelect(job.id, true); return; }
-          onOpen();
-        }}
+        onClick={() => onOpen()}
         className="min-w-0 text-left px-3 py-3 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent-400)] rounded-sm"
       >
         <p className="text-[13.5px] font-semibold leading-snug truncate" style={{ color: C.ink }}>{role}</p>
@@ -535,20 +349,6 @@ export default function JobsPage() {
     return FILTER_CHIPS.some((c) => c.key === s) ? s : "alle";
   });
 
-  // Group by status, sorted by most recently updated
-  const [sortBy, setSortBy] = useState(() => {
-    const s = searchParams.get("sort");
-    return s === "score" ? "score" : "date";
-  });
-
-  const [negativeFilters, setNegativeFilters] = useState(() => ({
-    ...DEFAULT_NEGATIVE_FILTERS,
-    ...(loadStored(NEGATIVE_FILTERS_KEY) || {}),
-  }));
-  useEffect(() => {
-    saveStored(NEGATIVE_FILTERS_KEY, negativeFilters);
-  }, [negativeFilters]);
-
   const setFilter = (key) => {
     setActiveFilter(key);
     const next = new URLSearchParams(searchParams);
@@ -557,86 +357,21 @@ export default function JobsPage() {
     setSearchParams(next, { replace: true });
   };
 
-  const setSort = (s) => {
-    setSortBy(s);
-    const next = new URLSearchParams(searchParams);
-    if (s === "date") next.delete("sort");
-    else next.set("sort", s);
-    setSearchParams(next, { replace: true });
-  };
-
-  const visibleJobs = useMemo(() => savedJobs.filter((j) => passesNegativeFilters(j, negativeFilters)), [savedJobs, negativeFilters]);
-
   const grouped = useMemo(() => {
     const out = { interviewing: [], offered: [], applied: [], bookmarked: [], rejected: [] };
-    visibleJobs.forEach((j) => {
+    savedJobs.forEach((j) => {
       const key = j.status in out ? j.status : "bookmarked";
       out[key].push(j);
     });
     Object.values(out).forEach((arr) =>
       arr.sort((a, b) => {
-        if (sortBy === "score") {
-          const sa = b.match_score ?? -1;
-          const sb = a.match_score ?? -1;
-          return sa - sb;
-        }
         const da = new Date(a.updated_at || a.created_at).getTime() || 0;
         const db = new Date(b.updated_at || b.created_at).getTime() || 0;
         return db - da;
       }),
     );
     return out;
-  }, [visibleJobs, sortBy]);
-
-  const heute = useMemo(() => pickHeuteAction(visibleJobs, mutedIds), [visibleJobs, mutedIds]);
-
-  // ── Multi-select for mass delete ────────────────────────────────────────────
-  const [selectedIds, setSelectedIds] = useState(() => new Set());
-  const isSelectMode = selectedIds.size > 0;
-
-  const enterSelectMode = (jobId) => {
-    setSelectedIds(new Set([jobId]));
-  };
-  const toggleSelect = (jobId, forceEnter = false) => {
-    if (forceEnter && !isSelectMode) { enterSelectMode(jobId); return; }
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
-      return next;
-    });
-  };
-  const exitSelectMode = () => setSelectedIds(new Set());
-
-  useEffect(() => {
-    if (!isSelectMode) return;
-    const onKey = (e) => { if (e.key === "Escape") exitSelectMode(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [isSelectMode]);
-
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (ids) => {
-      await Promise.allSettled(ids.map((id) => jobApi.delete(id)));
-    },
-    onMutate: async (ids) => {
-      await qc.cancelQueries({ queryKey: ["jobs"] });
-      const prev = qc.getQueryData(["jobs"]);
-      const idSet = new Set(ids);
-      qc.setQueryData(["jobs"], (old = []) => old.filter((j) => !idSet.has(j.id)));
-      return { prev };
-    },
-    onSuccess: (_data, ids) => {
-      const noun = ids.length === 1 ? "Stelle" : "Stellen";
-      toast.success(`${ids.length} ${noun} gelöscht`);
-      exitSelectMode();
-      qc.invalidateQueries({ queryKey: ["jobs"], exact: true });
-    },
-    onError: (err, _ids, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["jobs"], ctx.prev);
-      toast.error(getApiErrorMessage(err, "Löschen fehlgeschlagen"));
-    },
-  });
+  }, [savedJobs]);
 
   const scrollSaveRef = useRef(false);
   useEffect(() => {
@@ -763,69 +498,8 @@ export default function JobsPage() {
               );
             })}
           </div>
-          <button
-            type="button"
-            onClick={() => setSort(sortBy === "date" ? "score" : "date")}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all flex-shrink-0"
-            style={sortBy === "score"
-              ? { background: "rgba(124,125,240,0.14)", border: "1px solid rgba(124,125,240,0.35)", color: "#a5b4fc" }
-              : { background: "transparent", border: `1px solid ${C.lineSubtle}`, color: C.inkDim }}
-          >
-            <ArrowUpDown className="w-3 h-3" />
-            {sortBy === "score" ? "Passung" : "Datum"}
-          </button>
         </div>
       )}
-
-      {/* ── Negative filters ─────────────────────────────────────────── */}
-      {total > 0 && (
-        <details className="group">
-          <summary className="inline-flex items-center gap-1.5 cursor-pointer list-none text-[11.5px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors select-none">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent-500)]" style={{ opacity: Object.values(negativeFilters).some(Boolean) ? 1 : 0 }} />
-            Filter
-            <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <ToggleChip
-              label="Keine Ketten"
-              active={negativeFilters.hideChains}
-              onClick={() => setNegativeFilters((p) => ({ ...p, hideChains: !p.hideChains }))}
-            />
-            <ToggleChip
-              label="Nur bezahlte Praktika"
-              active={negativeFilters.hideUnpaidInternships}
-              onClick={() => setNegativeFilters((p) => ({ ...p, hideUnpaidInternships: !p.hideUnpaidInternships }))}
-            />
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-[var(--color-border-subtle)] text-[11.5px]">
-              <span className="text-[var(--color-fg-dim)]">Min. €/h</span>
-              <input
-                type="number"
-                min="0"
-                step="0.5"
-                value={negativeFilters.minHourlyRate ?? ""}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setNegativeFilters((p) => ({ ...p, minHourlyRate: v ? parseFloat(v) : null }));
-                }}
-                className="w-12 bg-transparent text-[var(--color-fg)] text-right outline-none tabular-nums"
-                placeholder="—"
-              />
-            </div>
-            {Object.values(negativeFilters).some((v) => v !== null && v !== false) && (
-              <button
-                type="button"
-                onClick={() => setNegativeFilters(DEFAULT_NEGATIVE_FILTERS)}
-                className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] underline underline-offset-2"
-              >
-                Zurücksetzen
-              </button>
-            )}
-          </div>
-        </details>
-      )}
-
-      {/* ── Urgent card ─────────────────────────────────────────────── */}
-      {heute ? <HeuteCard heute={heute} onOpen={openJob} /> : null}
 
       {/* ── Loading / Empty / Lists ─────────────────────────────────── */}
       {savedFetching && total === 0 ? (
@@ -862,9 +536,6 @@ export default function JobsPage() {
                     isFirst={i === 0}
                     muted={mutedIds.has(job.id)}
                     onOpen={() => openJob(job.id)}
-                    selected={selectedIds.has(job.id)}
-                    onSelect={toggleSelect}
-                    selectMode={isSelectMode}
                     onStatusChange={handleStatusChange}
                   />
                 ))}
@@ -889,9 +560,6 @@ export default function JobsPage() {
                   isFirst={i === 0}
                   muted={mutedIds.has(job.id)}
                   onOpen={() => openJob(job.id)}
-                  selected={selectedIds.has(job.id)}
-                  onSelect={toggleSelect}
-                  selectMode={isSelectMode}
                   onStatusChange={handleStatusChange}
                 />
               ))}
@@ -927,30 +595,6 @@ export default function JobsPage() {
         </div>
       </BottomSheet>
 
-      {/* ── Floating mass-delete toolbar ───────────────────────────── */}
-      {isSelectMode && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-          <span className="text-[13px] text-[var(--color-fg-muted)] tabular-nums">
-            {selectedIds.size} {selectedIds.size === 1 ? "Stelle" : "Stellen"} ausgewählt
-          </span>
-          <button
-            type="button"
-            onClick={exitSelectMode}
-            className="text-[12.5px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] px-2 py-1 rounded-md transition-colors"
-          >
-            Abbrechen
-          </button>
-          <button
-            type="button"
-            disabled={bulkDeleteMutation.isPending}
-            onClick={() => bulkDeleteMutation.mutate(Array.from(selectedIds))}
-            className="inline-flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[12.5px] font-semibold transition-all bg-[var(--color-error)] text-white hover:opacity-90 disabled:opacity-50"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Löschen
-          </button>
-        </div>
-      )}
     </div>
   );
 }
