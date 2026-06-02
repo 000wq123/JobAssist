@@ -61,6 +61,38 @@ jobs:
       - name: Run pytest
         run: python -m pytest tests
 
+  backend-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: test-secret-key-not-for-production
+      DEBUG: "true"
+      DATABASE_URL: sqlite+aiosqlite:///./smoke.db
+      STRIPE_SECRET_KEY: ""
+      GROQ_API_KEY: ""
+      ADZUNA_APP_ID: ""
+      ADZUNA_APP_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Start app in background
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          sleep 4
+      - name: Smoke /health
+        run: |
+          curl -fsS http://127.0.0.1:8000/health | jq -e '.status == "ok"'
+      - name: Smoke /health/dependencies
+        run: |
+          curl -fsS 'http://127.0.0.1:8000/health/dependencies?deep=true' | jq -e '.ready == true or .ready == false'
+
   backend-audit:
     runs-on: ubuntu-latest
     continue-on-error: true

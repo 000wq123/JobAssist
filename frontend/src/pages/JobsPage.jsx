@@ -21,6 +21,7 @@ import { DARK } from "../utils/colors";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Skeleton from "../components/ui/Skeleton";
+import BottomSheet from "../components/ui/BottomSheet";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -28,20 +29,28 @@ const MUTED_KEY = "muted-jobs";
 const COLLAPSED_KEY = "collapsed-groups";
 
 const STATUS_GROUPS = [
-  { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0" },
+  { key: "interviewing", label: "Gespräch",    dot: "#7c7df0" },
   { key: "offered",      label: "Angebot",     dot: "#4ade80" },
-  { key: "applied",      label: "Beworben",    dot: "#60a5fa" },
-  { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b" },
+  { key: "applied",      label: "Antwort ausständig", dot: "#60a5fa" },
+  { key: "bookmarked",   label: "Bewerben",    dot: "#f59e0b" },
+];
+
+const ALL_STATUSES = [
+  { key: "bookmarked", label: "Bewerben", dot: "#f59e0b" },
+  { key: "applied", label: "Antwort ausständig", dot: "#60a5fa" },
+  { key: "interviewing", label: "Gespräch", dot: "#7c7df0" },
+  { key: "offered", label: "Angebot", dot: "#4ade80" },
+  { key: "rejected", label: "Erledigt", dot: "#52525b" },
 ];
 
 const C = { ...DARK, surface3: "#27272a", inkFaint: "#52525b" };
 
 const FILTER_CHIPS = [
   { key: "alle",         label: "Alle",        dot: "#71717a", activeBg: "#18181b",                    activeBorder: "rgba(255,255,255,0.10)" },
-  { key: "interviewing", label: "Im Gespräch", dot: "#7c7df0", activeBg: "rgba(124,125,240,0.10)",    activeBorder: "rgba(124,125,240,0.30)" },
+  { key: "interviewing", label: "Gespräch",    dot: "#7c7df0", activeBg: "rgba(124,125,240,0.10)",    activeBorder: "rgba(124,125,240,0.30)" },
   { key: "offered",      label: "Angebot",     dot: "#4ade80", activeBg: "rgba(74,222,128,0.08)",     activeBorder: "rgba(74,222,128,0.25)" },
-  { key: "applied",      label: "Beworben",    dot: "#60a5fa", activeBg: "rgba(96,165,250,0.08)",     activeBorder: "rgba(96,165,250,0.25)" },
-  { key: "bookmarked",   label: "Gemerkt",     dot: "#f59e0b", activeBg: "rgba(245,158,11,0.08)",     activeBorder: "rgba(245,158,11,0.30)" },
+  { key: "applied",      label: "Antwort ausständig", dot: "#60a5fa", activeBg: "rgba(96,165,250,0.08)",     activeBorder: "rgba(96,165,250,0.25)" },
+  { key: "bookmarked",   label: "Bewerben",    dot: "#f59e0b", activeBg: "rgba(245,158,11,0.08)",     activeBorder: "rgba(245,158,11,0.30)" },
   { key: "rejected",     label: "Erledigt",    dot: "#52525b", activeBg: "rgba(82,82,91,0.10)",      activeBorder: "rgba(82,82,91,0.25)" },
 ];
 
@@ -221,8 +230,9 @@ function SectionLabel({ label, count, dot, collapsible, collapsed, onToggle }) {
 /**
  * ThreadRow — flat grid row: 2px accent bar · content · meta.
  * Supports multi-select via Shift+click (desktop) or long-press (mobile).
+ * Mobile-only swipe: left = mark applied, right = mark rejected.
  */
-function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSelect, selectMode }) {
+function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSelect, selectMode, onStatusChange }) {
   const role     = job.role || job.title || "Stelle";
   const company  = job.company || "";
   const location = job.location ? job.location.split(",")[0] : null;
@@ -241,11 +251,34 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSe
     ? (matchScore >= 80 ? "rgba(52,211,153,0.13)" : matchScore >= 65 ? "rgba(45,212,191,0.11)" : matchScore >= 45 ? "rgba(148,163,184,0.09)" : "rgba(82,82,91,0.06)") : null;
 
   const longPressRef = useRef(null);
+  const touchStartRef = useRef(null);
 
   const handlePointerDown = () => {
     longPressRef.current = setTimeout(() => { onSelect(job.id, true); }, 500);
   };
   const handlePointerUp = () => { clearTimeout(longPressRef.current); };
+
+  const onTouchStart = (e) => {
+    const t = e.changedTouches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+
+  const onTouchEnd = (e) => {
+    if (!touchStartRef.current || !onStatusChange) return;
+    const start = touchStartRef.current;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const dt = Date.now() - start.t;
+    if (dt < 400 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) {
+        onStatusChange(job.id, "applied");
+      } else {
+        onStatusChange(job.id, "rejected");
+      }
+    }
+    touchStartRef.current = null;
+  };
 
   return (
     <div
@@ -254,6 +287,8 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSe
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       <div
         className="self-stretch transition-opacity opacity-[0.22] group-hover:opacity-90"
@@ -288,6 +323,17 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSe
           <span className="text-[10.5px] font-bold tabular-nums px-1.5 py-0.5 rounded"
             style={{ color: matchColor, background: matchBg }}>{matchScore}%</span>
         )}
+        {/* Mobile-only status chip — opens bottom sheet */}
+        {onStatusChange && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onStatusChange(job.id, null); }}
+            className="sm:hidden text-[10px] font-medium px-1.5 py-0.5 rounded border"
+            style={{ borderColor: statusDot + "55", color: statusDot, background: statusDot + "15" }}
+          >
+            {statusLabel}
+          </button>
+        )}
         {timeLabel && (
           <span className="text-[11px] tabular-nums" style={{ color: C.inkFaint, minWidth: 36, textAlign: "right" }}>{timeLabel}</span>
         )}
@@ -300,10 +346,10 @@ function ThreadRow({ job, muted = false, isFirst = false, onOpen, selected, onSe
 function FilterEmptyState({ filter }) {
   const copy = {
     alle: { title: "Keine Stellen", desc: "Speichere eine Stelle, um sie hier zu sehen." },
-    interviewing: { title: "Keine Stellen im Gespräch", desc: "Wenn du dich beworben hast, markiere die Stelle als Beworben." },
+    interviewing: { title: "Keine Gespräche", desc: "Markiere eine Bewerbung als Gespräch, sobald du eingeladen wirst." },
     offered: { title: "Noch kein Angebot", desc: "Bewirb dich auf eine gespeicherte Stelle." },
-    applied: { title: "Noch keine Bewerbungen", desc: "Speichere eine Stelle und markiere sie als Beworben." },
-    bookmarked: { title: "Keine gemerkten Stellen", desc: "Finde Stellen über Empfehlungen oder eigene Suche." },
+    applied: { title: "Noch keine Antworten ausständig", desc: "Speichere eine Stelle und markiere sie als Beworben." },
+    bookmarked: { title: "Nichts zu bewerben", desc: "Finde Stellen über Empfehlungen oder eigene Suche." },
     rejected: { title: "Noch keine erledigten Stellen", desc: "Markiere abgelehnte oder zurückgezogene Stellen hier." },
   };
   const { title, desc } = copy[filter] || copy.alle;
@@ -566,6 +612,36 @@ export default function JobsPage() {
 
   const [showDone, setShowDone] = useState(false);
 
+  // ── Mobile status bottom sheet ────────────────────────────────────────────
+  const [statusSheet, setStatusSheet] = useState({ open: false, jobId: null });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }) => jobApi.updateStatus(id, status),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["jobs"] });
+      const prev = qc.getQueryData(["jobs"]);
+      qc.setQueryData(["jobs"], (old = []) =>
+        old.map((j) => (j.id === id ? { ...j, status, updated_at: new Date().toISOString() } : j))
+      );
+      return { prev };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["jobs"], ctx.prev);
+      toast.error(getApiErrorMessage(err, "Status ändern fehlgeschlagen"));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jobs"], exact: true });
+    },
+  });
+
+  const handleStatusChange = (jobId, nextStatus) => {
+    if (!nextStatus) {
+      setStatusSheet({ open: true, jobId });
+      return;
+    }
+    statusMutation.mutate({ id: jobId, status: nextStatus });
+  };
+
   const visibleGroups = activeFilter === "alle"
     ? STATUS_GROUPS
     : STATUS_GROUPS.filter((g) => g.key === activeFilter);
@@ -688,6 +764,7 @@ export default function JobsPage() {
                     selected={selectedIds.has(job.id)}
                     onSelect={toggleSelect}
                     selectMode={isSelectMode}
+                    onStatusChange={handleStatusChange}
                   />
                 ))}
               </div>
@@ -714,6 +791,7 @@ export default function JobsPage() {
                   selected={selectedIds.has(job.id)}
                   onSelect={toggleSelect}
                   selectMode={isSelectMode}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>
@@ -723,6 +801,30 @@ export default function JobsPage() {
 
         </div>
       )}
+
+      {/* ── Mobile status bottom sheet ───────────────────────────── */}
+      <BottomSheet
+        open={statusSheet.open}
+        onClose={() => setStatusSheet({ open: false, jobId: null })}
+        title="Status ändern"
+      >
+        <div className="flex flex-col gap-1">
+          {ALL_STATUSES.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => {
+                handleStatusChange(statusSheet.jobId, s.key);
+                setStatusSheet({ open: false, jobId: null });
+              }}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] text-left transition-colors hover:bg-white/[0.04]"
+            >
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+              <span style={{ color: C.ink }}>{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
 
       {/* ── Floating mass-delete toolbar ───────────────────────────── */}
       {isSelectMode && (

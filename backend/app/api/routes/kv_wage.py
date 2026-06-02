@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.security import get_current_user
 from app.models.kv_wage import KvWage
 from app.models.user import User
@@ -25,14 +26,14 @@ router = APIRouter()
 # Austrian statutory minimum + typical KV floors for teen-relevant categories.
 # Stored as integer euro-cents.  Year = 2025.
 _KV_SEED = [
-    # category, region, year, kollektivvertrag, hourly_min_cent, hourly_max_cent
-    ("teilzeit",    "AT", 2025, "KV Angestellte",       1209, 1650),
-    ("vollzeit",    "AT", 2025, "KV Angestellte",       1209, 1650),
-    ("samstagsjob", "AT", 2025, "KV Handel",            1209, 1450),
-    ("geringfügig", "AT", 2025, "KV Angestellte",       1209, 1450),
-    ("lehre",       "AT", 2025, "KV Lehre",               375,  800),
-    ("praktikum",   "AT", 2025, "Gesetzliches Minimum", 1209, 1450),
-    ("ferialjob",   "AT", 2025, "KV Handel",            1050, 1209),
+    # category, region, year, kollektivvertrag, hourly_min_cent, hourly_max_cent, source_url
+    ("teilzeit",    "AT", 2025, "KV Angestellte",       1209, 1650, "https://www.wko.at/kollektivvertrag/kollektivvertrag-handel-angestellte-2025"),
+    ("vollzeit",    "AT", 2025, "KV Angestellte",       1209, 1650, "https://www.wko.at/kollektivvertrag/kollektivvertrag-handel-angestellte-2025"),
+    ("samstagsjob", "AT", 2025, "KV Handel",            1209, 1450, "https://www.wko.at/kollektivvertrag/kollektivvertrag-handel-angestellte-2025"),
+    ("geringfügig", "AT", 2025, "KV Angestellte",       1209, 1450, "https://www.wko.at/kollektivvertrag/kollektivvertrag-handel-angestellte-2025"),
+    ("lehre",       "AT", 2025, "KV Lehre",               375,  800, "https://www.wko.at/oe/kollektivvertrag/gehaltstabelle-angestellte-handel-2025.pdf"),
+    ("praktikum",   "AT", 2025, "Gesetzliches Minimum", 1209, 1450, "https://www.wko.at/oe/handel/pflichtpraktikum-im-handel"),
+    ("ferialjob",   "AT", 2025, "KV Handel",            1050, 1209, "https://www.wko.at/kollektivvertrag/kollektivvertrag-handel-angestellte-2025"),
 ]
 
 
@@ -51,6 +52,7 @@ async def _ensure_seed(db: AsyncSession) -> None:
                 kollektivvertrag=row[3],
                 hourly_min_cent=row[4],
                 hourly_max_cent=row[5],
+                source_url=row[6],
             )
         )
     await db.commit()
@@ -77,6 +79,7 @@ async def list_kv_wages(
     result = await db.execute(stmt)
     rows = result.scalars().all()
 
+    default_url = (settings.KV_DEFAULT_SOURCE_URL or "").strip() or None
     return [
         {
             "category": r.category,
@@ -85,6 +88,7 @@ async def list_kv_wages(
             "kollektivvertrag": r.kollektivvertrag,
             "hourly_min": r.hourly_min_cent / 100,
             "hourly_max": (r.hourly_max_cent / 100) if r.hourly_max_cent else None,
+            "source_url": r.source_url or default_url,
         }
         for r in rows
     ]
@@ -110,6 +114,7 @@ async def get_kv_wage(
     if not row:
         raise HTTPException(status_code=404, detail="KV-Daten nicht gefunden")
 
+    default_url = (settings.KV_DEFAULT_SOURCE_URL or "").strip() or None
     return {
         "category": row.category,
         "region": row.region,
@@ -117,4 +122,5 @@ async def get_kv_wage(
         "kollektivvertrag": row.kollektivvertrag,
         "hourly_min": row.hourly_min_cent / 100,
         "hourly_max": (row.hourly_max_cent / 100) if row.hourly_max_cent else None,
+        "source_url": row.source_url or default_url,
     }

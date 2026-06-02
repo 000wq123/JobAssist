@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import useFocusTrap from "../../hooks/useFocusTrap";
 
 /**
  * BottomSheet — modal sheet that slides up from the bottom on mobile and
@@ -15,6 +16,9 @@ import { createPortal } from "react-dom";
  * @param {React.ReactNode} props.children
  */
 export default function BottomSheet({ open, onClose, title, children }) {
+  const sheetRef = useRef(null);
+  useFocusTrap(open, sheetRef);
+
   // Close on Escape; lock body scroll when open.
   useEffect(() => {
     if (!open) return;
@@ -46,6 +50,7 @@ export default function BottomSheet({ open, onClose, title, children }) {
 
       {/* Sheet */}
       <div
+        ref={sheetRef}
         className="
           relative w-full sm:w-[420px] sm:max-w-[92vw]
           bg-[var(--color-bg-elev-2)] border-t sm:border border-[var(--color-border)]

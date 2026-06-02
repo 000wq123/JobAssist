@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
+import useFocusTrap from "../hooks/useFocusTrap";
 
 const STORAGE_KEY = "jobassist_onboarding_done_v1";
 const SERIF = "'Instrument Serif', ui-serif, Georgia, serif";
@@ -52,6 +53,8 @@ function OnboardingModalInner({ onDone }) {
   const [idx, setIdx] = useState(0);
   const slide = SLIDES[idx];
   const isLast = idx === SLIDES.length - 1;
+  const modalRef = useRef(null);
+  useFocusTrap(true, modalRef);
 
   const close = () => {
     markOnboardingDone();
@@ -75,6 +78,7 @@ function OnboardingModalInner({ onDone }) {
       onClick={(e) => { if (e.target === e.currentTarget) close(); }}
     >
       <div
+        ref={modalRef}
         className="relative w-full max-w-[480px] rounded-2xl flex flex-col"
         style={{
           background: "#111113",

@@ -202,6 +202,12 @@ class TestSecretRedactingFilter:
         record = json.loads(stream.getvalue())
         assert record["authorization"] == REDACTED
 
+    def test_redacts_cookie_in_extra(self, captured_logger):
+        logger, stream = captured_logger
+        logger.info("request", extra={"cookie": "ja_refresh=secret; session=xyz"})
+        record = json.loads(stream.getvalue())
+        assert record["cookie"] == REDACTED
+
     def test_does_not_drop_request_id(self, captured_logger):
         from app.core.logging import set_request_id, reset_request_id
 

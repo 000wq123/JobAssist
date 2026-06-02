@@ -201,11 +201,11 @@ function pickHeroAnchor(ctx) {
 }
 
 const STATUS_BUCKETS = [
-  { key: "bookmarked",   label: "Gemerkt",     match: (s) => !s || s === "bookmarked" },
-  { key: "applied",      label: "Beworben",    match: (s) => s === "applied" },
-  { key: "interviewing", label: "Gespräch",    match: (s) => s === "interviewing" },
-  { key: "offered",      label: "Angebot",     match: (s) => s === "offered" },
-  { key: "rejected",     label: "Erledigt",    match: (s) => s === "rejected" },
+  { key: "bookmarked",   label: "Bewerben",       match: (s) => !s || s === "bookmarked" },
+  { key: "applied",      label: "Antwort ausständig", match: (s) => s === "applied" },
+  { key: "interviewing", label: "Gespräch",       match: (s) => s === "interviewing" },
+  { key: "offered",      label: "Angebot",        match: (s) => s === "offered" },
+  { key: "rejected",     label: "Erledigt",       match: (s) => s === "rejected" },
 ];
 
 const DISMISSED_KEY = "heute_dismissed_v1";
@@ -553,37 +553,39 @@ export default function DashboardPage() {
       )}
 
       {/* ── DEINE LISTE (full width) ──────────────────────────────────────── */}
-      <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: C.inkDim }}>Deine Liste</p>
-          <button type="button" onClick={() => navigate("/jobs")} className="text-[12px] hover:underline" style={{ color: C.inkMuted }}>
-            Alle ansehen →
-          </button>
-        </div>
-        <div className="grid grid-cols-5 rounded-xl overflow-hidden overflow-x-auto" style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}>
-          {STATUS_BUCKETS.map((b) => (
-            <button
-              key={b.key}
-              type="button"
-              onClick={() => navigate(`/jobs?status=${b.key}`)}
-              className="px-3 py-4 sm:px-5 sm:py-5 text-left transition-colors hover:bg-white/[0.05]"
-            >
-              <p
-                className="text-[22px] sm:text-[28px] tabular-nums leading-none font-semibold"
-                style={{ color: statusCounts[b.key] > 0 ? C.ink : C.inkMuted }}
-              >
-                {statusCounts[b.key] ?? 0}
-              </p>
-              <p className="mt-2 text-[10px] sm:text-[12px]" style={{ color: C.inkMuted }}>{b.label}</p>
-              {lastTouched[b.key] && (
-                <p className="hidden sm:block mt-0.5 text-[11px] tabular-nums truncate whitespace-nowrap" style={{ color: C.inkFaint }}>
-                  {relativeShort(lastTouched[b.key], now)}
-                </p>
-              )}
+      {jobs.length > 0 && (
+        <section>
+          <div className="flex items-baseline justify-between mb-4">
+            <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: C.inkDim }}>Deine Liste</p>
+            <button type="button" onClick={() => navigate("/jobs")} className="text-[12px] hover:underline" style={{ color: C.inkMuted }}>
+              Alle ansehen →
             </button>
-          ))}
-        </div>
-      </section>
+          </div>
+          <div className="grid grid-cols-5 rounded-xl overflow-hidden overflow-x-auto" style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}>
+            {STATUS_BUCKETS.map((b) => (
+              <button
+                key={b.key}
+                type="button"
+                onClick={() => navigate(`/jobs?status=${b.key}`)}
+                className="px-3 py-4 sm:px-5 sm:py-5 text-left transition-colors hover:bg-white/[0.05]"
+              >
+                <p
+                  className="text-[22px] sm:text-[28px] tabular-nums leading-none font-semibold"
+                  style={{ color: statusCounts[b.key] > 0 ? C.ink : C.inkMuted }}
+                >
+                  {statusCounts[b.key] ?? 0}
+                </p>
+                <p className="mt-2 text-[10px] sm:text-[12px]" style={{ color: C.inkMuted }}>{b.label}</p>
+                {lastTouched[b.key] && (
+                  <p className="hidden sm:block mt-0.5 text-[11px] tabular-nums truncate whitespace-nowrap" style={{ color: C.inkFaint }}>
+                    {relativeShort(lastTouched[b.key], now)}
+                  </p>
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── WIDGETS (left) + ZULETZT AKTIV (right) ───────────────────────── */}
       {(jobs.length > 0 || jobsLoading) && (() => {
@@ -742,29 +744,31 @@ export default function DashboardPage() {
       {isEmpty && (
         <section className="rounded-2xl p-6 sm:p-8" style={{ background: C.surface1, border: `1px solid ${C.lineSubtle}` }}>
           <p className="text-[16px] font-medium leading-snug" style={{ color: C.ink }}>
-            Hier wird's lebendig, sobald du deine erste Stelle speicherst.
+            Noch keine Stellen gespeichert.
           </p>
           <p className="mt-2 text-[13px] max-w-md leading-relaxed" style={{ color: C.inkMuted }}>
-            Such dir eine Stelle, die dich interessiert
-            {hasResume ? "" : " — oder lade vorher deinen Lebenslauf hoch, damit die KI Matches berechnen kann"}.
+            {hasResume
+              ? "Such dir eine Stelle und speichere sie — dann hast du hier den Überblick."
+              : "Lade zuerst deinen Lebenslauf hoch, damit die KI passende Stellen finden kann."}
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/jobs")}
-              className="rounded-lg px-3.5 py-2 text-[13px] font-medium"
-              style={{ background: C.ink, color: C.bg }}
-            >
-              Stellen finden
-            </button>
-            {!hasResume && (
+            {!hasResume ? (
               <button
                 type="button"
                 onClick={() => navigate("/lebenslauf")}
                 className="rounded-lg px-3.5 py-2 text-[13px] font-medium"
-                style={{ border: `1px solid ${C.line}`, color: C.ink }}
+                style={{ background: C.ink, color: C.bg }}
               >
-                Lebenslauf hochladen
+                Lebenslauf anlegen
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate("/finden")}
+                className="rounded-lg px-3.5 py-2 text-[13px] font-medium"
+                style={{ background: C.ink, color: C.bg }}
+              >
+                Stelle finden
               </button>
             )}
           </div>

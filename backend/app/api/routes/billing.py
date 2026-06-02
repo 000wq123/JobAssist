@@ -327,6 +327,12 @@ async def _handle_invoice_paid(db: AsyncSession, invoice: dict):
                     customer_id, exc,
                 )
                 await db.rollback()
+                # Alert Sentry if configured so ops sees webhook retries quickly.
+                try:
+                    import sentry_sdk
+                    sentry_sdk.capture_exception(exc)
+                except Exception:
+                    pass
                 raise  # Let Stripe retry; the idempotency row was already rolled back.
 
     await db.commit()

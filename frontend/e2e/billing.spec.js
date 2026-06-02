@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem("access_token", "test-access-token");
+    sessionStorage.setItem("ja:access_token", "test-access-token");
     localStorage.setItem(
       "auth_user",
       JSON.stringify({

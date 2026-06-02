@@ -263,7 +263,6 @@ export const jobApi = {
   get: (id) => api.get(`/jobs/${id}`),
   delete: (id) => api.delete(`/jobs/${id}`),
   match: (jobId, resumeId) => api.post(`/jobs/${jobId}/match`, { resume_id: resumeId }),
-  generateMatch: (jobId, resumeId) => api.post(`/jobs/${jobId}/match`, { resume_id: resumeId }),
   generateCoverLetter: (jobId, resumeId, tone = "professional") =>
     api.post("/cover-letter/generate", { job_id: jobId, resume_id: resumeId, tone }),
   generateInterviewPrep: (jobId, resumeId, numQuestions = 10) =>

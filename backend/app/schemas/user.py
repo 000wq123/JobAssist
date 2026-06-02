@@ -8,7 +8,6 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., max_length=128)
     full_name: Optional[str] = Field(None, max_length=200)
-    fingerprint: Optional[str] = Field(None, max_length=200)  # browser fingerprint for abuse prevention
 
     @field_validator("password")
     @classmethod
@@ -27,7 +26,6 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-    fingerprint: Optional[str] = Field(None, max_length=200)
 
 
 class UserOut(BaseModel):

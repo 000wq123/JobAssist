@@ -66,6 +66,7 @@ export default function FindenPage() {
 
   // ─── Search state ───────────────────────────────────────────────
   const [searchTab, setSearchTab] = useState("recommended");
+  const [moreSource, setMoreSource] = useState(null);
   const [keywords, setKeywords] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("");
@@ -319,13 +320,15 @@ export default function FindenPage() {
             <p className="mt-1 text-[12.5px] text-[var(--color-fg-muted)]">
               {searchTab === "recommended"
                 ? "KI-Empfehlungen aus deinem Profil und Lebenslauf."
-                : searchTab === "jooble"
+                : searchTab === "more" && !moreSource
+                ? "Wähle eine Quelle, um dort zu suchen."
+                : searchTab === "jooble" || (searchTab === "more" && moreSource === "jooble")
                 ? "Jooble durchsucht karriere.at, stepstone.at und weitere Quellen."
-                : searchTab === "karriere"
+                : searchTab === "karriere" || (searchTab === "more" && moreSource === "karriere")
                 ? "Österreichs größte Jobbörse — direkt durchsuchen."
-                : searchTab === "willhaben"
+                : searchTab === "willhaben" || (searchTab === "more" && moreSource === "willhaben")
                 ? "Kleinanzeigen-Plattform — gut für Minijobs und Teilzeit."
-                : searchTab === "ams"
+                : searchTab === "ams" || (searchTab === "more" && moreSource === "ams")
                 ? "Arbeitsmarktservice — offizielle Stellen der Regierung."
                 : "Eigene Suche — Begriffe, Ort und Art der Stelle frei wählen."}
             </p>
@@ -334,13 +337,13 @@ export default function FindenPage() {
             items={[
               { value: "recommended", label: "Empfohlen", icon: Sparkles },
               { value: "custom",      label: "Eigene Suche", icon: Search },
-              { value: "karriere",    label: "karriere.at", icon: Building2 },
-              { value: "willhaben",   label: "willhaben", icon: ShoppingBag },
-              { value: "ams",         label: "AMS", icon: Landmark },
-              { value: "jooble",      label: "Jooble", icon: Globe },
+              { value: "more",        label: "Mehr Quellen", icon: Globe },
             ]}
-            value={searchTab}
-            onChange={setSearchTab}
+            value={searchTab === "more" || ["jooble","karriere","willhaben","ams"].includes(searchTab) ? "more" : searchTab}
+            onChange={(v) => {
+              if (v === "more") { setSearchTab("more"); setMoreSource(null); }
+              else { setSearchTab(v); }
+            }}
           />
         </header>
 
@@ -366,8 +369,33 @@ export default function FindenPage() {
                 </Button>
               </div>
             </div>
+          ) : searchTab === "more" && !moreSource ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { key: "jooble", label: "Jooble", icon: Globe, desc: "Viele Quellen auf einmal" },
+                { key: "karriere", label: "karriere.at", icon: Building2, desc: "Große Jobbörse" },
+                { key: "willhaben", label: "willhaben", icon: ShoppingBag, desc: "Minijobs & Teilzeit" },
+                { key: "ams", label: "AMS", icon: Landmark, desc: "Offizielle Stellen" },
+              ].map((src) => (
+                <button
+                  key={src.key}
+                  type="button"
+                  onClick={() => { setMoreSource(src.key); setSearchTab(src.key); }}
+                  className="flex flex-col items-start gap-2 p-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] hover:bg-white/[0.03] transition-colors text-left"
+                >
+                  <src.icon className="w-5 h-5" style={{ color: "var(--color-fg-muted)" }} />
+                  <span className="text-[13px] font-medium" style={{ color: "var(--color-fg)" }}>{src.label}</span>
+                  <span className="text-[11px]" style={{ color: "var(--color-fg-dim)" }}>{src.desc}</span>
+                </button>
+              ))}
+            </div>
           ) : searchTab === "jooble" ? (
             <form onSubmit={handleJoobleSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12">
+                <button type="button" onClick={() => { setSearchTab("more"); setMoreSource(null); }} className="text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors">
+                  ← Zurück zu Quellen
+                </button>
+              </div>
               <div className="col-span-12 sm:col-span-7">
                 <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
                 <Input
@@ -405,6 +433,11 @@ export default function FindenPage() {
             </form>
           ) : searchTab === "karriere" ? (
             <form onSubmit={handleKarriereSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12">
+                <button type="button" onClick={() => { setSearchTab("more"); setMoreSource(null); }} className="text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors">
+                  ← Zurück zu Quellen
+                </button>
+              </div>
               <div className="col-span-12 sm:col-span-7">
                 <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
                 <Input
@@ -442,6 +475,11 @@ export default function FindenPage() {
             </form>
           ) : searchTab === "willhaben" ? (
             <form onSubmit={handleWillhabenSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12">
+                <button type="button" onClick={() => { setSearchTab("more"); setMoreSource(null); }} className="text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors">
+                  ← Zurück zu Quellen
+                </button>
+              </div>
               <div className="col-span-12 sm:col-span-7">
                 <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
                 <Input
@@ -479,6 +517,11 @@ export default function FindenPage() {
             </form>
           ) : searchTab === "ams" ? (
             <form onSubmit={handleAmsSubmit} className="grid grid-cols-12 gap-3">
+              <div className="col-span-12">
+                <button type="button" onClick={() => { setSearchTab("more"); setMoreSource(null); }} className="text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors">
+                  ← Zurück zu Quellen
+                </button>
+              </div>
               <div className="col-span-12 sm:col-span-7">
                 <label className="block text-[11px] font-medium text-[var(--color-fg-muted)] mb-1">Suchbegriffe</label>
                 <Input

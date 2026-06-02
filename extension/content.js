@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const JOBASSIST_ORIGIN = 'https://jobassist.at';
+  const JOBASSIST_ORIGIN = 'https://jobassist.tech';
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Site-specific selectors

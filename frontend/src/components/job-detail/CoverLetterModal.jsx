@@ -2,10 +2,11 @@
  * Modal that displays a generated cover letter with copy/mailto/download.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Download, Mail, X } from "lucide-react";
 import toast from "react-hot-toast";
+import useFocusTrap from "../../hooks/useFocusTrap";
 import AIDisclosureBanner from "../AIDisclosureBanner";
 
 function escapeHtml(v) {
@@ -31,6 +32,8 @@ function parseJson(v) { try { return v ? JSON.parse(v) : null; } catch { return 
 
 export default function CoverLetterModal({ open, onClose, job }) {
   const [copied, setCopied] = useState(false);
+  const modalRef = useRef(null);
+  useFocusTrap(open, modalRef);
   if (!open || !job?.cover_letter) return null;
 
   const companyEmail = parseJson(job.research_data)?.contact_info?.email;
@@ -42,7 +45,10 @@ export default function CoverLetterModal({ open, onClose, job }) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
+      <div
+        ref={modalRef}
+        className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60"
+      >
         <div className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
           <h2 className="col-span-9 text-[14px] font-semibold tracking-tight text-[var(--color-fg)] truncate">
             Anschreiben{job.company ? ` · ${job.company}` : ""}

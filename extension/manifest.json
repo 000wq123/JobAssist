@@ -8,7 +8,7 @@
     "https://www.karriere.at/*",
     "https://www.willhaben.at/*",
     "https://jobs.ams.at/*",
-    "https://jobassist.at/*"
+    "https://jobassist.tech/*"
   ],
   "content_scripts": [
     {

@@ -86,7 +86,7 @@ export default function MatchCard({ score, feedbackJson, onCheckFit, onCheckFitP
           onClick={() => setWhyOpen((v) => !v)}
           className="flex items-center justify-between w-full px-5 py-3 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
         >
-          <span>{hasDetail ? "Was die KI in deinem Lebenslauf gefunden hat" : "Wie entsteht diese Zahl?"}</span>
+          <span>Warum diese Zahl?</span>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${whyOpen ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
 
@@ -128,7 +128,7 @@ export default function MatchCard({ score, feedbackJson, onCheckFit, onCheckFitP
               </div>
             ) : (
               <div className="px-5 pt-2 text-[var(--color-fg-dim)]">
-                <p>{resumeId ? "Berechne die Passung, um die vollständige Anforderungsanalyse zu sehen." : "Verknüpfe deinen Lebenslauf, damit die KI die Anforderungen prüfen kann."}</p>
+                <p>Die Zahl setzt sich aus 6 Anforderungen zusammen — je mehr dein Lebenslauf abdeckt, desto höher der Wert. Einzelheiten siehst du, nachdem du die Passung berechnet hast.</p>
               </div>
             )}
 

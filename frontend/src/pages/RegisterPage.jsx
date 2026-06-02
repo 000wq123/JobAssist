@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -20,25 +20,13 @@ export default function RegisterPage() {
   } = useForm();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const fingerprintRef = useRef(null);
   const login = useAuthStore((s) => s.login);
   const setUser = useAuthStore((s) => s.setUser);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    import("@fingerprintjs/fingerprintjs")
-      .then((FingerprintJS) => FingerprintJS.default.load())
-      .then((fp) => fp.get())
-      .then((result) => { fingerprintRef.current = result.visitorId; })
-      .catch(() => {});
-  }, []);
-
   const onSubmit = async (data) => {
     try {
-      const res = await authApi.register({
-        ...data,
-        fingerprint: fingerprintRef.current ?? null,
-      });
+      const res = await authApi.register(data);
       login(res.data.access_token, res.data.refresh_token);
       queryClient.clear();
       navigate("/dashboard");

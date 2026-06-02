@@ -76,19 +76,10 @@ async def register(
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Diese E-Mail-Adresse ist bereits registriert")
 
-    if payload.fingerprint:
-        result = await db.execute(select(User).where(User.fingerprint == payload.fingerprint))
-        if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=400,
-                detail="Mit diesem Gerät wurde bereits ein Konto erstellt",
-            )
-
     user = User(
         email=payload.email,
         hashed_password=hash_password(payload.password),
         full_name=payload.full_name,
-        fingerprint=payload.fingerprint,
     )
     db.add(user)
     await db.commit()
@@ -131,10 +122,6 @@ async def login(
         )
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Konto ist deaktiviert")
-
-    # One account per device: store fingerprint if this user doesn't have one yet.
-    if payload.fingerprint and not user.fingerprint:
-        user.fingerprint = payload.fingerprint
 
     # One active session per user: revoke all old refresh tokens before issuing a new one.
     await db.execute(
