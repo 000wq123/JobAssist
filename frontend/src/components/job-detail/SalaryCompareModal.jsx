@@ -4,13 +4,25 @@
  */
 
 import { createPortal } from "react-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, BarChart2, TrendingUp } from "lucide-react";
 import { formatEuro } from "../../utils/format";
 import { parseSalary, kvMinimumFor } from "./domain";
+import useFocusTrap from "../../hooks/useFocusTrap";
 
 export default function SalaryCompareModal({ open, onClose, currentJob, allJobs }) {
   const [tipIdx] = useState(() => Math.floor(Math.random() * 4));
+  const dialogRef = useRef(null);
+  useFocusTrap(open, dialogRef);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -44,9 +56,13 @@ export default function SalaryCompareModal({ open, onClose, currentJob, allJobs 
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
-      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Gehaltsvergleich"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        ref={dialogRef}
         className="w-full sm:max-w-[520px] sm:mx-4 rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >

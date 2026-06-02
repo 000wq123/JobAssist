@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { X, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 
 import Button from "./ui/Button";
+import useFocusTrap from "../hooks/useFocusTrap";
 
 const FEATURE_LABELS = {
   cv_analysis: "Lebenslauf-Analysen",
@@ -21,6 +22,7 @@ const FEATURE_LABELS = {
 export default function UpgradeModal() {
   const [data, setData] = useState(null);
   const navigate = useNavigate();
+  const dialogRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => setData(e.detail);
@@ -34,28 +36,31 @@ export default function UpgradeModal() {
     return () => window.removeEventListener("rate-limited", handler);
   }, []);
 
+  useFocusTrap(Boolean(data), dialogRef);
+
+  useEffect(() => {
+    if (!data) return;
+    const onKey = (e) => { if (e.key === "Escape") setData(null); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [data]);
+
   if (!data) return null;
 
   const featureLabel = FEATURE_LABELS[data.feature] || data.feature;
 
   return createPortal(
     <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        padding: "16px",
-      }}
-      onClick={() => setData(null)}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Upgrade Hinweis"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+      onClick={(e) => { if (e.target === e.currentTarget) setData(null); }}
     >
       <div
+        ref={dialogRef}
         className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 shadow-2xl shadow-black/60"
         onClick={(e) => e.stopPropagation()}
       >

@@ -24,6 +24,7 @@ import EmptyState from "../components/ui/EmptyState";
 import Skeleton from "../components/ui/Skeleton";
 import Popover from "../components/ui/Popover";
 import PageHeader from "../components/ui/PageHeader";
+import useFocusTrap from "../hooks/useFocusTrap";
 
 const JOB_TYPES = [
   { value: "",           label: "Alle Arten" },
@@ -180,6 +181,9 @@ function CreateAlertModal({ onClose, onSubmit, defaultEmail, initialData, title 
     frequency: initialData?.frequency || "daily",
   });
 
+  const dialogRef = useRef(null);
+  useFocusTrap(true, dialogRef);
+
   const setVal = (key, val) => setForm((p) => ({ ...p, [key]: val }));
 
   useEffect(() => {
@@ -206,10 +210,14 @@ function CreateAlertModal({ onClose, onSubmit, defaultEmail, initialData, title 
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in"
-      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Job-Alert"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-5 sm:p-6 animate-slide-up"
         style={{ boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}

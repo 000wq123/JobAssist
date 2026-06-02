@@ -85,6 +85,9 @@ function OnboardingModalInner({ onDone }) {
           border: "1px solid rgba(255,255,255,0.10)",
           boxShadow: "0 32px 80px rgba(0,0,0,0.60)",
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Onboarding"
       >
         {/* Close */}
         <button

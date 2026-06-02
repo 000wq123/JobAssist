@@ -12,11 +12,6 @@ const MONTHS = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", 
 
 const DAY = 86400 * 1000;
 
-// Platform-wide benchmark shown alongside the user's numbers. Hardcoded
-// for v1 — replace with real telemetry once backend tracking lands.
-const BENCHMARK_RESPONSE_DAYS = 8;
-
-
 /**
  * Context-aware greeting. Varies by last-visit gap, time of day, weekday,
  * and actual saved-job data (company names, scores).
@@ -288,6 +283,12 @@ export default function DashboardPage() {
     try { localStorage.setItem("auth_me", JSON.stringify(me)); } catch { /* quota */ }
   }, [me]);
 
+  const { data: baselines } = useQuery({
+    queryKey: ["response-baselines"],
+    queryFn: () => jobApi.getResponseBaselines().then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
+  });
+
   const { data: jobAlertsData } = useQuery({
     queryKey: ["job-alerts"],
     queryFn: () =>
@@ -464,7 +465,7 @@ export default function DashboardPage() {
         kind: "neutral",
         eyebrow: "Nachfragen",
         title: `${job.company || "Bewerbung"} — vor ${days} Tagen beworben.`,
-        body: `Schnitt sind ${BENCHMARK_RESPONSE_DAYS} Tage. Eine kurze, freundliche Nachfrage ist okay.`,
+        body: `Schnitt: ${Math.round(baselines?.median_days ?? 8)} Tage. Eine kurze, freundliche Nachfrage ist okay.`,
         primary: { label: "Stelle öffnen", onClick: () => navigate(`/jobs/${job.id}`) },
       });
     }

@@ -57,6 +57,12 @@ class Job(Base):
     # User notes
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # When the user marked this job as "applied" — used for response-time baselines.
+    applied_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     # --- Timezone Aware Fields ---
     # These match your ALTER TABLE command and prevent the DataError
     deadline: Mapped[Optional[datetime]] = mapped_column(

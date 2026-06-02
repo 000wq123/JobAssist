@@ -27,6 +27,21 @@ import BottomSheet from "../components/ui/BottomSheet";
 
 const MUTED_KEY = "muted-jobs";
 const COLLAPSED_KEY = "collapsed-groups";
+const NEGATIVE_FILTERS_KEY = "negative-filters";
+
+const CHAIN_NAMES = new Set([
+  "mcdonald's", "mcdonalds", "burger king", "kfc", "subway", "starbucks",
+  "dm", "billa", "spar", "hofer", "lidl", "aldi", "merkur", "penny",
+  "h&m", "zara", "c&a", "new yorker", "primark", "decathlon",
+  "media markt", "saturn", "libro", "thalia", "müller",
+]);
+
+const DEFAULT_NEGATIVE_FILTERS = {
+  hideChains: false,
+  hideUnpaidInternships: false,
+  minHourlyRate: null,
+  maxCommuteMinutes: null,
+};
 
 const STATUS_GROUPS = [
   { key: "interviewing", label: "Gespräch",    dot: "#7c7df0" },
@@ -115,6 +130,21 @@ function timeAgoShort(input) {
  * @param {Set<number>} mutedIds
  * @returns {{ job: object, action: string, sub: string } | null}
  */
+function passesNegativeFilters(job, filters) {
+  if (!job || !filters) return true;
+  const company = (job.company || "").toLowerCase().trim();
+  if (filters.hideChains && CHAIN_NAMES.has(company)) return false;
+  if (filters.hideUnpaidInternships && job.category === "praktikum" && !job.salary_text) return false;
+  if (filters.minHourlyRate && job.salary_text) {
+    const match = job.salary_text.match(/(\d+[.,]?\d*)\s*€?\s*\/(?:h|std)/i);
+    if (match) {
+      const rate = parseFloat(match[1].replace(",", "."));
+      if (!Number.isNaN(rate) && rate < filters.minHourlyRate) return false;
+    }
+  }
+  return true;
+}
+
 function pickHeuteAction(jobs, mutedIds) {
   const candidates = jobs.filter((j) =>
     !mutedIds.has(j.id) && j.status !== "offered" && j.status !== "rejected",
@@ -160,6 +190,20 @@ function pickHeuteAction(jobs, mutedIds) {
   }
 
   return null;
+}
+
+function ToggleChip({ label, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-all border ${active ? "border-[var(--color-accent-500)]/40 text-[var(--color-accent-300)]" : "border-[var(--color-border-subtle)] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]"}`}
+      style={active ? { background: "rgba(124,125,240,0.10)" } : { background: "transparent" }}
+    >
+      <span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 ${active ? "bg-[var(--color-accent-500)]" : "bg-[var(--color-fg-faint)]"}`} />
+      {label}
+    </button>
+  );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -497,6 +541,14 @@ export default function JobsPage() {
     return s === "score" ? "score" : "date";
   });
 
+  const [negativeFilters, setNegativeFilters] = useState(() => ({
+    ...DEFAULT_NEGATIVE_FILTERS,
+    ...(loadStored(NEGATIVE_FILTERS_KEY) || {}),
+  }));
+  useEffect(() => {
+    saveStored(NEGATIVE_FILTERS_KEY, negativeFilters);
+  }, [negativeFilters]);
+
   const setFilter = (key) => {
     setActiveFilter(key);
     const next = new URLSearchParams(searchParams);
@@ -513,9 +565,11 @@ export default function JobsPage() {
     setSearchParams(next, { replace: true });
   };
 
+  const visibleJobs = useMemo(() => savedJobs.filter((j) => passesNegativeFilters(j, negativeFilters)), [savedJobs, negativeFilters]);
+
   const grouped = useMemo(() => {
     const out = { interviewing: [], offered: [], applied: [], bookmarked: [], rejected: [] };
-    savedJobs.forEach((j) => {
+    visibleJobs.forEach((j) => {
       const key = j.status in out ? j.status : "bookmarked";
       out[key].push(j);
     });
@@ -532,9 +586,9 @@ export default function JobsPage() {
       }),
     );
     return out;
-  }, [savedJobs, sortBy]);
+  }, [visibleJobs, sortBy]);
 
-  const heute = useMemo(() => pickHeuteAction(savedJobs, mutedIds), [savedJobs, mutedIds]);
+  const heute = useMemo(() => pickHeuteAction(visibleJobs, mutedIds), [visibleJobs, mutedIds]);
 
   // ── Multi-select for mass delete ────────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState(() => new Set());
@@ -595,7 +649,7 @@ export default function JobsPage() {
 
   const openJob = (jobId) => { scrollSaveRef.current = true; navigate(`/jobs/${jobId}`); };
 
-  const total = savedJobs.length;
+  const total = visibleJobs.length;
   const [collapsedGroups, setCollapsedGroups] = useState(() => new Set(loadStored(COLLAPSED_KEY) || []));
   useEffect(() => {
     saveStored(COLLAPSED_KEY, Array.from(collapsedGroups));
@@ -721,6 +775,53 @@ export default function JobsPage() {
             {sortBy === "score" ? "Passung" : "Datum"}
           </button>
         </div>
+      )}
+
+      {/* ── Negative filters ─────────────────────────────────────────── */}
+      {total > 0 && (
+        <details className="group">
+          <summary className="inline-flex items-center gap-1.5 cursor-pointer list-none text-[11.5px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors select-none">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent-500)]" style={{ opacity: Object.values(negativeFilters).some(Boolean) ? 1 : 0 }} />
+            Filter
+            <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <ToggleChip
+              label="Keine Ketten"
+              active={negativeFilters.hideChains}
+              onClick={() => setNegativeFilters((p) => ({ ...p, hideChains: !p.hideChains }))}
+            />
+            <ToggleChip
+              label="Nur bezahlte Praktika"
+              active={negativeFilters.hideUnpaidInternships}
+              onClick={() => setNegativeFilters((p) => ({ ...p, hideUnpaidInternships: !p.hideUnpaidInternships }))}
+            />
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-[var(--color-border-subtle)] text-[11.5px]">
+              <span className="text-[var(--color-fg-dim)]">Min. €/h</span>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={negativeFilters.minHourlyRate ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setNegativeFilters((p) => ({ ...p, minHourlyRate: v ? parseFloat(v) : null }));
+                }}
+                className="w-12 bg-transparent text-[var(--color-fg)] text-right outline-none tabular-nums"
+                placeholder="—"
+              />
+            </div>
+            {Object.values(negativeFilters).some((v) => v !== null && v !== false) && (
+              <button
+                type="button"
+                onClick={() => setNegativeFilters(DEFAULT_NEGATIVE_FILTERS)}
+                className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] underline underline-offset-2"
+              >
+                Zurücksetzen
+              </button>
+            )}
+          </div>
+        </details>
       )}
 
       {/* ── Urgent card ─────────────────────────────────────────────── */}

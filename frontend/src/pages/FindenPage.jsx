@@ -12,11 +12,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Search, Sparkles, Globe, Building2, ShoppingBag, Landmark } from "lucide-react";
+import { Search, Sparkles, Globe, Building2, ShoppingBag, Landmark, Filter, X } from "lucide-react";
 
 import { jobApi } from "../services/api";
 import useUsageGuard from "../hooks/useUsageGuard";
 import { getApiErrorMessage } from "../utils/apiError";
+import { mentionsSplitShift } from "../components/job-detail/commute";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
@@ -31,6 +32,28 @@ const JOB_TYPES = ["Vollzeit", "Teilzeit", "Praktikum", "Lehre", "Samstagsjob", 
 const loadStored = (key) => {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : undefined; } catch { return undefined; }
 };
+
+const BIG_CHAINS = new Set([
+  "mcdonald's", "mcdonalds", "billa", "hofer", "aldi", "lidl", "spar", "eurospar",
+  "interspar", "zara", "h&m", "hm", "c&a", "ca", "burger king", "starbucks",
+  "subway", "kfc", "pizza hut", "domino's", "dominos", "dunkin", "nike", "adidas",
+  "decathlon", "media markt", "mediamarkt", "saturn", "ebay", "amazon",
+]);
+
+function isBigChain(company) {
+  if (!company) return false;
+  const c = company.toLowerCase();
+  return BIG_CHAINS.has(c) || BIG_CHAINS.has(c.split(/\s+/)[0]);
+}
+
+function isUnpaidInternship(job) {
+  const type = (job.job_type || "").toLowerCase();
+  const title = (job.title || "").toLowerCase();
+  const desc = (job.description || "").toLowerCase();
+  const isPraktikum = type.includes("praktikum") || title.includes("praktikum") || desc.includes("praktikum");
+  const hasSalary = !!job.salary_text || (job.salary && job.salary.length > 0);
+  return isPraktikum && !hasSalary;
+}
 
 /** Loading placeholder for a search row. */
 function RowSkeleton() {
@@ -73,6 +96,14 @@ export default function FindenPage() {
   const [submittedParams, setSubmittedParams] = useState(null);
   const [recommendedEnabled, setRecommendedEnabled] = useState(false);
   const [savedSearchIds, setSavedSearchIds] = useState(() => new Set());
+
+  // Negative filters (persisted)
+  const [negativeFilters, setNegativeFilters] = useState(() => loadStored("finden-filters") || {
+    hideChains: false,
+    noSplitShifts: false,
+    noUnpaidInternships: false,
+    maxCommuteMinutes: null,
+  });
 
   // Jooble search state
   const [joobleKeywords, setJoobleKeywords] = useState("");
@@ -178,8 +209,21 @@ export default function FindenPage() {
     searchTab === "willhaben" ? willhabenData :
     searchTab === "ams" ? amsData :
     customData;
-  const searchResults = activeData?.jobs || [];
+  let searchResults = activeData?.jobs || [];
   const searchError = activeData?.error || null;
+
+  // Apply negative filters client-side
+  if (searchResults.length > 0) {
+    if (negativeFilters.hideChains) {
+      searchResults = searchResults.filter((j) => !isBigChain(j.company));
+    }
+    if (negativeFilters.noSplitShifts) {
+      searchResults = searchResults.filter((j) => !mentionsSplitShift(j.description));
+    }
+    if (negativeFilters.noUnpaidInternships) {
+      searchResults = searchResults.filter((j) => !isUnpaidInternship(j));
+    }
+  }
   const searchLoading =
     searchTab === "recommended" ? recommendedLoading :
     searchTab === "jooble" ? joobleLoading :
@@ -187,6 +231,22 @@ export default function FindenPage() {
     searchTab === "willhaben" ? willhabenLoading :
     searchTab === "ams" ? amsLoading :
     customLoading;
+
+  const toggleFilter = (key) => {
+    setNegativeFilters((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem("finden-filters", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const setMaxCommute = (minutes) => {
+    setNegativeFilters((prev) => {
+      const next = { ...prev, maxCommuteMinutes: minutes };
+      try { localStorage.setItem("finden-filters", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const saveJobMutation = useMutation({
     mutationFn: jobApi.create,
@@ -622,6 +682,47 @@ export default function FindenPage() {
           )}
         </div>
       </section>
+
+      {/* ── Negative filters ─────────────────────────────────────── */}
+      {searchResults.length > 0 && (
+        <section className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--color-fg-dim)] mr-1">
+            <Filter className="w-3 h-3" aria-hidden="true" />
+            <span>Filter</span>
+          </div>
+          {[
+            { key: "hideChains", label: "Große Ketten ausblenden" },
+            { key: "noSplitShifts", label: "Kein geteilter Dienst" },
+            { key: "noUnpaidInternships", label: "Keine unbezahlten Praktika" },
+          ].map((f) => {
+            const active = !!negativeFilters[f.key];
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => toggleFilter(f.key)}
+                className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11.5px] font-medium border transition-colors ${
+                  active
+                    ? "bg-[var(--color-accent-500)]/15 border-[var(--color-accent-500)]/50 text-[var(--color-accent-200)]"
+                    : "bg-transparent border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:border-[var(--color-border-strong)]"
+                }`}
+              >
+                {active ? <X className="w-2.5 h-2.5" /> : <Filter className="w-2.5 h-2.5" />}
+                {f.label}
+              </button>
+            );
+          })}
+          {negativeFilters.maxCommuteMinutes && (
+            <button
+              type="button"
+              onClick={() => setMaxCommute(null)}
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11.5px] font-medium border bg-[var(--color-accent-500)]/15 border-[var(--color-accent-500)]/50 text-[var(--color-accent-200)]"
+            >
+              <X className="w-2.5 h-2.5" /> Anfahrt ≤ {negativeFilters.maxCommuteMinutes} Min.
+            </button>
+          )}
+        </section>
+      )}
 
       {/* ── Search results ─────────────────────────────────────────── */}
       {(searchLoading || searchResults.length > 0 || searchError || (activeData && !searchLoading)) && (

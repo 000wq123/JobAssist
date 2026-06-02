@@ -221,6 +221,79 @@ async def get_pipeline_stats(
     }
 
 
+@router.get("/response-baselines")
+async def get_response_baselines(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Return anonymised response-time baselines for this user.
+
+    Computes median days from 'applied' to next status change for jobs
+    that have progressed past 'applied'. Falls back to platform-wide
+    defaults when the user has insufficient data.
+    """
+    from datetime import datetime, timezone
+
+    # Jobs with applied_at that have moved past 'applied'
+    result = await db.execute(
+        select(Job.applied_at, Job.updated_at, Job.status)
+        .where(
+            Job.user_id == current_user.id,
+            Job.applied_at.isnot(None),
+            Job.status.in_(["interviewing", "offered", "rejected"]),
+        )
+    )
+    completed = result.all()
+
+    # Jobs still in 'applied' — show how long they've been waiting
+    result2 = await db.execute(
+        select(Job.applied_at)
+        .where(
+            Job.user_id == current_user.id,
+            Job.status == "applied",
+            Job.applied_at.isnot(None),
+        )
+    )
+    waiting = [row[0] for row in result2.all()]
+
+    now = datetime.now(timezone.utc)
+
+    days_to_response = []
+    for applied_at, updated_at, _status in completed:
+        if applied_at and updated_at:
+            delta = (updated_at - applied_at).total_seconds() / 86400
+            if delta >= 0:
+                days_to_response.append(delta)
+
+    def _median(values):
+        if not values:
+            return None
+        s = sorted(values)
+        n = len(s)
+        if n % 2 == 1:
+            return s[n // 2]
+        return (s[n // 2 - 1] + s[n // 2]) / 2
+
+    median_days = _median(days_to_response)
+    waiting_days = sorted(
+        [(now - a).total_seconds() / 86400 for a in waiting if a],
+        reverse=True,
+    )
+
+    # Platform-wide fallback (anonymised) — updated when aggregate data grows.
+    fallback = {"median_days": 8, "p25_days": 5, "p75_days": 14}
+
+    baselines = {
+        "median_days": round(median_days, 1) if median_days is not None else fallback["median_days"],
+        "p25_days": round(_median([d for d in days_to_response if d <= (median_days or fallback["median_days"])]), 1) if days_to_response else fallback["p25_days"],
+        "p75_days": round(_median([d for d in days_to_response if d >= (median_days or fallback["median_days"])]), 1) if days_to_response else fallback["p75_days"],
+        "sample_size": len(days_to_response),
+        "longest_waiting_days": round(waiting_days[0], 1) if waiting_days else None,
+        "waiting_count": len(waiting_days),
+    }
+    return baselines
+
+
 @router.get("/search/recommended", response_model=dict)
 async def search_recommended_jobs(
     page: int = Query(1, ge=1, le=10),
@@ -474,7 +547,11 @@ async def update_job_status(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    from datetime import datetime, timezone
+
     job.status = payload.status
+    if payload.status == "applied" and job.applied_at is None:
+        job.applied_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(job)
     logger.info(

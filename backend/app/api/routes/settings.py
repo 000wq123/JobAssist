@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -23,14 +24,25 @@ async def get_profile(
     )
     profile = result.scalar_one_or_none()
 
-    if not profile:
-        # Create default profile if it doesn't exist
-        profile = UserProfile(user_id=current_user.id)
-        db.add(profile)
-        await db.commit()
-        await db.refresh(profile)
+    if profile:
+        return profile
 
-    return profile
+    # Return a transient default object without mutating the database
+    now = datetime.now(timezone.utc)
+    return UserProfileOut(
+        id=0,
+        user_id=current_user.id,
+        desired_locations=[],
+        salary_min=None,
+        salary_max=None,
+        job_types=[],
+        industries=[],
+        experience_level=None,
+        is_open_to_relocation=False,
+        avatar=None,
+        created_at=now,
+        updated_at=now,
+    )
 
 
 @router.put("/profile", response_model=UserProfileOut)

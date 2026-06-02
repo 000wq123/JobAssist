@@ -1,5 +1,6 @@
 """ProfileV2 (Austrian CV builder) routes."""
 
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,13 +32,47 @@ async def get_my_profile(
     )
     profile = result.scalar_one_or_none()
 
-    if not profile:
-        profile = ProfileV2(user_id=current_user.id)
-        db.add(profile)
-        await db.commit()
-        await db.refresh(profile)
+    if profile:
+        return profile
 
-    return profile
+    # Return a transient default object without mutating the database
+    now = datetime.now(timezone.utc)
+    return ProfileV2Out(
+        id=0,
+        user_id=current_user.id,
+        vorname=None,
+        nachname=None,
+        geburtsdatum=None,
+        geburtsort=None,
+        strasse=None,
+        plz=None,
+        ort=None,
+        telefon=None,
+        email=None,
+        staatsbuergerschaft="",
+        arbeitserlaubnis=None,
+        schulname=None,
+        schultyp=None,
+        klasse=None,
+        abschlussjahr=None,
+        erfahrungen=[],
+        sprachkenntnisse=[],
+        faehigkeiten=[],
+        hobbies=None,
+        foto_url=None,
+        profil=None,
+        fuehrerschein=None,
+        jobArten=[],
+        maxAnfahrtMin=None,
+        branchen=[],
+        verfuegbarAb=None,
+        weiterbildungen=[],
+        aktivitaeten=[],
+        templateId=None,
+        completion_pct=0,
+        created_at=now,
+        updated_at=now,
+    )
 
 
 @router.patch("/me", response_model=ProfileV2Out)

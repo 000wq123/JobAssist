@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import useFocusTrap from "../../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -52,6 +53,7 @@ export default function CommandMenu({ open, onClose }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const dialogRef = useRef(null);
 
   const commands = useMemo(() => buildCommands(navigate, onClose), [navigate, onClose]);
 
@@ -97,6 +99,17 @@ export default function CommandMenu({ open, onClose }) {
       return () => clearTimeout(id);
     }
   }, [open]);
+
+  // Trap focus while open and return focus on close
+  useFocusTrap(open, dialogRef);
+
+  // Global Escape to close regardless of focused element
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   // Reset active index when filter changes
   useEffect(() => {
@@ -149,6 +162,7 @@ export default function CommandMenu({ open, onClose }) {
 
       {/* Panel */}
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-[600px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] overflow-hidden animate-slide-up"
         style={{ boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}

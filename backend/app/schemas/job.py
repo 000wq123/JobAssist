@@ -75,6 +75,7 @@ class JobOut(BaseModel):
     suggested_courses: Optional[str] = None
     research_data: Optional[str] = None
     notes: Optional[str]
+    applied_at: Optional[datetime] = None
     deadline: Optional[datetime]
     # Scraper-sourced fields (exposed for new hero design)
     location: Optional[str] = None

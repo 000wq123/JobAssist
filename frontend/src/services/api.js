@@ -273,6 +273,7 @@ export const jobApi = {
   updateUrl: (jobId, url) => api.patch(`/jobs/${jobId}/url`, { url }),
   saveResearch: (jobId, researchData) => api.patch(`/jobs/${jobId}/research`, { research_data: JSON.stringify(researchData) }),
   getPipelineStats: () => api.get("/jobs/pipeline/stats"),
+  getResponseBaselines: () => api.get("/jobs/response-baselines"),
   searchRecommended: (page = 1) => api.get(`/jobs/search/recommended?page=${page}`),
   searchCustom: (keywords, location = "", jobType = "", page = 1) => {
     const params = new URLSearchParams({ keywords, location, job_type: jobType, page });

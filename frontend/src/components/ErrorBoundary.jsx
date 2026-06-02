@@ -1,5 +1,6 @@
 import { Component } from "react";
 import * as Sentry from "@sentry/react";
+import { getAnalyticsConsent } from "./CookieConsentBanner";
 
 export default class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
@@ -14,7 +15,15 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    Sentry.captureException(error, { extra: info });
+    // Only forward errors to Sentry after explicit analytics consent
+    // and once Sentry has been initialized.
+    try {
+      if (getAnalyticsConsent() === true && Sentry.getClient()) {
+        Sentry.captureException(error, { extra: info });
+      }
+    } catch {
+      // Swallow any telemetry errors; never disrupt UX
+    }
   }
 
   // Reset error state when the route changes without unmounting children

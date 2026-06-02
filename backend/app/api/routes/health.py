@@ -122,16 +122,11 @@ async def init(
 ):
     """Single endpoint that returns all bootstrap data so the SPA loads in
     one round-trip instead of `/me` + `/profile` + `/resumes` + `/usage`."""
-    # 1. Ensure profile exists (must be sequential — create path mutates db).
+    # 1. Load profile if it exists. Do not mutate state in a GET.
     profile_result = await db.execute(
         select(UserProfile).where(UserProfile.user_id == current_user.id)
     )
     profile = profile_result.scalar_one_or_none()
-    if not profile:
-        profile = UserProfile(user_id=current_user.id)
-        db.add(profile)
-        await db.commit()
-        await db.refresh(profile)
 
     # 2. Fire independent reads concurrently.
     async def _resumes():
@@ -172,20 +167,37 @@ async def init(
             "daily_creation_count": current_user.daily_creation_count or 0,
             "daily_counts_reset_at": current_user.daily_counts_reset_at,
         },
-        "profile": {
-            "id": profile.id,
-            "user_id": profile.user_id,
-            "desired_locations": profile.desired_locations,
-            "salary_min": profile.salary_min,
-            "salary_max": profile.salary_max,
-            "job_types": profile.job_types,
-            "industries": profile.industries,
-            "experience_level": profile.experience_level,
-            "is_open_to_relocation": profile.is_open_to_relocation,
-            "avatar": profile.avatar,
-            "created_at": profile.created_at,
-            "updated_at": profile.updated_at,
-        },
+        "profile": (
+            {
+                "id": profile.id,
+                "user_id": profile.user_id,
+                "desired_locations": profile.desired_locations,
+                "salary_min": profile.salary_min,
+                "salary_max": profile.salary_max,
+                "job_types": profile.job_types,
+                "industries": profile.industries,
+                "experience_level": profile.experience_level,
+                "is_open_to_relocation": profile.is_open_to_relocation,
+                "avatar": profile.avatar,
+                "created_at": profile.created_at,
+                "updated_at": profile.updated_at,
+            }
+            if profile
+            else {
+                "id": 0,
+                "user_id": current_user.id,
+                "desired_locations": [],
+                "salary_min": None,
+                "salary_max": None,
+                "job_types": [],
+                "industries": [],
+                "experience_level": None,
+                "is_open_to_relocation": False,
+                "avatar": None,
+                "created_at": None,
+                "updated_at": None,
+            }
+        ),
         "resumes": [
             {"id": r.id, "filename": r.filename, "created_at": r.created_at}
             for r in resumes

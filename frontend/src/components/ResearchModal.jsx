@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -20,6 +20,7 @@ import {
 import { jobApi } from "../services/api";
 import AIDisclosureBanner from "./AIDisclosureBanner";
 import { getApiErrorMessage } from "../utils/apiError";
+import useFocusTrap from "../hooks/useFocusTrap";
 
 /**
  * Portal-rendered modal displaying AI company research for a job application.
@@ -35,6 +36,16 @@ export default function ResearchModal({ companyName, data, loading, onClose, job
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const dialogRef = useRef(null);
+  useFocusTrap(true, dialogRef);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
 
   const hasContactInfo = useMemo(
     () => Boolean(data?.contact_info && Object.values(data.contact_info).some(Boolean)),
@@ -62,8 +73,18 @@ export default function ResearchModal({ companyName, data, loading, onClose, job
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60 border border-[var(--color-border)]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Unternehmensrecherche"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
+    >
+      <div
+        ref={dialogRef}
+        className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60 border border-[var(--color-border)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border-subtle)] px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-[var(--color-accent-500)]/10 border border-[var(--color-accent-500)]/20">

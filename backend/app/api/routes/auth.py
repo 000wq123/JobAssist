@@ -123,10 +123,28 @@ async def login(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Konto ist deaktiviert")
 
-    # One active session per user: revoke all old refresh tokens before issuing a new one.
-    await db.execute(
-        sa_delete(RefreshToken).where(RefreshToken.user_id == user.id)
+    # Allow up to 2 concurrent sessions (e.g., phone + laptop).
+    # Keep the most recent existing active token and prune older ones.
+    now = datetime.now(timezone.utc)
+    existing_res = await db.execute(
+        select(RefreshToken)
+        .where(RefreshToken.user_id == user.id, RefreshToken.revoked.is_(False))
+        .order_by(RefreshToken.created_at.desc())
     )
+    existing = existing_res.scalars().all()
+    # Filter out expired tokens and revoke extras beyond the newest one
+    kept = 0
+    for rt in existing:
+        expires = rt.expires_at
+        if expires is not None and expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires and expires <= now:
+            rt.revoked = True
+            continue
+        if kept >= 1:
+            rt.revoked = True
+        else:
+            kept += 1
 
     access_token = create_access_token({"sub": str(user.id)})
     raw_refresh, refresh_hash = generate_refresh_token()

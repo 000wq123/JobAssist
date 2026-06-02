@@ -4,7 +4,7 @@
  * Practice mode: one question at a time, user writes answer, then reveals suggestion.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import {
@@ -13,6 +13,7 @@ import {
 import AIDisclosureBanner from "../AIDisclosureBanner";
 import { interviewApi } from "../../services/api";
 import { Spinner } from "./ui";
+import useFocusTrap from "../../hooks/useFocusTrap";
 
 const parseJson = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
 
@@ -41,6 +42,17 @@ export default function InterviewSheet({ open, onClose, job, mutate, pending, re
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [ratings, setRatings] = useState({});
+  const dialogRef = useRef(null);
+  useFocusTrap(open, dialogRef);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -73,9 +85,12 @@ export default function InterviewSheet({ open, onClose, job, mutate, pending, re
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Interview Vorbereitung"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
+      <div ref={dialogRef} className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
 
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-border-subtle)]">

@@ -4,7 +4,7 @@
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Download, Mail, X } from "lucide-react";
+import { Check, Copy, Download, Mail, X, CalendarPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import useFocusTrap from "../../hooks/useFocusTrap";
 import AIDisclosureBanner from "../AIDisclosureBanner";
@@ -30,7 +30,35 @@ function printHtml(title, bodyHtml) {
 
 function parseJson(v) { try { return v ? JSON.parse(v) : null; } catch { return null; } }
 
-export default function CoverLetterModal({ open, onClose, job }) {
+function generateIcs({ title, start, end, description, location }) {
+  const fmt = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//JobAssist//Follow-up//DE",
+    "BEGIN:VEVENT",
+    `UID:${Date.now()}@jobassist.tech`,
+    `DTSTAMP:${fmt(new Date())}`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${description.replace(/\n/g, "\\n")}`,
+    location ? `LOCATION:${location}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
+}
+
+function downloadIcs(blob, filename) {
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(blob),
+    download: filename,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+export default function CoverLetterModal({ open, onClose, job, followUpDays = 10 }) {
   const [copied, setCopied] = useState(false);
   const modalRef = useRef(null);
   useFocusTrap(open, modalRef);
@@ -47,6 +75,9 @@ export default function CoverLetterModal({ open, onClose, job }) {
     >
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Anschreiben"
         className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60"
       >
         <div className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
@@ -79,15 +110,35 @@ export default function CoverLetterModal({ open, onClose, job }) {
           </a>
           <button
             onClick={() => downloadDoc(job.cover_letter, `Anschreiben_${job.company || "Bewerbung"}.doc`)}
-            className="col-span-6 sm:col-span-3 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+            className="col-span-4 sm:col-span-2 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" /> DOCX
           </button>
           <button
             onClick={() => printHtml("Anschreiben", `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(job.cover_letter)}</pre>`)}
-            className="col-span-6 sm:col-span-3 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+            className="col-span-4 sm:col-span-2 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" /> PDF
+          </button>
+          <button
+            onClick={() => {
+              const start = new Date();
+              start.setDate(start.getDate() + followUpDays);
+              start.setHours(9, 0, 0, 0);
+              const end = new Date(start.getTime() + 30 * 60 * 1000);
+              const ics = generateIcs({
+                title: `Nachfassen: ${job.company || "Bewerbung"}`,
+                start,
+                end,
+                description: `Erinnerung: Nachfassen bei ${job.company || "der Bewerbung"}.\n\nLink: ${job.url || ""}`,
+                location: job.location || "",
+              });
+              downloadIcs(new Blob([ics], { type: "text/calendar" }), `FollowUp_${job.company || "Bewerbung"}.ics`);
+              toast.success("Kalender-Erinnerung erstellt");
+            }}
+            className="col-span-4 sm:col-span-2 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[12.5px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] inline-flex items-center justify-center gap-1.5"
+          >
+            <CalendarPlus className="w-3.5 h-3.5" /> Erinnerung
           </button>
         </div>
       </div>
