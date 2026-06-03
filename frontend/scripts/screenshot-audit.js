@@ -1,4 +1,4 @@
-const { chromium } = require("playwright");
+const { chromium } = require("@playwright/test");
 const fs = require("fs");
 const path = require("path");
 
@@ -31,7 +31,8 @@ const SECTIONS = [
     });
     const page = await context.newPage();
     await page.goto("http://127.0.0.1:4174/", { waitUntil: "networkidle", timeout: 30000 });
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(800);
 
     // Full page
     await page.screenshot({

@@ -2,7 +2,9 @@ import { test, expect } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 
-const OUT = path.join(process.cwd(), "audit-screenshots");
+// Resolve repo/frontend root via import.meta.url to avoid cwd differences in CI/runner
+const FRONTEND_ROOT = path.resolve(new URL("..", import.meta.url).pathname);
+const OUT = path.join(FRONTEND_ROOT, "audit-screenshots");
 if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
 
 const viewports = [

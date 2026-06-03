@@ -360,8 +360,8 @@
     border-radius: 14px;
     overflow: hidden;
     box-shadow:
-      0 30px 80px rgba(0, 0, 0, 0.35),
-      0 8px 24px rgba(0, 0, 0, 0.25);
+      0 18px 50px rgba(0, 0, 0, 0.18),
+      0 6px 16px rgba(0, 0, 0, 0.12);
   }
   .browser-mockup::before {
     content: "";
@@ -373,6 +373,15 @@
       radial-gradient(circle at 16px 50%, #FF5F57 5px, transparent 5.5px),
       radial-gradient(circle at 36px 50%, #FEBC2E 5px, transparent 5.5px),
       radial-gradient(circle at 56px 50%, #28C840 5px, transparent 5.5px);
+  }
+
+  /* Mobile: lighter, tighter shadow for smaller viewports */
+  @media (max-width: 767px) {
+    .browser-mockup {
+      box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08);
+    }
   }
 
   /* ── Sticky CTA pill (Arc/Dia "Try Dia", Cron banner pattern) ─── */
