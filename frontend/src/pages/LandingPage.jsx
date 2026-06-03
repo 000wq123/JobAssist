@@ -111,7 +111,7 @@ function Hero() {
           </p>
         </div>
 
-        <div className="col-span-12 mt-8 sm:mt-16 overflow-x-auto sm:overflow-visible">
+        <div className="col-span-12 mt-8 sm:mt-16 overflow-x-auto scrollbar-hide sm:overflow-visible">
           <DashboardMockup />
         </div>
       </div>
@@ -407,7 +407,7 @@ function ResumeMockup() {
     { l: "Englisch",       v: 58 },
   ];
   return (
-    <div className="browser-mockup">
+    <div className="browser-mockup max-w-full">
       <div className="grid grid-cols-12 bg-[var(--color-bg)]">
         <div className="col-span-12 md:col-span-7 p-5 sm:p-6 border-r border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2 mb-4">
@@ -831,7 +831,7 @@ function PlanCard({ plan, isPopular, className = "" }) {
   const cta = isPopular ? "Pro 7 Tage testen" : plan.key === "max" ? "Max wählen" : "Kostenlos starten";
   return (
     <div
-      className={`rounded-2xl border p-7 flex flex-col ${
+      className={`rounded-2xl border p-5 sm:p-7 flex flex-col ${
         isPopular
           ? "border-[var(--color-accent-400)] bg-[var(--color-bg)]"
           : "border-[var(--color-border)] bg-[var(--color-bg)]"
@@ -933,7 +933,7 @@ function Pricing() {
             <button
               key={p.key}
               onClick={() => setActiveMobilePlan(p.key)}
-              className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+              className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] ${
                 activeMobilePlan === p.key
                   ? "bg-[var(--color-accent-500)] text-white"
                   : "border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)]"
