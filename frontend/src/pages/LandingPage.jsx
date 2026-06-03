@@ -72,9 +72,9 @@ function TopNav() {
 function Hero() {
   return (
     <section className="relative">
-      <div className="relative mx-auto grid max-w-[1200px] grid-cols-12 gap-6 px-5 pt-20 pb-12 sm:px-8 sm:pt-28 md:pt-32">
+      <div className="relative mx-auto grid max-w-[1200px] grid-cols-12 gap-6 px-5 pt-14 pb-10 sm:px-8 sm:pt-20 sm:pb-12 md:pt-32">
         <div className="col-span-12 flex flex-col items-center text-center">
-          <Link to="/pricing" className="pill-banner mb-8">
+          <Link to="/pricing" className="pill-banner mb-6 sm:mb-8">
             <span className="grid place-items-center h-5 w-5 rounded-full bg-[var(--color-accent-500)] text-white">
               <Sparkles className="h-3 w-3" />
             </span>
@@ -82,36 +82,36 @@ function Hero() {
             <ArrowRight className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />
           </Link>
 
-          <h1 className="text-hero text-[var(--color-fg)] max-w-[14ch]">
+          <h1 className="text-hero text-[var(--color-fg)] max-w-[16ch]">
             Bewerben. Klar. Schnell. Mit KI.
           </h1>
 
-          <p className="mt-6 max-w-[58ch] text-[16px] sm:text-[17px] leading-relaxed text-[var(--color-fg-muted)]">
+          <p className="mt-5 sm:mt-6 max-w-[58ch] text-[15px] sm:text-[17px] leading-relaxed text-[var(--color-fg-muted)]">
             Lade deinen Lebenslauf hoch — JobAssist findet passende Stellen und schreibt die Bewerbung für dich.
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto px-4 sm:px-0">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
             >
               Kostenlos starten
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#how"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-5 py-3 text-[14px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-5 py-3 text-[14px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
             >
               So funktioniert&apos;s
             </a>
           </div>
 
-          <p className="mt-4 text-[12px] text-[var(--color-fg-dim)]">
+          <p className="mt-4 text-[11px] sm:text-[12px] text-[var(--color-fg-dim)]">
             Keine Kreditkarte erforderlich · DSGVO-konform · Made in Austria
           </p>
         </div>
 
-        <div className="col-span-12 mt-12 sm:mt-16">
+        <div className="col-span-12 mt-8 sm:mt-16 overflow-x-auto sm:overflow-visible">
           <DashboardMockup />
         </div>
       </div>
@@ -330,41 +330,19 @@ function ProblemStatement() {
     <section className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
       <div className="grid grid-cols-12">
         <div className="col-span-12 md:col-span-10 md:col-start-2 text-center">
-          <h2 className="text-display text-[var(--color-fg)] leading-[1.1]">
-            Bewerben heißt jonglieren mit{" "}
-            <span className="inline-flex items-center gap-2 align-middle mx-2">
-              <CompetitorLogo
-                slug="linkedin"
-                name="LinkedIn"
-                color="#0A66C2"
-              />
-              <CompetitorLogo
-                slug="indeed"
-                name="Indeed"
-                color="#003A9B"
-              />
-              <CompetitorLogo
-                src="/logos/logo.svg"
-                name="StepStone"
-                color="#00217A"
-                crop
-              />
-              <CompetitorLogo
-                src="https://icon.horse/icon/karriere.at"
-                name="karriere.at"
-                bare
-              />
-              <CompetitorLogo
-                slug="xing"
-                name="Xing"
-                color="#006567"
-              />
-            </span>
-            <br />Werkzeugen.
+          <h2 className="text-display text-[var(--color-fg)] leading-[1.15]">
+            Bewerben heißt jonglieren mit zu vielen Werkzeugen.
           </h2>
-          <p className="mt-6 max-w-[55ch] mx-auto text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
-            Du wechselst zwischen Jobbörsen, Word-Dokumenten, Notizen und Mail —
-            verlierst Überblick und Zeit. <strong className="text-[var(--color-fg)]">Es geht auch anders.</strong>
+          <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2">
+            <CompetitorLogo slug="linkedin" name="LinkedIn" color="#0A66C2" />
+            <CompetitorLogo slug="indeed" name="Indeed" color="#003A9B" />
+            <CompetitorLogo src="/logos/logo.svg" name="StepStone" color="#00217A" crop />
+            <CompetitorLogo src="https://icon.horse/icon/karriere.at" name="karriere.at" bare />
+            <CompetitorLogo slug="xing" name="Xing" color="#006567" />
+          </div>
+          <p className="mt-5 max-w-[55ch] mx-auto text-[15px] sm:text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
+            Du wechselst zwischen Jobbörsen, Word und Mail — und verlierst den Überblick.
+            <strong className="text-[var(--color-fg)]"> JobAssist macht alles an einem Ort.</strong>
           </p>
         </div>
       </div>
@@ -443,11 +421,11 @@ function ResumeMockup() {
           <div className="space-y-2.5">
             {skills.map((s) => (
               <div key={s.l} className="grid grid-cols-12 items-center gap-3">
-                <span className="col-span-3 text-[12px] text-[var(--color-fg-muted)]">{s.l}</span>
-                <div className="col-span-8 h-1.5 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
+                <span className="col-span-4 sm:col-span-3 text-[12px] text-[var(--color-fg-muted)]">{s.l}</span>
+                <div className="col-span-6 sm:col-span-8 h-1.5 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${s.v}%`, background: s.c }} />
                 </div>
-                <span className="col-span-1 text-right text-[11px] font-semibold tabular-nums text-[var(--color-fg)]">{s.v}</span>
+                <span className="col-span-2 sm:col-span-1 text-right text-[11px] font-semibold tabular-nums text-[var(--color-fg)]">{s.v}</span>
               </div>
             ))}
           </div>
@@ -629,7 +607,7 @@ function JobsMockup() {
         <div className="grid grid-cols-12 items-center gap-3 px-5 py-3 border-b border-[var(--color-border-subtle)]">
           <div className="col-span-6 flex items-center gap-2">
             <Search className="h-3.5 w-3.5 text-[var(--color-fg-dim)]" />
-            <span className="text-[12px] text-[var(--color-fg-muted)]">Aushilfe Verkauf · Wien · Teilzeit</span>
+            <span className="text-[12px] text-[var(--color-fg-muted)]">Aushilfe · Wien</span>
           </div>
           <div className="col-span-6 justify-self-end flex gap-2">
             <span className="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px] text-[var(--color-fg-muted)]">5 Filter</span>
@@ -792,7 +770,7 @@ function BigQuote() {
       <div className="grid grid-cols-12">
         <div className="col-span-12 md:col-span-10 md:col-start-2">
           <Quote className="h-10 w-10 text-[var(--color-accent-500)]/40 mb-6" />
-          <blockquote className="text-section font-display italic text-[var(--color-fg)] leading-[1.2]">
+          <blockquote className="text-[20px] sm:text-section font-display italic text-[var(--color-fg)] leading-[1.25]">
             &ldquo;Ich hatte null Ahnung, wie man ein Anschreiben schreibt. JobAssist hat mir einen Entwurf gemacht, den ich nur noch anpassen musste. Nach zwei Wochen hatte ich ein Gespräch bei Billa.&rdquo;
           </blockquote>
           <div className="mt-8 grid grid-cols-12 items-center gap-3">
@@ -814,11 +792,11 @@ function BigQuote() {
 /* ─── Section 10: Pricing teaser (Cron pattern — 3 plans + final CTA) ─── */
 
 const LIMIT_LABELS = {
-  cv_analysis: (v) => (v === -1 ? "Unbegrenzt Lebenslauf-Analysen" : `${v} Lebenslauf-Analysen / Monat`),
-  cover_letter: (v) => (v === -1 ? "Unbegrenzt Anschreiben" : `${v} Anschreiben / Monat`),
-  job_alerts: (v) => (v === -1 ? "Unbegrenzt Job-Alerts" : `${v} Job-Alerts`),
-  ai_chat: (v) => (v === -1 ? "Unbegrenzt KI-Nachrichten" : `${v} KI-Nachrichten / Monat`),
-  job_search: (v) => (v === -1 ? "Unbegrenzt Jobsuche" : `${v} Jobsuche / Tag`),
+  cv_analysis: (v) => (v === -1 ? "Unbegrenzte Lebenslauf-Checks" : `${v} Lebenslauf-Checks / Monat`),
+  cover_letter: (v) => (v === -1 ? "Unbegrenzte Bewerbungen" : `${v} Bewerbungen / Monat`),
+  job_alerts: (v) => (v === -1 ? "Unbegrenzte Job-Alerts" : `${v} Job-Alerts`),
+  ai_chat: (v) => (v === -1 ? "Unbegrenzte Fragen an die KI" : `${v} Fragen an die KI / Monat`),
+  job_search: (v) => (v === -1 ? "Unbegrenzte Suche" : `${v} Suchen / Tag`),
 };
 
 function formatPrice(price) {
@@ -958,24 +936,24 @@ function Pricing() {
 function FinalCta() {
   return (
     <section className="relative">
-      <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-32 text-center">
+      <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-20 sm:py-32 text-center">
         <h2 className="text-hero text-[var(--color-fg)]">
           Es ist Zeit.
         </h2>
-        <p className="mt-6 text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
+        <p className="mt-6 text-[15px] sm:text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
           Erstelle ein kostenloses Konto. Keine Kreditkarte erforderlich.
         </p>
-        <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="mt-8 sm:mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 px-4 sm:px-0">
           <Link
             to="/register"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-6 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-6 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
           >
             Kostenlos starten
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             to="/login"
-            className="inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-6 py-3 text-[14px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-6 py-3 text-[14px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
           >
             Ich habe bereits ein Konto
           </Link>
@@ -1055,9 +1033,9 @@ function Footer() {
 
           {/* Link columns */}
           {columns.map((col) => (
-            <div key={col.title} className="col-span-6 md:col-span-2 md:col-start-auto">
-              <h4 className="text-eyebrow text-[var(--color-fg-dim)] mb-4">{col.title}</h4>
-              <ul className="space-y-2.5">
+            <div key={col.title} className="col-span-12 sm:col-span-4 md:col-span-2 md:col-start-auto">
+              <h4 className="text-eyebrow text-[var(--color-fg-dim)] mb-3 sm:mb-4">{col.title}</h4>
+              <ul className="space-y-2 sm:space-y-2.5">
                 {col.links.map((link) => (
                   <li key={link.l}>
                     <Link
