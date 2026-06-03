@@ -35,15 +35,13 @@ for (const vp of viewports) {
     const hero = page.locator("section:has(h1)").first();
     await hero.screenshot({ path: path.join(OUT, `${vp.name}-hero.png`) });
 
-    // Features section
-    await page.evaluate(() => window.scrollTo(0, 2200));
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(OUT, `${vp.name}-features.png`), clip: { x: 0, y: 2200, width: vp.width, height: 800 } });
-
-    // Pricing section
-    await page.evaluate(() => window.scrollTo(0, 5000));
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(OUT, `${vp.name}-pricing.png`), clip: { x: 0, y: 5000, width: vp.width, height: 800 } });
+    // How-it-works section (#how)
+    const howSection = page.locator("section#how");
+    if (await howSection.isVisible().catch(() => false)) {
+      await howSection.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      await howSection.screenshot({ path: path.join(OUT, `${vp.name}-how-it-works.png`) });
+    }
 
     await context.close();
   });
