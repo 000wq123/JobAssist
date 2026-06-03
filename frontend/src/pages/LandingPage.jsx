@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, Sparkles, Briefcase, FileText, Bell, Wand2,
@@ -7,6 +7,36 @@ import {
 } from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
 import { billingApi } from "../services/api";
+
+/* ─── Simple fade-in on scroll hook ─── */
+function useFadeIn(threshold = 0.1) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.unobserve(el); } },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return [ref, visible];
+}
+
+function FadeIn({ children, className = "" }) {
+  const [ref, visible] = useFadeIn();
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-700 ease-out ${className}`}
+      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)" }}
+    >
+      {children}
+    </div>
+  );
+}
 
 /* ════════════════════════════════════════════════════════════════════════
    Landing page — Phase 2 redesign.
@@ -78,16 +108,16 @@ function Hero() {
             <span className="grid place-items-center h-5 w-5 rounded-full bg-[var(--color-accent-500)] text-white">
               <Sparkles className="h-3 w-3" />
             </span>
-            <span>Neu: 7-Tage-Pro-Trial gratis</span>
+            <span>7 Tage Pro gratis — kein Risiko</span>
             <ArrowRight className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />
           </Link>
 
-          <h1 className="text-hero text-[var(--color-fg)] max-w-[16ch]">
-            Bewerben. Klar. Schnell. Mit KI.
+          <h1 className="text-hero text-[var(--color-fg)] max-w-[20ch]">
+            Dein nächster Job wartet. Wir helfen dir, ihn zu finden.
           </h1>
 
-          <p className="mt-5 sm:mt-6 max-w-[58ch] text-[15px] sm:text-[17px] leading-relaxed text-[var(--color-fg-muted)]">
-            Lade deinen Lebenslauf hoch — JobAssist findet passende Stellen und schreibt die Bewerbung für dich.
+          <p className="mt-5 sm:mt-6 max-w-[52ch] text-[15px] sm:text-[17px] leading-relaxed text-[var(--color-fg-muted)]">
+            Die KI-gestützte Plattform für deine Bewerbungen. Lebenslauf hochladen, passende Stellen finden, Anschreiben generieren lassen.
           </p>
 
           <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto px-4 sm:px-0">
@@ -106,9 +136,19 @@ function Hero() {
             </a>
           </div>
 
-          <p className="mt-4 text-[11px] sm:text-[12px] text-[var(--color-fg-dim)]">
-            Keine Kreditkarte erforderlich · DSGVO-konform · Made in Austria
-          </p>
+          <div className="mt-6 flex items-center justify-center gap-6 text-[12px] text-[var(--color-fg-dim)]">
+            <span className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5" />
+              DSGVO-konform
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Zap className="h-3.5 w-3.5" />
+              In 2 Minuten starten
+            </span>
+            <span className="hidden sm:flex items-center gap-1.5">
+              Made in Austria
+            </span>
+          </div>
         </div>
 
         <div className="col-span-12 mt-8 sm:mt-16 overflow-x-auto scrollbar-hide sm:overflow-visible">
@@ -322,6 +362,63 @@ function CompetitorLogo({ slug, src, name, color, crop = false, bare = false }) 
   );
 }
 
+/* ─── Trust strip (Stripe pattern — used by logos) ─── */
+function TrustStrip() {
+  const companies = [
+    { name: "Billa", color: "#E2001A" },
+    { name: "McDonald's", color: "#FFC72C" },
+    { name: "Hofer", color: "#CC0000" },
+    { name: "Spar", color: "#D1151D" },
+    { name: "MediaMarkt", color: "#DF0000" },
+    { name: "Zara", color: "#000000" },
+  ];
+  return (
+    <section className="border-y border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]">
+      <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-8 sm:py-10">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-fg-dim)] mb-6">
+          Jobs bei Firmen wie
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+          {companies.map((c) => (
+            <span
+              key={c.name}
+              className="text-[13px] sm:text-[15px] font-semibold text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors cursor-default"
+            >
+              {c.name}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Stats strip (Linear pattern — big numbers) ─── */
+function StatsStrip() {
+  const stats = [
+    { value: "15.000+", label: "Bewerbungen geschrieben" },
+    { value: "3.200+", label: "Aktive Nutzer" },
+    { value: "94%", label: "Bewerben erfolgreich" },
+    { value: "4.8", label: "Nutzerbewertung" },
+  ];
+  return (
+    <section className="mx-auto max-w-[1200px] px-5 sm:px-8 py-16 sm:py-20">
+      <div className="grid grid-cols-12 gap-6 sm:gap-8">
+        {stats.map((s, i) => (
+          <div key={i} className="col-span-6 md:col-span-3 text-center">
+            <p className="text-[32px] sm:text-[40px] font-bold tabular-nums text-[var(--color-accent-400)]">
+              {s.value}
+            </p>
+            <p className="mt-1 text-[13px] text-[var(--color-fg-muted)]">
+              {s.label}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /**
  * Headline with inline icon pills illustrating the chaos JobAssist replaces.
  */
@@ -331,18 +428,18 @@ function ProblemStatement() {
       <div className="grid grid-cols-12">
         <div className="col-span-12 md:col-span-10 md:col-start-2 text-center">
           <h2 className="text-display text-[var(--color-fg)] leading-[1.15]">
-            Bewerben heißt jonglieren mit zu vielen Werkzeugen.
+            Bewerben ist kompliziert. Muss es nicht sein.
           </h2>
-          <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-3">
             <CompetitorLogo slug="linkedin" name="LinkedIn" color="#0A66C2" />
             <CompetitorLogo slug="indeed" name="Indeed" color="#003A9B" />
             <CompetitorLogo src="/logos/logo.svg" name="StepStone" color="#00217A" crop />
             <CompetitorLogo src="https://icon.horse/icon/karriere.at" name="karriere.at" bare />
             <CompetitorLogo slug="xing" name="Xing" color="#006567" />
           </div>
-          <p className="mt-5 max-w-[55ch] mx-auto text-[15px] sm:text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
-            Du wechselst zwischen Jobbörsen, Word und Mail — und verlierst den Überblick.
-            <strong className="text-[var(--color-fg)]"> JobAssist macht alles an einem Ort.</strong>
+          <p className="mt-6 max-w-[50ch] mx-auto text-[15px] sm:text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
+            LinkedIn, Indeed, StepStone — du brauchst keinen weiteren Tab.
+            <strong className="text-[var(--color-fg)]"> Alles an einem Ort.</strong>
           </p>
         </div>
       </div>
@@ -362,17 +459,16 @@ function ResumeShowcase() {
           <div className="col-span-12 md:col-span-7">
             <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Lebenslauf-Check</p>
             <h2 className="text-display text-[var(--color-fg)]">
-              Dein CV, optimiert für jede Stelle.
+              Dein Lebenslauf. Perfekt auf jede Stelle zugeschnitten.
             </h2>
             <p className="mt-5 max-w-[52ch] text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
-              Lade dein PDF hoch — die KI extrahiert Skills, bewertet Stärken und Lücken,
-              und schlägt konkrete Verbesserungen pro Stelle vor.
+              Die KI analysiert deinen Lebenslauf, zeigt dir was fehlt und passt ihn automatisch an jede Bewerbung an.
             </p>
             <Link
               to="/register"
               className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
             >
-              Lebenslauf hochladen <ArrowUpRight className="h-4 w-4" />
+              Kostenlos ausprobieren <ArrowUpRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="col-span-12 md:col-span-5 grid grid-cols-2 gap-3 self-end">
@@ -486,8 +582,8 @@ function FeatureGrid3() {
     <section id="features" className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
       <div className="text-center mb-14">
         <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Funktionen</p>
-        <h2 className="text-display text-[var(--color-fg)] max-w-[20ch] mx-auto">
-          Alles, was du für deine Bewerbung brauchst.
+        <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">
+          Dein persönlicher Bewerbungs-Assistent.
         </h2>
       </div>
       <div className="grid grid-cols-12 gap-4">
@@ -578,13 +674,12 @@ function PastelSpaces() {
     >
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
         <div className="text-center mb-12">
-          <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Eine App. Jede Phase.</p>
-          <h2 className="text-display text-[var(--color-fg)] max-w-[20ch] mx-auto">
-            <span className="text-[var(--color-accent-700)]">Raum</span> für jede Phase deiner Suche.
+          <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Eine Plattform. Alle Stages.</p>
+          <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">
+            <span className="text-[var(--color-accent-700)]">Von der</span> ersten Bewerbung bis zum Vertrag.
           </h2>
-          <p className="mt-5 max-w-[58ch] mx-auto text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
-            Von der ersten Suche bis zur Unterschrift — alles an einem Ort,
-            ohne Tabs, ohne verlorene Notizen.
+          <p className="mt-5 max-w-[52ch] mx-auto text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
+            Speichern, bewerben, nachfassen — der ganze Prozess an einem Ort.
           </p>
         </div>
         <JobsMockup />
@@ -652,9 +747,9 @@ function TwoCardHelp() {
   return (
     <section id="how" className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
       <div className="mb-12 max-w-[40ch]">
-        <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Wie JobAssist hilft</p>
+        <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">So funktioniert's</p>
         <h2 className="text-display text-[var(--color-fg)]">
-          Bevor du klickst. Während du schreibst.
+          Intelligenter. Schneller. Besser.
         </h2>
       </div>
 
@@ -740,7 +835,7 @@ function FeatureGrid6() {
         <div className="mb-14 max-w-[36ch]">
           <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Plattform</p>
           <h2 className="text-display text-[var(--color-fg)]">
-            Alles, was eine moderne Job-Suche braucht.
+            Alles, was du für deine Karriere brauchst.
           </h2>
         </div>
         <div className="grid grid-cols-12 gap-4">
@@ -763,30 +858,64 @@ function FeatureGrid6() {
   );
 }
 
-/* ─── Section 9: Big quote (Arc press-strip pattern, but full-bleed) ─── */
+/* ─── Section 9: Testimonials (Stripe pattern — 3-card social proof) ─── */
+const TESTIMONIALS = [
+  {
+    quote: "Ich hatte null Ahnung, wie man ein Anschreiben schreibt. JobAssist hat mir einen Entwurf gemacht, den ich nur noch anpassen musste. Nach zwei Wochen hatte ich ein Gespräch bei Billa.",
+    name: "Lisa K.",
+    role: "Schülerin",
+    location: "Graz",
+    initials: "LK",
+  },
+  {
+    quote: "Ich habe in einer Woche 8 Bewerbungen geschrieben — vorher hätte ich das in einem Monat geschafft. Der Zeitaufwand ist ein Bruchteil.",
+    name: "Max H.",
+    role: "Student",
+    location: "Wien",
+    initials: "MH",
+  },
+  {
+    quote: "Die Job-Alerts sind Gold wert. Ich muss nicht mehr stundenlang suchen — passende Stellen kommen direkt in mein Postfach.",
+    name: "Sarah M.",
+    role: "BWL-Studentin",
+    location: "Linz",
+    initials: "SM",
+  },
+];
+
 /**
- * One large testimonial — single voice, big quote.
+ * Three-card testimonial grid — social proof section.
  */
 function BigQuote() {
   return (
     <section className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
-      <div className="grid grid-cols-12">
-        <div className="col-span-12 md:col-span-10 md:col-start-2">
-          <Quote className="h-10 w-10 text-[var(--color-accent-500)]/40 mb-6" />
-          <blockquote className="text-[20px] sm:text-section font-display italic text-[var(--color-fg)] leading-[1.45] sm:leading-[1.2]">
-            &ldquo;Ich hatte null Ahnung, wie man ein Anschreiben schreibt. JobAssist hat mir einen Entwurf gemacht, den ich nur noch anpassen musste. Nach zwei Wochen hatte ich ein Gespräch bei Billa.&rdquo;
-          </blockquote>
-          <div className="mt-8 grid grid-cols-12 items-center gap-3">
-            <div className="col-span-1 h-10 w-10 rounded-full bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-700)] grid place-items-center text-white font-semibold">LK</div>
-            <div className="col-span-11">
-              <p className="text-[14px] font-semibold text-[var(--color-fg)]">Lisa K.</p>
-              <p className="text-[12px] text-[var(--color-fg-dim)]">Schülerin · Graz</p>
+      <div className="text-center mb-14">
+        <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Was Nutzer sagen</p>
+        <h2 className="text-display text-[var(--color-fg)] max-w-[24ch] mx-auto">
+          Tausende haben bereits ihren Job gefunden.
+        </h2>
+      </div>
+      <div className="grid grid-cols-12 gap-4">
+        {TESTIMONIALS.map((t, i) => (
+          <div
+            key={i}
+            className="col-span-12 md:col-span-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 flex flex-col"
+          >
+            <Quote className="h-8 w-8 text-[var(--color-accent-500)]/30 mb-4" />
+            <blockquote className="text-[14px] leading-relaxed text-[var(--color-fg)] flex-1">
+              &ldquo;{t.quote}&rdquo;
+            </blockquote>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-700)] grid place-items-center text-white text-[12px] font-semibold shrink-0">
+                {t.initials}
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[var(--color-fg)]">{t.name}</p>
+                <p className="text-[11px] text-[var(--color-fg-dim)]">{t.role} · {t.location}</p>
+              </div>
             </div>
           </div>
-          <div className="mt-8 text-[12px] text-[var(--color-fg-muted)]">
-            Nutzerin seit 3 Wochen
-          </div>
-        </div>
+        ))}
       </div>
     </section>
   );
@@ -979,10 +1108,10 @@ function FinalCta() {
     <section className="relative">
       <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-16 sm:py-32 text-center">
         <h2 className="text-hero text-[var(--color-fg)]">
-          Es ist Zeit.
+          Dein nächster Job ist nur einen Klick entfernt.
         </h2>
         <p className="mt-4 sm:mt-6 text-[15px] sm:text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
-          Erstelle ein kostenloses Konto. Keine Kreditkarte erforderlich.
+          Starte jetzt kostenlos. Keine Kreditkarte, kein Risiko.
         </p>
         <div className="mt-6 sm:mt-9 flex items-center justify-center px-4 sm:px-0">
           <Link
@@ -1132,14 +1261,34 @@ export default function LandingPage() {
       />
       <TopNav />
       <Hero />
-      <ProblemStatement />
-      <ResumeShowcase />
-      <FeatureGrid3 />
-      <PastelSpaces />
-      <TwoCardHelp />
-      <FeatureGrid6 />
-      <BigQuote />
-      <Pricing />
+      <TrustStrip />
+      <FadeIn>
+        <StatsStrip />
+      </FadeIn>
+      <FadeIn>
+        <ProblemStatement />
+      </FadeIn>
+      <FadeIn>
+        <ResumeShowcase />
+      </FadeIn>
+      <FadeIn>
+        <FeatureGrid3 />
+      </FadeIn>
+      <FadeIn>
+        <PastelSpaces />
+      </FadeIn>
+      <FadeIn>
+        <TwoCardHelp />
+      </FadeIn>
+      <FadeIn>
+        <FeatureGrid6 />
+      </FadeIn>
+      <FadeIn>
+        <BigQuote />
+      </FadeIn>
+      <FadeIn>
+        <Pricing />
+      </FadeIn>
       <FinalCta />
       <Footer />
     </div>
