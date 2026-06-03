@@ -87,8 +87,7 @@ function Hero() {
           </h1>
 
           <p className="mt-6 max-w-[58ch] text-[16px] sm:text-[17px] leading-relaxed text-[var(--color-fg-muted)]">
-            Lade deinen Lebenslauf hoch, finde passende Stellen in ganz Österreich und lass die KI
-            Anschreiben, Match-Scores und Interview-Fragen für dich erledigen.
+            Lade deinen Lebenslauf hoch — JobAssist findet passende Stellen und schreibt die Bewerbung für dich.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
@@ -383,7 +382,7 @@ function ResumeShowcase() {
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
         <div className="grid grid-cols-12 gap-8 mb-12">
           <div className="col-span-12 md:col-span-7">
-            <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Lebenslauf</p>
+            <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Lebenslauf-Check</p>
             <h2 className="text-display text-[var(--color-fg)]">
               Dein CV, optimiert für jede Stelle.
             </h2>
@@ -603,7 +602,7 @@ function PastelSpaces() {
             <span className="text-[var(--color-accent-700)]">Raum</span> für jede Phase deiner Suche.
           </h2>
           <p className="mt-5 max-w-[58ch] mx-auto text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
-            Von der ersten Recherche bis zur Vertragsunterschrift — alles an einem Ort,
+            Von der ersten Suche bis zur Unterschrift — alles an einem Ort,
             ohne Tabs, ohne verlorene Notizen.
           </p>
         </div>
@@ -687,7 +686,7 @@ function TwoCardHelp() {
             JobAssist liest die Stelle für dich
           </p>
           <p className="text-[13px] text-[var(--color-fg-muted)] mb-6">
-            Die KI extrahiert Anforderungen und Skills — und gleicht sie sofort mit deinem Profil ab.
+            Die KI liest die Anforderungen der Stelle und vergleicht sie mit deinem Profil.
           </p>
           <div className="mt-auto rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-4">
             <div className="flex flex-wrap gap-1.5">
@@ -733,18 +732,18 @@ function TwoCardHelp() {
 
 /* ─── Section 8: 6-card grid (Plain dark grid pattern) ─── */
 const GRID_FEATURES = [
-  { icon: Briefcase,    cat: "Pipeline",     title: "Meine Stellen",
-    desc: "Behalte den Überblick über jede Bewerbung — Status, Deadlines, Notizen." },
-  { icon: Wand2,        cat: "KI-Assistent", title: "Lebenslauf-Anpassung",
-    desc: "Die KI passt deinen Lebenslauf auf die Stellenanzeige an — konkret und nachvollziehbar." },
-  { icon: Bell,         cat: "Alerts",       title: "Job-Alerts",
-    desc: "Tägliche oder wöchentliche Mails mit den passendsten Stellen — kuratiert, ohne Spam." },
-  { icon: Globe,        cat: "Recherche",    title: "Firmen-Insights",
-    desc: "Werte, Größe, Kultur — die KI fasst alles zusammen, was du vor dem Gespräch wissen musst." },
-  { icon: Shield,       cat: "Privatsphäre", title: "DSGVO & EU AI Act",
-    desc: "Daten in der EU, jederzeit löschbar. Compliance-by-default, ohne Tracking-Theater." },
-  { icon: Zap,          cat: "Export",       title: "Deine Daten, dein Format",
-    desc: "Exportiere deinen Lebenslauf als PDF. Dein Profil gehört dir — jederzeit löschbar." },
+  { icon: Briefcase,    cat: "Übersicht",    title: "Meine Stellen",
+    desc: "Alle Bewerbungen an einem Ort. Du siehst sofort, bei welchen Firmen du dich beworben hast." },
+  { icon: Wand2,        cat: "Lebenslauf",   title: "Auf die Stelle anpassen",
+    desc: "Die KI zeigt dir, was du im Lebenslauf ergänzen oder ändern solltest — ganz einfach." },
+  { icon: Bell,         cat: "Benachrichtigungen", title: "Jobs per Mail",
+    desc: "Passende Stellen kommen direkt in dein Postfach. Du musst nicht selbst suchen." },
+  { icon: Globe,        cat: "Infos",        title: "Firmen vor dem Gespräch",
+    desc: "Wie groß ist die Firma? Wie ist die Kultur? Die KI bereitet dich auf das Gespräch vor." },
+  { icon: Shield,       cat: "Datenschutz",  title: "Deine Daten, dein Profil",
+    desc: "Alle Daten bleiben in Österreich. Du kannst dein Profil jederzeit löschen." },
+  { icon: Zap,          cat: "Download",     title: "Lebenslauf als PDF",
+    desc: "Lade deinen fertigen Lebenslauf herunter und schicke ihn mit deiner Bewerbung ab." },
 ];
 
 /**
@@ -888,7 +887,7 @@ function Pricing() {
         <div className="text-center mb-14">
           <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Preise</p>
           <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">
-            Starte kostenlos. Upgrade, wenn du mehr willst.
+            Starte kostenlos. Mehr Funktionen, wenn du sie brauchst.
           </h2>
         </div>
         <div className="grid grid-cols-12 gap-4">
