@@ -79,10 +79,10 @@ function FadeIn({ children, className = "" }) {
 function TopNav() {
   return (
     <header
-      className="sticky top-0 z-40 w-full backdrop-blur-md backdrop-saturate-150 relative"
-      style={{ background: "rgba(255,255,255,0.72)" }}
+      className="sticky top-0 z-50 w-full backdrop-blur-xl backdrop-saturate-150 border-b border-[var(--color-border)]/[0.5]"
+      style={{ background: "rgba(250,250,247,0.65)" }}
     >
-      <div className="mx-auto grid max-w-[1200px] grid-cols-12 items-center gap-4 px-5 py-3.5 sm:px-8">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-12 items-center gap-4 px-5 py-3 sm:px-8">
         <Link to="/" className="col-span-6 md:col-span-3 flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-accent-500)]">
             <Sparkles className="h-4 w-4 text-white" />
@@ -91,7 +91,7 @@ function TopNav() {
         </Link>
         <nav className="col-span-6 hidden md:flex md:col-span-6 items-center justify-center gap-8 text-[14px] text-[var(--color-fg-muted)]">
           <a href="#features" className="hover:text-[var(--color-fg)] transition-colors">Funktionen</a>
-          <a href="#how" className="hover:text-[var(--color-fg)] transition-colors">So funktioniert&apos;s</a>
+          <a href="#personas" className="hover:text-[var(--color-fg)] transition-colors">Für wen</a>
           <Link to="/pricing" className="hover:text-[var(--color-fg)] transition-colors">Preise</Link>
         </nav>
         <div className="col-span-6 md:col-span-3 flex items-center justify-end gap-2">
@@ -103,22 +103,13 @@ function TopNav() {
           </Link>
           <Link
             to="/register"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3.5 py-2 text-[13px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-500)] px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors shadow-[0_2px_8px_rgba(124,92,255,0.3)]"
           >
             Jetzt starten
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
-      {/* Subtle accent hairline at the bottom for definition */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(124,92,255,0.45) 50%, transparent 100%)",
-        }}
-      />
     </header>
   );
 }
@@ -129,7 +120,15 @@ function TopNav() {
  */
 function Hero() {
   return (
-    <section className="relative">
+    <section className="relative overflow-hidden">
+      {/* Animated mesh gradient background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,92,255,0.18), transparent 60%), radial-gradient(ellipse 60% 40% at 80% 50%, rgba(172,153,255,0.10), transparent 50%), radial-gradient(ellipse 50% 50% at 20% 60%, rgba(144,119,255,0.08), transparent 50%)",
+        }}
+      />
       <div className="relative mx-auto grid max-w-[1200px] grid-cols-12 gap-6 px-5 pt-14 pb-10 sm:px-8 sm:pt-20 sm:pb-12 md:pt-32">
         <div className="col-span-12 flex flex-col items-center text-center">
           <Link to="/pricing" className="pill-banner mb-6 sm:mb-8">
@@ -140,7 +139,7 @@ function Hero() {
             <ArrowRight className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />
           </Link>
 
-          <h1 className="text-hero text-[var(--color-fg)] max-w-[20ch]">
+          <h1 className="text-hero text-[var(--color-fg)] max-w-[22ch] font-display" style={{ fontFamily: "var(--font-family-display)", letterSpacing: "-0.02em" }}>
             Dein nächster Job wartet. Wir helfen dir, ihn zu finden.
           </h1>
 
@@ -961,9 +960,16 @@ function Pricing() {
  */
 function FinalCta() {
   return (
-    <section className="relative">
+    <section className="relative overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(124,92,255,0.12), transparent 60%)",
+        }}
+      />
       <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-16 sm:py-32 text-center">
-        <h2 className="text-hero text-[var(--color-fg)]">
+        <h2 className="text-hero text-[var(--color-fg)]" style={{ fontFamily: "var(--font-family-display)", letterSpacing: "-0.02em" }}>
           Dein nächster Job ist nur einen Klick entfernt.
         </h2>
         <p className="mt-4 sm:mt-6 text-[15px] sm:text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
@@ -1095,26 +1101,21 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen overflow-x-clip bg-[var(--color-bg)] text-[var(--color-fg)] font-sans">
-      {/* Page-level radial glow — sits behind the transparent header so the hero
-          purple wash bleeds all the way to the top of the viewport. */}
+      {/* Subtle animated mesh — global ambient glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[700px]"
+        className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,92,255,0.22), transparent 70%)",
+          background: "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,92,255,0.10), transparent 70%)",
+          animation: "meshPulse 8s ease-in-out infinite",
         }}
       />
-      {/* Page-level radial glow at the bottom — mirrors the top glow so FinalCta
-          and Footer share one continuous purple wash. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[700px]"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 100%, rgba(124,92,255,0.22), transparent 70%)",
-        }}
-      />
+      <style>{`
+        @keyframes meshPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `}</style>
       <TopNav />
       <Hero />
       <TrustStrip />
