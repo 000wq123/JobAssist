@@ -22,7 +22,7 @@ function TopNav() {
   return (
     <header
       className="sticky top-0 z-40 w-full backdrop-blur-md backdrop-saturate-150 relative"
-      style={{ background: "rgba(11,11,15,0.72)" }}
+      style={{ background: "rgba(255,255,255,0.72)" }}
     >
       <div className="mx-auto grid max-w-[1200px] grid-cols-12 items-center gap-4 px-5 py-3.5 sm:px-8">
         <Link to="/" className="col-span-6 md:col-span-3 flex items-center gap-2">
@@ -46,7 +46,7 @@ function TopNav() {
           </Link>
           <Link
             to="/register"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-500)] px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3.5 py-2 text-[13px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
           >
             Jetzt starten
             <ArrowRight className="h-3.5 w-3.5" />
@@ -420,7 +420,7 @@ function ResumeShowcase() {
           <div className="col-span-12 md:col-span-7">
             <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Lebenslauf</p>
             <h2 className="text-display text-[var(--color-fg)]">
-              Dein <span className="font-display italic">CV</span>, optimiert für jede Stelle.
+              Dein CV, optimiert für jede Stelle.
             </h2>
             <p className="mt-5 max-w-[52ch] text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
               Lade dein PDF hoch — die KI extrahiert Skills, bewertet Stärken und Lücken,
@@ -542,8 +542,7 @@ function FeatureGrid3() {
       <div className="text-center mb-14">
         <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Funktionen</p>
         <h2 className="text-display text-[var(--color-fg)] max-w-[20ch] mx-auto">
-          Alles, was du für deine{" "}
-          <span className="font-display italic text-[var(--color-accent-300)]">Bewerbung</span> brauchst.
+          Alles, was du für deine Bewerbung brauchst.
         </h2>
       </div>
       <div className="grid grid-cols-12 gap-4">
@@ -629,7 +628,7 @@ function FeatureCardVisual({ variant }) {
 function PastelSpaces() {
   return (
     <section
-      className="surface-dark relative overflow-hidden"
+      className="relative overflow-hidden"
       style={{ background: "linear-gradient(180deg, #F6EFD8 0%, #FBC8B5 100%)" }}
     >
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
@@ -710,8 +709,7 @@ function TwoCardHelp() {
       <div className="mb-12 max-w-[40ch]">
         <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Wie JobAssist hilft</p>
         <h2 className="text-display text-[var(--color-fg)]">
-          Bevor du klickst.{" "}
-          <span className="font-display italic text-[var(--color-accent-300)]">Während du schreibst.</span>
+          Bevor du klickst. Während du schreibst.
         </h2>
       </div>
 
@@ -772,16 +770,16 @@ function TwoCardHelp() {
 const GRID_FEATURES = [
   { icon: Briefcase,    cat: "Pipeline",     title: "Bewerbungs-Tracker",
     desc: "Behalte den Überblick über jede Bewerbung — Status, Deadlines, Notizen." },
-  { icon: Wand2,        cat: "KI-Assistent", title: "Smart-Optimierung",
-    desc: "Lass die KI deinen Lebenslauf für jede Stelle individuell anpassen." },
+  { icon: Wand2,        cat: "KI-Assistent", title: "Lebenslauf-Anpassung",
+    desc: "Die KI passt deinen Lebenslauf auf die Stellenanzeige an — konkret und nachvollziehbar." },
   { icon: Bell,         cat: "Alerts",       title: "Job-Alerts",
     desc: "Tägliche oder wöchentliche Mails mit den passendsten Stellen — kuratiert, ohne Spam." },
   { icon: Globe,        cat: "Recherche",    title: "Firmen-Insights",
     desc: "Werte, Größe, Kultur — die KI fasst alles zusammen, was du vor dem Gespräch wissen musst." },
   { icon: Shield,       cat: "Privatsphäre", title: "DSGVO & EU AI Act",
     desc: "Daten in der EU, jederzeit löschbar. Compliance-by-default, ohne Tracking-Theater." },
-  { icon: Zap,          cat: "API",          title: "Build anything",
-    desc: "Komplette Export-Funktion — JSON, PDF, Markdown. Dein Profil gehört dir." },
+  { icon: Zap,          cat: "Export",       title: "Deine Daten, dein Format",
+    desc: "Exportiere deinen Lebenslauf als PDF. Dein Profil gehört dir — jederzeit löschbar." },
 ];
 
 /**
@@ -797,8 +795,7 @@ function FeatureGrid6() {
         <div className="mb-14 max-w-[36ch]">
           <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Plattform</p>
           <h2 className="text-display text-[var(--color-fg)]">
-            Alles, was eine moderne{" "}
-            <span className="font-display italic text-[var(--color-accent-300)]">Job-Suche</span> braucht.
+            Alles, was eine moderne Job-Suche braucht.
           </h2>
         </div>
         <div className="grid grid-cols-12 gap-4">
@@ -846,7 +843,7 @@ function BigQuote() {
             {Array.from({ length: 5 }).map((_, i) => (
               <Star key={i} className="h-4 w-4 fill-[var(--color-warning)] text-[var(--color-warning)]" />
             ))}
-            <span className="ml-2 text-[12px] text-[var(--color-fg-dim)]">4.8/5 · 312 Bewertungen</span>
+            <span className="ml-2 text-[12px] text-[var(--color-fg-dim)]">4.8/5 · Google Play</span>
           </div>
         </div>
       </div>
@@ -918,8 +915,7 @@ function Pricing() {
         <div className="text-center mb-14">
           <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Preise</p>
           <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">
-            Starte kostenlos. Upgrade,{" "}
-            <span className="font-display italic text-[var(--color-accent-300)]">wenn du mehr willst.</span>
+            Starte kostenlos. Upgrade, wenn du mehr willst.
           </h2>
         </div>
         <div className="grid grid-cols-12 gap-4">
@@ -944,7 +940,7 @@ function Pricing() {
                 )}
                 <h3 className="text-[16px] font-semibold text-[var(--color-fg)]">{p.name}</h3>
                 <p className="text-[13px] text-[var(--color-fg-muted)]">
-                  {p.key === "basic" ? "Zum Ausprobieren" : p.key === "pro" ? "Für aktive Bewerber" : "Unbegrenzte Power"}
+                  {p.key === "basic" ? "Zum Ausprobieren" : p.key === "pro" ? "Für aktive Bewerber" : "Ohne Limits"}
                 </p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-[40px] font-bold tracking-tight text-[var(--color-fg)]">{price.text}</span>
@@ -992,7 +988,7 @@ function FinalCta() {
     <section className="relative">
       <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-32 text-center">
         <h2 className="text-hero text-[var(--color-fg)]">
-          <span className="font-display italic">Es ist</span> Zeit.
+          Es ist Zeit.
         </h2>
         <p className="mt-6 text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
           Erstelle in 30 Sekunden ein kostenloses Konto. Keine Kreditkarte erforderlich.
@@ -1105,22 +1101,6 @@ function Footer() {
               </ul>
             </div>
           ))}
-        </div>
-
-        {/* Giant wordmark band — Plain/Resend signature finisher */}
-        <div
-          aria-hidden="true"
-          className="font-display italic select-none leading-none"
-          style={{
-            fontSize: "clamp(80px, 18vw, 220px)",
-            background: "linear-gradient(180deg, rgba(124,92,255,0.22) 0%, rgba(124,92,255,0.02) 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-            letterSpacing: "-0.04em",
-          }}
-        >
-          JobAssist
         </div>
 
         {/* Bottom bar */}
