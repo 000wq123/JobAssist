@@ -55,7 +55,7 @@ export default function RegisterPage() {
     <AuthLayout>
       <div className="mb-7 text-center">
         <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight leading-[1.1] text-[var(--color-fg)]">
-          <span className="font-display italic text-[var(--color-accent-300)]">Starte</span> in 30 Sekunden.
+          <span className="font-display italic text-[var(--color-accent-300)]">Konto</span> erstellen.
         </h1>
         <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
           Kostenlos. Keine Kreditkarte erforderlich.

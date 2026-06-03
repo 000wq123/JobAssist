@@ -60,7 +60,7 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
             <div
               key={location.pathname}
               className="auth-card-enter rounded-2xl border border-[var(--color-border)] p-7 sm:p-9 backdrop-blur-sm"
-              style={{ background: "rgba(20,20,28,0.65)" }}
+              style={{ background: "rgba(255,255,255,0.72)" }}
             >
               {children}
             </div>
