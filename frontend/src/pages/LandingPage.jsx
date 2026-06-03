@@ -8,6 +8,34 @@ import {
 import useAuthStore from "../hooks/useAuthStore";
 import { billingApi } from "../services/api";
 
+/* ─── Count-up animation hook ─── */
+function useCountUp(end, duration = 2000) {
+  const [count, setCount] = useState(0);
+  const [ref, visible] = useFadeIn(0.3);
+  useEffect(() => {
+    if (!visible) return;
+    let start = 0;
+    const isFloat = String(end).includes(".");
+    const isPercent = String(end).includes("%");
+    const isPlus = String(end).includes("+");
+    const numericEnd = parseFloat(String(end).replace(/[^0-9.]/g, ""));
+    const stepTime = 20;
+    const steps = duration / stepTime;
+    const increment = numericEnd / steps;
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= numericEnd) {
+        setCount(numericEnd);
+        clearInterval(timer);
+      } else {
+        setCount(isFloat ? parseFloat(start.toFixed(1)) : Math.floor(start));
+      }
+    }, stepTime);
+    return () => clearInterval(timer);
+  }, [visible, end, duration]);
+  return [ref, count, visible];
+}
+
 /* ─── Simple fade-in on scroll hook ─── */
 function useFadeIn(threshold = 0.1) {
   const ref = useRef(null);
@@ -152,7 +180,7 @@ function Hero() {
         </div>
 
         <div className="col-span-12 mt-8 sm:mt-16 overflow-x-auto scrollbar-hide sm:overflow-visible">
-          <DashboardMockup />
+          <InteractiveJobDemo />
         </div>
       </div>
     </section>
@@ -160,117 +188,139 @@ function Hero() {
 }
 
 /**
- * Hero product mockup — JobAssist dashboard rendered with `.browser-mockup` chrome.
+ * Interactive job search demo — users can type and see AI matches animate in.
+ * Inspired by Bolt.new and Cursor live product demos.
  */
-function DashboardMockup() {
-  const jobs = [
-    { c: "Billa",              r: "Aushilfe Verkauf",         s: 91 },
-    { c: "McDonald's",          r: "Servicekraft",             s: 78 },
-    { c: "Sporthaus Schuster",  r: "Teilzeit Lager",           s: 64 },
-    { c: "Rathaus Wien",        r: "Praktikum Verwaltung",     s: 71 },
+function InteractiveJobDemo() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const demoQuery = "Aushilfe Verkauf";
+  const allJobs = [
+    { c: "Billa", r: "Aushilfe Verkauf", l: "Wien", s: 94, tags: ["Keine Erfahrung", "Flexibel"] },
+    { c: "McDonald's", r: "Servicekraft", l: "Wien", s: 87, tags: ["Schüler", "Wochenende"] },
+    { c: "Spar", r: "Verkäufer Teilzeit", l: "Graz", s: 82, tags: ["Teilzeit", "Kasse"] },
+    { c: "MediaMarkt", r: "Beratung Elektronik", l: "Linz", s: 76, tags: ["Technik", "Team"] },
+    { c: "Rathaus Wien", r: "Praktikum Verwaltung", l: "Wien", s: 71, tags: ["Praktikum", "Büro"] },
   ];
+
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setQuery(demoQuery.slice(0, i));
+      if (i >= demoQuery.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+        setResults(allJobs);
+      }
+    }, 120);
+    setIsTyping(true);
+    return () => clearInterval(interval);
+  }, []);
+
+  const filtered = query.length > 2
+    ? allJobs.filter((j) =>
+        j.r.toLowerCase().includes(query.toLowerCase()) ||
+        j.c.toLowerCase().includes(query.toLowerCase())
+      )
+    : [];
+
+  const displayResults = results.length > 0 ? results : filtered;
+
   return (
-    <div className="browser-mockup mx-auto max-w-full sm:max-w-[1080px]">
-      <div className="grid grid-cols-12 gap-0">
-        {/* Sidebar */}
-        <aside className="col-span-3 border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-4 hidden md:block">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="grid h-7 w-7 place-items-center rounded-md bg-[var(--color-accent-500)]">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
+    <div className="browser-mockup mx-auto max-w-full sm:max-w-[900px]">
+      <div className="bg-[var(--color-bg)] rounded-lg p-4 sm:p-6">
+        {/* Search bar */}
+        <div className="relative mb-5">
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-4 py-3">
+            <Search className="h-4 w-4 text-[var(--color-fg-dim)] shrink-0" />
+            <div className="flex-1 relative">
+              <span className="text-[14px] text-[var(--color-fg)]">{query}</span>
+              {isTyping && (
+                <span className="inline-block w-[2px] h-[16px] bg-[var(--color-accent-400)] ml-0.5 animate-pulse" />
+              )}
+              {!query && !isTyping && (
+                <span className="text-[14px] text-[var(--color-fg-dim)]">z.B. Aushilfe Verkauf</span>
+              )}
             </div>
-            <span className="text-[12px] font-semibold text-[var(--color-fg)]">JobAssist</span>
-          </div>
-          <nav className="space-y-1">
-            {[
-              { i: TrendingUp, l: "Dashboard",   active: true  },
-              { i: Briefcase,  l: "Stellen",     active: false },
-              { i: FileText,   l: "Lebenslauf",  active: false },
-              { i: Wand2,      l: "KI-Assistent", active: false },
-              { i: Bell,       l: "Job-Alerts",  active: false },
-            ].map(({ i: Icon, l, active }) => (
-              <div
-                key={l}
-                className={`grid grid-cols-12 items-center gap-2 rounded-md px-2.5 py-2 text-[12px] ${
-                  active
-                    ? "bg-[var(--color-bg-elev-2)] text-[var(--color-fg)]"
-                    : "text-[var(--color-fg-muted)]"
-                }`}
-              >
-                <Icon className="col-span-2 h-3.5 w-3.5" />
-                <span className="col-span-10">{l}</span>
-              </div>
-            ))}
-          </nav>
-        </aside>
-
-        {/* Main */}
-        <main className="col-span-12 md:col-span-9 p-5 sm:p-6 bg-[var(--color-bg)]">
-          <div className="mb-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">
-              Übersicht
-            </p>
-            <h3 className="mt-1 text-[18px] font-semibold text-[var(--color-fg)]">
-              Guten Morgen, Lisa
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-12 gap-3 mb-5">
-            {[
-              { l: "Match-Score",   v: "82%", d: "+4% vs Vorwoche" },
-              { l: "Beworben",      v: "12",  d: "diese Woche"      },
-              { l: "Interviews",    v: "3",   d: "anstehend"        },
-            ].map((kpi) => (
-              <div
-                key={kpi.l}
-                className="col-span-12 sm:col-span-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-3"
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">
-                  {kpi.l}
-                </p>
-                <p className="mt-1 text-[22px] font-bold tabular-nums text-[var(--color-fg)]">
-                  {kpi.v}
-                </p>
-                <p className="text-[10px] text-[var(--color-fg-dim)]">{kpi.d}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]">
-            <div className="grid grid-cols-12 items-center gap-2 px-4 py-2.5 border-b border-[var(--color-border-subtle)]">
-              <p className="col-span-7 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">
-                Top-Matches
-              </p>
-              <span className="col-span-5 justify-self-end text-[10px] text-[var(--color-fg-dim)]">
-                {jobs.length} aktive Stellen
+            {query.length > 0 && (
+              <span className="text-[11px] font-medium text-[var(--color-accent-300)] bg-[var(--color-accent-500)]/10 px-2 py-1 rounded-md">
+                {displayResults.length} Treffer
               </span>
+            )}
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="space-y-2">
+          {displayResults.length === 0 && query.length > 2 && (
+            <div className="text-center py-8 text-[13px] text-[var(--color-fg-muted)]">
+              Tippe einen Job-Titel ein, um passende Stellen zu sehen.
             </div>
-            <div className="divide-y divide-[var(--color-border-subtle)]">
-              {jobs.map((j) => (
-                <div key={j.c} className="grid grid-cols-12 items-center gap-3 px-4 py-2.5">
-                  <div className="col-span-1 h-6 w-6 rounded-md bg-[var(--color-bg-elev-2)] grid place-items-center">
-                    <Briefcase className="h-3 w-3 text-[var(--color-fg-muted)]" />
-                  </div>
-                  <div className="col-span-7 min-w-0">
-                    <p className="text-[12px] font-medium text-[var(--color-fg)] truncate">{j.r}</p>
-                    <p className="text-[10px] text-[var(--color-fg-dim)] truncate">{j.c}</p>
-                  </div>
-                  <div className="col-span-3 hidden sm:block">
-                    <div className="h-1.5 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[var(--color-accent-500)]"
-                        style={{ width: `${j.s}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span className="col-span-1 sm:col-span-1 text-right text-[12px] font-bold tabular-nums text-[var(--color-fg)]">
-                    {j.s}%
-                  </span>
+          )}
+          {displayResults.map((j, idx) => (
+            <div
+              key={j.c + j.r}
+              className="group rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-3 sm:p-4 hover:border-[var(--color-accent-500)]/30 hover:bg-[var(--color-bg-elev-2)] transition-all duration-300 cursor-default"
+              style={{
+                animation: `fadeInUp 0.4s ease-out ${idx * 0.1}s both`,
+              }}
+            >
+              <div className="grid grid-cols-12 items-center gap-3">
+                <div className="col-span-1 h-8 w-8 rounded-lg bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-700)] grid place-items-center text-white text-[10px] font-bold shrink-0">
+                  {j.c[0]}
                 </div>
-              ))}
+                <div className="col-span-6 sm:col-span-5 min-w-0">
+                  <p className="text-[13px] font-semibold text-[var(--color-fg)] truncate">{j.r}</p>
+                  <p className="text-[11px] text-[var(--color-fg-dim)]">{j.c} · {j.l}</p>
+                </div>
+                <div className="col-span-5 sm:col-span-4 flex flex-wrap gap-1 justify-end">
+                  {j.tags.map((t) => (
+                    <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-bg-elev-2)] text-[var(--color-fg-muted)] border border-[var(--color-border-subtle)]">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+                <div className="col-span-12 sm:col-span-2 flex items-center gap-2 justify-end">
+                  <div className="h-1.5 w-16 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden hidden sm:block">
+                    <div
+                      className="h-full rounded-full bg-[var(--color-accent-400)]"
+                      style={{ width: `${j.s}%`, transition: "width 1s ease-out 0.3s" }}
+                    />
+                  </div>
+                  <span className="text-[13px] font-bold tabular-nums text-[var(--color-accent-300)]">{j.s}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* AI insight banner */}
+        {displayResults.length > 0 && (
+          <div
+            className="mt-4 rounded-lg border border-[var(--color-accent-500)]/20 bg-[var(--color-accent-500)]/5 p-3 flex items-start gap-3"
+            style={{ animation: "fadeInUp 0.5s ease-out 0.6s both" }}
+          >
+            <Sparkles className="h-4 w-4 text-[var(--color-accent-400)] mt-0.5 shrink-0" />
+            <div>
+              <p className="text-[12px] font-medium text-[var(--color-fg)]">
+                KI-Matching basiert auf deinem Lebenslauf
+              </p>
+              <p className="text-[11px] text-[var(--color-fg-muted)]">
+                {displayResults[0].r} bei {displayResults[0].c} passt am besten zu deinen Skills.
+              </p>
             </div>
           </div>
-        </main>
+        )}
       </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -393,26 +443,39 @@ function TrustStrip() {
   );
 }
 
-/* ─── Stats strip (Linear pattern — big numbers) ─── */
+/* ─── Stats strip (Linear pattern — big numbers with count-up) ─── */
+function AnimatedStat({ value, label }) {
+  const [ref, count] = useCountUp(value, 2500);
+  const isPercent = value.includes("%");
+  const isPlus = value.includes("+");
+  const isDot = value.includes(".");
+  const suffix = isPercent ? "%" : isPlus ? "+" : "";
+  const prefix = value.includes("€") ? "€" : "";
+  const displayValue = isDot ? count.toFixed(1) : count.toLocaleString("de-DE");
+  return (
+    <div ref={ref} className="col-span-6 md:col-span-3 text-center">
+      <p className="text-[32px] sm:text-[48px] font-bold tabular-nums text-[var(--color-accent-400)]">
+        {prefix}{displayValue}{suffix}
+      </p>
+      <p className="mt-1 text-[13px] text-[var(--color-fg-muted)]">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 function StatsStrip() {
   const stats = [
-    { value: "15.000+", label: "Bewerbungen geschrieben" },
-    { value: "3.200+", label: "Aktive Nutzer" },
-    { value: "94%", label: "Bewerben erfolgreich" },
+    { value: "15000+", label: "Bewerbungen geschrieben" },
+    { value: "3200+", label: "Aktive Nutzer" },
+    { value: "94%", label: "Erfolgsquote" },
     { value: "4.8", label: "Nutzerbewertung" },
   ];
   return (
     <section className="mx-auto max-w-[1200px] px-5 sm:px-8 py-16 sm:py-20">
       <div className="grid grid-cols-12 gap-6 sm:gap-8">
         {stats.map((s, i) => (
-          <div key={i} className="col-span-6 md:col-span-3 text-center">
-            <p className="text-[32px] sm:text-[40px] font-bold tabular-nums text-[var(--color-accent-400)]">
-              {s.value}
-            </p>
-            <p className="mt-1 text-[13px] text-[var(--color-fg-muted)]">
-              {s.label}
-            </p>
-          </div>
+          <AnimatedStat key={i} value={s.value} label={s.label} />
         ))}
       </div>
     </section>
@@ -552,307 +615,100 @@ function ResumeMockup() {
   );
 }
 
-/* ─── Section 5: 3-card features (Cluely "Undetectable in every way" pattern) ─── */
-const FEATURE_CARDS = [
-  {
-    icon: Target,
-    title: "Intelligentes Matching",
-    desc: "Die KI bewertet jede Stelle in Sekunden — du siehst auf einen Blick, wo du wirklich passt.",
-    visual: "match",
-  },
-  {
-    icon: Wand2,
-    title: "Anschreiben in Sekunden",
-    desc: "Personalisierte Motivationsschreiben — auf Ton, Stelle und Profil zugeschnitten.",
-    visual: "letter",
-  },
-  {
-    icon: MessageSquare,
-    title: "Interview-Vorbereitung",
-    desc: "Übe mit Fragen, die exakt auf den Job und deinen Lebenslauf zugeschnitten sind.",
-    visual: "interview",
-  },
+/* ─── Persona sections (Notion/Retool pattern) ─── */
+const PERSONAS = [
+  { icon: Target, label: "Schüler", age: "16–18", headline: "Erster Job? Kein Problem.", points: ["Praktika ohne Erfahrung finden", "Anschreiben ohne Berufsleben", "Schüler-friendly Filter"], cta: "Für Schüler" },
+  { icon: Briefcase, label: "Student", age: "19–25", headline: "Neben dem Studium verdienen.", points: ["Werkstudenten und Teilzeit", "An Semesterferien anpassen", "Alerts für deinen Studienort"], cta: "Für Studenten" },
+  { icon: TrendingUp, label: "Berufseinsteiger", age: "25+", headline: "Den richtigen Einstieg finden.", points: ["Quereinsteiger mit Transfer-Check", "Lebenslauf optimieren", "Firmen-Insights vor Gespräch"], cta: "Für Einsteiger" },
 ];
 
-/**
- * 3-column feature grid with custom mini-visuals per card.
- */
-function FeatureGrid3() {
+function PersonaSection() {
+  const [active, setActive] = useState(0);
+  return (
+    <section id="personas" className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
+      <div className="text-center mb-14">
+        <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Für wen</p>
+        <h2 className="text-display text-[var(--color-fg)] max-w-[24ch] mx-auto">Egal wo du stehst — wir helfen weiter.</h2>
+      </div>
+      <div className="flex gap-2 mb-8">
+        {PERSONAS.map((p, i) => (
+          <button key={i} onClick={() => setActive(i)} className={`flex-1 rounded-xl border px-5 py-4 text-left transition-all ${active === i ? "border-[var(--color-accent-500)]/40 bg-[var(--color-bg-elev-2)]" : "border-[var(--color-border)] bg-[var(--color-bg-elev-1)] hover:bg-[var(--color-bg-elev-2)]"}`}>
+            <div className="flex items-center gap-3">
+              <div className={`grid h-9 w-9 place-items-center rounded-lg ${active === i ? "bg-[var(--color-accent-500)]" : "bg-[var(--color-accent-500)]/10"}`}>
+                <p.icon className={`h-4 w-4 ${active === i ? "text-white" : "text-[var(--color-accent-300)]"}`} />
+              </div>
+              <div><p className="text-[14px] font-semibold text-[var(--color-fg)]">{p.label}</p><p className="text-[11px] text-[var(--color-fg-dim)]">{p.age} Jahre</p></div>
+            </div>
+          </button>
+        ))}
+      </div>
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-8">
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-12 md:col-span-6">
+            <p className="text-[22px] font-semibold text-[var(--color-fg)] mb-5">{PERSONAS[active].headline}</p>
+            <ul className="space-y-3">
+              {PERSONAS[active].points.map((pt, j) => (
+                <li key={j} className="flex items-start gap-3 text-[14px] text-[var(--color-fg-muted)]"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent-400)] mt-0.5 shrink-0" />{pt}</li>
+              ))}
+            </ul>
+            <Link to="/register" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors">{PERSONAS[active].cta} <ArrowRight className="h-3.5 w-3.5" /></Link>
+          </div>
+          <div className="col-span-12 md:col-span-6 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-6 grid place-items-center">
+            <div className="text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)] mb-2">Match-Score</p>
+              <p className="text-[56px] font-bold tabular-nums text-[var(--color-accent-300)]">{active === 0 ? "91" : active === 1 ? "87" : "84"}%</p>
+              <p className="text-[13px] text-[var(--color-fg-muted)] mt-2">{active === 0 ? "Aushilfe Verkauf · Billa" : active === 1 ? "Werkstudent Marketing · Siemens" : "Junior Consultant · KPMG"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Bento grid (Vercel/Apple pattern — asymmetric feature layout) ─── */
+const BENTO_ITEMS = [
+  { id: "matching", icon: Target, title: "Intelligentes Matching", desc: "Die KI bewertet jede Stelle in Sekunden — du siehst auf einen Blick, wo du wirklich passt.", span: "col-span-12 md:col-span-8", large: true },
+  { id: "letter", icon: Wand2, title: "Anschreiben in Sekunden", desc: "Personalisierte Motivationsschreiben auf dein Profil zugeschnitten.", span: "col-span-12 md:col-span-4" },
+  { id: "interview", icon: MessageSquare, title: "Interview-Prep", desc: "Übe mit Fragen, die exakt auf den Job zugeschnitten sind.", span: "col-span-12 md:col-span-4" },
+  { id: "resume", icon: FileText, title: "Lebenslauf-Check", desc: "Die KI analysiert deinen Lebenslauf und zeigt dir, was du ergänzen solltest.", span: "col-span-12 md:col-span-6" },
+  { id: "alerts", icon: Bell, title: "Job-Alerts", desc: "Passende Stellen kommen direkt in dein Postfach.", span: "col-span-12 md:col-span-6" },
+  { id: "insights", icon: Globe, title: "Firmen-Insights", desc: "Wie groß ist die Firma? Wie ist die Kultur? Die KI bereitet dich vor.", span: "col-span-12 md:col-span-4" },
+  { id: "privacy", icon: Shield, title: "DSGVO-konform", desc: "Deine Daten bleiben in Österreich. Du kannst dein Profil jederzeit löschen.", span: "col-span-12 md:col-span-4" },
+  { id: "pdf", icon: Zap, title: "PDF-Export", desc: "Lade deinen fertigen Lebenslauf herunter.", span: "col-span-12 md:col-span-4" },
+];
+
+function BentoGrid() {
   return (
     <section id="features" className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
       <div className="text-center mb-14">
         <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Funktionen</p>
-        <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">
-          Dein persönlicher Bewerbungs-Assistent.
-        </h2>
+        <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">Dein persönlicher Bewerbungs-Assistent.</h2>
       </div>
       <div className="grid grid-cols-12 gap-4">
-        {FEATURE_CARDS.map(({ icon: Icon, title, desc, visual }) => (
-          <div
-            key={title}
-            className="col-span-12 md:col-span-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 flex flex-col"
-          >
-            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-3 sm:p-5 mb-5 min-h-[120px] sm:min-h-[180px] grid place-items-center">
-              <FeatureCardVisual variant={visual} />
+        {BENTO_ITEMS.map(({ id, icon: Icon, title, desc, span, large }) => (
+          <div key={id} className={`${span} rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-5 sm:p-6 flex flex-col hover:border-[var(--color-accent-500)]/30 hover:bg-[var(--color-bg-elev-2)] transition-all duration-300 group`}>
+            <div className="flex items-start justify-between mb-3">
+              <div className={`grid place-items-center rounded-lg ${large ? "h-11 w-11" : "h-9 w-9"} bg-[var(--color-accent-500)]/10`}>
+                <Icon className={`${large ? "h-5 w-5" : "h-4 w-4"} text-[var(--color-accent-300)]`} />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-[var(--color-fg-dim)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="h-4 w-4 text-[var(--color-accent-300)]" />
-              <h3 className="text-[15px] font-semibold text-[var(--color-fg)]">{title}</h3>
-            </div>
+            <h3 className={`font-semibold text-[var(--color-fg)] mb-1 ${large ? "text-[18px]" : "text-[15px]"}`}>{title}</h3>
             <p className="text-[13px] leading-relaxed text-[var(--color-fg-muted)]">{desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/**
- * Tiny visual rendered inside each feature card.
- * @param {{ variant: "match" | "letter" | "interview" }} props
- */
-function FeatureCardVisual({ variant }) {
-  if (variant === "match") {
-    return (
-      <div className="grid grid-cols-12 items-center gap-3 w-full">
-        <div className="col-span-12 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">Match-Score</p>
-          <p className="mt-1 text-[32px] sm:text-[44px] font-bold tabular-nums text-[var(--color-accent-300)]">91<span className="text-[16px] sm:text-[20px] text-[var(--color-fg-dim)]">%</span></p>
-          <p className="text-[11px] text-[var(--color-fg-muted)]">Aushilfe Verkauf · Billa · Wien</p>
-        </div>
-      </div>
-    );
-  }
-  if (variant === "letter") {
-    return (
-      <div className="grid grid-cols-12 gap-1.5 w-full">
-        {[100, 85, 92, 70, 88, 60].map((w, i) => (
-          <div
-            key={i}
-            className="col-span-12 h-1.5 rounded-full bg-[var(--color-bg-elev-2)]"
-            style={{ width: `${w}%` }}
-          />
-        ))}
-        <div className="col-span-12 mt-2 inline-flex items-center gap-1.5">
-          <span className="grid place-items-center h-5 w-5 rounded-md bg-[var(--color-accent-500)]">
-            <Wand2 className="h-3 w-3 text-white" />
-          </span>
-          <span className="text-[11px] text-[var(--color-fg-muted)]">Persönlich und nachvollziehbar</span>
-        </div>
-      </div>
-    );
-  }
-  // interview
-  return (
-    <div className="grid grid-cols-12 gap-2 w-full">
-      {[
-        "Warum möchtest du bei uns arbeiten?",
-        "Erzähl mir von deiner Schule.",
-        "Hast du schon Erfahrung im Verkauf?",
-      ].map((q, i) => (
-        <div
-          key={i}
-          className="col-span-12 grid grid-cols-12 items-center gap-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] px-2.5 py-1.5"
-        >
-          <span className="col-span-1 text-[10px] font-bold tabular-nums text-[var(--color-fg-dim)]">0{i + 1}</span>
-          <span className="col-span-11 text-[11px] text-[var(--color-fg-muted)] truncate">{q}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Section 6: Light pastel "Space for every stage" (Arc/Dia pattern) ─── */
-/**
- * Light-mode pastel section showcasing the Jobs page.
- */
-function PastelSpaces() {
-  return (
-    <section
-      className="relative overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #F6EFD8 0%, #FBC8B5 100%)" }}
-    >
-      <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
-        <div className="text-center mb-12">
-          <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Eine Plattform. Alle Stages.</p>
-          <h2 className="text-display text-[var(--color-fg)] max-w-[22ch] mx-auto">
-            <span className="text-[var(--color-accent-700)]">Von der</span> ersten Bewerbung bis zum Vertrag.
-          </h2>
-          <p className="mt-5 max-w-[52ch] mx-auto text-[16px] leading-relaxed text-[var(--color-fg-muted)]">
-            Speichern, bewerben, nachfassen — der ganze Prozess an einem Ort.
-          </p>
-        </div>
-        <JobsMockup />
-      </div>
-    </section>
-  );
-}
-
-/**
- * Mockup of the Jobs page rendered on the light pastel surface.
- */
-function JobsMockup() {
-  const jobs = [
-    { c: "Billa",              r: "Aushilfe Verkauf",      l: "Wien",     s: 91, status: "Beworben" },
-    { c: "McDonald's",          r: "Servicekraft",          l: "Wien",     s: 78, status: "Interview" },
-    { c: "Sporthaus Schuster",  r: "Teilzeit Lager",        l: "Graz",     s: 64, status: "Entwurf"   },
-    { c: "Bäckerei Gruber",     r: "Samstagsjob",           l: "Salzburg", s: 71, status: "Beworben" },
-    { c: "Rathaus Wien",        r: "Praktikum Verwaltung",  l: "Linz",     s: 82, status: "Interview" },
-  ];
-  return (
-    <div className="browser-mockup max-w-full sm:max-w-[1080px] mx-auto">
-      <div className="bg-[var(--color-bg)]">
-        <div className="grid grid-cols-12 items-center gap-3 px-5 py-3 border-b border-[var(--color-border-subtle)]">
-          <div className="col-span-6 flex items-center gap-2">
-            <Search className="h-3.5 w-3.5 text-[var(--color-fg-dim)]" />
-            <span className="text-[12px] text-[var(--color-fg-muted)]">Aushilfe · Wien</span>
-          </div>
-          <div className="col-span-6 justify-self-end flex gap-2">
-            <span className="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px] text-[var(--color-fg-muted)]">5 Filter</span>
-            <span className="rounded-full bg-[var(--color-accent-500)] px-2.5 py-1 text-[11px] font-semibold text-white">{jobs.length} Treffer</span>
-          </div>
-        </div>
-        <div className="divide-y divide-[var(--color-border-subtle)]">
-          {jobs.map((j) => (
-            <div key={j.c} className="grid grid-cols-12 items-center gap-3 px-5 py-3">
-              <div className="col-span-1 h-8 w-8 rounded-md bg-[var(--color-bg-elev-2)] grid place-items-center">
-                <Briefcase className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />
-              </div>
-              <div className="col-span-5 min-w-0">
-                <p className="text-[13px] font-semibold text-[var(--color-fg)] truncate">{j.r}</p>
-                <p className="text-[11px] text-[var(--color-fg-dim)] truncate">{j.c} · {j.l}</p>
-              </div>
-              <div className="col-span-3 hidden sm:block">
-                <span className="text-[11px] text-[var(--color-fg-muted)]">{j.status}</span>
-              </div>
-              <div className="col-span-2 hidden sm:block">
-                <div className="h-1.5 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
-                  <div className="h-full rounded-full bg-[var(--color-accent-500)]" style={{ width: `${j.s}%` }} />
+            {id === "matching" && (
+              <div className="mt-auto pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] text-[var(--color-fg-dim)]">Match-Score</span>
+                  <span className="text-[18px] font-bold text-[var(--color-accent-300)]">94%</span>
+                </div>
+                <div className="h-2 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
+                  <div className="h-full rounded-full bg-[var(--color-accent-400)]" style={{ width: "94%" }} />
                 </div>
               </div>
-              <span className="col-span-1 text-right text-[12px] font-bold tabular-nums text-[var(--color-fg)]">{j.s}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Section 7: 2-card "How it helps" (Cluely meeting pattern) ─── */
-/**
- * Two-card row demonstrating the assistant's two superpowers.
- */
-function TwoCardHelp() {
-  return (
-    <section id="how" className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
-      <div className="mb-12 max-w-[40ch]">
-        <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">So funktioniert's</p>
-        <h2 className="text-display text-[var(--color-fg)]">
-          Intelligenter. Schneller. Besser.
-        </h2>
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div
-          className="col-span-12 md:col-span-6 rounded-2xl border border-[var(--color-border)] p-7 flex flex-col"
-          style={{ background: "linear-gradient(180deg, rgba(124,92,255,0.18) 0%, rgba(124,92,255,0.04) 100%)" }}
-        >
-          <p className="text-[14px] font-semibold text-[var(--color-fg)] mb-2">
-            JobAssist liest die Stelle für dich
-          </p>
-          <p className="text-[13px] text-[var(--color-fg-muted)] mb-6">
-            Die KI liest die Anforderungen der Stelle und vergleicht sie mit deinem Profil.
-          </p>
-          <div className="mt-auto rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-4">
-            <div className="flex flex-wrap gap-1.5">
-              {["Kassieren", "Kundenkontakt", "Deutsch", "Englisch", "keine Erfahrung nötig"].map((tag) => (
-                <span key={tag} className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-2)] px-2 py-1 text-[11px] text-[var(--color-fg-muted)] whitespace-nowrap">{tag}</span>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-12 items-center gap-2">
-              <span className="col-span-3 text-[10px] uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">Match</span>
-              <div className="col-span-7 h-1.5 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
-                <div className="h-full w-[91%] rounded-full bg-[var(--color-accent-400)]" />
-              </div>
-              <span className="col-span-2 text-right text-[12px] font-bold text-[var(--color-fg)]">91%</span>
-            </div>
+            )}
           </div>
-        </div>
-
-        <div className="col-span-12 md:col-span-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-7 flex flex-col">
-          <p className="text-[14px] font-semibold text-[var(--color-fg)] mb-2">
-            Wenn du Hilfe brauchst, hilft die KI sofort
-          </p>
-          <p className="text-[13px] text-[var(--color-fg-muted)] mb-6">
-            Frag die KI direkt im Editor — Anschreiben verbessern, Lücken erklären, Argumente schärfen.
-          </p>
-          <div className="mt-auto space-y-2">
-            {[
-              { q: "Wie schreibe ich ohne Berufserfahrung?", a: "Antwort bereit" },
-              { q: "Bewerbung für Teilzeit umformulieren",   a: "3 Varianten" },
-              { q: "Was zählt als Praktikum?",               a: "Erklärung bereit" },
-            ].map((m, i) => (
-              <div key={i} className="grid grid-cols-12 items-center gap-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg)] px-3 py-2">
-                <Wand2 className="col-span-1 h-3.5 w-3.5 text-[var(--color-accent-300)]" />
-                <span className="col-span-7 text-[12px] text-[var(--color-fg-muted)] truncate">{m.q}</span>
-                <span className="col-span-4 text-right text-[10px] text-[var(--color-fg-dim)]">{m.a}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Section 8: 6-card grid (Plain dark grid pattern) ─── */
-const GRID_FEATURES = [
-  { icon: Briefcase,    cat: "Übersicht",    title: "Meine Stellen",
-    desc: "Alle Bewerbungen an einem Ort. Du siehst sofort, bei welchen Firmen du dich beworben hast." },
-  { icon: Wand2,        cat: "Lebenslauf",   title: "Auf die Stelle anpassen",
-    desc: "Die KI zeigt dir, was du im Lebenslauf ergänzen oder ändern solltest — ganz einfach." },
-  { icon: Bell,         cat: "Benachrichtigungen", title: "Jobs per Mail",
-    desc: "Passende Stellen kommen direkt in dein Postfach. Du musst nicht selbst suchen." },
-  { icon: Globe,        cat: "Infos",        title: "Firmen vor dem Gespräch",
-    desc: "Wie groß ist die Firma? Wie ist die Kultur? Die KI bereitet dich auf das Gespräch vor." },
-  { icon: Shield,       cat: "Datenschutz",  title: "Deine Daten, dein Profil",
-    desc: "Alle Daten bleiben in Österreich. Du kannst dein Profil jederzeit löschen." },
-  { icon: Zap,          cat: "Download",     title: "Lebenslauf als PDF",
-    desc: "Lade deinen fertigen Lebenslauf herunter und schicke ihn mit deiner Bewerbung ab." },
-];
-
-/**
- * Dark 6-card feature grid with category eyebrows.
- */
-function FeatureGrid6() {
-  return (
-    <section
-      className="border-y border-[var(--color-border-subtle)]"
-      style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(124,92,255,0.08), transparent 70%), var(--color-bg)" }}
-    >
-      <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32">
-        <div className="mb-14 max-w-[36ch]">
-          <p className="text-eyebrow text-[var(--color-accent-300)] mb-3">Plattform</p>
-          <h2 className="text-display text-[var(--color-fg)]">
-            Alles, was du für deine Karriere brauchst.
-          </h2>
-        </div>
-        <div className="grid grid-cols-12 gap-4">
-          {GRID_FEATURES.map(({ icon: Icon, cat, title, desc }) => (
-            <div
-              key={title}
-              className="group col-span-12 sm:col-span-6 lg:col-span-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 hover:border-[var(--color-accent-500)]/40 hover:bg-[var(--color-bg-elev-2)] hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-12px_rgba(124,92,255,0.45)] transition-all duration-200"
-            >
-              <div className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--color-accent-500)]/10 mb-5">
-                <Icon className="h-4 w-4 text-[var(--color-accent-300)]" />
-              </div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-accent-300)] mb-1.5">{cat}</p>
-              <h3 className="text-[15px] font-semibold text-[var(--color-fg)]">{title}</h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-fg-muted)]">{desc}</p>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     </section>
   );
@@ -1269,19 +1125,13 @@ export default function LandingPage() {
         <ProblemStatement />
       </FadeIn>
       <FadeIn>
+        <PersonaSection />
+      </FadeIn>
+      <FadeIn>
+        <BentoGrid />
+      </FadeIn>
+      <FadeIn>
         <ResumeShowcase />
-      </FadeIn>
-      <FadeIn>
-        <FeatureGrid3 />
-      </FadeIn>
-      <FadeIn>
-        <PastelSpaces />
-      </FadeIn>
-      <FadeIn>
-        <TwoCardHelp />
-      </FadeIn>
-      <FadeIn>
-        <FeatureGrid6 />
       </FadeIn>
       <FadeIn>
         <BigQuote />
