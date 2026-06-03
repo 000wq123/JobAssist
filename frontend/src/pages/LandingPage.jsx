@@ -3,7 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, Sparkles, Briefcase, FileText, Bell, Wand2,
   MessageSquare, Target, Search, TrendingUp, Shield, Zap, Globe, CheckCircle2,
-  ChevronRight, Star, Quote, Twitter, Instagram, Youtube,
+  ChevronRight, Quote, Twitter, Instagram, Youtube,
 } from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
 import { billingApi } from "../services/api";
@@ -35,7 +35,6 @@ function TopNav() {
           <a href="#features" className="hover:text-[var(--color-fg)] transition-colors">Funktionen</a>
           <a href="#how" className="hover:text-[var(--color-fg)] transition-colors">So funktioniert&apos;s</a>
           <Link to="/pricing" className="hover:text-[var(--color-fg)] transition-colors">Preise</Link>
-          <a href="#faq" className="hover:text-[var(--color-fg)] transition-colors">FAQ</a>
         </nav>
         <div className="col-span-6 md:col-span-3 flex items-center justify-end gap-2">
           <Link
@@ -84,8 +83,7 @@ function Hero() {
           </Link>
 
           <h1 className="text-hero text-[var(--color-fg)] max-w-[14ch]">
-            <span className="font-display italic text-[var(--color-accent-300)]">Bewerben.</span>{" "}
-            Klar. Schnell. Mit KI.
+            Bewerben. Klar. Schnell. Mit KI.
           </h1>
 
           <p className="mt-6 max-w-[58ch] text-[16px] sm:text-[17px] leading-relaxed text-[var(--color-fg-muted)]">
@@ -238,40 +236,7 @@ function DashboardMockup() {
   );
 }
 
-/* ─── Section 2: Press / customer logo strip (Plain pattern) ─── */
-/**
- * Marquee strip of "as seen in" / customer logos.
- */
-function LogoStrip() {
-  const items = [
-    "Siemens", "ÖBB", "Red Bull", "AVL List", "Erste Bank", "Bosch",
-    "voestalpine", "Magna", "Wienerberger", "OMV", "A1 Telekom",
-    "Andritz", "Raiffeisen", "Spar", "BAWAG", "Verbund", "STRABAG",
-    "Mondi", "Lenzing", "Borealis", "KTM", "Doppelmayr", "Palfinger",
-    "FACC", "Frequentis", "Infineon", "Egger", "Kapsch",
-  ];
-  // Duplicate for seamless loop
-  const looped = [...items, ...items];
-  return (
-    <section className="border-y border-[var(--color-border-subtle)] py-10 overflow-hidden">
-      <p className="text-center text-eyebrow text-[var(--color-fg-dim)] mb-6">
-        Bewerber bei führenden Unternehmen in Österreich
-      </p>
-      <div className="logo-strip whitespace-nowrap">
-        {looped.map((label, i) => (
-          <span
-            key={`${label}-${i}`}
-            className="text-[18px] font-semibold tracking-tight text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
-          >
-            {label}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Section 3: Problem statement (Plain "Tools add distance" pattern) ─── */
+/* ─── Section 2: Problem statement (Plain "Tools add distance" pattern) ─── */
 /**
  * App-icon-style brand mark for a competitor.
  *
@@ -435,10 +400,10 @@ function ResumeShowcase() {
           </div>
           <div className="col-span-12 md:col-span-5 grid grid-cols-2 gap-3 self-end">
             {[
-              { l: "Match-Genauigkeit",  v: "94%" },
-              { l: "Bewertungszeit",   v: "8s"  },
-              { l: "Skills extrahiert",  v: "47"  },
-              { l: "Sprachen",           v: "DE/EN" },
+              { l: "Formatierung",     v: "OK" },
+              { l: "Sprachen",         v: "DE/EN" },
+              { l: "Hobbies",          v: "3" },
+              { l: "Praktika",         v: "1" },
             ].map((s) => (
               <div key={s.l} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">{s.l}</p>
@@ -577,7 +542,7 @@ function FeatureCardVisual({ variant }) {
         <div className="col-span-12 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">Match-Score</p>
           <p className="mt-1 text-[44px] font-bold tabular-nums text-[var(--color-accent-300)]">91<span className="text-[20px] text-[var(--color-fg-dim)]">%</span></p>
-          <p className="text-[11px] text-[var(--color-fg-muted)]">Software Engineer · Siemens AG</p>
+          <p className="text-[11px] text-[var(--color-fg-muted)]">Aushilfe Verkauf · Billa · Wien</p>
         </div>
       </div>
     );
@@ -838,11 +803,8 @@ function BigQuote() {
               <p className="text-[12px] text-[var(--color-fg-dim)]">Schülerin · Graz</p>
             </div>
           </div>
-          <div className="mt-8 flex items-center gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-[var(--color-warning)] text-[var(--color-warning)]" />
-            ))}
-            <span className="ml-2 text-[12px] text-[var(--color-fg-dim)]">4.8/5 · Google Play</span>
+          <div className="mt-8 text-[12px] text-[var(--color-fg-dim)]">
+            Nutzerin seit 3 Wochen
           </div>
         </div>
       </div>
@@ -906,7 +868,11 @@ function Pricing() {
     return (
       <section id="pricing" className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32 text-center">
-          <p className="text-[16px] text-[var(--color-fg-muted)]">Preise werden geladen…</p>
+          <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">Preise</p>
+          <h2 className="text-display text-[var(--color-fg)] mb-6">Starte kostenlos. Upgrade, wenn du mehr willst.</h2>
+          <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors">
+            Preise ansehen <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
     );
@@ -942,7 +908,7 @@ function Pricing() {
               >
                 {isPopular && (
                   <span className="self-start mb-3 inline-flex rounded-full bg-[var(--color-accent-500)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-300)]">
-                    Beliebt
+                    Empfohlen
                   </span>
                 )}
                 <h3 className="text-[16px] font-semibold text-[var(--color-fg)]">{p.name}</h3>
@@ -1154,7 +1120,6 @@ export default function LandingPage() {
       />
       <TopNav />
       <Hero />
-      <LogoStrip />
       <ProblemStatement />
       <ResumeShowcase />
       <FeatureGrid3 />
