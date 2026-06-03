@@ -102,7 +102,7 @@ function Hero() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
-              href="#features"
+              href="#how"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-5 py-3 text-[14px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
             >
               So funktioniert&apos;s
@@ -127,10 +127,10 @@ function Hero() {
  */
 function DashboardMockup() {
   const jobs = [
-    { c: "Siemens AG",   r: "Software Engineer",  s: 91 },
-    { c: "ÖBB",          r: "Data Analyst",       s: 78 },
-    { c: "AVL List",     r: "DevOps Engineer",    s: 64 },
-    { c: "Red Bull",     r: "Product Manager",    s: 71 },
+    { c: "Billa",              r: "Aushilfe Verkauf",         s: 91 },
+    { c: "McDonald's",          r: "Servicekraft",             s: 78 },
+    { c: "Sporthaus Schuster",  r: "Teilzeit Lager",           s: 64 },
+    { c: "Rathaus Wien",        r: "Praktikum Verwaltung",     s: 71 },
   ];
   return (
     <div className="browser-mockup mx-auto max-w-[1080px]">
@@ -173,7 +173,7 @@ function DashboardMockup() {
               Übersicht
             </p>
             <h3 className="mt-1 text-[18px] font-semibold text-[var(--color-fg)]">
-              Guten Morgen, Davor
+              Guten Morgen, Lisa
             </h3>
           </div>
 
@@ -458,11 +458,11 @@ function ResumeShowcase() {
  */
 function ResumeMockup() {
   const skills = [
-    { l: "TypeScript",  v: 92, c: "var(--color-accent-500)" },
-    { l: "React",       v: 88, c: "var(--color-accent-400)" },
-    { l: "Python",      v: 76, c: "var(--color-success)" },
-    { l: "AWS",         v: 64, c: "var(--color-warning)" },
-    { l: "PostgreSQL",  v: 58, c: "var(--color-info)" },
+    { l: "MS Office",      v: 92, c: "var(--color-accent-500)" },
+    { l: "Teamfähigkeit",  v: 88, c: "var(--color-accent-400)" },
+    { l: "Kundenkontakt",  v: 76, c: "var(--color-success)" },
+    { l: "Deutsch",        v: 64, c: "var(--color-warning)" },
+    { l: "Englisch",       v: 58, c: "var(--color-info)" },
   ];
   return (
     <div className="browser-mockup">
@@ -492,9 +492,9 @@ function ResumeMockup() {
           <p className="text-eyebrow text-[var(--color-fg-dim)] mb-3">KI-Vorschläge</p>
           <div className="space-y-3">
             {[
-              "Ergänze Cloud-Zertifikate (AWS/Azure) — 73% deiner Zielstellen verlangen sie.",
-              "Quantifiziere drei Erfolge im aktuellen Job mit konkreten Zahlen.",
-              "Verkürze Berufserfahrung vor 2018 auf 2 Zeilen pro Position.",
+              "Ergänze deine Sprachkenntnisse — 60% der Stellen wünschen Englisch.",
+              "Füge ein Praktikum oder ein Ehrenamt als erste Erfahrung ein.",
+              "Schreibe eine Kurzbeschreibung zu deinen Hobbys — das zeigt Persönlichkeit.",
             ].map((tip, i) => (
               <div
                 key={i}
@@ -596,7 +596,7 @@ function FeatureCardVisual({ variant }) {
           <span className="grid place-items-center h-5 w-5 rounded-md bg-[var(--color-accent-500)]">
             <Wand2 className="h-3 w-3 text-white" />
           </span>
-          <span className="text-[11px] text-[var(--color-fg-muted)]">Erstellt in 8 Sekunden</span>
+          <span className="text-[11px] text-[var(--color-fg-muted)]">Persönlich und nachvollziehbar</span>
         </div>
       </div>
     );
@@ -605,9 +605,9 @@ function FeatureCardVisual({ variant }) {
   return (
     <div className="grid grid-cols-12 gap-2 w-full">
       {[
-        "Erzähl mir von einem schwierigen Projekt.",
-        "Wie gehst du mit Konflikten um?",
-        "Warum gerade diese Stelle?",
+        "Warum möchtest du bei uns arbeiten?",
+        "Erzähl mir von deiner Schule.",
+        "Hast du schon Erfahrung im Verkauf?",
       ].map((q, i) => (
         <div
           key={i}
@@ -653,11 +653,11 @@ function PastelSpaces() {
  */
 function JobsMockup() {
   const jobs = [
-    { c: "Siemens AG",     r: "Software Engineer", l: "Wien", s: 91, status: "Beworben" },
-    { c: "ÖBB",            r: "Data Analyst",      l: "Wien", s: 78, status: "Interview" },
-    { c: "AVL List",       r: "DevOps Engineer",   l: "Graz", s: 64, status: "Entwurf"   },
-    { c: "Red Bull",       r: "Product Manager",   l: "Salzburg", s: 71, status: "Beworben" },
-    { c: "voestalpine",    r: "Data Engineer",     l: "Linz", s: 82, status: "Interview" },
+    { c: "Billa",              r: "Aushilfe Verkauf",      l: "Wien",     s: 91, status: "Beworben" },
+    { c: "McDonald's",          r: "Servicekraft",          l: "Wien",     s: 78, status: "Interview" },
+    { c: "Sporthaus Schuster",  r: "Teilzeit Lager",        l: "Graz",     s: 64, status: "Entwurf"   },
+    { c: "Bäckerei Gruber",     r: "Samstagsjob",           l: "Salzburg", s: 71, status: "Beworben" },
+    { c: "Rathaus Wien",        r: "Praktikum Verwaltung",  l: "Linz",     s: 82, status: "Interview" },
   ];
   return (
     <div className="browser-mockup max-w-[1080px] mx-auto">
@@ -665,7 +665,7 @@ function JobsMockup() {
         <div className="grid grid-cols-12 items-center gap-3 px-5 py-3 border-b border-[var(--color-border-subtle)]">
           <div className="col-span-6 flex items-center gap-2">
             <Search className="h-3.5 w-3.5 text-[var(--color-fg-dim)]" />
-            <span className="text-[12px] text-[var(--color-fg-muted)]">Software Engineer · Wien · Vollzeit</span>
+            <span className="text-[12px] text-[var(--color-fg-muted)]">Aushilfe Verkauf · Wien · Teilzeit</span>
           </div>
           <div className="col-span-6 justify-self-end flex gap-2">
             <span className="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px] text-[var(--color-fg-muted)]">5 Filter</span>
@@ -719,14 +719,14 @@ function TwoCardHelp() {
           style={{ background: "linear-gradient(180deg, rgba(124,92,255,0.18) 0%, rgba(124,92,255,0.04) 100%)" }}
         >
           <p className="text-[14px] font-semibold text-[var(--color-fg)] mb-2">
-            JobAssist <span className="rounded-md bg-[var(--color-accent-500)]/30 px-1.5 py-0.5 text-[var(--color-accent-200)]">liest</span> die Stelle für dich
+            JobAssist liest die Stelle für dich
           </p>
           <p className="text-[13px] text-[var(--color-fg-muted)] mb-6">
-            Die KI extrahiert Anforderungen, Skills und Soft-Cues — und gleicht sie sofort mit deinem Profil ab.
+            Die KI extrahiert Anforderungen und Skills — und gleicht sie sofort mit deinem Profil ab.
           </p>
           <div className="mt-auto rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-4">
             <div className="flex flex-wrap gap-1.5">
-              {["Python", "AWS", "Scrum", "Englisch", "5+ Jahre"].map((tag) => (
+              {["Kassieren", "Kundenkontakt", "Deutsch", "Englisch", "keine Erfahrung nötig"].map((tag) => (
                 <span key={tag} className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-2)] px-2 py-1 text-[11px] text-[var(--color-fg-muted)] whitespace-nowrap">{tag}</span>
               ))}
             </div>
@@ -742,16 +742,16 @@ function TwoCardHelp() {
 
         <div className="col-span-12 md:col-span-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-7 flex flex-col">
           <p className="text-[14px] font-semibold text-[var(--color-fg)] mb-2">
-            Wenn du Hilfe brauchst, <span className="font-display italic text-[var(--color-accent-300)]">assistiert</span> die KI sofort
+            Wenn du Hilfe brauchst, hilft die KI sofort
           </p>
           <p className="text-[13px] text-[var(--color-fg-muted)] mb-6">
-            Frag die KI direkt im Editor — Anschreiben verbessern, Lücke erklären, Argumente schärfen.
+            Frag die KI direkt im Editor — Anschreiben verbessern, Lücken erklären, Argumente schärfen.
           </p>
           <div className="mt-auto space-y-2">
             {[
-              { q: "Wie hebe ich meine Cloud-Erfahrung hervor?", a: "Antwort generiert" },
-              { q: "Anschreiben formeller umschreiben",          a: "3 Varianten" },
-              { q: "Lücke 2022 erklären",                        a: "Vorschlag bereit" },
+              { q: "Wie schreibe ich ohne Berufserfahrung?", a: "Antwort bereit" },
+              { q: "Bewerbung für Teilzeit umformulieren",   a: "3 Varianten" },
+              { q: "Was zählt als Praktikum?",               a: "Erklärung bereit" },
             ].map((m, i) => (
               <div key={i} className="grid grid-cols-12 items-center gap-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg)] px-3 py-2">
                 <Wand2 className="col-span-1 h-3.5 w-3.5 text-[var(--color-accent-300)]" />
@@ -768,7 +768,7 @@ function TwoCardHelp() {
 
 /* ─── Section 8: 6-card grid (Plain dark grid pattern) ─── */
 const GRID_FEATURES = [
-  { icon: Briefcase,    cat: "Pipeline",     title: "Bewerbungs-Tracker",
+  { icon: Briefcase,    cat: "Pipeline",     title: "Meine Stellen",
     desc: "Behalte den Überblick über jede Bewerbung — Status, Deadlines, Notizen." },
   { icon: Wand2,        cat: "KI-Assistent", title: "Lebenslauf-Anpassung",
     desc: "Die KI passt deinen Lebenslauf auf die Stellenanzeige an — konkret und nachvollziehbar." },
@@ -829,14 +829,13 @@ function BigQuote() {
         <div className="col-span-12 md:col-span-10 md:col-start-2">
           <Quote className="h-10 w-10 text-[var(--color-accent-500)]/40 mb-6" />
           <blockquote className="text-section font-display italic text-[var(--color-fg)] leading-[1.2]">
-            &ldquo;Die KI hat meinen Lebenslauf in 8 Sekunden besser verstanden als die letzten drei Recruiter zusammen.
-            Innerhalb von drei Wochen hatte ich zwei Vorstellungsgespräche.&rdquo;
+            &ldquo;Ich hatte null Ahnung, wie man ein Anschreiben schreibt. JobAssist hat mir einen Entwurf gemacht, den ich nur noch anpassen musste. Nach zwei Wochen hatte ich ein Gespräch bei Billa.&rdquo;
           </blockquote>
           <div className="mt-8 grid grid-cols-12 items-center gap-3">
-            <div className="col-span-1 h-10 w-10 rounded-full bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-700)] grid place-items-center text-white font-semibold">SM</div>
+            <div className="col-span-1 h-10 w-10 rounded-full bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-700)] grid place-items-center text-white font-semibold">LK</div>
             <div className="col-span-11">
-              <p className="text-[14px] font-semibold text-[var(--color-fg)]">Sarah M.</p>
-              <p className="text-[12px] text-[var(--color-fg-dim)]">Software Engineer · Wien</p>
+              <p className="text-[14px] font-semibold text-[var(--color-fg)]">Lisa K.</p>
+              <p className="text-[12px] text-[var(--color-fg-dim)]">Schülerin · Graz</p>
             </div>
           </div>
           <div className="mt-8 flex items-center gap-1">
@@ -903,11 +902,19 @@ function Pricing() {
       });
   }, []);
 
-  if (!plans.length) return null;
+  if (!plans.length) {
+    return (
+      <section id="pricing" className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)]">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-24 sm:py-32 text-center">
+          <p className="text-[16px] text-[var(--color-fg-muted)]">Preise werden geladen…</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
-      id="faq"
+      id="pricing"
       className="border-t border-[var(--color-border-subtle)]"
       style={{ background: "var(--color-bg-elev-1)" }}
     >
@@ -991,7 +998,7 @@ function FinalCta() {
           Es ist Zeit.
         </h2>
         <p className="mt-6 text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
-          Erstelle in 30 Sekunden ein kostenloses Konto. Keine Kreditkarte erforderlich.
+          Erstelle ein kostenloses Konto. Keine Kreditkarte erforderlich.
         </p>
         <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
@@ -1060,20 +1067,18 @@ function Footer() {
               <span className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)]">JobAssist</span>
             </div>
             <p className="max-w-[36ch] text-[13px] leading-relaxed text-[var(--color-fg-muted)]">
-              KI-Bewerbungsassistent für den österreichischen Arbeitsmarkt.{" "}
-              <span className="font-display italic text-[var(--color-accent-300)]">Made in Austria.</span>
+              KI-Bewerbungsassistent für den österreichischen Arbeitsmarkt. Made in Austria.
             </p>
             <div className="mt-6 flex items-center gap-2">
               {[
-                { l: "X",         href: "https://x.com/jobassist",            Icon: Twitter   },
-                { l: "Instagram", href: "https://instagram.com/jobassist",    Icon: Instagram },
-                { l: "YouTube",   href: "https://youtube.com/@jobassist",     Icon: Youtube   },
+                { l: "X",         href: "#",            Icon: Twitter   },
+                { l: "Instagram", href: "#",    Icon: Instagram },
+                { l: "YouTube",   href: "#",     Icon: Youtube   },
               ].map(({ l, href, Icon }) => (
                 <a
                   key={l}
                   href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  aria-disabled="true"
                   className="grid place-items-center h-8 w-8 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[var(--color-fg-muted)] hover:text-[var(--color-accent-300)] hover:border-[var(--color-accent-500)]/40 transition-colors"
                   aria-label={l}
                 >
