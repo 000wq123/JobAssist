@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobAssist Premium Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FAFAF7;--bg-e:#FFFFFF;--bg-e2:#F4F4F0;--fg:#0B0B0F;--fg-m:#46464D;--fg-d:#6B6B72;--fg-f:#9A9AA0;--b:#E5E5DF;--b-s:rgba(10,10,15,0.06);--a:#7C5CFF;--a-l:#AC99FF;--a-s:rgba(124,92,255,0.08);--f:'Inter',system-ui,sans-serif;--fd:'Instrument Serif',Georgia,serif;}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:var(--f);background:var(--bg);color:var(--fg);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+.nav-pill{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;display:flex;align-items:center;gap:24px;padding:10px 20px;border-radius:9999px;background:rgba(255,255,255,0.72);backdrop-filter:blur(24px) saturate(150%);border:1px solid var(--b-s);box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+.nav-logo{display:flex;align-items:center;gap:8px}
+.nav-logo-icon{width:28px;height:28px;border-radius:8px;background:var(--a);display:grid;place-items:center}
+.nav-logo-icon svg{width:14px;height:14px;color:white}
+.nav-logo-text{font-size:14px;font-weight:600;letter-spacing:-0.01em}
+.nav-links{display:none;align-items:center;gap:20px}
+@media(min-width:768px){.nav-links{display:flex}}
+.nav-links a{font-size:13px;font-weight:500;color:var(--fg-d);transition:color 0.15s}
+.nav-links a:hover{color:var(--fg)}
+.nav-cta{margin-left:4px;padding:7px 16px;border-radius:9999px;background:var(--a);color:white;font-size:12px;font-weight:600;transition:background 0.15s;box-shadow:0 2px 8px rgba(124,92,255,0.25)}
+.nav-cta:hover{background:var(--a-l)}
+.hero{position:relative;padding-top:140px;padding-bottom:80px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(124,92,255,0.10),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 50%,rgba(172,153,255,0.06),transparent 50%);animation:meshPulse 8s ease-in-out infinite}
+@keyframes meshPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.c{max-width:1200px;margin:0 auto;padding-left:20px;padding-right:20px}
+.pill-banner{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9999px;border:1px solid var(--b-s);background:var(--a-s);font-size:13px;color:var(--fg-d);transition:background 0.15s;margin-bottom:32px}
+.pill-banner:hover{background:rgba(124,92,255,0.14)}
+.pill-banner-icon{width:20px;height:20px;border-radius:50%;background:var(--a);display:grid;place-items:center}
+.pill-banner-icon svg{width:10px;height:10px;color:white}
+.hero-headline{font-family:var(--fd);font-size:clamp(40px,5.5vw,72px);line-height:1.08;letter-spacing:-0.02em;color:var(--fg);max-width:16ch;margin:0 auto;text-align:center}
+.hero-sub{font-size:17px;color:var(--fg-d);max-width:52ch;margin:24px auto 0;text-align:center;line-height:1.6}
+.hero-ctas{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:32px}
+@media(min-width:640px){.hero-ctas{flex-direction:row;justify-content:center}}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;background:var(--a);color:white;font-size:14px;font-weight:600;transition:background 0.15s;box-shadow:0 4px 20px rgba(124,92,255,0.25);white-space:nowrap}
+.btn-primary:hover{background:var(--a-l)}
+.btn-primary svg{width:16px;height:16px}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;border:1px solid var(--b);background:var(--bg-e);color:var(--fg);font-size:14px;font-weight:600;transition:background 0.15s;white-space:nowrap}
+.btn-secondary:hover{background:var(--bg-e2)}
+.hero-meta{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:24px;font-size:12px;color:var(--fg-f)}
+.hero-meta-item{display:flex;align-items:center;gap:6px}
+.hero-meta-item svg{width:14px;height:14px}
+.browser-mockup{max-width:900px;margin:56px auto 0;border:1px solid var(--b);border-radius:16px;background:var(--bg-e);overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.02)}
+.browser-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--b);background:var(--bg-e2)}
+.browser-dot{width:10px;height:10px;border-radius:50%}
+.browser-dot.red{background:#ef4444}.browser-dot.yellow{background:#f59e0b}.browser-dot.green{background:#22c55e}
+.browser-url{flex:1;text-align:center;font-size:11px;color:var(--fg-f);letter-spacing:0.02em}
+.browser-body{padding:24px;background:var(--bg)}
+.demo-search{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid var(--b);background:var(--bg-e)}
+.demo-search svg{width:16px;height:16px;color:var(--fg-f);flex-shrink:0}
+.demo-search-text{font-size:14px;color:var(--fg)}
+.demo-cursor{display:inline-block;width:2px;height:1.1em;background:var(--a-l);margin-left:2px;animation:blink 1s step-end infinite;vertical-align:text-bottom}
+@keyframes blink{50%{opacity:0}}
+.demo-results{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.demo-result{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:1px solid var(--b);background:var(--bg-e);transition:border-color 0.15s,box-shadow 0.15s}
+.demo-result:hover{border-color:rgba(124,92,255,0.2);box-shadow:0 2px 8px rgba(124,92,255,0.06)}
+.demo-result-logo{width:36px;height:36px;border-radius:8px;background:var(--bg-e2);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--fg-m);flex-shrink:0}
+.demo-result-info{flex:1}
+.demo-result-title{font-size:13px;font-weight:600;color:var(--fg)}
+.demo-result-company{font-size:12px;color:var(--fg-d);margin-top:1px}
+.demo-result-score{font-size:16px;font-weight:700;color:var(--a)}
+.trust-strip{border-top:1px solid var(--b);border-bottom:1px solid var(--b);padding:36px 0;background:var(--bg-e)}
+.trust-label{text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.2em;color:var(--fg-f);margin-bottom:20px}
+.trust-logos{display:flex;flex-wrap:wrap;justify-content:center;gap:32px;align-items:center}
+.trust-logo{font-size:15px;font-weight:600;color:var(--fg-f);transition:color 0.2s}
+.trust-logo:hover{color:var(--fg-m)}
+.stats{position:relative;padding:80px 0;overflow:hidden}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:40px;position:relative}
+@media(min-width:768px){.stats-grid{grid-template-columns:repeat(4,1fr);gap:32px}}
+.stat-item{text-align:center}
+.stat-value{font-size:clamp(32px,4vw,56px);font-weight:800;line-height:1;letter-spacing:-0.02em;background:linear-gradient(135deg,var(--a-l),var(--a));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{margin-top:8px;font-size:14px;color:var(--fg-d)}
+.orbit-container{position:absolute;left:50%;top:50%;width:0;height:0}
+.orbit-icon{position:absolute;width:40px;height:40px;border-radius:10px;background:var(--bg-e);border:1px solid var(--b);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--fg-f);animation:orbit var(--dur,12s) linear infinite;animation-delay:var(--del,0s)}
+@keyframes orbit{0%{transform:rotate(0deg) translateX(var(--rad,120px)) rotate(0deg)}100%{transform:rotate(360deg) translateX(var(--rad,120px)) rotate(-360deg)}}
+.problem{padding:80px 0;border-top:1px solid;border-image:linear-gradient(90deg,transparent,rgba(124,92,255,0.2),transparent) 1}
+.section-headline{font-family:var(--fd);font-size:clamp(32px,4vw,48px);line-height:1.12;letter-spacing:-0.02em;text-align:center;max-width:20ch;margin:0 auto}
+.problem-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px}
+.problem-tag{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:9999px;border:1px solid var(--b);background:var(--bg-e);font-size:12px;color:var(--fg-d)}
+.problem-tag svg{width:14px;height:14px}
+.personas{padding:80px 0}
+.section-eyebrow{text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.2em;color:var(--fg-f);margin-bottom:12px}
+.section-title{font-family:var(--fd);font-size:clamp(32px,4vw,48px);line-height:1.12;letter-spacing:-0.02em;text-align:center;max-width:24ch;margin:0 auto}
+.persona-tabs{display:flex;gap:8px;margin-top:40px;margin-bottom:24px}
+.persona-tab{flex:1;padding:16px 20px;border-radius:14px;border:1px solid var(--b);background:var(--bg-e);cursor:pointer;text-align:left;transition:border-color 0.15s,background 0.15s}
+.persona-tab:hover{background:var(--bg-e2)}
+.persona-tab.active{border-color:rgba(124,92,255,0.25);background:var(--bg-e2)}
+.tab-header{display:flex;align-items:center;gap:12px}
+.tab-icon{width:36px;height:36px;border-radius:8px;background:var(--a-s);display:grid;place-items:center;transition:background 0.15s}
+.persona-tab.active .tab-icon{background:var(--a)}
+.tab-icon svg{width:16px;height:16px;color:var(--a);transition:color 0.15s}
+.persona-tab.active .tab-icon svg{color:white}
+.tab-title{font-size:14px;font-weight:600;color:var(--fg)}
+.tab-sub{font-size:11px;color:var(--fg-f);margin-top:1px}
+.persona-panel{border-radius:20px;border:1px solid var(--b);background:var(--bg-e);padding:32px}
+.persona-grid{display:grid;grid-template-columns:1fr;gap:32px}
+@media(min-width:768px){.persona-grid{grid-template-columns:1fr 1fr}}
+.persona-headline{font-size:22px;font-weight:600;margin-bottom:20px}
+.persona-list{display:flex;flex-direction:column;gap:12px}
+.persona-item{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--fg-m)}
+.persona-item svg{width:16px;height:16px;color:var(--a);flex-shrink:0;margin-top:2px}
+.persona-cta{display:inline-flex;align-items:center;gap:6px;margin-top:20px;padding:10px 20px;border-radius:10px;background:var(--a);color:white;font-size:13px;font-weight:600;transition:background 0.15s}
+.persona-cta:hover{background:var(--a-l)}
+.persona-score-card{border-radius:14px;border:1px solid var(--b);background:var(--bg);padding:40px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.16em;color:var(--fg-f)}
+.score-value{font-size:72px;font-weight:800;line-height:1;margin-top:8px;background:linear-gradient(135deg,var(--a-l),var(--a));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.score-job{font-size:14px;color:var(--fg-d);margin-top:8px}
+.bento-section{padding:80px 0}
+.bento-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:48px}
+@media(min-width:768px){.bento-grid{grid-template-columns:repeat(12,1fr)}}
+.bento-card{border-radius:18px;border:1px solid var(--b);background:var(--bg-e);padding:28px;display:flex;flex-direction:column;transition:border-color 0.2s,background 0.2s}
+.bento-card:hover{border-color:rgba(124,92,255,0.18);background:var(--bg-e2)}
+@media(min-width:768px){.bento-card.col-8{grid-column:span 8}.bento-card.col-4{grid-column:span 4}.bento-card.col-6{grid-column:span 6}}
+.bento-icon{width:44px;height:44px;border-radius:10px;background:var(--a-s);display:grid;place-items:center;margin-bottom:16px}
+.bento-icon svg{width:20px;height:20px;color:var(--a)}
+.bento-title{font-size:16px;font-weight:600;margin-bottom:6px}
+.bento-desc{font-size:13px;color:var(--fg-d);line-height:1.5}
+.bento-bar{margin-top:auto;padding-top:16px}
+.bento-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-f);margin-bottom:6px}
+.bento-bar-track{height:6px;border-radius:3px;background:var(--bg-e2);overflow:hidden}
+.bento-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--a-l),var(--a))}
+.carousel-section{padding:80px 0;overflow:hidden}
+.carousel-track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:8px 20px 24px;margin:0 -20px}
+.carousel-track::-webkit-scrollbar{display:none}
+.carousel-card{scroll-snap-align:start;flex-shrink:0;width:280px;border-radius:16px;border:1px solid var(--b);background:var(--bg-e);padding:16px}
+.carousel-screen{aspect-ratio:9/19;border-radius:12px;background:var(--bg);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--fg-f)}
+.carousel-label{text-align:center;font-size:12px;color:var(--fg-d);margin-top:10px}
+.testimonials{padding:80px 0;border-top:1px solid;border-image:linear-gradient(90deg,transparent,var(--b),transparent) 1}
+.testimonial-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:48px}
+@media(min-width:768px){.testimonial-grid{grid-template-columns:repeat(3,1fr)}}
+.testimonial{border-radius:18px;border:1px solid var(--b);background:var(--bg-e);padding:28px;display:flex;flex-direction:column}
+.testimonial-quote{font-size:28px;line-height:1;color:rgba(124,92,255,0.15);font-family:var(--fd)}
+.testimonial-text{font-size:14px;line-height:1.65;color:var(--fg-m);margin-top:8px;flex:1}
+.testimonial-author{display:flex;align-items:center;gap:10px;margin-top:24px}
+.author-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--a),#5235BD);display:grid;place-items:center;color:white;font-size:12px;font-weight:700}
+.author-name{font-size:13px;font-weight:600}
+.author-meta{font-size:11px;color:var(--fg-f)}
+.final-cta{position:relative;padding:100px 0;overflow:hidden}
+.final-cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 100%,rgba(124,92,255,0.08),transparent 60%)}
+.final-cta-inner{position:relative;text-align:center}
+.final-cta h2{font-family:var(--fd);font-size:clamp(32px,4vw,48px);letter-spacing:-0.02em}
+.final-cta p{font-size:16px;color:var(--fg-d);max-width:48ch;margin:20px auto 0}
+.final-cta .btn-primary{margin-top:28px}
+.footer{border-top:1px solid var(--b);padding:32px 0;background:var(--bg)}
+.footer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;font-size:13px;color:var(--fg-f)}
+@media(min-width:640px){.footer-inner{flex-direction:row;justify-content:space-between}}
+.footer-logo{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--fg)}
+.footer-logo-icon{width:24px;height:24px;border-radius:6px;background:var(--a);display:grid;place-items:center}
+.footer-logo-icon svg{width:12px;height:12px;color:white}
+</style>
+</head>
+<body>
+
+<!-- PART 1: NAV + HERO + TRUST -->
+<nav class="nav-pill">
+<a href="#" class="nav-logo"><div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg></div><span class="nav-logo-text">JobAssist</span></a>
+<div class="nav-links"><a href="#features">Funktionen</a><a href="#personas">Für wen</a><a href="#preise">Preise</a></div>
+<a href="#" class="nav-cta">Starten</a>
+</nav>
+
+<section class="hero"><div class="hero-bg"></div>
+<div class="c" style="position:relative;z-index:1">
+<div style="text-align:center">
+<span class="pill-banner"><span class="pill-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg></span>7 Tage Pro gratis — kein Risiko<svg style="width:14px;height:14px;color:var(--fg-f)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></span>
+<h1 class="hero-headline">Das Bewerbungssystem für die nächste Generation.</h1>
+<p class="hero-sub">Die KI-gestützte Plattform für deine Bewerbungen. Lebenslauf hochladen, passende Stellen finden, Anschreiben generieren lassen.</p>
+<div class="hero-ctas"><a href="#" class="btn-primary">Kostenlos starten<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a><a href="#" class="btn-secondary">So funktioniert es</a></div>
+<div class="hero-meta"><span class="hero-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>DSGVO-konform</span><span class="hero-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>In 2 Minuten starten</span></div>
+</div>
+
+<div class="browser-mockup"><div class="browser-header"><span class="browser-dot red"></span><span class="browser-dot yellow"></span><span class="browser-dot green"></span><div class="browser-url">jobassist.at</div></div><div class="browser-body"><div class="demo-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><div class="demo-search-text">Praktikum Marketing Wien<span class="demo-cursor"></span></div></div><div class="demo-results"><div class="demo-result"><div class="demo-result-logo">B</div><div class="demo-result-info"><div class="demo-result-title">Praktikant Marketing</div><div class="demo-result-company">Billa · Wien</div></div><div class="demo-result-score">94%</div></div><div class="demo-result"><div class="demo-result-logo">H</div><div class="demo-result-info"><div class="demo-result-title">Werkstudent Marketing</div><div class="demo-result-company">Hofer · Wien</div></div><div class="demo-result-score">87%</div></div><div class="demo-result"><div class="demo-result-logo">S</div><div class="demo-result-info"><div class="demo-result-title">Aushilfe Verkauf</div><div class="demo-result-company">Spar · Graz</div></div><div class="demo-result-score">82%</div></div></div></div></div>
+</div></section>
+
+<section class="trust-strip"><div class="c"><p class="trust-label">Jobs bei Firmen wie</p><div class="trust-logos"><span class="trust-logo">Billa</span><span class="trust-logo">McDonald's</span><span class="trust-logo">Hofer</span><span class="trust-logo">Spar</span><span class="trust-logo">MediaMarkt</span><span class="trust-logo">Zara</span></div></div></section>
+
+<!-- PART 2: STATS + PROBLEM + PERSONAS + BENTO -->
+
+<section class="stats"><div class="c" style="position:relative"><div class="orbit-container"><div class="orbit-icon" style="--rad:180px;--dur:14s;--del:-2s">B</div><div class="orbit-icon" style="--rad:200px;--dur:18s;--del:-5s">M</div><div class="orbit-icon" style="--rad:160px;--dur:12s;--del:-8s">S</div><div class="orbit-icon" style="--rad:220px;--dur:20s;--del:-3s">Z</div></div><div class="stats-grid"><div class="stat-item"><div class="stat-value">15K+</div><div class="stat-label">Bewerbungen geschrieben</div></div><div class="stat-item"><div class="stat-value">3.2K+</div><div class="stat-label">Aktive Nutzer</div></div><div class="stat-item"><div class="stat-value">94%</div><div class="stat-label">Erfolgsquote</div></div><div class="stat-item"><div class="stat-value">4.8</div><div class="stat-label">Nutzerbewertung</div></div></div></div></section>
+
+<section class="problem"><div class="c"><h2 class="section-headline">Bewerben ist kompliziert. Muss es nicht sein.</h2><div class="problem-tags"><span class="problem-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Stundenlanges Suchen</span><span class="problem-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Anschreiben-Frust</span><span class="problem-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Keine Übersicht</span></div></div></section>
+
+<section id="personas" class="personas"><div class="c"><p class="section-eyebrow">Für wen</p><h2 class="section-title">Egal wo du stehst — wir helfen weiter.</h2><div class="persona-tabs"><button class="persona-tab active" onclick="setPersona(0)"><div class="tab-header"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div><div class="tab-title">Schüler</div><div class="tab-sub">16–18 Jahre</div></div></div></button><button class="persona-tab" onclick="setPersona(1)"><div class="tab-header"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div><div class="tab-title">Student</div><div class="tab-sub">19–25 Jahre</div></div></div></button><button class="persona-tab" onclick="setPersona(2)"><div class="tab-header"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></div><div><div class="tab-title">Berufseinsteiger</div><div class="tab-sub">25+ Jahre</div></div></div></button></div><div class="persona-panel"><div class="persona-grid"><div><p class="persona-headline">Erster Job? Kein Problem.</p><div class="persona-list"><div class="persona-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Praktika ohne Erfahrung finden</div><div class="persona-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Anschreiben ohne Berufsleben schreiben</div><div class="persona-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Schüler-friendly Filter</div></div><a href="#" class="persona-cta">Für Schüler <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a></div><div class="persona-score-card"><div class="score-label">Match-Score</div><div class="score-value">91%</div><div class="score-job">Aushilfe Verkauf · Billa</div></div></div></div></div></section>
+
+<section id="features" class="bento-section"><div class="c"><p class="section-eyebrow">Funktionen</p><h2 class="section-title">Dein persönlicher Bewerbungs-Assistent.</h2><div class="bento-grid"><div class="bento-card col-8"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="bento-title">Intelligentes Matching</div><div class="bento-desc">Die KI bewertet jede Stelle in Sekunden — du siehst auf einen Blick, wo du wirklich passt.</div><div class="bento-bar"><div class="bento-bar-label"><span>Match-Score</span><span>94%</span></div><div class="bento-bar-track"><div class="bento-bar-fill" style="width:94%"></div></div></div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg></div><div class="bento-title">Anschreiben in Sekunden</div><div class="bento-desc">Personalisierte Motivationsschreiben auf dein Profil zugeschnitten.</div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div><div class="bento-title">Interview-Prep</div><div class="bento-desc">Übe mit Fragen, die exakt auf den Job zugeschnitten sind.</div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="bento-title">Lebenslauf-Check</div><div class="bento-desc">Die KI analysiert deinen Lebenslauf und zeigt dir, was du ergänzen solltest.</div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="bento-title">Job-Alerts</div><div class="bento-desc">Passende Stellen kommen direkt in dein Postfach.</div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="bento-title">Firmen-Insights</div><div class="bento-desc">Wie groß ist die Firma? Wie ist die Kultur?</div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div><div class="bento-title">DSGVO-konform</div><div class="bento-desc">Deine Daten bleiben in Österreich.</div></div><div class="bento-card col-4"><div class="bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></div><div class="bento-title">PDF-Export</div><div class="bento-desc">Lade deinen fertigen Lebenslauf herunter.</div></div></div></div></section>
+
+<!-- PART 3: CAROUSEL + TESTIMONIALS + CTA + FOOTER -->
+
+<section class="carousel-section"><div class="c"><p class="section-eyebrow">Die App</p><h2 class="section-title" style="max-width:none">So sieht JobAssist aus.</h2></div><div class="carousel-track"><div class="carousel-card"><div class="carousel-screen">Dashboard</div><div class="carousel-label">Heute-Übersicht</div></div><div class="carousel-card"><div class="carousel-screen">Job Detail</div><div class="carousel-label">Stellen-Detail</div></div><div class="carousel-card"><div class="carousel-screen">AI Chat</div><div class="carousel-label">KI-Assistent</div></div><div class="carousel-card"><div class="carousel-screen">CV Builder</div><div class="carousel-label">Lebenslauf</div></div><div class="carousel-card"><div class="carousel-screen">Job Alerts</div><div class="carousel-label">Job-Alerts</div></div></div></section>
+
+<section class="testimonials"><div class="c"><p class="section-eyebrow">Was Nutzer sagen</p><h2 class="section-title">Tausende haben bereits ihren Job gefunden.</h2><div class="testimonial-grid"><div class="testimonial"><div class="testimonial-quote">&ldquo;</div><div class="testimonial-text">Ich hatte null Ahnung, wie man ein Anschreiben schreibt. JobAssist hat mir einen Entwurf gemacht, den ich nur noch anpassen musste. Nach zwei Wochen hatte ich ein Gespräch bei Billa.</div><div class="testimonial-author"><div class="author-avatar">LK</div><div><div class="author-name">Lisa K.</div><div class="author-meta">Schülerin · Graz</div></div></div></div><div class="testimonial"><div class="testimonial-quote">&ldquo;</div><div class="testimonial-text">In einer Woche 8 Bewerbungen geschrieben — vorher hätte ich das in einem Monat geschafft. Der Zeitaufwand ist ein Bruchteil.</div><div class="testimonial-author"><div class="author-avatar">MH</div><div><div class="author-name">Max H.</div><div class="author-meta">Student · Wien</div></div></div></div><div class="testimonial"><div class="testimonial-quote">&ldquo;</div><div class="testimonial-text">Die Job-Alerts sind Gold wert. Ich muss nicht mehr stundenlang suchen — passende Stellen kommen direkt in mein Postfach.</div><div class="testimonial-author"><div class="author-avatar">SM</div><div><div class="author-name">Sarah M.</div><div class="author-meta">BWL-Studentin · Linz</div></div></div></div></div></div></section>
+
+<section class="final-cta"><div class="final-cta-bg"></div><div class="final-cta-inner c"><h2>Dein nächster Job ist nur einen Klick entfernt.</h2><p>Starte jetzt kostenlos. Keine Kreditkarte, kein Risiko.</p><a href="#" class="btn-primary">Jetzt kostenlos starten <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a></div></section>
+
+<footer class="footer"><div class="c footer-inner"><div class="footer-logo"><div class="footer-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg></div>JobAssist</div><div>&copy; 2025 JobAssist</div></div></footer>
+
+<script>
+const personas=[
+  {headline:"Erster Job? Kein Problem.",points:["Praktika ohne Erfahrung finden","Anschreiben ohne Berufsleben schreiben","Schüler-friendly Filter"],cta:"Für Schüler",score:"91%",job:"Aushilfe Verkauf · Billa"},
+  {headline:"Neben der Uni Geld verdienen.",points:["Werkstudenten-Jobs finden","Flexible Stundenpläne filtern","Remote-Optionen anzeigen"],cta:"Für Studenten",score:"88%",job:"Werkstudent Marketing · Hofer"},
+  {headline:"Den Karrieresprung wagen.",points:["Berufseinsteiger-Stellen finden","Gehaltsvergleich pro Branche","Weiterbildungsangebote entdecken"],cta:"Für Berufseinsteiger",score:"93%",job:"Junior Marketing Manager · Billa"}
+];
+function setPersona(i){
+  document.querySelectorAll('.persona-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  const p=personas[i];
+  document.querySelector('.persona-headline').textContent=p.headline;
+  document.querySelector('.persona-list').innerHTML=p.points.map(pt=>'<div class="persona-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'+pt+'</div>').join('');
+  document.querySelector('.persona-cta').childNodes[0].textContent=p.cta+' ';
+  document.querySelector('.score-value').textContent=p.score;
+  document.querySelector('.score-job').textContent=p.job;
+}
+const observer=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+</script>
+
+</body>
+</html>

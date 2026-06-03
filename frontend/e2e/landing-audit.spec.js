@@ -35,12 +35,20 @@ for (const vp of viewports) {
     const hero = page.locator("section:has(h1)").first();
     await hero.screenshot({ path: path.join(OUT, `${vp.name}-hero.png`) });
 
-    // How-it-works section (#how)
-    const howSection = page.locator("section#how");
-    if (await howSection.isVisible().catch(() => false)) {
-      await howSection.scrollIntoViewIfNeeded();
+    // Features section (#features)
+    const featuresSection = page.locator("section#features");
+    if (await featuresSection.isVisible().catch(() => false)) {
+      await featuresSection.scrollIntoViewIfNeeded();
       await page.waitForTimeout(300);
-      await howSection.screenshot({ path: path.join(OUT, `${vp.name}-how-it-works.png`) });
+      await featuresSection.screenshot({ path: path.join(OUT, `${vp.name}-features.png`) });
+    }
+
+    // Final CTA section
+    const ctaSection = page.locator("section:has(h2:has-text('Dein Job wartet'))");
+    if (await ctaSection.isVisible().catch(() => false)) {
+      await ctaSection.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      await ctaSection.screenshot({ path: path.join(OUT, `${vp.name}-cta.png`) });
     }
 
     await context.close();

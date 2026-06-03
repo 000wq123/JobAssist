@@ -450,6 +450,24 @@
     100% { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── Starfield twinkle ─────────────────────────────────────────── */
+  .animate-twinkle {
+    animation: twinkle var(--twinkle-dur, 4s) ease-in-out var(--twinkle-del, 0s) infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.12; }
+    50% { opacity: 0.45; }
+  }
+
+  /* ── CTA glow on hover ─────────────────────────────────────────── */
+  .glow-cta {
+    transition: box-shadow 0.3s ease, transform 0.2s ease, background-color 0.2s ease;
+  }
+  .glow-cta:hover {
+    box-shadow: 0 0 28px rgba(124, 125, 240, 0.35);
+    transform: translateY(-1px);
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
