@@ -130,7 +130,7 @@ function DashboardMockup() {
     { c: "Rathaus Wien",        r: "Praktikum Verwaltung",     s: 71 },
   ];
   return (
-    <div className="browser-mockup mx-auto max-w-[1080px]">
+    <div className="browser-mockup mx-auto max-w-full sm:max-w-[1080px]">
       <div className="grid grid-cols-12 gap-0">
         {/* Sidebar */}
         <aside className="col-span-3 border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-1)] p-4 hidden md:block">
@@ -400,11 +400,11 @@ function ResumeShowcase() {
  */
 function ResumeMockup() {
   const skills = [
-    { l: "MS Office",      v: 92, c: "var(--color-accent-500)" },
-    { l: "Teamfähigkeit",  v: 88, c: "var(--color-accent-400)" },
-    { l: "Kundenkontakt",  v: 76, c: "var(--color-success)" },
-    { l: "Deutsch",        v: 64, c: "var(--color-warning)" },
-    { l: "Englisch",       v: 58, c: "var(--color-info)" },
+    { l: "MS Office",      v: 92 },
+    { l: "Teamfähigkeit",  v: 88 },
+    { l: "Kundenkontakt",  v: 76 },
+    { l: "Deutsch",        v: 64 },
+    { l: "Englisch",       v: 58 },
   ];
   return (
     <div className="browser-mockup">
@@ -423,7 +423,10 @@ function ResumeMockup() {
               <div key={s.l} className="grid grid-cols-12 items-center gap-3">
                 <span className="col-span-4 sm:col-span-3 text-[12px] text-[var(--color-fg-muted)]">{s.l}</span>
                 <div className="col-span-6 sm:col-span-8 h-1.5 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${s.v}%`, background: s.c }} />
+                  <div
+                    className="h-full rounded-full bg-[var(--color-accent-500)]"
+                    style={{ width: `${s.v}%`, opacity: 0.35 + (s.v / 100) * 0.65 }}
+                  />
                 </div>
                 <span className="col-span-2 sm:col-span-1 text-right text-[11px] font-semibold tabular-nums text-[var(--color-fg)]">{s.v}</span>
               </div>
@@ -493,7 +496,7 @@ function FeatureGrid3() {
             key={title}
             className="col-span-12 md:col-span-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 flex flex-col"
           >
-            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-5 mb-5 min-h-[180px] grid place-items-center">
+            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-3 sm:p-5 mb-5 min-h-[120px] sm:min-h-[180px] grid place-items-center">
               <FeatureCardVisual variant={visual} />
             </div>
             <div className="flex items-center gap-2 mb-2">
@@ -518,7 +521,7 @@ function FeatureCardVisual({ variant }) {
       <div className="grid grid-cols-12 items-center gap-3 w-full">
         <div className="col-span-12 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-fg-dim)]">Match-Score</p>
-          <p className="mt-1 text-[44px] font-bold tabular-nums text-[var(--color-accent-300)]">91<span className="text-[20px] text-[var(--color-fg-dim)]">%</span></p>
+          <p className="mt-1 text-[32px] sm:text-[44px] font-bold tabular-nums text-[var(--color-accent-300)]">91<span className="text-[16px] sm:text-[20px] text-[var(--color-fg-dim)]">%</span></p>
           <p className="text-[11px] text-[var(--color-fg-muted)]">Aushilfe Verkauf · Billa · Wien</p>
         </div>
       </div>
@@ -602,7 +605,7 @@ function JobsMockup() {
     { c: "Rathaus Wien",        r: "Praktikum Verwaltung",  l: "Linz",     s: 82, status: "Interview" },
   ];
   return (
-    <div className="browser-mockup max-w-[1080px] mx-auto">
+    <div className="browser-mockup max-w-full sm:max-w-[1080px] mx-auto">
       <div className="bg-[var(--color-bg)]">
         <div className="grid grid-cols-12 items-center gap-3 px-5 py-3 border-b border-[var(--color-border-subtle)]">
           <div className="col-span-6 flex items-center gap-2">
@@ -770,7 +773,7 @@ function BigQuote() {
       <div className="grid grid-cols-12">
         <div className="col-span-12 md:col-span-10 md:col-start-2">
           <Quote className="h-10 w-10 text-[var(--color-accent-500)]/40 mb-6" />
-          <blockquote className="text-[20px] sm:text-section font-display italic text-[var(--color-fg)] leading-[1.25]">
+          <blockquote className="text-[20px] sm:text-section font-display italic text-[var(--color-fg)] leading-[1.45] sm:leading-[1.2]">
             &ldquo;Ich hatte null Ahnung, wie man ein Anschreiben schreibt. JobAssist hat mir einen Entwurf gemacht, den ich nur noch anpassen musste. Nach zwei Wochen hatte ich ein Gespräch bei Billa.&rdquo;
           </blockquote>
           <div className="mt-8 grid grid-cols-12 items-center gap-3">
@@ -780,7 +783,7 @@ function BigQuote() {
               <p className="text-[12px] text-[var(--color-fg-dim)]">Schülerin · Graz</p>
             </div>
           </div>
-          <div className="mt-8 text-[12px] text-[var(--color-fg-dim)]">
+          <div className="mt-8 text-[12px] text-[var(--color-fg-muted)]">
             Nutzerin seit 3 Wochen
           </div>
         </div>
@@ -822,8 +825,57 @@ function buildFeatures(plan) {
  * Fetches plan limits/prices from the backend so marketing copy never drifts
  * from the single source of truth in plans.py.
  */
+function PlanCard({ plan, isPopular, className = "" }) {
+  const price = formatPrice(plan.price);
+  const features = buildFeatures(plan);
+  const cta = isPopular ? "Pro 7 Tage testen" : plan.key === "max" ? "Max wählen" : "Kostenlos starten";
+  return (
+    <div
+      className={`rounded-2xl border p-7 flex flex-col ${
+        isPopular
+          ? "border-[var(--color-accent-400)] bg-[var(--color-bg)]"
+          : "border-[var(--color-border)] bg-[var(--color-bg)]"
+      } ${className}`}
+    >
+      {isPopular && (
+        <span className="self-start mb-3 inline-flex rounded-full bg-[var(--color-accent-500)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-300)]">
+          Empfohlen
+        </span>
+      )}
+      <h3 className="text-[16px] font-semibold text-[var(--color-fg)]">{plan.name}</h3>
+      <p className="text-[13px] text-[var(--color-fg-muted)]">
+        {plan.key === "basic" ? "Zum Ausprobieren" : plan.key === "pro" ? "Für aktive Bewerber" : "Ohne Limits"}
+      </p>
+      <div className="mt-4 flex items-baseline gap-1">
+        <span className="text-[40px] font-bold tracking-tight text-[var(--color-fg)]">{price.text}</span>
+        {price.suffix && <span className="text-[13px] text-[var(--color-fg-dim)]">{price.suffix}</span>}
+      </div>
+      <ul className="mt-6 space-y-2.5 flex-1">
+        {features.map((f) => (
+          <li key={f} className="grid grid-cols-12 gap-2 text-[13px] text-[var(--color-fg-muted)]">
+            <CheckCircle2 className="col-span-1 h-4 w-4 text-[var(--color-accent-400)] mt-0.5" />
+            <span className="col-span-11">{f}</span>
+          </li>
+        ))}
+      </ul>
+      <Link
+        to="/register"
+        className={`mt-7 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+          isPopular
+            ? "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-400)]"
+            : "border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+        }`}
+      >
+        {cta}
+        <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
+  );
+}
+
 function Pricing() {
   const [plans, setPlans] = useState([]);
+  const [activeMobilePlan, setActiveMobilePlan] = useState("pro");
 
   useEffect(() => {
     billingApi.plans()
@@ -834,6 +886,12 @@ function Pricing() {
           .map((k) => res.data.find((p) => p.key === k))
           .filter(Boolean);
         setPlans(ordered);
+        // Default active mobile tab to the popular plan if available
+        if (ordered.find((p) => p.key === "pro")) {
+          setActiveMobilePlan("pro");
+        } else if (ordered.length) {
+          setActiveMobilePlan(ordered[0].key);
+        }
       })
       .catch(() => {
         // Graceful fallback: render nothing if the API is unavailable
@@ -868,57 +926,40 @@ function Pricing() {
             Starte kostenlos. Mehr Funktionen, wenn du sie brauchst.
           </h2>
         </div>
-        <div className="grid grid-cols-12 gap-4">
-          {plans.map((p) => {
-            const price = formatPrice(p.price);
-            const features = buildFeatures(p);
-            const isPopular = p.key === "pro";
-            const cta = isPopular ? "Pro 7 Tage testen" : p.key === "max" ? "Max wählen" : "Kostenlos starten";
-            return (
-              <div
-                key={p.key}
-                className={`col-span-12 md:col-span-4 rounded-2xl border p-7 flex flex-col ${
-                  isPopular
-                    ? "border-[var(--color-accent-400)] bg-[var(--color-bg)]"
-                    : "border-[var(--color-border)] bg-[var(--color-bg)]"
-                }`}
-              >
-                {isPopular && (
-                  <span className="self-start mb-3 inline-flex rounded-full bg-[var(--color-accent-500)]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-300)]">
-                    Empfohlen
-                  </span>
-                )}
-                <h3 className="text-[16px] font-semibold text-[var(--color-fg)]">{p.name}</h3>
-                <p className="text-[13px] text-[var(--color-fg-muted)]">
-                  {p.key === "basic" ? "Zum Ausprobieren" : p.key === "pro" ? "Für aktive Bewerber" : "Ohne Limits"}
-                </p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-[40px] font-bold tracking-tight text-[var(--color-fg)]">{price.text}</span>
-                  {price.suffix && <span className="text-[13px] text-[var(--color-fg-dim)]">{price.suffix}</span>}
-                </div>
-                <ul className="mt-6 space-y-2.5 flex-1">
-                  {features.map((f) => (
-                    <li key={f} className="grid grid-cols-12 gap-2 text-[13px] text-[var(--color-fg-muted)]">
-                      <CheckCircle2 className="col-span-1 h-4 w-4 text-[var(--color-accent-400)] mt-0.5" />
-                      <span className="col-span-11">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/register"
-                  className={`mt-7 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors ${
-                    isPopular
-                      ? "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-400)]"
-                      : "border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
-                  }`}
-                >
-                  {cta}
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            );
-          })}
+
+        {/* Mobile tab switcher */}
+        <div className="md:hidden flex justify-center gap-2 mb-8">
+          {plans.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setActiveMobilePlan(p.key)}
+              className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+                activeMobilePlan === p.key
+                  ? "bg-[var(--color-accent-500)] text-white"
+                  : "border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)]"
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
         </div>
+
+        {/* Desktop: 3-column grid */}
+        <div className="hidden md:grid grid-cols-12 gap-4">
+          {plans.map((p) => (
+            <PlanCard key={p.key} plan={p} isPopular={p.key === "pro"} className="col-span-4" />
+          ))}
+        </div>
+
+        {/* Mobile: single active card */}
+        <div className="md:hidden">
+          {(() => {
+            const p = plans.find((plan) => plan.key === activeMobilePlan);
+            if (!p) return null;
+            return <PlanCard plan={p} isPopular={p.key === "pro"} />;
+          })()}
+        </div>
+
         <div className="mt-10 text-center">
           <Link to="/pricing" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)]">
             Alle Pläne im Detail vergleichen <ChevronRight className="h-3.5 w-3.5" />
@@ -936,26 +977,20 @@ function Pricing() {
 function FinalCta() {
   return (
     <section className="relative">
-      <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-20 sm:py-32 text-center">
+      <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 py-16 sm:py-32 text-center">
         <h2 className="text-hero text-[var(--color-fg)]">
           Es ist Zeit.
         </h2>
-        <p className="mt-6 text-[15px] sm:text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
+        <p className="mt-4 sm:mt-6 text-[15px] sm:text-[16px] text-[var(--color-fg-muted)] max-w-[48ch] mx-auto">
           Erstelle ein kostenloses Konto. Keine Kreditkarte erforderlich.
         </p>
-        <div className="mt-8 sm:mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 px-4 sm:px-0">
+        <div className="mt-6 sm:mt-9 flex items-center justify-center px-4 sm:px-0">
           <Link
             to="/register"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-6 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
           >
             Kostenlos starten
             <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            to="/login"
-            className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-6 py-3 text-[14px] font-semibold text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
-          >
-            Ich habe bereits ein Konto
           </Link>
         </div>
       </div>
@@ -1033,7 +1068,7 @@ function Footer() {
 
           {/* Link columns */}
           {columns.map((col) => (
-            <div key={col.title} className="col-span-12 sm:col-span-4 md:col-span-2 md:col-start-auto">
+            <div key={col.title} className="col-span-12 text-center sm:text-left sm:col-span-4 md:col-span-2 md:col-start-auto">
               <h4 className="text-eyebrow text-[var(--color-fg-dim)] mb-3 sm:mb-4">{col.title}</h4>
               <ul className="space-y-2 sm:space-y-2.5">
                 {col.links.map((link) => (
