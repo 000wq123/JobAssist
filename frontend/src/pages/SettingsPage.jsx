@@ -98,7 +98,7 @@ const INPUT_CLS =
   " transition-colors";
 
 const INPUT_STYLE = {
-  borderColor: 'rgba(255,255,255,0.1)',
+  borderColor: 'var(--color-border)',
   backgroundColor: 'var(--color-surface-input)',
   color: 'var(--color-ink-primary)',
   '--placeholder': 'var(--color-ink-meta)',
@@ -135,7 +135,7 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
         ref={anchorRef}
         onClick={() => setOpen((o) => !o)}
         className="min-h-10 w-full rounded-xl border px-2 py-1.5 text-sm cursor-pointer flex flex-wrap gap-1 items-center focus:outline-none hover:border-[var(--color-border-strong)] transition-colors"
-        style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-primary)' }}
+        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-primary)' }}
       >
         {value.length === 0 ? (
           <span className="px-1 py-0.5" style={{ color: 'var(--color-ink-meta)' }}>{placeholder}</span>
@@ -169,7 +169,7 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
         align="left"
         className="w-[min(100%,320px)] rounded-xl border shadow-xl overflow-hidden mt-1"
         >
-        <div style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-elevated)' }}>
+        <div style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-elevated)' }}>
           {options.map((option) => (
             <label
               key={option}
@@ -424,7 +424,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-sub)' }}
+                    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-sub)' }}
                   >
                     {avatar ? "Foto ändern" : "Foto hochladen"}
                   </button>
@@ -588,7 +588,7 @@ export default function SettingsPage() {
                 render={({ field }) => (
                   <div className="flex items-center justify-between gap-4 pt-2 border-t border-[var(--color-border-subtle)]">
                     <div>
-                      <p className="text-sm font-semibold text-white">Umzugsbereitschaft</p>
+                      <p className="text-sm font-semibold text-[var(--color-fg)]">Umzugsbereitschaft</p>
                       <p className="text-xs text-[var(--color-fg-muted)] mt-0.5">
                         Offen für Stellen außerhalb der Heimatstadt
                       </p>
@@ -725,10 +725,10 @@ function CVUploadSection() {
         onClick={() => cvInputRef.current?.click()}
         disabled={uploadMut.isPending}
         className="flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] font-semibold transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)] disabled:opacity-50"
-        style={{ borderColor: "rgba(255,255,255,0.1)", backgroundColor: "var(--color-surface-input)", color: "var(--color-ink-sub)" }}
+        style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface-input)", color: "var(--color-ink-sub)" }}
       >
         {uploadMut.isPending ? (
-          <span className="inline-block w-3.5 h-3.5 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+          <span className="inline-block w-3.5 h-3.5 border-2 border-[var(--color-fg-dim)]/40 border-t-transparent rounded-full animate-spin" />
         ) : (
           <Upload className="h-3.5 w-3.5" />
         )}
@@ -805,7 +805,7 @@ function DeleteAccountSection() {
             </label>
             <input
               type="password"
-              className="w-full rounded-xl border border-red-900/60 bg-[var(--color-bg-input)] px-3 py-2 text-sm text-white placeholder-red-900 focus:outline-none focus:border-red-500/50 h-10"
+              className="w-full rounded-xl border border-red-900/60 bg-[var(--color-bg-input)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder-red-500 focus:outline-none focus:border-red-500/50 h-10"
               placeholder="Aktuelles Passwort eingeben"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -825,7 +825,7 @@ function DeleteAccountSection() {
                 setPassword("");
               }}
               className="rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
-            style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-sub)' }}
+            style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-input)', color: 'var(--color-ink-sub)' }}
             >
               Abbrechen
             </button>

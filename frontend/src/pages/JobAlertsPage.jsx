@@ -197,13 +197,12 @@ function CreateAlertModal({ onClose, onSubmit, defaultEmail, initialData, title 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.keywords.trim()) return toast.error("Bitte Suchbegriff eingeben");
-    if (!form.email.trim()) return toast.error("Bitte E-Mail eingeben");
     onSubmit({
       keywords: form.keywords.trim(),
       location: form.location.trim() || null,
       job_type: form.job_type || null,
-      email: form.email.trim(),
-      frequency: form.frequency,
+      email: defaultEmail || "",
+      frequency: "daily",
     });
   };
 
@@ -276,30 +275,6 @@ function CreateAlertModal({ onClose, onSubmit, defaultEmail, initialData, title 
                   </button>
                 );
               })}
-            </div>
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-[var(--color-fg-muted)] mb-1.5">E-Mail</label>
-            <Input type="email" value={form.email} disabled />
-            <p className="mt-1 text-[11.5px] text-[var(--color-fg-dim)]">
-              Alerts werden nur an deine registrierte E-Mail gesendet.
-            </p>
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-[var(--color-fg-muted)] mb-2">Häufigkeit</label>
-            <div className="flex gap-4">
-              {FREQUENCIES.map((f) => (
-                <label key={f.value} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="frequency"
-                    checked={form.frequency === f.value}
-                    onChange={() => setVal("frequency", f.value)}
-                    className="accent-accent-500"
-                  />
-                  <span className="text-[13px] text-[var(--color-fg)]">{f.label}</span>
-                </label>
-              ))}
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
