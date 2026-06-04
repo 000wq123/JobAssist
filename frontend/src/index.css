@@ -2,40 +2,42 @@
 
 @theme {
   /* ─────────────────────────────────────────────────────────────────
-     New design system — restrained, single accent, borders not shadows.
-     Old tokens (brand-*, surface-*, ink-*) retained as aliases so legacy
-     pages keep rendering during phased migration.
+     JobAssist Design System v2 — Full dark, Linear × Arc × Stripe.
+     Single electric-violet accent. Borders not shadows. No gradients
+     on interactive elements. Restrained motion.
      ───────────────────────────────────────────────────────────────── */
 
-  /* ── Accent (single brand color) ──────────────────────────────── */
-  --color-accent-50:  #F3F0FF;
-  --color-accent-100: #E5DEFF;
-  --color-accent-200: #C9BCFF;
-  --color-accent-300: #AC99FF;
-  --color-accent-400: #9077FF;
-  --color-accent-500: #7C5CFF;
-  --color-accent-600: #6644E6;
-  --color-accent-700: #5235BD;
-  --color-accent-800: #3F2890;
-  --color-accent-900: #2A1A66;
+  /* ── Accent (electric violet) ─────────────────────────────────── */
+  --color-accent-50:  #F0EEFF;
+  --color-accent-100: #DDD8FF;
+  --color-accent-200: #BDB4FF;
+  --color-accent-300: #9D8FFF;
+  --color-accent-400: #7C6BFF;
+  --color-accent-500: #6152F3;
+  --color-accent-600: #4D40D6;
+  --color-accent-700: #3A30A8;
+  --color-accent-800: #28217A;
+  --color-accent-900: #17134D;
 
-  /* ── Neutrals (light default) ─────────────────────────────────── */
-  --color-bg:        #FAFAF7;
-  --color-bg-elev-1: #FFFFFF;
-  --color-bg-elev-2: #F4F4F0;
-  --color-bg-elev-3: #ECECE6;
-  --color-bg-input:  #FFFFFF;
+  /* ── Base surfaces (true dark) ────────────────────────────────── */
+  --color-bg:        #0C0C10;
+  --color-bg-elev-1: #111116;
+  --color-bg-elev-2: #18181F;
+  --color-bg-elev-3: #1F1F28;
+  --color-bg-input:  #111116;
 
-  --color-border:        #E5E5DF;
-  --color-border-subtle: rgba(10, 10, 15, 0.06);
-  --color-border-strong: rgba(10, 10, 15, 0.14);
+  /* ── Borders ──────────────────────────────────────────────────── */
+  --color-border:        rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
 
-  --color-fg:       #0B0B0F;
-  --color-fg-muted: #46464D;
-  --color-fg-dim:   #6B6B72;
-  --color-fg-faint: #9A9AA0;
+  /* ── Foreground ───────────────────────────────────────────────── */
+  --color-fg:       #EEEEF2;
+  --color-fg-muted: #A0A0AB;
+  --color-fg-dim:   #6B6B78;
+  --color-fg-faint: #44444F;
 
-  /* ── Semantic (use sparingly) ─────────────────────────────────── */
+  /* ── Semantic ─────────────────────────────────────────────────── */
   --color-success:      #34D399;
   --color-success-soft: rgba(52, 211, 153, 0.12);
   --color-warning:      #FBBF24;
@@ -45,7 +47,7 @@
   --color-info:         #60A5FA;
   --color-info-soft:    rgba(96, 165, 250, 0.12);
 
-  /* ── Legacy aliases (for non-migrated pages) ──────────────────── */
+  /* ── Legacy aliases (non-migrated pages keep rendering) ───────── */
   --color-brand-50:  var(--color-accent-50);
   --color-brand-100: var(--color-accent-100);
   --color-brand-200: var(--color-accent-200);
@@ -68,71 +70,67 @@
   --color-ink-dim:     var(--color-fg-dim);
   --color-ink-meta:    var(--color-fg-faint);
 
-  /* Skill category colors retained for ResumePage radar (to be removed) */
-  --color-skill-tech: #A855F7;
+  /* Skill category colors */
+  --color-skill-tech: #A78BFA;
   --color-skill-exp:  #38BDF8;
   --color-skill-edu:  #34D399;
   --color-skill-soft: #FBBF24;
   --color-skill-lang: #F472B6;
 
-  /* ── Dark-mode tokens (for `.surface-dark` override) ─────────── */
-  --color-dark-bg:        #0B0B0F;
-  --color-dark-bg-elev-1: #131318;
-  --color-dark-bg-elev-2: #1B1B22;
-  --color-dark-bg-elev-3: #24242C;
-  --color-dark-border:        #2A2A33;
-  --color-dark-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-dark-border-strong: rgba(255, 255, 255, 0.12);
-  --color-dark-fg:       #ECECEF;
-  --color-dark-fg-muted: #A1A1AA;
-  --color-dark-fg-dim:   #71717A;
-  --color-dark-fg-faint: #52525B;
+  /* ── Dark-mode tokens (for .surface-dark override — now same as base) */
+  --color-dark-bg:        #0C0C10;
+  --color-dark-bg-elev-1: #111116;
+  --color-dark-bg-elev-2: #18181F;
+  --color-dark-bg-elev-3: #1F1F28;
+  --color-dark-border:        rgba(255, 255, 255, 0.08);
+  --color-dark-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-dark-border-strong: rgba(255, 255, 255, 0.14);
+  --color-dark-fg:       #EEEEF2;
+  --color-dark-fg-muted: #A0A0AB;
+  --color-dark-fg-dim:   #6B6B78;
+  --color-dark-fg-faint: #44444F;
 
-  /* ── Pastel accents (for Arc/Dia-style soft sections) ─────────── */
-  --color-pastel-peach: #FBC8B5;
-  --color-pastel-sky:   #BFD9F2;
-  --color-pastel-mint:  #C8EFD9;
-  --color-pastel-lilac: #DCD2F7;
-  --color-pastel-cream: #F6EFD8;
+  /* ── Pastel accents (Arc-style soft sections) ─────────────────── */
+  --color-pastel-peach: rgba(251, 146, 60, 0.15);
+  --color-pastel-sky:   rgba(96, 165, 250, 0.15);
+  --color-pastel-mint:  rgba(52, 211, 153, 0.15);
+  --color-pastel-lilac: rgba(167, 139, 250, 0.15);
+  --color-pastel-cream: rgba(251, 191, 36, 0.12);
 
   /* ── Typography ───────────────────────────────────────────────── */
   --font-family-sans:    "Inter", system-ui, -apple-system, "SF Pro Display", sans-serif;
   --font-family-display: "Instrument Serif", "Iowan Old Style", "Times New Roman", Times, serif;
   --font-family-mono:    "JetBrains Mono", ui-monospace, "Menlo", monospace;
 
-  /* ── Display type scale (hero + section headlines) ────────────── */
-  /* Used via .text-hero / .text-display / .text-section utilities. */
-  --text-hero:    clamp(2.75rem, 6.5vw, 5.5rem);   /*  44–88px */
-  --text-display: clamp(2.25rem, 5vw, 4rem);       /*  36–64px */
-  --text-section: clamp(1.75rem, 3.5vw, 3rem);     /*  28–48px */
-  --text-eyebrow: 0.6875rem;                        /*    11px */
+  /* ── Display type scale ───────────────────────────────────────── */
+  --text-hero:    clamp(2.75rem, 6.5vw, 5.5rem);
+  --text-display: clamp(2.25rem, 5vw, 4rem);
+  --text-section: clamp(1.75rem, 3.5vw, 3rem);
+  --text-eyebrow: 0.6875rem;
 
-  /* ── In-app type scale (Linear-style) ─────────────────────────── */
-  /* The missing mid-tier between body (13px) and section title (26px).
-     `page-title` replaces the marketing hero on in-app pages.
-     `subhead` is for grouping inside a page (formerly card titles). */
-  --text-page-title: 1.5rem;        /* 24px — in-app page H1 */
-  --text-subhead-lg: 1.1875rem;     /* 19px — major sub-section */
-  --text-subhead:    1.0625rem;     /* 17px — section header inside a page */
-  --text-body-lg:    0.9375rem;     /* 15px — emphasized body */
-  --text-body:       0.8125rem;     /* 13px — default body (unchanged) */
-  --text-meta:       0.75rem;       /* 12px — meta / captions */
-  --text-micro:      0.6875rem;     /* 11px — uppercase eyebrow */
+  /* ── In-app type scale ────────────────────────────────────────── */
+  --text-page-title: 1.5rem;
+  --text-subhead-lg: 1.1875rem;
+  --text-subhead:    1.0625rem;
+  --text-body-lg:    0.9375rem;
+  --text-body:       0.8125rem;
+  --text-meta:       0.75rem;
+  --text-micro:      0.6875rem;
 
-  /* ── Radii (tighter scale) ────────────────────────────────────── */
-  --radius-sm: 6px;
+  /* ── Radii ────────────────────────────────────────────────────── */
+  --radius-sm: 5px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
-  /* ── Shadows (legacy retained but unused in new components) ───── */
-  --shadow-card: 0 8px 40px rgba(0,0,0,0.70), 0 2px 8px rgba(0,0,0,0.50);
-  --shadow-tile: 0 4px 16px rgba(0,0,0,0.40);
-  --shadow-brand: 0 4px 22px rgba(124,92,255,0.30);
-  --shadow-glow-brand:   0 0 20px rgba(124,92,255,0.30);
-  --shadow-glow-success: 0 0 20px rgba(52,211,153,0.30);
-  --shadow-glow-warning: 0 0 20px rgba(251,191,36,0.30);
-  --shadow-glow-error:   0 0 20px rgba(248,113,113,0.30);
+  /* ── Shadows ──────────────────────────────────────────────────── */
+  --shadow-card:  0 8px 40px rgba(0,0,0,0.70), 0 2px 8px rgba(0,0,0,0.50);
+  --shadow-tile:  0 4px 16px rgba(0,0,0,0.40);
+  --shadow-brand: 0 4px 22px rgba(97,82,243,0.35);
+  --shadow-glow-brand:   0 0 24px rgba(97,82,243,0.30);
+  --shadow-glow-success: 0 0 20px rgba(52,211,153,0.25);
+  --shadow-glow-warning: 0 0 20px rgba(251,191,36,0.25);
+  --shadow-glow-error:   0 0 20px rgba(248,113,113,0.25);
 
   /* ── Motion ───────────────────────────────────────────────────── */
   --animate-slide-up: slideUp 0.2s ease-out;
@@ -170,27 +168,21 @@
     box-sizing: border-box;
   }
 
-  /* Scrollbar — refined */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: 5px;
-    border: 2px solid var(--color-bg);
+    background: rgba(255,255,255,0.10);
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-border-strong);
+    background: rgba(255,255,255,0.18);
   }
 
   /* Selection */
   ::selection {
-    background-color: var(--color-accent-500);
-    color: white;
+    background-color: rgba(97, 82, 243, 0.40);
+    color: #EEEEF2;
   }
 
   /* Native select option */
@@ -201,7 +193,7 @@
 }
 
 @layer components {
-  /* ── Form labels (legacy) ──────────────────────────────────────── */
+  /* ── Form labels ──────────────────────────────────────────────── */
   .label {
     display: block;
     margin-bottom: 0.375rem;
@@ -210,7 +202,7 @@
     color: var(--color-fg-muted);
   }
 
-  /* ── Input (legacy) — used by non-migrated pages ──────────────── */
+  /* ── Input ────────────────────────────────────────────────────── */
   .input {
     display: block;
     width: 100%;
@@ -221,19 +213,17 @@
     font-size: 0.8125rem;
     color: var(--color-fg);
     outline: none;
-    transition: border-color 0.15s var(--ease-standard, ease), background-color 0.15s var(--ease-standard, ease);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
 
-  .input::placeholder {
-    color: var(--color-fg-faint);
-  }
+  .input::placeholder { color: var(--color-fg-faint); }
 
   .input:focus {
     border-color: var(--color-accent-500);
-    background-color: var(--color-bg-elev-1);
+    background-color: var(--color-bg-elev-2);
   }
 
-  /* ── Button (legacy .btn-primary kept for old code paths) ─────── */
+  /* ── Button (legacy .btn-primary) ────────────────────────────── */
   .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -255,12 +245,9 @@
     outline: 2px solid var(--color-accent-400);
     outline-offset: 2px;
   }
-  .btn-primary:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
+  .btn-primary:disabled { cursor: not-allowed; opacity: 0.5; }
 
-  /* ── Card (legacy .card kept for old code paths) ──────────────── */
+  /* ── Card (legacy) ────────────────────────────────────────────── */
   .card {
     background: var(--color-bg-elev-1);
     border: 1px solid var(--color-border);
@@ -273,7 +260,7 @@
     border-radius: var(--radius-lg);
   }
 
-  /* ── Badge (legacy classes) ───────────────────────────────────── */
+  /* ── Badge (legacy) ───────────────────────────────────────────── */
   .badge {
     display: inline-flex;
     align-items: center;
@@ -288,21 +275,17 @@
   .badge-warning { background: var(--color-warning-soft); color: var(--color-warning); }
   .badge-error   { background: var(--color-error-soft);   color: var(--color-error);   }
   .badge-info    { background: var(--color-info-soft);    color: var(--color-info);    }
-  .badge-brand   { background: rgba(124,92,255,0.12);     color: var(--color-accent-300); }
+  .badge-brand   { background: rgba(97,82,243,0.18);      color: var(--color-accent-300); }
 
-  /* ── Focus ring utility ───────────────────────────────────────── */
-  .focus-ring {
-    outline: none;
-  }
+  /* ── Focus ring ───────────────────────────────────────────────── */
+  .focus-ring { outline: none; }
   .focus-ring:focus-visible {
     outline: 2px solid var(--color-accent-400);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
 
-  /* ── Display typography (hero / section headlines) ────────────── */
-  /* Pair these with `font-display` (serif) or default sans for two
-     distinct emotive-vs-functional headline styles. */
+  /* ── Display typography ───────────────────────────────────────── */
   .text-hero {
     font-size: var(--text-hero);
     line-height: 1.02;
@@ -333,10 +316,10 @@
     letter-spacing: -0.01em;
   }
 
-  /* ── Dark surface wrapper ───────────────────────────────────── */
+  /* ── Dark surface wrapper (now same as base — kept for compat) ── */
   .surface-dark {
-    background-color: var(--color-dark-bg);
-    color: var(--color-dark-fg);
+    background-color: var(--color-bg);
+    color: var(--color-fg);
     --color-bg:            var(--color-dark-bg);
     --color-bg-elev-1:     var(--color-dark-bg-elev-1);
     --color-bg-elev-2:     var(--color-dark-bg-elev-2);
@@ -350,18 +333,15 @@
     --color-fg-faint:      var(--color-dark-fg-faint);
   }
 
-  /* ── Browser mockup chrome (Cluely / Arc / Plain pattern) ─────── */
-  /* Wraps any element in a realistic macOS browser frame. The traffic
-     lights are pure CSS via ::before, so consumers just supply content. */
+  /* ── Browser mockup chrome ────────────────────────────────────── */
   .browser-mockup {
-    position: relative;
     background-color: var(--color-bg-elev-1);
     border: 1px solid var(--color-border);
     border-radius: 14px;
     overflow: hidden;
     box-shadow:
-      0 18px 50px rgba(0, 0, 0, 0.18),
-      0 6px 16px rgba(0, 0, 0, 0.12);
+      0 24px 60px rgba(0, 0, 0, 0.60),
+      0 6px 20px rgba(0, 0, 0, 0.40);
   }
   .browser-mockup::before {
     content: "";
@@ -375,16 +355,7 @@
       radial-gradient(circle at 56px 50%, #28C840 5px, transparent 5.5px);
   }
 
-  /* Mobile: lighter, tighter shadow for smaller viewports */
-  @media (max-width: 767px) {
-    .browser-mockup {
-      box-shadow:
-        0 10px 24px rgba(0, 0, 0, 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-  }
-
-  /* ── Sticky CTA pill (Arc/Dia "Try Dia", Cron banner pattern) ─── */
+  /* ── Pill banner ──────────────────────────────────────────────── */
   .pill-banner {
     display: inline-flex;
     align-items: center;
@@ -403,7 +374,7 @@
     border-color: var(--color-border-strong);
   }
 
-  /* ── Marquee logo strip (press / customer logos band) ─────────── */
+  /* ── Logo strip ───────────────────────────────────────────────── */
   .logo-strip {
     display: flex;
     gap: 3rem;
@@ -417,20 +388,14 @@
 }
 
 @layer utilities {
-  .animate-slide-up {
-    animation: var(--animate-slide-up);
-  }
+  .animate-slide-up { animation: var(--animate-slide-up); }
   .page-enter {
     animation: var(--animate-slide-up);
     animation-duration: 0.25s;
   }
-  .page-ready {
-    animation: none;
-  }
+  .page-ready { animation: none; }
 
-  /* ── Auth page card mount animation ────────────────────────────
-     Triggers on every mount, so navigating between Login / Register /
-     ForgotPassword feels like a smooth fade-in instead of a hard swap. */
+  /* Auth card mount */
   .auth-card-enter {
     animation: authCardEnter 360ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
@@ -439,9 +404,7 @@
     100% { opacity: 1; transform: translateY(0)   scale(1);     filter: blur(0); }
   }
 
-  /* ── CV wizard scene transition ────────────────────────────────
-     Fires each time a new scene mounts (key={activeId} on the main).
-     Subtle: just a soft fade + 6px upward slide, no scale. */
+  /* CV wizard scene transition */
   .scene-enter {
     animation: sceneEnter 240ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   }
@@ -450,21 +413,21 @@
     100% { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── Starfield twinkle ─────────────────────────────────────────── */
+  /* Starfield twinkle */
   .animate-twinkle {
     animation: twinkle var(--twinkle-dur, 4s) ease-in-out var(--twinkle-del, 0s) infinite;
   }
   @keyframes twinkle {
-    0%, 100% { opacity: 0.12; }
-    50% { opacity: 0.45; }
+    0%, 100% { opacity: 0.08; }
+    50% { opacity: 0.40; }
   }
 
-  /* ── CTA glow on hover ─────────────────────────────────────────── */
+  /* CTA glow on hover */
   .glow-cta {
     transition: box-shadow 0.3s ease, transform 0.2s ease, background-color 0.2s ease;
   }
   .glow-cta:hover {
-    box-shadow: 0 0 28px rgba(124, 125, 240, 0.35);
+    box-shadow: 0 0 32px rgba(97, 82, 243, 0.40);
     transform: translateY(-1px);
   }
 
@@ -472,33 +435,22 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }
 
-/* Hide browser-native password reveal toggle (Edge/Chrome) */
+/* Hide browser-native password reveal toggle */
 input[type="password"]::-ms-reveal,
-input[type="password"]::-ms-clear {
-  display: none;
-}
-input[type="password"]::-webkit-textfield-decoration-container {
-  display: none;
-}
+input[type="password"]::-ms-clear { display: none; }
+input[type="password"]::-webkit-textfield-decoration-container { display: none; }
 
 /* Prevent iOS viewport zoom on input focus */
 @media (max-width: 767px) {
-  input, select, textarea {
-    font-size: 16px !important;
-  }
+  input, select, textarea { font-size: 16px !important; }
 }
 
-/* Honour OS-level reduced-motion setting — disable non-essential animations
-   and transitions to prevent motion-induced discomfort. */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;

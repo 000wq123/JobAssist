@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  FileText,
-  Briefcase,
-  Bell,
   Settings,
   CreditCard,
   LogOut,
@@ -18,21 +14,13 @@ import useAuthStore from "../../hooks/useAuthStore";
 import { authApi } from "../../services/api";
 import Popover from "../ui/Popover";
 
-const NAV_ITEMS = [
-  { to: "/dashboard",    label: "Dashboard",    icon: LayoutDashboard },
-  { to: "/jobs",         label: "Stellen",      icon: Briefcase },
-  { to: "/lebenslauf",   label: "Lebenslauf",   icon: FileText },
-  { to: "/job-alerts",   label: "Alerts",       icon: Bell },
-];
-
 const USER_MENU = [
   { to: "/settings", label: "Einstellungen", icon: Settings },
-  { to: "/billing",  label: "Mein Plan",    icon: CreditCard },
+  { to: "/billing",  label: "Mein Plan",     icon: CreditCard },
 ];
 
 /**
  * Extracts initials from a full name or email.
- * Examples: "Max Mustermann" → "MM", "ada@x.com" → "A"
  */
 function getInitials(name, email) {
   if (name) {
@@ -44,23 +32,20 @@ function getInitials(name, email) {
   return "?";
 }
 
-/**
- * Detects whether to render ⌘ or Ctrl shortcut hint.
- */
 function isMac() {
   if (typeof navigator === "undefined") return false;
   return /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 }
 
 /**
- * TopNav — minimal 56px navigation bar.
+ * TopNav — minimal 56px navigation bar for mobile.
  * Uses 12-col grid for layout (per project conventions).
  *
  * @param {object} props
  * @param {object} [props.me]
  * @param {object} [props.profile]
- * @param {() => void} props.onMenuClick - Mobile drawer trigger
- * @param {() => void} props.onCommandClick - Open command palette
+ * @param {() => void} props.onMenuClick
+ * @param {() => void} props.onCommandClick
  */
 export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -70,17 +55,13 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
 
   useEffect(() => {
     if (!menuOpen) return;
-    const handler = (e) => {
-      if (!menuBtnRef.current) return;
-      // Popover handles overlay click; here we only close on window blur to be safe
-      if (document.hidden) setMenuOpen(false);
-    };
+    const handler = () => { if (document.hidden) setMenuOpen(false); };
     document.addEventListener("visibilitychange", handler);
     return () => document.removeEventListener("visibilitychange", handler);
   }, [menuOpen]);
 
   const handleLogout = async () => {
-    try { await authApi.logout(); } catch { /* network error – continue local logout */ }
+    try { await authApi.logout(); } catch { /* ignore */ }
     useAuthStore.getState().logout();
     navigate("/login");
   };
@@ -89,63 +70,46 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
   const initials = getInitials(me?.full_name, me?.email);
 
   return (
-    <header
-      className="sticky top-0 z-40 bg-[var(--color-bg)]/70 backdrop-blur-md border-b border-[var(--color-border-subtle)]"
-    >
-      {/* Note: page-level radial glow lives on AppShell so it bleeds through the
-          frosted-glass header — no internal glow here (would create banding). */}
-      <div className="relative grid grid-cols-12 items-center gap-2 h-14 max-w-[1440px] mx-auto px-4 md:px-6 lg:px-10">
-        {/* Left: logo + mobile menu */}
-        <div className="col-span-3 flex items-center gap-2">
-          <NavLink to="/dashboard" className="flex items-center gap-2 group">
-            <div className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-accent-500)]">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
+    <header className="sticky top-0 z-40 bg-[var(--color-bg-elev-1)]/80 backdrop-blur-md border-b border-[var(--color-border-subtle)]">
+      <div className="grid grid-cols-12 items-center gap-2 h-13 max-w-[1440px] mx-auto px-4">
+
+        {/* Left: hamburger + logo */}
+        <div className="col-span-6 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
+            aria-label="Menü öffnen"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <NavLink to="/dashboard" className="flex items-center gap-2">
+            <div className="grid h-6 w-6 place-items-center rounded-md bg-[var(--color-accent-500)]">
+              <Sparkles className="h-3 w-3 text-white" />
             </div>
-            <span className="hidden sm:block text-[14px] font-semibold text-[var(--color-fg)] tracking-tight">
+            <span className="hidden sm:block text-[13px] font-semibold text-[var(--color-fg)] tracking-tight">
               JobAssist
             </span>
           </NavLink>
         </div>
 
-        {/* Center: nav */}
-        <nav className="col-span-6 hidden md:flex items-center justify-center gap-0.5">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                clsx(
-                  "inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-[13px] font-medium transition-colors",
-                  "focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-400)]",
-                  isActive
-                    ? "text-[var(--color-fg)] bg-[var(--color-bg-elev-1)]"
-                    : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)]",
-                )
-              }
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Right: command + avatar */}
-        <div className="col-span-9 md:col-span-3 flex items-center justify-end gap-2">
+        {/* Right: search + avatar */}
+        <div className="col-span-6 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onCommandClick}
             className={clsx(
-              "hidden sm:inline-flex items-center gap-2 h-8 px-2.5 rounded-md",
-              "bg-[var(--color-bg-elev-1)] border border-[var(--color-border)] text-[var(--color-fg-muted)]",
-              "hover:bg-[var(--color-bg-elev-2)] hover:text-[var(--color-fg)] transition-colors",
+              "hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md",
+              "bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] text-[var(--color-fg-faint)]",
+              "hover:bg-[var(--color-bg-elev-3)] hover:text-[var(--color-fg-dim)] hover:border-[var(--color-border)] transition-colors",
               "focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-400)]",
             )}
             aria-label="Befehlsmenü öffnen"
           >
-            <Search className="w-3.5 h-3.5" />
-            <span className="text-[12px]">Suchen</span>
-            <kbd className="ml-1 inline-flex items-center justify-center min-w-[24px] h-[18px] px-1.5 rounded bg-[var(--color-bg-elev-3)] border border-[var(--color-border)] font-mono text-[10px] text-[var(--color-fg-dim)]">
-              {mac ? "⌘K" : "Ctrl K"}
+            <Search className="w-3 h-3" />
+            <span className="text-[11.5px]">Suchen</span>
+            <kbd className="ml-0.5 inline-flex items-center justify-center min-w-[20px] h-[15px] px-1 rounded bg-[var(--color-bg-elev-3)] border border-[var(--color-border-subtle)] font-mono text-[9px] text-[var(--color-fg-faint)]">
+              {mac ? "⌘K" : "^K"}
             </kbd>
           </button>
 
@@ -154,9 +118,9 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
               className={clsx(
-                "inline-flex items-center gap-1.5 h-8 pl-1 pr-2 rounded-md",
-                "border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]",
-                "hover:bg-[var(--color-bg-elev-2)] hover:border-[var(--color-border-strong)] transition-colors",
+                "inline-flex items-center gap-1.5 h-7 pl-1 pr-2 rounded-md",
+                "border border-[var(--color-border-subtle)] bg-[var(--color-bg-elev-2)]",
+                "hover:bg-[var(--color-bg-elev-3)] hover:border-[var(--color-border)] transition-colors",
                 "focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-400)]",
               )}
               aria-label="Benutzermenü"
@@ -164,13 +128,18 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
               ref={menuBtnRef}
             >
               {profile?.avatar ? (
-                <img src={profile.avatar} alt="" className="w-6 h-6 rounded object-cover" />
+                <img src={profile.avatar} alt="" className="w-5 h-5 rounded object-cover" />
               ) : (
-                <span className="grid place-items-center w-6 h-6 rounded bg-[var(--color-accent-500)]/15 border border-[var(--color-accent-500)]/30 text-[var(--color-accent-200)] text-[10px] font-semibold">
+                <span className="grid place-items-center w-5 h-5 rounded bg-[var(--color-accent-500)]/20 border border-[var(--color-accent-500)]/30 text-[var(--color-accent-300)] text-[9px] font-semibold">
                   {initials}
                 </span>
               )}
-              <ChevronDown className={clsx("w-3 h-3 text-[var(--color-fg-dim)] transition-transform", menuOpen && "rotate-180")} />
+              <ChevronDown
+                className={clsx(
+                  "w-3 h-3 text-[var(--color-fg-faint)] transition-transform duration-150",
+                  menuOpen && "rotate-180",
+                )}
+              />
             </button>
 
             <Popover
@@ -178,11 +147,12 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
               onClose={() => setMenuOpen(false)}
               anchorRef={menuBtnRef}
               align="right"
-              className="w-60 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] p-1 animate-slide-up"
+              className="w-56 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-3)] p-1 animate-slide-up"
+              style={{ boxShadow: "0 16px 40px rgba(0,0,0,0.60), 0 4px 12px rgba(0,0,0,0.40)" }}
             >
               <div className="px-2.5 py-2 mb-1 border-b border-[var(--color-border-subtle)]">
-                <p className="text-[13px] font-semibold text-[var(--color-fg)] truncate">{userName}</p>
-                <p className="text-[11.5px] text-[var(--color-fg-dim)] truncate">{me?.email}</p>
+                <p className="text-[12px] font-semibold text-[var(--color-fg)] truncate">{userName}</p>
+                <p className="text-[10.5px] text-[var(--color-fg-dim)] truncate mt-px">{me?.email}</p>
               </div>
               {USER_MENU.map(({ to, label, icon: Icon }) => (
                 <NavLink
@@ -190,7 +160,7 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
                   to={to}
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
-                  className="grid grid-cols-12 items-center gap-2 px-2.5 py-2 rounded-md text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
+                  className="grid grid-cols-12 items-center gap-2 px-2.5 py-2 rounded-md text-[12.5px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] transition-colors"
                 >
                   <Icon className="col-span-1 w-3.5 h-3.5" />
                   <span className="col-span-11">{label}</span>
@@ -201,7 +171,7 @@ export default function TopNav({ me, profile, onMenuClick, onCommandClick }) {
                 type="button"
                 role="menuitem"
                 onClick={() => { setMenuOpen(false); handleLogout(); }}
-                className="grid grid-cols-12 items-center gap-2 w-full px-2.5 py-2 rounded-md text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+                className="grid grid-cols-12 items-center gap-2 w-full px-2.5 py-2 rounded-md text-[12.5px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
               >
                 <LogOut className="col-span-1 w-3.5 h-3.5" />
                 <span className="col-span-11 text-left">Abmelden</span>

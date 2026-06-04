@@ -78,6 +78,17 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['lucide-react'],
+        },
+      },
+    },
+  },
   // Vitest configuration. Vitest 4 reads from this same config file unless a
   // dedicated vitest.config.js is provided; we centralise it here so there is
   // exactly one source of truth.
