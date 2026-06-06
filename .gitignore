@@ -48,3 +48,4 @@ Thumbs.db
 # Misc cruft that shouldn't be checked in
 get.pip.py
 sse3_temp.txt
+.aider*
