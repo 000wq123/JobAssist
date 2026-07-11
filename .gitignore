@@ -30,6 +30,7 @@ coverage/
 # Playwright
 playwright-report/
 test-results/
+audit-screenshots/
 
 # IDE
 .vscode/
