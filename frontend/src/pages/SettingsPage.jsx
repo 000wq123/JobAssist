@@ -278,17 +278,26 @@ export default function SettingsPage() {
                 <Controller name="salary_min" control={control} render={({ field }) => (
                   <div>
                     <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }} htmlFor="salary_min">Mindestgehalt (€ / Monat)</label>
-                    <input id="salary_min" type="number" className={inputCls} style={{ ...inputStyle, borderColor: salaryError ? "var(--app-error, #E05050)" : "var(--app-border, #E7E7E4)" }}
+                    <input id="salary_min" type="number" className={inputCls}
+                      aria-invalid={!!salaryError}
+                      aria-describedby={salaryError ? "salary-error" : undefined}
+                      style={{ ...inputStyle, borderColor: salaryError ? "var(--app-error, #E05050)" : "var(--app-border, #E7E7E4)" }}
                       {...field} value={field.value || ""} placeholder="30" />
                   </div>
                 )} />
                 <Controller name="salary_max" control={control} render={({ field }) => (
                   <div>
                     <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }} htmlFor="salary_max">Maximalgehalt (€ / Monat)</label>
-                    <input id="salary_max" type="number" className={inputCls} style={{ ...inputStyle, borderColor: salaryError ? "var(--app-error, #E05050)" : "var(--app-border, #E7E7E4)" }}
+                    <input id="salary_max" type="number" className={inputCls}
+                      aria-invalid={!!salaryError}
+                      aria-describedby={salaryError ? "salary-error" : undefined}
+                      style={{ ...inputStyle, borderColor: salaryError ? "var(--app-error, #E05050)" : "var(--app-border, #E7E7E4)" }}
                       {...field} value={field.value || ""} placeholder="50" />
                   </div>
                 )} />
+                {salaryError && (
+                  <p id="salary-error" role="alert" className="text-[12px] text-[var(--app-error, #E05050)] -mt-2">{salaryError}</p>
+                )}
                 <Controller name="job_types" control={control} render={({ field }) => (
                   <div>
                     <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }}>Jobarten</label>
