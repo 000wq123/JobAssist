@@ -468,7 +468,7 @@ function ThemeSection() {
             }}>
             <opt.icon className="w-4 h-4 flex-shrink-0" style={{ color: active ? "var(--app-brand, #E30613)" : "var(--app-text-muted, #888)" }} />
             <div>
-              <div className="text-[13px] font-semibold" style={{ color: active ? "var(--app-brand, #E30613)" : "var(--app-text, #171717)" }}>{opt.label}</div>
+              <div className="text-[13px] font-semibold" style={{ color: active ? "#b30010" : "var(--app-text, #171717)" }}>{opt.label}</div>
               <div className="text-[11px] mt-0.5" style={{ color: "var(--app-text-muted, #888)" }}>{opt.desc}</div>
             </div>
           </button>
