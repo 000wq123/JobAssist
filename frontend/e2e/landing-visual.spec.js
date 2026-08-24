@@ -68,7 +68,7 @@ const SECTIONS = [
   // v5 landing: features + CTA no longer have dedicated section ids.
   // Capture the workflow canvas and final CTA block via stable text landmarks.
   { name: "features", selector: 'div:has(> h2:has-text("Ein Ablauf. Alle Werkzeuge."))' },
-  { name: "cta", selector: 'div:has(> a:has-text("Kostenlos starten"))' },
+  { name: "cta", selector: 'div:has(> h2:has-text("Bereit für deinen nächsten Karriereschritt?"))' },
 ];
 
 // Section snapshots are captured at representative breakpoints only
