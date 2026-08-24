@@ -208,7 +208,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
           <span
             className="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium border flex-shrink-0"
             style={{
-              color: alert.is_active ? T("success") : T("text-muted"),
+              color: alert.is_active ? "#2f6b3a" : T("text-muted"),
               borderColor: alert.is_active ? "color-mix(in srgb, var(--app-success) 25%, transparent)" : T("border-subtle"),
               background: alert.is_active ? "color-mix(in srgb, var(--app-success) 8%, transparent)" : "transparent",
             }}

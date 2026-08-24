@@ -180,7 +180,7 @@ function FindenTab({ onSaved }) {
             onClick={() => setJobType(t.value)}
             className="h-8 px-3 rounded-full text-[12px] font-medium border transition-colors"
             style={{
-              color: jobType === t.value ? T("accent") : T("text-muted"),
+              color: jobType === t.value ? "#b30010" : T("text-muted"),
               borderColor: jobType === t.value ? "var(--app-brand)" : T("border"),
               background: jobType === t.value ? "color-mix(in srgb, var(--app-brand) 8%, transparent)" : "transparent",
             }}

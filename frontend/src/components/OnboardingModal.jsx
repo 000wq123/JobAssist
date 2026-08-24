@@ -77,6 +77,12 @@ function OnboardingModalInner({ onDone }) {
           background: "#111113",
           border: "1px solid rgba(255,255,255,0.10)",
           boxShadow: "0 32px 80px rgba(0,0,0,0.60)",
+          // Dark surface: override light-mode text tokens so children pass AA.
+          "--color-fg": "#f5f5f7",
+          "--color-fg-muted": "#c2c2ca",
+          "--color-fg-dim": "#a8a8b3",
+          "--color-fg-faint": "#8f8f9a",
+          "--color-accent-400": "#A78BFA",
         }}
         role="dialog"
         aria-modal="true"
@@ -124,7 +130,7 @@ function OnboardingModalInner({ onDone }) {
             className="w-full h-11 rounded-xl inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-all hover:-translate-y-px"
             style={{
               background: "var(--color-accent-500)",
-              color: "#0b0b14",
+              color: "#ffffff",
               boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.18)",
             }}
           >

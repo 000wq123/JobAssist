@@ -20,7 +20,7 @@ const BUCKETS = [
   { key: "applied",      label: "Beworben",    icon: Send,           color: "#3b82f6" },
   { key: "interviewing", label: "Gespräch",    icon: MessageCircle,  color: "#8b5cf6" },
   { key: "offered",      label: "Angebot",     icon: CheckCircle2,   color: "#22c55e" },
-  { key: "archived",     label: "Archiviert",  icon: Archive,        color: "#6b7280" },
+  { key: "archived",     label: "Archiviert",  icon: Archive,        color: "#6b7280", pill: "#4b5563" },
 ];
 
 function getGreeting(name) {
@@ -308,7 +308,7 @@ export default function DashboardPage() {
                         {dateStr ? ` · ${dateStr}` : ""}
                       </p>
                     </div>
-                    <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block" style={{ color: bucket.color, background: `${bucket.color}10` }}>
+                    <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block" style={{ color: bucket.pill, background: `${bucket.color}10` }}>
                       {bucket.label}
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: T("text-faint") }} />
