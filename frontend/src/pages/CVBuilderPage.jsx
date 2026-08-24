@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { usePageTitle } from "../hooks/usePageChrome";
+import useConfirmDialog from "../components/ui/ConfirmDialog";
 import toast from "react-hot-toast";
 import {
   ArrowLeft, Trash2, ChevronRight, Download, CheckCircle2, Upload, Copy, Pencil, Edit3,
@@ -232,6 +233,7 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
 /* ── CVBuilderPage ── */
 export default function CVBuilderPage() {
   usePageTitle("CV-Builder");
+  const { confirm, element: confirmElement } = useConfirmDialog();
   const authUser = useAuthStore((s) => s.user);
   const [profile, setProfile] = useState(() => {
     const draft = loadDraft();
@@ -321,18 +323,29 @@ export default function CVBuilderPage() {
   }, [profile.templateId, authUser]);
 
   const onLoadFromLibrary = useCallback((libProfile) => { setProfile({ ...libProfile }); saveDraftNow(libProfile); setMode("wizard"); }, []);
-  const onReset = useCallback(() => {
-    if (!window.confirm("Lebenslauf-Entwurf wirklich löschen?")) return;
+  const onReset = useCallback(async () => {
+    const ok = await confirm({
+      title: "Entwurf verwerfen?",
+      body: "Dein aktueller Lebenslauf-Entwurf wird gelöscht. Das kann nicht rückgängig gemacht werden.",
+      confirmLabel: "Verwerfen",
+      danger: true,
+    });
+    if (!ok) return;
     const empty = emptyProfile(); if (authUser?.email) empty.email = authUser.email;
     setProfile(empty); saveDraftNow(empty); profileApi.patch(empty).catch(() => {});
     setMode("landing");
-  }, [authUser]);
+  }, [authUser, confirm]);
 
   if (mode === "landing") {
-    return <CVLandingView onStart={() => setMode("templatePicker")}
-      hasDraft={hasDraftData(profile)} onLoadFromLibrary={onLoadFromLibrary}
-      onUploadResume={handleUploadResume} uploadBusy={uploadBusy}
-      onReset={hasDraftData(profile) ? onReset : undefined} />;
+    return (
+      <>
+        {confirmElement}
+        <CVLandingView onStart={() => setMode("templatePicker")}
+          hasDraft={hasDraftData(profile)} onLoadFromLibrary={onLoadFromLibrary}
+          onUploadResume={handleUploadResume} uploadBusy={uploadBusy}
+          onReset={hasDraftData(profile) ? onReset : undefined} />
+      </>
+    );
   }
 
   if (mode === "templatePicker") {

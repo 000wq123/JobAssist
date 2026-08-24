@@ -18,6 +18,7 @@ import {
 } from "../services/api";
 import useFetch from "../hooks/useFetch";
 import useMutation from "../hooks/useMutation";
+import useConfirmDialog from "../components/ui/ConfirmDialog";
 import { useBootstrap } from "../context/BootstrapContext";
 import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
@@ -88,6 +89,7 @@ function CommuteSafetyCard({ job, me }) {
 
 export default function JobDetailPage() {
   const { jobId } = useParams();
+  const { confirm: confirmDelete, element: confirmElement } = useConfirmDialog();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -163,6 +165,12 @@ export default function JobDetailPage() {
   };
 
   const deleteMutation = useMutation(() => jobApi.delete(jobId));
+  const askDelete = () => confirmDelete({
+    title: "Stelle löschen?",
+    body: "Die Stelle wird aus deiner Liste entfernt. Das kann nicht rückgängig gemacht werden.",
+    confirmLabel: "Löschen",
+    danger: true,
+  });
   const handleDelete = async () => {
     try {
       await deleteMutation.mutate();
@@ -242,6 +250,7 @@ export default function JobDetailPage() {
 
   return (
     <>
+      {confirmElement}
       <div key={jobId} className="animate-slide-up">
         {/* Sticky toolbar */}
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-8 lg:mx-0 px-5 sm:px-8 lg:px-0 py-2.5 bg-[var(--color-bg)]/95 backdrop-blur border-b border-[var(--color-border-subtle)]">
@@ -282,7 +291,7 @@ export default function JobDetailPage() {
                   </div>
                   <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
                   <button type="button" onClick={() => { setEditOpen(true); setMobileToolOpen(false); }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]"><Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> Bearbeiten</button>
-                  <button type="button" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) { setMobileToolOpen(false); handleDelete(); } }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]"><Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen</button>
+                  <button type="button" onClick={async () => { setMobileToolOpen(false); if (await askDelete()) handleDelete(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]"><Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen</button>
                 </Popover>
               </div>
               <div className="hidden sm:block w-px h-4 mx-1 bg-[var(--color-border-subtle)]" aria-hidden="true" />
@@ -321,7 +330,7 @@ export default function JobDetailPage() {
                   </div>
                 </Popover>
                 <ToolBtn icon={Edit3} label="Notizen & Lebenslauf" shortLabel="Bearbeiten" onClick={() => setEditOpen(true)} />
-                <ToolBtn icon={Trash2} label="Stelle löschen" shortLabel="Löschen" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) handleDelete(); }} danger disabled={deleteMutation.loading} />
+                <ToolBtn icon={Trash2} label="Stelle löschen" shortLabel="Löschen" onClick={async () => { if (await askDelete()) handleDelete(); }} danger disabled={deleteMutation.loading} />
               </div>
             </div>
           </div>
