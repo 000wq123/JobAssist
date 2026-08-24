@@ -43,8 +43,8 @@ async function newLandingPageContext(browser, viewport) {
  */
 async function gotoLandingPage(page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await page.locator(".landing-root").waitFor({ state: "visible" });
-  await expect(page.locator("h1")).toContainText("Bewerbungen");
+  await page.locator(".landing-v5").waitFor({ state: "visible" });
+  await expect(page.locator("h1").first()).toBeVisible();
   await page.waitForTimeout(500);
 }
 
@@ -65,8 +65,10 @@ for (const vp of VIEWPORTS) {
 
 const SECTIONS = [
   { name: "hero", selector: "section#hero" },
-  { name: "features", selector: "section#funktionen" },
-  { name: "cta", selector: "section#cta" },
+  // v5 landing: features + CTA no longer have dedicated section ids.
+  // Capture the workflow canvas and final CTA block via stable text landmarks.
+  { name: "features", selector: 'div:has(> h2:has-text("Ein Ablauf. Alle Werkzeuge."))' },
+  { name: "cta", selector: 'div:has(> a:has-text("Kostenlos starten"))' },
 ];
 
 // Section snapshots are captured at representative breakpoints only

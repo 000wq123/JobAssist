@@ -503,9 +503,9 @@ function DeleteAccountSection() {
   return (
     <div className="rounded-[8px] border p-4" style={{ borderColor: "var(--app-error, #E05050)", background: "var(--app-error-soft, rgba(224,80,80,0.08))" }}>
       <div className="flex items-start gap-2.5">
-        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: "var(--app-error, #E05050)" }} />
+        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: "#b91c1c" }} />
         <div>
-          <h3 className="font-semibold" style={{ color: "var(--app-error, #E05050)" }}>Konto löschen</h3>
+          <h3 className="font-semibold" style={{ color: "#b91c1c" }}>Konto löschen</h3>
           <p className="mt-0.5 text-[12px]" style={{ color: "var(--app-text-secondary, #626262)" }}>
             Entfernt alle deine Daten, Profile, Lebensläufe und gespeicherten Stellen dauerhaft.
           </p>
