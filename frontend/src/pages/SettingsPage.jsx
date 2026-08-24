@@ -514,7 +514,7 @@ function DeleteAccountSection() {
       {!showConfirm ? (
         <button onClick={() => setShowConfirm(true)}
           className="mt-3 inline-flex items-center gap-2 rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors duration-100"
-          style={{ background: "var(--app-error, #E05050)" }}>
+          style={{ background: "#c0392b" }}>
           <Trash2 className="h-3.5 w-3.5" /> Konto löschen
         </button>
       ) : (
