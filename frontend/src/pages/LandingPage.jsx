@@ -107,10 +107,10 @@ function Nav() {
    DASHBOARD MOCKUP — light product preview
    ─────────────────────────────────────────────────────────────── */
 const DASH_JOBS = [
-  { role: "Marketing Manager (m/w/d)", company: "Sanitas GmbH", status: "Antwort erhalten", date: "12. Mai", color: "#6e8fb5", bg: "rgba(110,143,181,.10)" },
-  { role: "Projektleiter:in IT", company: "ÖBB-Infrastruktur AG", status: "Im Gespräch", date: "9. Mai", color: "#5d9f68", bg: "rgba(93,159,104,.10)" },
-  { role: "HR Generalist (m/w/d)", company: "ACCENTURE", status: "Eingereicht", date: "5. Mai", color: "#b79649", bg: "rgba(183,150,73,.10)" },
-  { role: "Sales Specialist B2B", company: "Hilti Austria", status: "Gespeichert", date: "2. Mai", color: "#909098", bg: "rgba(0,0,0,.04)" },
+  { role: "Marketing Manager (m/w/d)", company: "Sanitas GmbH", status: "Antwort erhalten", date: "12. Mai", color: "#4a6d94", bg: "rgba(110,143,181,.10)" },
+  { role: "Projektleiter:in IT", company: "ÖBB-Infrastruktur AG", status: "Im Gespräch", date: "9. Mai", color: "#3f7a4a", bg: "rgba(93,159,104,.10)" },
+  { role: "HR Generalist (m/w/d)", company: "ACCENTURE", status: "Eingereicht", date: "5. Mai", color: "#75591f", bg: "rgba(183,150,73,.10)" },
+  { role: "Sales Specialist B2B", company: "Hilti Austria", status: "Gespeichert", date: "2. Mai", color: "#5a5a62", bg: "rgba(0,0,0,.04)" },
 ];
 
 function DashboardMockup() {
@@ -120,43 +120,43 @@ function DashboardMockup() {
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#FF5F57]" /><div className="w-3 h-3 rounded-full bg-[#FEBC2E]" /><div className="w-3 h-3 rounded-full bg-[#28C840]" />
         </div>
-        <span className="text-[11px] ml-1 text-[#9a9a9a]">Übersicht — JobAssist</span>
-        <span className="ml-auto text-[10px] text-[#9a9a9a] bg-[#f0efec] px-2 py-0.5 rounded-sm">⌘K Suchen…</span>
+        <span className="text-[11px] ml-1 text-[#6f6f6f]">Übersicht — JobAssist</span>
+        <span className="ml-auto text-[10px] text-[#5c5c5c] bg-[#f0efec] px-2 py-0.5 rounded-sm">⌘K Suchen…</span>
       </div>
       <div className="flex" style={{ minHeight: "380px" }}>
         <div className="hidden md:flex flex-col w-[152px] flex-shrink-0 border-r p-3 gap-0.5 bg-[#faf9f7] border-[#f0f0ed]">
           {["Dashboard","Stellen","Lebenslauf","Anschreiben","Alerts"].map((item) => (
-            <div key={item} className="text-[11px] px-2 py-1.5 rounded-sm" style={{ color: item === "Dashboard" ? "#111" : "#777", background: item === "Dashboard" ? "#fff" : "transparent", fontWeight: item === "Dashboard" ? 600 : 400 }}>{item}</div>
+            <div key={item} className="text-[11px] px-2 py-1.5 rounded-sm" style={{ color: item === "Dashboard" ? "#111" : "#5f5f5f", background: item === "Dashboard" ? "#fff" : "transparent", fontWeight: item === "Dashboard" ? 600 : 400 }}>{item}</div>
           ))}
           <div className="mt-auto border-t pt-3 border-[#f0f0ed]">
-            <div className="text-[11px] px-2 py-1.5 rounded-sm text-[#777]">⚙ Einstellungen</div>
-            <div className="flex items-center gap-2 px-2 py-1.5 mt-1 text-[#777] text-[11px]">
+            <div className="text-[11px] px-2 py-1.5 rounded-sm text-[#5f5f5f]">⚙ Einstellungen</div>
+            <div className="flex items-center gap-2 px-2 py-1.5 mt-1 text-[#5f5f5f] text-[11px]">
               <div className="w-5 h-5 rounded-full bg-[#6152F3] grid place-items-center text-[9px] text-white font-bold">L</div>
               <span>Lisa M.</span>
             </div>
           </div>
         </div>
         <div className="flex-1 p-4 md:p-5 min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a9a9a] mb-1">Sonntag, 23. Aug.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f6f6f] mb-1">Sonntag, 23. Aug.</p>
           <p className="text-[14px] font-semibold text-[#111]">Guten Morgen, Lisa!</p>
-          <p className="text-[12px] mt-0.5 text-[#777]">Hier ist deine aktuelle Übersicht.</p>
+          <p className="text-[12px] mt-0.5 text-[#5f5f5f]">Hier ist deine aktuelle Übersicht.</p>
           <div className="grid grid-cols-4 gap-3 mt-5">
             {[{v:"12",l:"Bewerbungen"},{v:"4",l:"Antworten"},{v:"2",l:"Gespräche"},{v:"1",l:"Angebote"}].map(m => (
               <div key={m.l} className="text-center">
                 <div className="text-[26px] font-bold leading-none tracking-[-0.03em] text-[#111]">{m.v}</div>
-                <div className="text-[11px] mt-1 leading-tight text-[#777]">{m.l}</div>
+                <div className="text-[11px] mt-1 leading-tight text-[#5f5f5f]">{m.l}</div>
               </div>
             ))}
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] mt-5 mb-2.5 text-[#9a9a9a]">Letzte Bewerbungen</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] mt-5 mb-2.5 text-[#6f6f6f]">Letzte Bewerbungen</p>
           {DASH_JOBS.map((j) => (
             <div key={j.role} className="flex items-center gap-3 py-2.5 border-b border-[#f0f0ed] last:border-0">
               <div className="flex-1 min-w-0">
                 <div className="text-[12px] font-medium truncate text-[#111]">{j.role}</div>
-                <div className="text-[11px] mt-0.5 text-[#777]">{j.company}</div>
+                <div className="text-[11px] mt-0.5 text-[#5f5f5f]">{j.company}</div>
               </div>
               <span className="text-[11px] font-medium px-2 py-0.5 rounded-sm flex-shrink-0" style={{ background: j.bg, color: j.color }}>{j.status}</span>
-              <span className="text-[11px] flex-shrink-0 hidden sm:inline text-[#9a9a9a]">{j.date}</span>
+              <span className="text-[11px] flex-shrink-0 hidden sm:inline text-[#6f6f6f]">{j.date}</span>
             </div>
           ))}
         </div>
@@ -176,10 +176,10 @@ function FloatingKvCard() {
         <span className="w-2 h-2 rounded-full bg-[#e30613]" />
         <span className="text-[11px] font-bold text-[#111]">KV-Check</span>
       </div>
-      <div className="text-[9px] font-semibold uppercase tracking-[0.10em] text-[#9a9a9a] mb-0.5">Handel · Sachbearbeiter:in</div>
+      <div className="text-[9px] font-semibold uppercase tracking-[0.10em] text-[#6f6f6f] mb-0.5">Handel · Sachbearbeiter:in</div>
       <div className="text-[26px] font-bold tracking-[-0.03em] text-[#111] mt-1">2.548 €</div>
-      <div className="text-[10px] text-[#777] mt-0.5">Brutto / Monat (Vollzeit)</div>
-      <div className="text-[9px] text-[#9a9a9a] mt-1.5">WKO-Daten 2025</div>
+      <div className="text-[10px] text-[#5f5f5f] mt-0.5">Brutto / Monat (Vollzeit)</div>
+      <div className="text-[9px] text-[#6f6f6f] mt-1.5">WKO-Daten 2025</div>
       <div className="mt-2 pt-2 border-t border-[#e8e8e5] flex items-end gap-[2px] h-[24px]">
         {[8,12,16,22,24].map((h, i) => (
           <div key={i} className="w-[9px] rounded-t-[1px]" style={{ height: `${h}px`, background: i === 4 ? "#e30613" : "#fff1f1" }} />
@@ -196,7 +196,7 @@ function RepoPreview() {
   return (
     <div className="rounded-[6px] border bg-white overflow-hidden border-[#e8e8e5]">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b bg-[#faf9f7] border-[#e8e8e5]">
-        <svg className="w-3.5 h-3.5 text-[#777]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
+        <svg className="w-3.5 h-3.5 text-[#5f5f5f]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
         <span className="text-[12px] font-medium text-[#111]">davorrr/JobAssist</span>
         <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-sm text-[#e30613] bg-[#fff1f1]">AGPL-3.0</span>
       </div>
@@ -207,7 +207,7 @@ function RepoPreview() {
       </div>
       <div className="px-4 pb-4 flex flex-wrap gap-1.5">
         {["React","FastAPI","PostgreSQL","AGPL-3.0"].map(t => (
-          <span key={t} className="text-[10px] font-medium px-2 py-0.5 rounded-sm text-[#777] bg-[#f6f6f4]">{t}</span>
+          <span key={t} className="text-[10px] font-medium px-2 py-0.5 rounded-sm text-[#5f5f5f] bg-[#f6f6f4]">{t}</span>
         ))}
       </div>
     </div>
@@ -234,26 +234,26 @@ function WorkflowCanvas() {
               <div className="w-12 h-14 rounded-sm bg-[#e0e0e0] grid place-items-center text-[18px] font-bold text-[#999]">LM</div>
               <div>
                 <div className="font-semibold text-[#111] text-[13px]">Lisa Muster</div>
-                <div className="text-[#777] text-[11px]">Projektmanagerin</div>
-                <div className="text-[#9a9a9a] text-[10px]">Wien, Österreich</div>
+                <div className="text-[#5f5f5f] text-[11px]">Projektmanagerin</div>
+                <div className="text-[#6f6f6f] text-[10px]">Wien, Österreich</div>
               </div>
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9a9a9a] mb-1">Über mich</div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f6f6f] mb-1">Über mich</div>
                 <div className="text-[#565656] text-[11px] leading-[1.5]">Organisierte Projektmanagerin mit 5+ Jahren Erfahrung in der Digitalwirtschaft.</div>
               </div>
               <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9a9a9a] mb-1">Erfahrung</div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f6f6f] mb-1">Erfahrung</div>
                 <div className="text-[#111] text-[11px] font-medium">Senior PM · TechCorp</div>
-                <div className="text-[#9a9a9a] text-[10px]">2021 – heute</div>
+                <div className="text-[#6f6f6f] text-[10px]">2021 – heute</div>
                 <div className="text-[#111] text-[11px] font-medium mt-1.5">Junior PM · StartUp AG</div>
-                <div className="text-[#9a9a9a] text-[10px]">2019 – 2021</div>
+                <div className="text-[#6f6f6f] text-[10px]">2019 – 2021</div>
               </div>
               <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9a9a9a] mb-1">Bildung</div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f6f6f] mb-1">Bildung</div>
                 <div className="text-[#111] text-[11px] font-medium">M.Sc. BWL · WU Wien</div>
-                <div className="text-[#9a9a9a] text-[10px]">2017 – 2019</div>
+                <div className="text-[#6f6f6f] text-[10px]">2017 – 2019</div>
               </div>
             </div>
           </div>
@@ -271,14 +271,14 @@ function WorkflowCanvas() {
               <span className="text-[11px] font-medium px-2 py-1 rounded-sm bg-[#fff1f1] text-[#e30613]">IT</span>
               <span className="text-[11px] font-medium px-2 py-1 rounded-sm bg-[#fff1f1] text-[#e30613]">Wien</span>
               <span className="text-[11px] font-medium px-2 py-1 rounded-sm bg-[#fff1f1] text-[#e30613]">Praktikum</span>
-              <div className="flex items-center gap-1 flex-1 min-w-0 ml-1 h-[28px] rounded-[3px] border border-[#e8e8e5] px-2.5 text-[11px] text-[#9a9a9a]">
+              <div className="flex items-center gap-1 flex-1 min-w-0 ml-1 h-[28px] rounded-[3px] border border-[#e8e8e5] px-2.5 text-[11px] text-[#6f6f6f]">
                 <Search className="w-3 h-3" /> Stichwort, Firma...
               </div>
             </div>
             {/* Source pills */}
             <div className="flex items-center gap-1.5 mb-3">
               {["karriere.at","willhaben","AMS"].map(s => (
-                <span key={s} className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-[#f6f6f4] text-[#777]">{s}</span>
+                <span key={s} className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-[#f6f6f4] text-[#5f5f5f]">{s}</span>
               ))}
             </div>
             {/* Job rows */}
@@ -291,7 +291,7 @@ function WorkflowCanvas() {
                 <div key={j.role} className="flex items-center gap-3 py-2.5">
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px] font-medium truncate text-[#111]">{j.role}</div>
-                    <div className="flex items-center gap-2 text-[10.5px] text-[#777] mt-0.5">
+                    <div className="flex items-center gap-2 text-[10.5px] text-[#5f5f5f] mt-0.5">
                       <span>{j.company}</span>
                       <span className="text-[#e8e8e5]">·</span>
                       <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />Wien</span>
@@ -299,7 +299,7 @@ function WorkflowCanvas() {
                       <span className="flex items-center gap-0.5"><Briefcase className="w-2.5 h-2.5" />{j.type}</span>
                     </div>
                   </div>
-                  <span className="text-[10px] text-[#9a9a9a] flex-shrink-0">{j.when}</span>
+                  <span className="text-[10px] text-[#6f6f6f] flex-shrink-0">{j.when}</span>
                 </div>
               ))}
             </div>
@@ -316,7 +316,7 @@ function WorkflowCanvas() {
             <Bookmark className="w-4 h-4 text-[#e30613] mb-1.5" />
             <div className="text-[11px] font-semibold text-[#111]">Stelle gespeichert</div>
             <div className="text-[12px] font-medium text-[#111] mt-1">IT Projektmanager:in</div>
-            <div className="text-[11px] text-[#777]">Erste Digital GmbH</div>
+            <div className="text-[11px] text-[#5f5f5f]">Erste Digital GmbH</div>
             <div className="mt-2 pt-2 border-t border-[#e30613]/15">
               <span className="text-[10px] font-medium text-[#e30613]">Zur Stellenübersicht →</span>
             </div>
@@ -334,7 +334,7 @@ function WorkflowCanvas() {
               {l:"Branche",v:"Handel"},{l:"Position",v:"Sachbearbeiter:in"},{l:"Stundenausmaß",v:"38,5 h / Woche"},{l:"Stufe",v:"III / 3. Jahr"}
             ].map(f => (
               <div key={f.l}>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#9a9a9a] mb-0.5">{f.l}</div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#6f6f6f] mb-0.5">{f.l}</div>
                 <div className="h-[28px] rounded-[3px] border border-[#e8e8e5] px-2 flex items-center text-[11px] text-[#111]">{f.v}</div>
               </div>
             ))}
@@ -342,7 +342,7 @@ function WorkflowCanvas() {
           <div className="mt-4 pt-3 border-t border-[#f0f0ed] flex items-end justify-between">
             <div>
               <div className="text-[28px] font-bold tracking-[-0.04em] text-[#111]">2.548 €</div>
-              <div className="text-[10px] text-[#777]">Brutto / Monat (Vollzeit)</div>
+              <div className="text-[10px] text-[#5f5f5f]">Brutto / Monat (Vollzeit)</div>
             </div>
             <div className="flex items-end gap-[2px] h-[28px]">
               {[8,14,18,24,28].map((h,k) => (
@@ -362,7 +362,7 @@ function WorkflowCanvas() {
             {/* Mini toolbar */}
             <div className="flex items-center gap-1 mb-3 pb-2 border-b border-[#f0f0ed]">
               {["B","I","U","·","Link","·","AI ✦"].map(b => (
-                <span key={b} className="text-[10px] px-1.5 py-0.5 rounded-sm text-[#777] hover:text-[#111] cursor-default">{b}</span>
+                <span key={b} className="text-[10px] px-1.5 py-0.5 rounded-sm text-[#5f5f5f] hover:text-[#111] cursor-default">{b}</span>
               ))}
             </div>
             <div className="text-[11px] leading-relaxed text-[#565656] space-y-2">
@@ -382,25 +382,25 @@ function WorkflowCanvas() {
             <span className="text-[12px] font-bold text-[#111]">Bewerbungen verfolgen</span>
           </div>
           <div className="p-4">
-            <div className="flex items-center gap-1 mb-3 overflow-x-auto">
+            <div className="flex items-center gap-1 mb-3 overflow-x-auto" tabIndex={0} role="group" aria-label="Anwendungs-Vorschau">
               {["Alle","Eingereicht","Im Gespräch","Antwort erhalten","Archiviert"].map((tab,i) => (
                 <span key={tab} className="text-[10px] font-medium px-2 py-1 rounded-[3px] whitespace-nowrap cursor-default"
-                  style={{color:i===0?"#111":"#777",background:i===0?"#f6f6f4":"transparent"}}>{tab}</span>
+                  style={{color:i===0?"#111":"#5f5f5f",background:i===0?"#f6f6f4":"transparent"}}>{tab}</span>
               ))}
             </div>
             <div className="divide-y divide-[#f0f0ed]">
               {[
-                {role:"Marketing Manager",co:"Sanitas GmbH",s:"Antwort erhalten",d:"12. Mai",c:"#6e8fb5",bg:"rgba(110,143,181,.10)"},
-                {role:"Projektleiter:in IT",co:"ÖBB-Infrastruktur AG",s:"Im Gespräch",d:"9. Mai",c:"#5d9f68",bg:"rgba(93,159,104,.10)"},
-                {role:"HR Generalist",co:"ACCENTURE",s:"Eingereicht",d:"5. Mai",c:"#b79649",bg:"rgba(183,150,73,.10)"},
+                {role:"Marketing Manager",co:"Sanitas GmbH",s:"Antwort erhalten",d:"12. Mai",c:"#4a6d94",bg:"rgba(110,143,181,.10)"},
+                {role:"Projektleiter:in IT",co:"ÖBB-Infrastruktur AG",s:"Im Gespräch",d:"9. Mai",c:"#3f7a4a",bg:"rgba(93,159,104,.10)"},
+                {role:"HR Generalist",co:"ACCENTURE",s:"Eingereicht",d:"5. Mai",c:"#75591f",bg:"rgba(183,150,73,.10)"},
               ].map(r => (
                 <div key={r.role} className="flex items-center gap-2 py-2.5">
                   <div className="flex-1 min-w-0">
                     <div className="text-[11.5px] font-medium truncate text-[#111]">{r.role}</div>
-                    <div className="text-[10.5px] text-[#777]">{r.co}</div>
+                    <div className="text-[10.5px] text-[#5f5f5f]">{r.co}</div>
                   </div>
                   <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm flex-shrink-0" style={{background:r.bg,color:r.c}}>{r.s}</span>
-                  <span className="text-[10px] text-[#9a9a9a] flex-shrink-0 hidden sm:inline">{r.d}</span>
+                  <span className="text-[10px] text-[#6f6f6f] flex-shrink-0 hidden sm:inline">{r.d}</span>
                 </div>
               ))}
             </div>
@@ -433,7 +433,7 @@ function FaqItem({ question, answer, open, onToggle }) {
         <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 transition-transform duration-300" style={{ color: open ? "#e30613" : "#9a9a9a", transform: open ? "rotate(180deg)" : "none" }} />
       </button>
       <div className={`lv5-faq-answer ${open ? "lv5-open" : ""}`}>
-        <div><p className="pb-3.5 pr-6 text-[12.5px] leading-relaxed text-[#777]">{answer}</p></div>
+        <div><p className="pb-3.5 pr-6 text-[12.5px] leading-relaxed text-[#5f5f5f]">{answer}</p></div>
       </div>
     </div>
   );
@@ -500,11 +500,11 @@ export default function LandingPage() {
                     <Play className="w-3 h-3" /> So funktioniert&apos;s
                   </a>
                 </div>
-                <div className="lv5-reveal lv5-delay-4 mt-5 flex items-center gap-3 text-[12px] text-[#9a9a9a]">
+                <div className="lv5-reveal lv5-delay-4 mt-5 flex items-center gap-3 text-[12px] text-[#6f6f6f]">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Transparent. Open Source. AGPL-3.0.</span>
                   <span aria-hidden className="w-px h-3 bg-[#e8e8e5]" />
-                  <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline text-[#777]">Quellcode auf GitHub</a>
+                  <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline text-[#4f4f4f]">Quellcode auf GitHub</a>
                 </div>
               </div>
               <div className="lg:col-span-7 lv5-reveal lv5-delay-2 min-w-0">
@@ -553,11 +553,11 @@ export default function LandingPage() {
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
                   Auf GitHub ansehen
                 </a>
-                <a href="https://github.com/davorrr/JobAssist#readme" target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#777] hover:text-[#111] transition-colors">Dokumentation →</a>
+                <a href="https://github.com/davorrr/JobAssist#readme" target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#5f5f5f] hover:text-[#111] transition-colors">Dokumentation →</a>
               </div>
               <div className="mt-5 pt-3 border-t border-[#e8e8e5] flex flex-wrap items-center gap-3">
                 <span className="text-[12px] font-medium text-[#111]">Mitentwickeln?</span>
-                <span className="text-[12px] text-[#777]">Bugs melden, Scraper reparieren oder neue Features beitragen.</span>
+                <span className="text-[12px] text-[#5f5f5f]">Bugs melden, Scraper reparieren oder neue Features beitragen.</span>
                 <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#e30613] hover:text-[#c9000b] transition-colors duration-150">Zum Repository <ExternalLink className="w-3 h-3" /></a>
               </div>
             </div>
@@ -594,7 +594,7 @@ export default function LandingPage() {
             </div>
             <div className="flex-shrink-0 text-center sm:text-right">
               <Link to="/register" className="inline-flex items-center h-[48px] px-8 rounded-[3px] text-white text-[15px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
-              <p className="mt-2 text-[12px] text-[#9a9a9a]">Keine Kreditkarte · Keine Paywall · Open Source</p>
+              <p className="mt-2 text-[12px] text-[#6f6f6f]">Keine Kreditkarte · Keine Paywall · Open Source</p>
             </div>
           </div>
         </Section>
@@ -609,43 +609,43 @@ export default function LandingPage() {
                 <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]"><span className="text-white text-[10px] font-bold leading-none">JA</span></span>
                 <span className="text-[16px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
               </div>
-              <p className="text-[13px] text-[#777]">Bewerbungstools für den österreichischen Arbeitsmarkt.</p>
-              <p className="text-[12px] mt-3 text-[#9a9a9a]">Open Source · AGPL-3.0</p>
-              <p className="text-[12px] mt-1 text-[#9a9a9a]">© {new Date().getFullYear()} JobAssist</p>
+              <p className="text-[13px] text-[#5f5f5f]">Bewerbungstools für den österreichischen Arbeitsmarkt.</p>
+              <p className="text-[12px] mt-3 text-[#6f6f6f]">Open Source · AGPL-3.0</p>
+              <p className="text-[12px] mt-1 text-[#6f6f6f]">© {new Date().getFullYear()} JobAssist</p>
             </div>
             <div className="md:col-span-2 min-w-0">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#9a9a9a]">Produkt</h4>
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Produkt</h4>
               <div className="flex flex-col gap-2">
                 {[{label:"Funktionen",href:"#funktionen"},{label:"KV-Check",href:"#funktionen"},{label:"Jobbörsen",href:"#funktionen"},{label:"Bewerbungs-Tracker",href:"#funktionen"}].map(l=>(
-                  <a key={l.label} href={l.href} className="text-[13px] text-[#777] hover:text-[#111] transition-colors">{l.label}</a>
+                  <a key={l.label} href={l.href} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
                 ))}
               </div>
             </div>
             <div className="md:col-span-2 min-w-0">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#9a9a9a]">Open Source</h4>
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Open Source</h4>
               <div className="flex flex-col gap-2">
                 {[{label:"GitHub",href:"https://github.com/davorrr/JobAssist"},{label:"Dokumentation",href:"https://github.com/davorrr/JobAssist#readme"},{label:"Lizenz (AGPL-3.0)",href:"https://github.com/davorrr/JobAssist/blob/main/LICENSE"}].map(l=>(
-                  <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#777] hover:text-[#111] transition-colors">{l.label}</a>
+                  <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
                 ))}
               </div>
             </div>
             <div className="md:col-span-2 min-w-0">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#9a9a9a]">Ressourcen</h4>
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Ressourcen</h4>
               <div className="flex flex-col gap-2">
                 {[{label:"So funktioniert's",href:"#funktionen"},{label:"FAQ",href:"#faq"},{label:"Open Source",href:"#open-source"}].map(l=>(
-                  <a key={l.label} href={l.href} className="text-[13px] text-[#777] hover:text-[#111] transition-colors">{l.label}</a>
+                  <a key={l.label} href={l.href} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
                 ))}
               </div>
             </div>
             <div className="md:col-span-2 min-w-0">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#9a9a9a]">Rechtliches</h4>
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Rechtliches</h4>
               <div className="flex flex-col gap-2 mb-4">
                 {[{label:"Datenschutz",to:"/privacy"},{label:"AGB",to:"/terms"},{label:"Impressum",to:"/impressum"}].map(l=>(
-                  <Link key={l.label} to={l.to} className="text-[13px] text-[#777] hover:text-[#111] transition-colors">{l.label}</Link>
+                  <Link key={l.label} to={l.to} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</Link>
                 ))}
               </div>
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#9a9a9a]">Kontakt</h4>
-              <a href="mailto:hallo@jobassist.tech" className="text-[13px] text-[#777] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Kontakt</h4>
+              <a href="mailto:hallo@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
             </div>
           </div>
         </div>

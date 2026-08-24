@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>08 Dark Luxe — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;600&display=swap');
+body{background:#0A0A0A;color:#D4C5B2;font-family:Inter,system-ui,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:0 32px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:32px 0;margin-bottom:80px;border-bottom:1px solid #222}
+.logo{font-family:Playfair Display,serif;font-size:18px;font-weight:700;color:#C8A96E;letter-spacing:.02em}
+.nav-cta{padding:10px 28px;border:1px solid #C8A96E;color:#C8A96E;font-size:12px;font-weight:400;text-decoration:none;letter-spacing:.05em;transition:all .3s}
+.nav-cta:hover{background:#C8A96E;color:#0A0A0A}
+.hero{margin-bottom:100px}
+.hero .overline{font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:#C8A96E;margin-bottom:24px}
+h1{font-family:Playfair Display,serif;font-size:clamp(42px,8vw,72px);font-weight:900;line-height:1.05;margin-bottom:28px;color:#E8DDD0}
+h1 em{font-style:italic;color:#C8A96E}
+.hero p{font-size:15px;color:#8A7E6E;max-width:420px;margin-bottom:36px;font-weight:300;line-height:1.7}
+.btn{padding:16px 36px;background:linear-gradient(135deg,#C8A96E,#B8944E);color:#0A0A0A;font-size:13px;font-weight:600;text-decoration:none;display:inline-block;letter-spacing:.04em;transition:all .3s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(200,169,110,.15)}
+.divider{width:60px;height:1px;background:#C8A96E;margin:48px 0}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1A1A1A;margin:80px 0}
+.card{background:#0D0D0D;padding:40px 28px;transition:all .3s}
+.card:hover{background:#111}
+.card .num{font-family:Playfair Display,serif;font-size:36px;color:#C8A96E;opacity:.3;margin-bottom:16px}
+.card h3{font-size:15px;font-weight:600;color:#E8DDD0;margin-bottom:8px}
+.card p{font-size:12px;color:#8A7E6E;font-weight:300;line-height:1.6}
+.cta-banner{margin:80px 0;padding:60px 0;border-top:1px solid #1A1A1A;border-bottom:1px solid #1A1A1A;text-align:center}
+.cta-banner h2{font-family:Playfair Display,serif;font-size:32px;font-weight:700;color:#E8DDD0;margin-bottom:12px}
+.cta-banner p{font-size:14px;color:#8A7E6E;font-weight:300;margin-bottom:0}
+footer{padding:40px 0;display:flex;justify-content:space-between;font-size:11px;color:#555;font-weight:300;letter-spacing:.03em}
+footer a{color:#555;text-decoration:none}
+.back{position:fixed;top:24px;right:32px;font-size:11px;color:#8A7E6E;text-decoration:none;border:1px solid #333;padding:8px 14px;z-index:10;letter-spacing:.03em;transition:all .3s}
+.back:hover{border-color:#C8A96E;color:#C8A96E}
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← Alle</a>
+<div class="wrap">
+  <nav><div class="logo">JobAssist</div><a href="#" class="nav-cta">REGISTRIEREN</a></nav>
+  <div class="hero">
+    <div class="overline">Für deinen ersten Job</div>
+    <h1>Bewerbungen,<br>die sich <em>selbst schreiben.</em></h1>
+    <p>JobAssist durchsucht karriere.at, willhaben.at, AMS und Stepstone. Gleicht dein Gehalt mit dem Kollektivvertrag ab. Schreibt Anschreiben auf Österreichisch.</p>
+    <a href="#" class="btn">Kostenlos starten</a>
+    <div class="divider"></div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="num">01</div><h3>Lebenslauf</h3><p>Builder mit Vorschau. Fragen beantworten, PDF exportieren. In wenigen Minuten.</p></div>
+    <div class="card"><div class="num">02</div><h3>KV-Check</h3><p>Jedes Angebot gegen den Kollektivvertrag. Brutto, Netto, Stundenlohn. Automatisch.</p></div>
+    <div class="card"><div class="num">03</div><h3>Autopilot</h3><p>Browser-Erweiterung. Ein Klick auf karriere.at und das Formular ist ausgefüllt.</p></div>
+  </div>
+  <div class="cta-banner">
+    <h2>Bereit?</h2>
+    <p>Registrieren, Profil anlegen, erste Bewerbung abschicken. Kostenlos.</p>
+  </div>
+  <footer><span>© 2026 JobAssist</span><span>Open Source · AGPL-3.0</span></footer>
+</div>
+</body>
+</html>

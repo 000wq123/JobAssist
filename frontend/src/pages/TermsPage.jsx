@@ -3,7 +3,7 @@ import LegalLayout from "../components/ui/LegalLayout";
 
 /** Static terms of service page (Austrian AGB). */
 export default function TermsPage() {
-  const linkClass = "text-[var(--app-brand)] hover:text-[var(--app-brand-hover)] hover:underline transition-colors";
+  const linkClass = "text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors";
   const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
   const h2Class = "text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-3";
 

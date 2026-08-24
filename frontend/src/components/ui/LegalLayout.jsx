@@ -75,10 +75,10 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
 
             {/* Footer link strip */}
             <div className="mt-10 mb-4 pt-6 border-t border-[var(--color-border-subtle)] flex flex-wrap justify-center gap-5 text-[12px] text-[var(--color-fg-dim)]">
-              <Link to="/terms"     className="hover:text-[var(--color-accent-400)] transition-colors">AGB</Link>
-              <Link to="/privacy"   className="hover:text-[var(--color-accent-400)] transition-colors">Datenschutz</Link>
-              <Link to="/impressum" className="hover:text-[var(--color-accent-400)] transition-colors">Impressum</Link>
-              <Link to="/contact"   className="hover:text-[var(--color-accent-400)] transition-colors">Kontakt</Link>
+              <Link to="/terms"     className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">AGB</Link>
+              <Link to="/privacy"   className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Datenschutz</Link>
+              <Link to="/impressum" className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Impressum</Link>
+              <Link to="/contact"   className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Kontakt</Link>
             </div>
           </div>
         </div>

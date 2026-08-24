@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>05 Bauhaus — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600&display=swap');
+body{background:#E8E4D9;color:#1A1A1A;font-family:Archivo,system-ui,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px;position:relative}
+.circle{position:fixed;width:200px;height:200px;border-radius:50%;pointer-events:none;z-index:0}
+.circle.red{background:#E0352C;top:60px;right:60px;opacity:.9}
+.circle.blue{background:#1A47B8;bottom:80px;left:40px;width:140px;height:140px;opacity:.8}
+.triangle{position:fixed;width:0;height:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:100px solid #F5C51C;top:200px;left:80px;pointer-events:none;z-index:0;opacity:.9}
+nav{display:flex;justify-content:space-between;align-items:center;padding:30px 0;position:relative;z-index:1;border-bottom:3px solid #1A1A1A;margin-bottom:80px}
+.logo{font-family:Archivo Black;font-size:14px;text-transform:uppercase;letter-spacing:.1em}
+.nav-cta{padding:10px 28px;background:#E0352C;color:#fff;font-size:12px;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:.05em}
+h1{font-family:Archivo Black;font-size:clamp(40px,8vw,72px);line-height:.95;margin-bottom:32px;position:relative;z-index:1;text-transform:uppercase;letter-spacing:-.02em}
+h1 .red{color:#E0352C}
+h1 .blue{color:#1A47B8}
+.hero p{font-size:15px;font-weight:600;color:#555;max-width:420px;margin-bottom:36px;position:relative;z-index:1;line-height:1.6}
+.btn{padding:14px 36px;background:#1A1A1A;color:#F5C51C;font-size:13px;font-weight:700;text-decoration:none;display:inline-block;text-transform:uppercase;letter-spacing:.05em;position:relative;z-index:1}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:100px 0;position:relative;z-index:1}
+.card{padding:36px 28px;border:3px solid #1A1A1A;margin:-3px 0 0 -3px}
+.card:nth-child(1){background:#E0352C;color:#fff;border-color:#E0352C}
+.card:nth-child(2){background:#1A47B8;color:#fff;border-color:#1A47B8}
+.card:nth-child(3){background:#F5C51C;border-color:#F5C51C}
+.card .shape{width:40px;height:40px;margin-bottom:20px}
+.card:nth-child(1) .shape{border-radius:50%;background:rgba(255,255,255,.3)}
+.card:nth-child(2) .shape{width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:35px solid rgba(255,255,255,.3);background:none}
+.card:nth-child(3) .shape{background:rgba(0,0,0,.1)}
+.card h3{font-size:16px;font-weight:700;margin-bottom:8px;text-transform:uppercase}
+.card p{font-size:13px;line-height:1.5;opacity:.9}
+footer{padding:40px 0;border-top:3px solid #1A1A1A;display:flex;justify-content:space-between;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;position:relative;z-index:1}
+.back{position:fixed;top:20px;right:20px;font-size:11px;font-weight:700;color:#1A1A1A;text-decoration:none;background:#F5C51C;padding:8px 14px;z-index:100;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="circle red"></div><div class="circle blue"></div><div class="triangle"></div>
+<a href="index.html" class="back">← Alle</a>
+<div class="wrap">
+  <nav><div class="logo">JobAssist</div><a href="#" class="nav-cta">Registrieren</a></nav>
+  <h1>Finde deinen<br><span class="red">ersten</span> <span class="blue">Job.</span></h1>
+  <p>JobAssist durchsucht karriere.at, willhaben.at, AMS und Stepstone. Gleicht dein Gehalt mit dem Kollektivvertrag ab.</p>
+  <a href="#" class="btn">Kostenlos starten</a>
+  <div class="cards">
+    <div class="card"><div class="shape"></div><h3>Lebenslauf</h3><p>Builder mit Live-Vorschau. PDF-Export. Fertig.</p></div>
+    <div class="card"><div class="shape"></div><h3>KV-Check</h3><p>Kollektivvertrag. Brutto. Netto. Stundenlohn.</p></div>
+    <div class="card"><div class="shape"></div><h3>Autopilot</h3><p>Ein Klick, Formular ausgefüllt. Browser-Erweiterung.</p></div>
+  </div>
+  <footer><span>© 2026 JobAssist · AGPL-3.0</span><span>Open Source</span></footer>
+</div>
+</body>
+</html>

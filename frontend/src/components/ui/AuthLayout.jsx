@@ -104,9 +104,9 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
                 <div className="text-[11px] font-semibold uppercase tracking-[0.08em] mb-3"
                   style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>Deine Bewerbungen</div>
                 {[
-                  { role: "Projektleiter:in IT", co: "ÖBB", status: "Im Gespräch", c: "#5d9f68", bg: "rgba(93,159,104,.10)" },
-                  { role: "HR Generalist", co: "ACCENTURE", status: "Eingereicht", c: "#b79649", bg: "rgba(183,150,73,.10)" },
-                  { role: "Marketing Manager", co: "Sanitas", status: "Antwort", c: "#6e8fb5", bg: "rgba(110,143,181,.10)" },
+                  { role: "Projektleiter:in IT", co: "ÖBB", status: "Im Gespräch", c: "#3f7a4a", bg: "rgba(93,159,104,.10)" },
+                  { role: "HR Generalist", co: "ACCENTURE", status: "Eingereicht", c: "#75591f", bg: "rgba(183,150,73,.10)" },
+                  { role: "Marketing Manager", co: "Sanitas", status: "Antwort", c: "#4a6d94", bg: "rgba(110,143,181,.10)" },
                 ].map((r) => (
                   <div key={r.role} className="flex items-center gap-2 py-2 border-b last:border-0"
                     style={{ borderColor: "var(--ja-auth-border, #e7e6e3)", transition: t }}>

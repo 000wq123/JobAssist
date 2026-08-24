@@ -168,7 +168,7 @@ export default function ContactPage() {
                   <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">Direkter Kontakt</p>
                   <a
                     href="mailto:info@jobassist.tech"
-                    className="mt-0.5 inline-block text-[12px] text-[var(--app-brand)] hover:text-[var(--app-brand-hover)] hover:underline transition-colors"
+                    className="mt-0.5 inline-block text-[12px] text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors"
                   >
                     info@jobassist.tech
                   </a>

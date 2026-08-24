@@ -137,7 +137,7 @@
   --ja-accent-100: #EDE9FE;
   --ja-accent-200: #DDD6FE;
   --ja-accent-300: #C4B5FD;
-  --ja-accent-400: #A78BFA;
+  --ja-accent-400: #6D4FD0;
   --ja-accent-500: #7C5CF0;
   --ja-accent-600: #6541D9;
   --ja-accent-700: #4D30A8;
@@ -171,7 +171,7 @@
   /* ── Foreground ───────────────────────────────────────────────── */
   --ja-fg:        #171717;
   --ja-fg-muted:  #525252;
-  --ja-fg-dim:    #777777;
+  --ja-fg-dim:    #707070;
   --ja-fg-faint:  #9A9A9A;
 
   /* ── Semantic ──────────────────────────────────────────────────── */
@@ -196,7 +196,7 @@
   --ja-auth-border: #e7e6e3;
   --ja-auth-text: #171717;
   --ja-auth-secondary: #666666;
-  --ja-auth-muted: #909090;
+  --ja-auth-muted: #6a6a6a;
   --ja-auth-shadow: 0 2px 16px rgba(0,0,0,0.04);
   --ja-auth-theme-active: #ffffff;
   --ja-auth-input-bg: #ffffff;
@@ -936,7 +936,7 @@
   --lv5-text:          #111111;
   --lv5-text-secondary:#565656;
   --lv5-text-muted:    #777777;
-  --lv5-text-faint:    #9a9a9a;
+  --lv5-text-faint:    #6f6f6f;
   --lv5-border:        #e8e8e5;
   --lv5-border-strong: #dcdcd8;
   --lv5-red:           #e30613;
