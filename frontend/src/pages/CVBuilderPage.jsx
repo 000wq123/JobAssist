@@ -217,7 +217,7 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
           </p>
           <div {...getRootProps()} className={`w-full rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors text-center ${isDragActive ? "border-[var(--app-brand)]" : ""} ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
             style={{ borderColor: isDragActive ? T("brand") : T("border") }}>
-            <input {...getInputProps()} />
+            <input {...getInputProps()} aria-label="Lebenslauf-Datei hochladen" />
             <Upload className="w-5 h-5 mx-auto mb-2" style={{ color: T("text-muted") }} />
             <p className="text-[13px] font-medium" style={{ color: T("text") }}>
               {uploadBusy ? "Wird gelesen…" : "Datei auswählen"}
