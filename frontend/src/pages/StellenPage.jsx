@@ -96,6 +96,7 @@ function FindenTab({ onSaved }) {
   const [jobType, setJobType] = useState("");
   const [submitted, setSubmitted] = useState(null);
   const [searchData, setSearchData] = useState(null);
+  const [searchError, setSearchError] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const searchIdRef = useRef(0);
 
@@ -107,6 +108,7 @@ function FindenTab({ onSaved }) {
   const runSearch = async (kw, jt) => {
     const id = ++searchIdRef.current;
     setIsFetching(true);
+    setSearchError(null);
     try {
       const res = await jobApi.searchCustom(kw, "", jt, 1);
       if (id !== searchIdRef.current) return; // stale — a newer search won
@@ -115,6 +117,7 @@ function FindenTab({ onSaved }) {
     } catch {
       if (id !== searchIdRef.current) return;
       setSearchData(null);
+      setSearchError("Die Suche ist fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut.");
       setIsFetching(false);
     }
   };
@@ -237,7 +240,30 @@ function FindenTab({ onSaved }) {
         </div>
       )}
 
-      {submitted && !isFetching && results.length === 0 && (
+      {submitted && !isFetching && searchError && (
+        <div
+          className="flex items-center gap-4 rounded-lg px-4 py-3 mb-3"
+          role="alert"
+          style={{ background: T("error-soft"), borderLeft: `3px solid ${T("error")}` }}
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: T("error") }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium" style={{ color: T("text") }}>
+              Suche fehlgeschlagen.
+            </p>
+            <p className="text-[12px]" style={{ color: T("text-muted") }}>{searchError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      )}
+
+      {submitted && !isFetching && !searchError && results.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16">
           <h2 className="text-[16px] font-semibold mb-2" style={{ color: T("text") }}>Keine passenden Stellen gefunden</h2>
           <p className="text-[13px] max-w-[340px] text-center" style={{ color: T("text-muted") }}>
