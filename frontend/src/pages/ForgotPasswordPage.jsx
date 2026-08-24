@@ -79,6 +79,8 @@ export default function ForgotPasswordPage() {
             autoComplete="email"
             placeholder="du@beispiel.at"
             className={inputCls}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
             style={{
               background: "var(--ja-auth-input-bg, #fff)",
               borderColor: errors.email ? "#ef4444" : "var(--ja-auth-input-border, #e7e6e3)",
@@ -87,7 +89,7 @@ export default function ForgotPasswordPage() {
             {...register("email", { required: "E-Mail ist erforderlich" })}
           />
           {errors.email && (
-            <p className="mt-1.5 text-[12px] text-[#ef4444]">{errors.email.message}</p>
+            <p id="email-error" role="alert" className="mt-1.5 text-[12px] text-[#ef4444]">{errors.email.message}</p>
           )}
         </div>
 

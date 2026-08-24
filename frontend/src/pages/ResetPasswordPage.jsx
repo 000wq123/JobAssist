@@ -121,6 +121,8 @@ export default function ResetPasswordPage() {
               autoComplete="new-password"
               placeholder="Mindestens 8 Zeichen"
               className={`${inputCls} pr-10`}
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
               style={inputStyle(errors.password)}
               {...register("password", {
                 required: "Passwort ist erforderlich",
@@ -146,7 +148,7 @@ export default function ResetPasswordPage() {
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1.5 text-[12px] text-[#ef4444]">{errors.password.message}</p>
+            <p id="password-error" role="alert" className="mt-1.5 text-[12px] text-[#ef4444]">{errors.password.message}</p>
           )}
         </div>
 
@@ -163,6 +165,8 @@ export default function ResetPasswordPage() {
               autoComplete="new-password"
               placeholder="Passwort wiederholen"
               className={`${inputCls} pr-10`}
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
               style={inputStyle(errors.confirmPassword)}
               {...register("confirmPassword", {
                 required: "Bitte bestätige dein Passwort",
@@ -182,7 +186,7 @@ export default function ResetPasswordPage() {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1.5 text-[12px] text-[#ef4444]">{errors.confirmPassword.message}</p>
+            <p id="confirmPassword-error" role="alert" className="mt-1.5 text-[12px] text-[#ef4444]">{errors.confirmPassword.message}</p>
           )}
         </div>
 
