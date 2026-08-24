@@ -1,72 +1,148 @@
 # JobAssist
 
-AI-assisted job-search & application-tracking SaaS. Users upload a CV, get
-LLM-generated match scores, cover letters, and interview prep against jobs
-they've saved, and run scheduled job-board searches (Adzuna) on a daily
-budget tied to their billing plan.
+> Open-Source Bewerbungstools für Österreich — Praktikum, Teilzeit, Lehre, Samstagsjob, Ferialjob.
 
-## Stack
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-teal.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/davorrr/JobAssist?style=social)](https://github.com/davorrr/JobAssist)
 
-- **Frontend:** React 18 + Vite + Tailwind, Vitest + Playwright for tests.
-- **Backend:** FastAPI (Python 3.11+), SQLAlchemy 2 async, Alembic for
-  schema, slowapi for rate-limiting.
-- **Data:** PostgreSQL (production), SQLite (tests). Stripe for billing.
-- **AI / external:** Groq (LLM), Adzuna (job search), Sentry (errors),
-  pluggable email provider.
+---
 
-## Getting started
+## Was JobAssist kann
 
-1. **Clone + install** — `docs/guides/QUICK_START.md` for the five-minute
-   path, `docs/guides/SETUP.md` for the detailed walkthrough.
-2. **Backend env** — copy `backend/.env.example` to `backend/.env`, fill
-   in `SECRET_KEY`, `DATABASE_URL`, `GROQ_API_KEY`, Stripe keys, etc.
-3. **Frontend env** — copy `frontend/.env.example` to `frontend/.env`,
-   set `VITE_API_URL`.
-4. **Run** —
-   - Backend: `cd backend && uvicorn app.main:app --reload`
-   - Frontend: `cd frontend && npm install && npm run dev`
+- **Lebenslauf-Builder** — Fragen beantworten, A4-PDF exportieren.
+- **Job-Suche** — karriere.at, willhaben.at, AMS, Stepstone.
+- **KV-Check** — Angebot gegen Kollektivvertrag abgleichen.
+- **Anschreiben** — Automatisch generiert, auf Österreichisch.
+- **Autopilot** — Browser-Erweiterung: ein Klick auf karriere.at, Formular ausgefüllt.
 
-## Project layout
+JobAssist ist Open Source (AGPL-3.0). Der gesamte Code liegt auf GitHub.
 
-```text
-backend/      FastAPI service, SQLAlchemy models, Alembic migrations, pytest suite
-frontend/     React SPA, Vitest unit/component tests, Playwright e2e tests
-docs/         Long-form docs — start with docs/README.md
-scripts/      One-shot maintenance scripts
-extension/    Chrome Extension (Manifest V3) — "Save to JobAssist" button
-railway.toml  Railway deployment manifest
-vercel.json   Vercel deployment config for the SPA
+👉 **[jobassist.tech](https://jobassist.tech)** — registrieren und loslegen.
+
+---
+
+## Für Entwickler:innen
+
+### Mitmachen
+
+Die **Scraper** sind der beste Einstiegspunkt. Sie durchsuchen karriere.at, willhaben.at und das AMS — und brechen, wenn die Jobbörsen ihr Design ändern. Python-Kenntnisse reichen.
+
+```
+backend/app/services/scrapers/
+  ├── base.py       — Basisklasse (Rate Limiting, Caching, Headers)
+  ├── karriere.py   — karriere.at
+  ├── willhaben.py  — willhaben.at
+  └── ams.py        — jobs.ams.at
 ```
 
-> Maintainer-only: `memory/`, `.windsurf/`, `.claude/`, and `AGENTS.md`
-> hold internal context for AI-assisted development workflows. Reading
-> them is not required to use, deploy, or contribute to JobAssist.
+Die **Kollektivvertrag-Daten** ändern sich jährlich:
 
-## Common commands
+```
+backend/app/api/routes/kv_wage.py
+```
+
+### Stack
+
+| Layer | Technologie |
+|-------|-------------|
+| **Frontend** | React 19, Vite, Tailwind v4, TanStack Query, Zustand |
+| **Backend** | FastAPI (Python 3.11+), SQLAlchemy 2 async, Alembic |
+| **Datenbank** | PostgreSQL (Produktion), SQLite (lokal) |
+| **AI** | Groq (Llama, Mixtral) |
+| **Job-Daten** | Adzuna API, Jooble API, native Scraper |
+| **E-Mail** | Brevo (SMTP + HTTP API) |
+| **Monitoring** | Sentry |
+
+### Lokal starten
+
+```bash
+git clone https://github.com/davorrr/JobAssist.git
+cd JobAssist
+
+# Backend
+cp backend/.env.example backend/.env
+# → SECRET_KEY, DATABASE_URL, GROQ_API_KEY ausfüllen
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload     # → http://localhost:8000
+
+# Frontend (zweites Terminal)
+cd frontend
+npm install
+npm run dev                        # → http://localhost:5173
+```
+
+> Details: [`docs/guides/SETUP.md`](docs/guides/SETUP.md)
+
+### Tests & Linting
 
 ```bash
 # Frontend
-cd frontend
-npm run dev                 # local dev server on :5173
-npm run lint                # ESLint (CI gate)
-npm run test                # Vitest unit + component tests
-npx vitest run --coverage   # coverage report → coverage/ + console summary
-npm run test:e2e            # Playwright (requires test:e2e:install first)
-npm run build               # production build → dist/
+cd frontend && npm run lint && npm run test && npm run test:e2e
 
 # Backend
-cd backend
-uvicorn app.main:app --reload    # local dev server on :8000
-pytest                           # full test suite
-alembic upgrade head             # apply pending migrations
-alembic revision --autogenerate -m "<message>"   # create a new migration
+cd backend && pytest && ruff check .
 ```
 
-## Where to read next
+### CI/CD
 
-- **Deploying** — `docs/DEPLOYMENT_CHECKLIST.md`
-- **On-call / incidents** — `docs/OPERATIONS_RUNBOOK.md`
-- **Security** — `docs/SECURITY_THREAT_MODEL.md`
-- **Privacy / GDPR** — `docs/PRIVACY_POLICY.md`, `docs/DPA_TEMPLATE.md`
-- **Contributing rules (humans + AI)** — `AGENTS.md`
-- **Index of every other doc** — `docs/README.md`
+- **Frontend:** Vercel (Deploy bei Push auf `main`)
+- **Backend:** Railway (Deploy bei Push auf `main`)
+- **Tests:** GitHub Actions (CI bei jedem PR)
+
+---
+
+## Projekt-Struktur
+
+```text
+backend/         FastAPI, SQLAlchemy, Alembic, pytest
+frontend/        React SPA, Vitest, Playwright, Tailwind
+docs/            Setup, Deployment, Security, Operations
+scripts/         Wartungsskripte
+extension/       Chrome Extension (Manifest V3)
+```
+
+---
+
+## Roadmap
+
+- [x] CV Builder (Wizard, 4 Templates, PDF-Export)
+- [x] Job-Suche (5 Quellen)
+- [x] KV-Gehalts-Check (Brutto, Netto, Stundenlohn)
+- [x] Anschreiben (Österreichisches Deutsch, Groq)
+- [x] Browser Extension (Autopilot)
+- [x] Job Alerts (tägliche E-Mail)
+- [x] Bewerbungs-Tracker (Status, Notizen, Deadlines)
+- [ ] WhatsApp-Integration
+- [ ] Lehre-Suche (spezialisierte Filter)
+- [ ] Community KV-Daten (User-Updates)
+
+---
+
+## Lizenz
+
+**GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+- ✅ Verwenden, verändern, weitergeben.
+- ✅ Wer eine modifizierte Version hostet, muss den Quellcode veröffentlichen.
+- ❌ Nicht als proprietäres SaaS-Produkt verkaufen.
+
+[`LICENSE`](LICENSE)
+
+---
+
+## Beitragen
+
+1. **Issue öffnen** — Bug oder Feature-Idee.
+2. **Fork + Branch** — `git checkout -b fix/willhaben-selector`
+3. **Änderung + Tests** — PR stellen.
+
+> Issues und PRs auf Deutsch oder Englisch. Code-Kommentare auf Englisch.
+
+---
+
+## Kontakt
+
+- **E-Mail:** [hallo@jobassist.tech](mailto:hallo@jobassist.tech)
+- **Issues:** [GitHub Issues](https://github.com/davorrr/JobAssist/issues)

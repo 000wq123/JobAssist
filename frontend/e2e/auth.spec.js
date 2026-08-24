@@ -21,7 +21,7 @@ test("verify email success state renders for guests", async ({ page }) => {
   await page.goto("/verify-email?token=test-token");
 
   await expect(page.getByRole("heading", { name: /e-mail bestätigt/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /zum login/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /zum login/i }).first()).toBeVisible();
 });
 
 test("verify email error state renders for invalid token", async ({ page }) => {

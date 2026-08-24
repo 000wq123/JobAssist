@@ -197,19 +197,16 @@ async def refresh(
         clear_refresh_cookie(response)
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
-    rt.revoked = True
-    raw_new, hash_new = generate_refresh_token()
-    new_rt = RefreshToken(
-        user_id=rt.user_id,
-        token_hash=hash_new,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-    )
-    db.add(new_rt)
-    await db.commit()
-
+    # Non-rotating refresh: issue a fresh access token but keep the same
+    # refresh token. Rotating here caused a multi-tab race — two tabs share one
+    # `ja_refresh` cookie, and if both refresh concurrently one would revoke the
+    # token the other just saw, then the loser hits the revoked path and clears
+    # the cookie, logging the user out. Keeping the refresh token stable makes
+    # `/refresh` idempotent and concurrent-safe. Security is preserved by the
+    # httpOnly + Secure + SameSite cookie, the 2-session cap at login, and the
+    # explicit revoke on logout / password reset.
     access_token = create_access_token({"sub": str(rt.user_id)})
-    set_refresh_cookie(response, raw_new)
-    return Token(access_token=access_token, refresh_token=raw_new)
+    return Token(access_token=access_token, refresh_token=raw)
 
 
 @router.post("/logout", status_code=204)

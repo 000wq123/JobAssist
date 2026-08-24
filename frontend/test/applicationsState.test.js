@@ -17,10 +17,9 @@ test("parseJson returns parsed object or null", () => {
 });
 
 test("getMatchColorClass returns the unified brand palette regardless of score", () => {
-  // The match-score is now visualised via a single calm palette across all
-  // bands; the per-band red/yellow/green styling was retired to keep the UI
-  // consistent. Keep this test as a regression so the simplification stays.
-  const expected = "bg-brand-500/10 text-brand-200";
+  // The match-score is visualised via a single calm palette across all
+  // bands, expressed through theme CSS variables (dark-mode safe).
+  const expected = "bg-[var(--color-accent-500)]/10 text-[var(--color-accent-200)]";
   expect(getMatchColorClass(0)).toBe(expected);
   expect(getMatchColorClass(25)).toBe(expected);
   expect(getMatchColorClass(55)).toBe(expected);

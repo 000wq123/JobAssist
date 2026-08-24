@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import useFetch from "../hooks/useFetch";
+import { usePageTitle } from "../hooks/usePageChrome";
 import toast from "react-hot-toast";
 import {
-  Sparkles, ArrowLeft, Trash2, ChevronRight, Download, CheckCircle2, Upload, Copy, Pencil, Edit3,
+  ArrowLeft, Trash2, ChevronRight, Download, CheckCircle2, Upload, Copy, Pencil, Edit3,
+  Wand2, Plus,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
@@ -19,8 +21,7 @@ import { getApiErrorMessage } from "../utils/apiError";
 import PageHeader from "../components/ui/PageHeader";
 import { CVTemplatePicker, TemplatePreviewPanel, TemplateLightbox } from "../cv/CVTemplatePicker";
 
-// ─── Constants ──────────────────────────────────────────────────────────────
-const SERIF = "'Instrument Serif', ui-serif, Georgia, serif";
+function T(n) { return `var(--app-${n})`; }
 
 const TMPL_META = {
   "gray-header":  { label: "Grau-Header",    color: "#9ca3af" },
@@ -38,26 +39,17 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric" });
 }
 
-/** Convert a parsed resume JSON (from backend /resume/analyze) into a CVProfile partial. */
 function mapParsedResumeToProfile(parsed) {
   const p = parsed || {};
   const nameParts = (p.name || "").split(" ");
   const vorname = nameParts[0] || "";
   const nachname = nameParts.slice(1).join(" ") || "";
-
   const erfahrungen = (p.experience || []).map((e) => ({
     id: Math.random().toString(36).slice(2, 10),
-    art: "Sonstige",
-    titel: e.title || "",
-    organisation: e.company || "",
-    von: "",
-    bis: "",
-    bullets: e.bullets || [],
+    art: "Sonstige", titel: e.title || "", organisation: e.company || "",
+    von: "", bis: "", bullets: e.bullets || [],
   }));
-
-  // Map education to schulname / schultyp heuristics
-  let schulname = "";
-  let schultyp = "";
+  let schulname = "", schultyp = "";
   const edu = (p.education || [])[0];
   if (edu) {
     schulname = edu.institution || "";
@@ -66,30 +58,16 @@ function mapParsedResumeToProfile(parsed) {
     else if (deg.includes("htl")) schultyp = "HTL";
     else if (deg.includes("ahs")) schultyp = "AHS";
     else if (deg.includes("bhs")) schultyp = "BHS";
-    else if (deg.includes("nms")) schultyp = "NMS";
-    else if (deg.includes("pts")) schultyp = "PTS";
     else schultyp = "Sonstige";
   }
-
   const sprachkenntnisse = [{ sprache: "Deutsch", niveau: "Muttersprache" }];
   (p.languages || []).forEach((l) => {
-    if (l && l.name && l.name.toLowerCase() !== "deutsch") {
-      sprachkenntnisse.push({ sprache: l.name, niveau: l.level || "B1" });
-    }
+    if (l && l.name && l.name.toLowerCase() !== "deutsch") sprachkenntnisse.push({ sprache: l.name, niveau: l.level || "B1" });
   });
-
   return {
-    vorname,
-    nachname,
-    email: p.email || "",
-    telefon: p.phone || "",
-    profil: p.summary || "",
-    faehigkeiten: p.skills || [],
-    erfahrungen,
-    schulname,
-    schultyp,
-    sprachkenntnisse,
-    // These come from the resume parser but don't map perfectly:
+    vorname, nachname, email: p.email || "", telefon: p.phone || "",
+    profil: p.summary || "", faehigkeiten: p.skills || [], erfahrungen,
+    schulname, schultyp, sprachkenntnisse,
     weiterbildungen: (p.certifications || []).map((c) => ({
       name: typeof c === "string" ? c : c.name || "",
       institution: typeof c === "object" ? c.institution || "" : "",
@@ -98,278 +76,155 @@ function mapParsedResumeToProfile(parsed) {
   };
 }
 
-/**
- * Single row card for a saved CV library entry.
- */
+/* ── CVLibraryCard ── */
 function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRename, busy }) {
   const meta = TMPL_META[entry.templateId] || TMPL_META["tabellarisch"];
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] hover:border-[var(--color-border-strong)] transition-colors">
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-        <div style={{ width: 8, height: 40, borderRadius: 3, background: meta.color, flexShrink: 0 }} />
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 rounded-lg border"
+      style={{ borderColor: T("border"), background: T("surface") }}>
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div style={{ width: 6, height: 28, borderRadius: 2, background: meta.color, flexShrink: 0 }} />
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-[var(--color-fg)] truncate">{entry.name}</p>
-          <p className="text-[12px] text-[var(--color-fg-faint)] mt-0.5">
-            {meta.label} · {formatDate(entry.createdAt)}
-          </p>
+          <p className="text-[14px] font-semibold truncate" style={{ color: T("text") }}>{entry.name}</p>
+          <p className="text-[12px] mt-0.5" style={{ color: T("text-muted") }}>{meta.label} · {formatDate(entry.createdAt)}</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => onDownload(entry)}
-          disabled={busy}
-          className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-semibold transition-all disabled:opacity-50"
-          style={{ background: "var(--color-accent-500)", color: "#0b0b14" }}
-        >
-          <Download className="w-3 h-3" />
-          {busy ? "…" : "PDF"}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <button type="button" onClick={() => onDownload(entry)} disabled={busy}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors disabled:opacity-50"
+          style={{ background: T("brand"), color: "#fff" }}>
+          <Download className="w-3 h-3" />{busy ? "…" : "PDF"}
         </button>
-        <button
-          type="button"
-          onClick={() => onEdit(entry)}
-          className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-medium border transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
-          style={{ borderColor: "rgba(255,255,255,0.10)", color: "var(--color-fg-muted)" }}
-        >
-          <Edit3 className="w-3 h-3 sm:hidden" />
-          <span className="hidden sm:inline">Bearbeiten</span>
-          <span className="sm:hidden">Bearb.</span>
+        <button type="button" onClick={() => onEdit(entry)}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors"
+          style={{ borderColor: T("border"), color: T("text-secondary") }}>
+          <Edit3 className="w-3 h-3 sm:hidden" /><span className="hidden sm:inline">Bearbeiten</span>
         </button>
-        <button
-          type="button"
-          onClick={() => onDuplicate(entry)}
-          className="p-1 sm:p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
-          title="Duplizieren"
-          aria-label="Duplizieren"
-        >
-          <Copy className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onRename(entry)}
-          className="p-1 sm:p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-fg-muted)] transition-colors"
-          title="Umbenennen"
-          aria-label="Umbenennen"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(entry.id)}
-          className="p-1 sm:p-1.5 text-[var(--color-fg-faint)] hover:text-[var(--color-error)] transition-colors"
-          aria-label="Entfernen"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <button type="button" onClick={() => onDuplicate(entry)} className="p-1.5 rounded"
+          style={{ color: T("text-faint") }} title="Duplizieren"><Copy className="w-3.5 h-3.5" /></button>
+        <button type="button" onClick={() => onRename(entry)} className="p-1.5 rounded"
+          style={{ color: T("text-faint") }} title="Umbenennen"><Pencil className="w-3.5 h-3.5" /></button>
+        <button type="button" onClick={() => onDelete(entry.id)} className="p-1.5 rounded"
+          style={{ color: T("text-faint") }} title="Entfernen"><Trash2 className="w-3.5 h-3.5" /></button>
       </div>
     </div>
   );
 }
 
-/**
- * Landing view shown before entering the wizard.
- * Matches the app's normal page aesthetic.
- *
- * @param {{ onStart: () => void, hasDraft: boolean, onLoadFromLibrary: (profile: any) => void, onUploadResume: (file: File) => void, uploadBusy: boolean }} props
- */
-function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, uploadBusy }) {
+/* ── CVLandingView ── */
+function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, uploadBusy, profile }) {
   const [library, setLibrary] = useState(() => loadLibrary());
   const [downloadingId, setDownloadingId] = useState(null);
 
   const handleLibraryDownload = async (entry) => {
     setDownloadingId(entry.id);
-    try {
-      const { downloadCVPdf } = await import("../cv/exportPdf.jsx");
-      await downloadCVPdf(entry.profile);
-    } catch {
-      toast.error("PDF konnte nicht erstellt werden.");
-    } finally {
-      setDownloadingId(null);
-    }
+    try { const { downloadCVPdf } = await import("../cv/exportPdf.jsx"); await downloadCVPdf(entry.profile); }
+    catch { toast.error("PDF konnte nicht erstellt werden."); }
+    finally { setDownloadingId(null); }
   };
-
-  const handleLibraryDelete = (id) => {
-    deleteFromLibrary(id);
-    setLibrary(loadLibrary());
-  };
-
-  const handleLibraryDuplicate = (entry) => {
-    duplicateInLibrary(entry.id);
-    setLibrary(loadLibrary());
-    toast.success("Lebenslauf dupliziert.");
-  };
-
+  const handleLibraryDelete = (id) => { deleteFromLibrary(id); setLibrary(loadLibrary()); };
+  const handleLibraryDuplicate = (entry) => { duplicateInLibrary(entry.id); setLibrary(loadLibrary()); toast.success("Lebenslauf dupliziert."); };
   const handleLibraryRename = (entry) => {
     const newName = window.prompt("Neuer Name:", entry.name);
-    if (newName && newName.trim() && newName.trim() !== entry.name) {
-      renameInLibrary(entry.id, newName.trim());
-      setLibrary(loadLibrary());
-    }
+    if (newName && newName.trim() && newName.trim() !== entry.name) { renameInLibrary(entry.id, newName.trim()); setLibrary(loadLibrary()); }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "application/pdf": [".pdf"], "text/plain": [".txt"] },
-    maxFiles: 1,
-    maxSize: 5 * 1024 * 1024,
-    disabled: uploadBusy,
-    onDrop: (accepted) => {
-      if (accepted[0]) onUploadResume(accepted[0]);
-    },
-    onDropRejected: () => {
-      toast.error("Nur PDF oder TXT, maximal 5 MB.");
-    },
+    maxFiles: 1, maxSize: 5 * 1024 * 1024, disabled: uploadBusy,
+    onDrop: (accepted) => { if (accepted[0]) onUploadResume(accepted[0]); },
+    onDropRejected: () => toast.error("Nur PDF oder TXT, maximal 5 MB."),
   });
 
   return (
-    <div className="max-w-[1180px] mx-auto px-5 pt-8 pb-24 sm:px-8 sm:pt-10 lg:px-14 lg:pt-14 flex flex-col gap-12 animate-slide-up">
+    <div className="max-w-[1100px] mx-auto px-5 pt-6 pb-24 sm:px-8 sm:pt-10 lg:px-10 lg:pt-12 flex flex-col gap-10">
+      <PageHeader title="Lebenslauf" description="Erstelle einen professionellen österreichischen Lebenslauf." />
 
-      <PageHeader
-        title="Lebenslauf"
-        description="Erstelle einen professionellen österreichischen Lebenslauf in etwa drei Minuten — oder lade deinen eigenen hoch."
-      />
-
-      {/* ── Saved CVs library ────────────────────────────────────── */}
-      {library.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[17px] font-semibold text-[var(--color-fg)]">Deine Lebensläufe</h2>
-            <button
-              type="button"
-              onClick={onStart}
-              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-accent-400)] hover:text-[var(--color-accent-300)] transition-colors"
-            >
-              <span className="text-[17px] leading-none font-light">+</span> Neu erstellen
-            </button>
+      {/* Draft card */}
+      {hasDraft && (
+        <div className="rounded-xl border p-6 flex flex-col sm:flex-row sm:items-center gap-5"
+          style={{ borderColor: T("border"), background: T("surface") }}>
+          <div className="flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: T("brand") }}>Entwurf vorhanden</p>
+            <h2 className="text-[20px] font-bold mb-1" style={{ color: T("text") }}>Dein angefangener Lebenslauf</h2>
+            <p className="text-[13px]" style={{ color: T("text-secondary") }}>Mach dort weiter, wo du aufgehört hast.</p>
           </div>
-          <div className="flex flex-col gap-2">
-            {library.map((entry) => (
-              <CVLibraryCard
-                key={entry.id}
-                entry={entry}
-                onDownload={handleLibraryDownload}
-                onEdit={(e) => onLoadFromLibrary(e.profile)}
-                onDelete={handleLibraryDelete}
-                onDuplicate={handleLibraryDuplicate}
-                onRename={handleLibraryRename}
-                busy={downloadingId === entry.id}
-              />
-            ))}
-          </div>
+          <button type="button" onClick={onStart}
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-lg text-[14px] font-semibold flex-shrink-0 transition-colors"
+            style={{ background: T("brand"), color: "#fff" }}>
+            <Wand2 className="w-4 h-4" />Fortsetzen <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
-      {/* ── Two-up feature cards ─────────────────────────────────── */}
+      {/* Library */}
+      {library.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[15px] font-semibold" style={{ color: T("text") }}>Gespeicherte Lebensläufe</h2>
+            <button type="button" onClick={onStart} className="btn btn-link text-[13px] font-medium">
+              <Plus className="w-3.5 h-3.5 inline mr-1" />Neu
+            </button>
+          </div>
+          {library.map((entry) => (
+            <CVLibraryCard key={entry.id} entry={entry} onDownload={handleLibraryDownload}
+              onEdit={(e) => onLoadFromLibrary(e.profile)} onDelete={handleLibraryDelete}
+              onDuplicate={handleLibraryDuplicate} onRename={handleLibraryRename} busy={downloadingId === entry.id} />
+          ))}
+        </div>
+      )}
+
+      {/* Two-up: Create + Upload */}
       <div className="grid grid-cols-12 gap-5">
-
-        {/* Create from scratch */}
-        <div
-          className="col-span-12 md:col-span-6 flex flex-col gap-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] px-7 py-7"
-        >
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent-300)]">
-              Instant-Lebenslauf
-            </p>
-            <h2
-              className="text-[28px] sm:text-[34px] font-normal leading-[1.1] text-[var(--color-fg)]"
-              style={{ fontFamily: SERIF, letterSpacing: "-0.02em" }}
-            >
-              {hasDraft ? "Entwurf fortsetzen" : "Lebenslauf erstellen"}
-            </h2>
-            <p className="text-[14px] text-[var(--color-fg-muted)] leading-relaxed">
-              {hasDraft
-                ? "Du hast einen angefangenen Entwurf. Mach dort weiter, wo du aufgehört hast — deine Antworten sind gespeichert."
-                : "Beantworte ein paar Fragen über dich. Danach generieren wir sofort ein professionelles PDF im österreichischen Format."}
-            </p>
-          </div>
-
-          <ul className="flex flex-col gap-2">
-            {[
-              { text: "Tabellarischer Lebenslauf im österreichischen Standard", color: "text-[var(--color-accent-300)]" },
-              { text: "Persönliche Daten, Ausbildung, Erfahrung, Sprachen",      color: "text-emerald-400" },
-              { text: "Sofort als PDF herunterladen — kein Konto bei Drittanbietern", color: "text-sky-400" },
-            ].map(({ text, color }) => (
-              <li key={text} className="flex items-start gap-2 text-[13px] text-[var(--color-fg-muted)]">
-                <span className={`mt-0.5 text-[11px] font-bold flex-shrink-0 ${color}`}>✓</span>
-                {text}
+        <div className="col-span-12 md:col-span-7 rounded-xl border p-6 flex flex-col gap-5"
+          style={{ borderColor: T("border"), background: T("surface") }}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: T("brand") }}>Lebenslauf erstellen</p>
+          <h2 className="text-[22px] font-bold tracking-[-0.02em]" style={{ color: T("text") }}>
+            {hasDraft ? "Entwurf fortsetzen" : "Neuen Lebenslauf erstellen"}
+          </h2>
+          <p className="text-[14px] leading-relaxed" style={{ color: T("text-secondary") }}>
+            Beantworte ein paar Fragen und erhalte sofort ein professionelles PDF im österreichischen Format.
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {["Tabellarischer Lebenslauf (österreichischer Standard)", "Persönliche Daten, Ausbildung, Erfahrung, Sprachen", "Sofort als PDF herunterladen"].map((t) => (
+              <li key={t} className="flex items-start gap-2 text-[13px]" style={{ color: T("text-secondary") }}>
+                <span className="mt-0.5 text-[10px] font-bold flex-shrink-0" style={{ color: T("brand") }}>✓</span>{t}
               </li>
             ))}
           </ul>
-
-          <button
-            type="button"
-            onClick={onStart}
-            className="self-start inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold transition-all hover:-translate-y-px"
-            style={{ background: "var(--color-accent-500)", color: "#0b0b14", boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.22)" }}
-          >
-            <Sparkles className="w-4 h-4" />
-            {hasDraft ? "Fortsetzen" : "Starten — etwa 3 Minuten"}
-            <ChevronRight className="w-4 h-4" />
+          <button type="button" onClick={onStart}
+            className="self-start inline-flex items-center gap-2 h-11 px-6 rounded-lg text-[14px] font-semibold transition-colors"
+            style={{ background: T("brand"), color: "#fff" }}>
+            <Wand2 className="w-4 h-4" />Starten <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Upload existing resume */}
-        <div
-          {...getRootProps()}
-          className={`col-span-12 md:col-span-6 flex flex-col gap-6 rounded-2xl border border-dashed px-7 py-7 transition-colors cursor-pointer ${
-            isDragActive
-              ? "border-[var(--color-accent-500)] bg-[var(--color-accent-500)]/[0.04]"
-              : "border-[var(--color-border)] hover:border-[var(--color-border-strong)] bg-[var(--color-bg-elev-1)]"
-          } ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
-        >
-          <input {...getInputProps()} />
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-fg-dim)]">
-              Vorhandener Lebenslauf
+        <div className="col-span-12 md:col-span-5 rounded-xl border p-6 flex flex-col gap-5 items-center justify-center text-center"
+          style={{ borderColor: T("border"), background: T("surface") }}>
+          <img src="/illustrations/cv-document.png" alt="" className="w-[140px] h-[140px] object-contain pointer-events-none mb-2" />
+          <h2 className="text-[18px] font-bold" style={{ color: T("text") }}>Lebenslauf hochladen</h2>
+          <p className="text-[13px] leading-relaxed" style={{ color: T("text-secondary") }}>
+            Lade einen bestehenden Lebenslauf als PDF oder Textdatei hoch. Wir lesen deine Daten aus und füllen das Formular vor.
+          </p>
+          <div {...getRootProps()} className={`w-full rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors text-center ${isDragActive ? "border-[var(--app-brand)]" : ""} ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
+            style={{ borderColor: isDragActive ? T("brand") : T("border") }}>
+            <input {...getInputProps()} />
+            <Upload className="w-5 h-5 mx-auto mb-2" style={{ color: T("text-muted") }} />
+            <p className="text-[13px] font-medium" style={{ color: T("text") }}>
+              {uploadBusy ? "Wird gelesen…" : "Datei auswählen"}
             </p>
-            <h2
-              className="text-[28px] sm:text-[34px] font-normal leading-[1.1] text-[var(--color-fg)]"
-              style={{ fontFamily: SERIF, letterSpacing: "-0.02em" }}
-            >
-              Hochladen &amp; vorausfüllen
-            </h2>
-            <p className="text-[14px] text-[var(--color-fg-muted)] leading-relaxed">
-              Lade einen bestehenden Lebenslauf hoch. Wir lesen deine Daten aus und füllen das Formular für dich vor.
-            </p>
+            <p className="text-[11px] mt-1" style={{ color: T("text-faint") }}>PDF oder TXT, max. 5 MB</p>
           </div>
-
-          <ul className="flex flex-col gap-2">
-            {[
-              { text: "Unterstützt PDF und Textdateien", color: "text-[var(--color-accent-300)]" },
-              { text: "KI liest Name, Ausbildung, Erfahrung aus", color: "text-emerald-400" },
-              { text: "Du kannst alles vor dem PDF noch bearbeiten", color: "text-sky-400" },
-            ].map(({ text, color }) => (
-              <li key={text} className="flex items-start gap-2 text-[13px] text-[var(--color-fg-muted)]">
-                <span className={`mt-0.5 text-[11px] font-bold flex-shrink-0 ${color}`}>✓</span>
-                {text}
-              </li>
-            ))}
-          </ul>
-
-          <button
-            type="button"
-            className="self-start inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold transition-all hover:-translate-y-px border border-[var(--color-border)] hover:border-[var(--color-border-strong)] text-[var(--color-fg)]"
-          >
-            <Upload className="w-4 h-4" />
-            {uploadBusy ? "Wird gelesen…" : "Datei auswählen"}
-          </button>
         </div>
-
       </div>
     </div>
   );
 }
 
-/**
- * Lebenslauf builder page.
- *
- * mode = 'landing' → standard app-page layout with feature overview.
- * mode = 'wizard'  → full-screen focus wizard (FocusModeWizard).
- *
- * Auto-starts wizard if a meaningful draft already exists.
- */
+/* ── CVBuilderPage ── */
 export default function CVBuilderPage() {
+  usePageTitle("CV-Builder");
   const authUser = useAuthStore((s) => s.user);
-
   const [profile, setProfile] = useState(() => {
     const draft = loadDraft();
     if (!draft.email && authUser?.email) draft.email = authUser.email;
@@ -380,183 +235,112 @@ export default function CVBuilderPage() {
   const [pdfError, setPdfError] = useState("");
   const [finishLightboxOpen, setFinishLightboxOpen] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
-
   const debouncedSave = useMemo(() => makeDebouncedSave(), []);
   const emailPrefillDone = useRef(Boolean(profile.email?.trim?.()));
 
-  // ── Load profile from backend on mount (fallback to local draft) ────────
-  const { data: serverProfile } = useQuery({
-    queryKey: ["cv-profile"],
-    queryFn: profileApi.get,
-    enabled: !!authUser,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: serverProfile } = useFetch(
+    () => profileApi.get(),
+    { enabled: !!authUser }
+  );
 
   useEffect(() => {
     if (!serverProfile?.data) return;
     const srv = serverProfile.data;
-    // Only overwrite local draft if the server has newer/more complete data.
-    // We use a simple heuristic: if server has a name and local doesn't, or server has more filled fields.
+    // Only prefill from the server while the local draft is still empty —
+    // never overwrite content the user already typed or loaded from their
+    // saved draft (prevents the mid-session "content swap" flash).
     const localFilled = [profile.vorname, profile.nachname, profile.schulname].filter(Boolean).length;
+    if (localFilled > 0) return;
     const srvFilled = [srv.vorname, srv.nachname, srv.schulname].filter(Boolean).length;
-    if (srvFilled >= localFilled) {
+    if (srvFilled > 0) {
       const merged = { ...emptyProfile(), ...srv, templateId: srv.templateId || profile.templateId || "tabellarisch" };
-      setProfile(merged);
-      saveDraftNow(merged);
+      setProfile(merged); saveDraftNow(merged);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverProfile]);
 
-  // ── Persist to localStorage (fast) and backend (debounced) ─────────────
-  useEffect(() => {
-    debouncedSave(profile);
-  }, [profile, debouncedSave]);
+  useEffect(() => { debouncedSave(profile); }, [profile, debouncedSave]);
 
   const backendSaveTimer = useRef(null);
   useEffect(() => {
     if (!authUser) return;
     if (backendSaveTimer.current) clearTimeout(backendSaveTimer.current);
     backendSaveTimer.current = setTimeout(() => {
-      profileApi.patch(profile).catch((err) => {
-        const msg = getApiErrorMessage(err, "Speichern fehlgeschlagen");
-        toast.error(msg);
-      });
+      profileApi.patch(profile).catch((err) => { toast.error(getApiErrorMessage(err, "Speichern fehlgeschlagen")); });
     }, 2000);
     return () => clearTimeout(backendSaveTimer.current);
   }, [profile, authUser]);
 
   useEffect(() => {
     if (emailPrefillDone.current) return;
-    if (authUser?.email) {
-      setProfile((p) => (p.email?.trim?.() ? p : { ...p, email: authUser.email }));
-      emailPrefillDone.current = true;
-    }
+    if (authUser?.email) { setProfile((p) => (p.email?.trim?.() ? p : { ...p, email: authUser.email })); emailPrefillDone.current = true; }
   }, [authUser]);
 
-  const patch = useCallback((delta) => {
-    setProfile((p) => ({ ...p, ...delta }));
-  }, []);
+  const patch = useCallback((delta) => { setProfile((p) => ({ ...p, ...delta })); }, []);
 
-  const onComplete = useCallback(() => {
-    setMode("finish");
-  }, []);
-
-  // ── PDF download with SERVER-SIDE rate limit check ────────────────────
   const handleDownload = useCallback(async () => {
-    setPdfError("");
-    setPdfBusy(true);
-    // Always save the CV to local library first — regardless of PDF limit.
-    saveDraftNow(profile);
-    saveToLibrary(profile);
-    try {
-      // Ask the server for permission (increments usage counter).
-      await profileApi.generateCv();
-    } catch (err) {
-      const msg = getApiErrorMessage(err, "PDF-Limit erreicht. Upgrade auf Pro für mehr.");
-      setPdfError(msg);
-      setPdfBusy(false);
-      return;
-    }
+    setPdfError(""); setPdfBusy(true);
+    saveDraftNow(profile); saveToLibrary(profile);
+    try { await profileApi.generateCv(); }
+    catch (err) { setPdfError(getApiErrorMessage(err, "PDF-Limit erreicht.")); setPdfBusy(false); return; }
     try {
       const { downloadCVPdf } = await import("../cv/exportPdf.jsx");
       await downloadCVPdf(profile);
-      // Also sync completion to backend
       profileApi.patch(profile).catch(() => {});
       toast.success("PDF heruntergeladen — dein Lebenslauf wurde gespeichert.");
       setMode("landing");
-    } catch (err) {
-      setPdfError("PDF konnte nicht erstellt werden. Bitte erneut versuchen.");
-      // eslint-disable-next-line no-console
-      console.error("CV PDF export failed", err);
-    } finally {
-      setPdfBusy(false);
-    }
+    } catch (err) { setPdfError("PDF konnte nicht erstellt werden."); }
+    finally { setPdfBusy(false); }
   }, [profile]);
 
-  // ── Resume upload → parse → prefill wizard ─────────────────────────────
   const handleUploadResume = useCallback(async (file) => {
     setUploadBusy(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const formData = new FormData(); formData.append("file", file);
       const uploadRes = await resumeApi.upload(formData);
       const resumeId = uploadRes.data?.id;
       if (!resumeId) throw new Error("Upload failed");
-
-      // Fetch parsed JSON from the uploaded resume
       const getRes = await resumeApi.get(resumeId);
       const parsed = getRes.data?.parsed_json ? JSON.parse(getRes.data.parsed_json) : {};
       const mapped = mapParsedResumeToProfile(parsed);
-
       const merged = { ...emptyProfile(), ...mapped, templateId: profile.templateId || "tabellarisch" };
       if (authUser?.email) merged.email = authUser.email;
-      setProfile(merged);
-      saveDraftNow(merged);
+      setProfile(merged); saveDraftNow(merged);
       toast.success("Daten übernommen — du kannst sie jetzt bearbeiten.");
       setMode("templatePicker");
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, "Lebenslauf konnte nicht gelesen werden."));
-    } finally {
-      setUploadBusy(false);
-    }
+    } catch (err) { toast.error(getApiErrorMessage(err, "Lebenslauf konnte nicht gelesen werden.")); }
+    finally { setUploadBusy(false); }
   }, [profile.templateId, authUser]);
 
-  const onLoadFromLibrary = useCallback((libProfile) => {
-    setProfile({ ...libProfile });
-    saveDraftNow(libProfile);
-    setMode("wizard");
-  }, []);
-
+  const onLoadFromLibrary = useCallback((libProfile) => { setProfile({ ...libProfile }); saveDraftNow(libProfile); setMode("wizard"); }, []);
   const onReset = useCallback(() => {
     if (!window.confirm("Lebenslauf-Entwurf wirklich löschen?")) return;
-    const empty = emptyProfile();
-    if (authUser?.email) empty.email = authUser.email;
-    setProfile(empty);
-    saveDraftNow(empty);
-    // Also clear on backend
-    profileApi.patch(empty).catch(() => {});
+    const empty = emptyProfile(); if (authUser?.email) empty.email = authUser.email;
+    setProfile(empty); saveDraftNow(empty); profileApi.patch(empty).catch(() => {});
     setMode("landing");
   }, [authUser]);
 
-  const handleBackToLanding = useCallback(() => {
-    // Preserve the draft — going back to landing should never destroy data.
-    setMode("landing");
-  }, []);
-
   if (mode === "landing") {
-    return (
-      <CVLandingView
-        onStart={() => setMode("templatePicker")}
-        hasDraft={hasDraftData(profile)}
-        onLoadFromLibrary={onLoadFromLibrary}
-        onUploadResume={handleUploadResume}
-        uploadBusy={uploadBusy}
-      />
-    );
+    return <CVLandingView profile={profile} onStart={() => setMode("templatePicker")}
+      hasDraft={hasDraftData(profile)} onLoadFromLibrary={onLoadFromLibrary}
+      onUploadResume={handleUploadResume} uploadBusy={uploadBusy} />;
   }
 
   if (mode === "templatePicker") {
     return (
-      <div className="min-h-[100dvh] bg-[var(--color-bg)]">
-        <div className="px-4 pt-3 pb-0">
-          <button
-            type="button"
-            onClick={handleBackToLanding}
-            className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Übersicht
+      <div style={{ minHeight: "100dvh", background: T("bg") }}>
+        <div className="px-4 pt-3">
+          <button type="button" onClick={() => setMode("landing")} className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: T("text-muted") }}>
+            <ArrowLeft className="w-3.5 h-3.5" />Zurück
           </button>
         </div>
-        <div className="max-w-[720px] lg:max-w-[1400px] mx-auto px-4 lg:px-10 pt-8 pb-6 lg:pb-24">
+        <div className="max-w-[720px] lg:max-w-[1400px] mx-auto px-4 lg:px-10 pt-8 pb-24">
           <CVTemplatePicker profile={profile} onChange={patch} />
-          <div className="mt-4 lg:mt-8">
-            <button
-              type="button"
-              onClick={() => setMode("wizard")}
-              className="w-full lg:max-w-[480px] lg:mx-auto h-[52px] rounded-[14px] inline-flex items-center justify-center gap-2 font-semibold text-[15px] tracking-[0.01em] bg-[var(--color-accent-500)] text-white hover:opacity-90 transition-all"
-            >
-              Weiter zum Formular
-              <ChevronRight className="w-4 h-4" />
+          <div className="mt-6">
+            <button type="button" onClick={() => setMode("wizard")}
+              className="w-full lg:max-w-[480px] lg:mx-auto h-[48px] rounded-lg inline-flex items-center justify-center gap-2 font-semibold text-[14px] transition-colors"
+              style={{ background: T("accent"), color: "#fff" }}>
+              Weiter zum Formular <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -566,78 +350,39 @@ export default function CVBuilderPage() {
 
   if (mode === "finish") {
     return (
-      <div className="min-h-[100dvh] bg-[var(--color-bg)]">
-        <div className="px-4 pt-3 pb-0">
-          <button
-            type="button"
-            onClick={handleBackToLanding}
-            className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Übersicht
+      <div style={{ minHeight: "100dvh", background: T("bg") }}>
+        <div className="px-4 pt-3">
+          <button type="button" onClick={() => setMode("landing")} className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: T("text-muted") }}>
+            <ArrowLeft className="w-3.5 h-3.5" />Zurück
           </button>
         </div>
         <div className="max-w-[640px] lg:max-w-[1100px] mx-auto px-5 pt-8 pb-24">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-[rgba(74,222,128,0.15)] border border-[rgba(74,222,128,0.25)] grid place-items-center flex-shrink-0">
-              <CheckCircle2 className="w-5 h-5 text-[var(--color-ok)]" />
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full border grid place-items-center flex-shrink-0"
+              style={{ background: "color-mix(in srgb, var(--app-success) 12%, transparent)", borderColor: "color-mix(in srgb, var(--app-success) 25%, transparent)" }}>
+              <CheckCircle2 className="w-5 h-5" style={{ color: T("success") }} />
             </div>
-            <h2 className="text-[28px] sm:text-[34px] font-normal leading-[1.1] text-[var(--color-fg)]" style={{ fontFamily: SERIF }}>
-              Dein Lebenslauf ist fertig.
-            </h2>
+            <h2 className="text-[24px] font-bold" style={{ color: T("text") }}>Dein Lebenslauf ist fertig.</h2>
           </div>
-          <p className="text-[14px] text-[var(--color-fg-muted)] leading-relaxed mb-6">
-            Hier ist die Vorschau mit deinen Daten. Du kannst die Vorlage noch wechseln, bevor du die PDF erzeugst.
-          </p>
-
           <TemplatePreviewPanel profile={profile} templateId={profile.templateId} />
-
-          {pdfError && <p className="text-[12px] text-[var(--color-error)] mt-4">{pdfError}</p>}
-
+          {pdfError && <p className="text-[12px] mt-4" style={{ color: T("error") }}>{pdfError}</p>}
           <div className="mt-8 flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={pdfBusy}
-              className="w-full h-[56px] rounded-[14px] inline-flex items-center justify-center gap-2 font-semibold text-[16px] tracking-[0.01em] bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-            >
-              {pdfBusy ? "Wird erstellt…" : "PDF herunterladen"}
-              <Download className="w-5 h-5" />
+            <button type="button" onClick={handleDownload} disabled={pdfBusy}
+              className="w-full h-[52px] rounded-lg inline-flex items-center justify-center gap-2 font-semibold text-[15px] disabled:opacity-60 transition-colors"
+              style={{ background: T("accent"), color: "#fff" }}>
+              {pdfBusy ? "Wird erstellt…" : "PDF herunterladen"} <Download className="w-4 h-4" />
             </button>
-            <button
-              type="button"
-              onClick={() => setFinishLightboxOpen(true)}
-              className="w-full h-[48px] rounded-[14px] border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:border-[var(--color-border-strong)] text-[15px] transition-colors"
-            >
-              Vorlage wechseln
-            </button>
+            <button type="button" onClick={() => setFinishLightboxOpen(true)}
+              className="w-full h-[44px] rounded-lg border text-[14px] transition-colors"
+              style={{ borderColor: T("border"), color: T("text-secondary") }}>Vorlage wechseln</button>
           </div>
-          {finishLightboxOpen && (
-            <TemplateLightbox
-              templateId={profile.templateId}
-              profile={profile}
-              onClose={() => setFinishLightboxOpen(false)}
-              onSelect={(id) => { patch({ templateId: id }); setFinishLightboxOpen(false); }}
-            />
-          )}
-          <div className="mt-6 flex items-center gap-3 text-[14px] text-[var(--color-fg-dim)]">
-            <button type="button" onClick={onReset} className="hover:text-[var(--color-fg)] transition-colors">Neuen Lebenslauf erstellen</button>
-            <span className="text-[var(--color-border-hover)]">|</span>
-            <Link to="/dashboard" className="hover:text-[var(--color-fg)] transition-colors">Zum Dashboard</Link>
-          </div>
+          {finishLightboxOpen && <TemplateLightbox templateId={profile.templateId} profile={profile}
+            onClose={() => setFinishLightboxOpen(false)} onSelect={(id) => { patch({ templateId: id }); setFinishLightboxOpen(false); }} />}
         </div>
       </div>
     );
   }
 
-  return (
-    <CVSimpleBuilder
-      profile={profile}
-      onChange={patch}
-      onBack={handleBackToLanding}
-      onDownload={handleDownload}
-      pdfBusy={pdfBusy}
-      pdfError={pdfError}
-    />
-  );
+  return <CVSimpleBuilder profile={profile} onChange={patch} onBack={() => setMode("landing")}
+    onDownload={handleDownload} pdfBusy={pdfBusy} pdfError={pdfError} />;
 }

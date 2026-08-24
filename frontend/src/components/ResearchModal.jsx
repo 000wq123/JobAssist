@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   Building2,
@@ -33,7 +32,6 @@ import useFocusTrap from "../hooks/useFocusTrap";
  * @param {() => Promise<void>} props.onRefresh - Triggers a fresh research call.
  */
 export default function ResearchModal({ companyName, data, loading, onClose, jobId, onRefresh }) {
-  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const dialogRef = useRef(null);
@@ -57,12 +55,7 @@ export default function ResearchModal({ companyName, data, loading, onClose, job
 
     setSaving(true);
     try {
-      const res = await jobApi.saveResearch(jobId, data);
-      queryClient.setQueryData(["jobs"], (old = []) =>
-        old.map((job) => (job.id === res.data.id ? res.data : job))
-      );
-      queryClient.setQueryData(["jobs", String(jobId)], res.data);
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      await jobApi.saveResearch(jobId, data);
       setSaved(true);
       toast.success("Recherche gespeichert");
     } catch (err) {

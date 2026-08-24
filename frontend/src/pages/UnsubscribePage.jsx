@@ -43,7 +43,7 @@ export default function UnsubscribePage() {
         {status === "loading" && (
           <>
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] mx-auto mb-5">
-              <Loader2 className="w-6 h-6 text-[var(--color-accent-300)] animate-spin" />
+              <Loader2 className="w-6 h-6 text-[var(--app-brand)] animate-spin" />
             </div>
             <h1 className="text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-2">Abmeldung wird verarbeitet…</h1>
             <p className="text-[13px] text-[var(--color-fg-muted)]">Bitte warte einen Moment.</p>
@@ -58,7 +58,7 @@ export default function UnsubscribePage() {
             <p className="text-[13px] text-[var(--color-fg-muted)] mb-6 leading-relaxed">{message}</p>
             <Link
               to="/job-alerts"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--color-accent-500)] text-white text-[13px] font-semibold transition-colors hover:bg-[var(--color-accent-400)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--app-brand)] text-white text-[13px] font-semibold transition-colors hover:bg-[var(--app-brand-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
             >
               <Bell className="w-4 h-4" /> Alerts verwalten
             </Link>

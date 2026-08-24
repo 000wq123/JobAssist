@@ -1,86 +1,163 @@
-import { create } from "zustand";
-import {
-  STORAGE_KEYS,
-  clearAllAppStorage,
-  readJson,
-  removeKey,
-  writeJson,
-} from "../storageKeys";
+import { useSyncExternalStore } from "react";
+import { clearSwrCache } from "./useFetch";
 
 /**
- * Auth store.
+ * Minimal auth store built on React's `useSyncExternalStore` — no zustand.
  *
- * Refresh tokens live in an httpOnly cookie set by the backend (XSS-proof) —
- * the SPA never touches them. The access token lives in this Zustand store
- * (memory only) and is mirrored to localStorage *only* until the cookie-only
- * rollout completes; it is short-lived (≤ 30 min) so the blast radius of any
- * future XSS is limited to the current tab session.
+ * The access token lives in `sessionStorage` (so a hard reload keeps you
+ * logged in) and the user identity is mirrored to `localStorage` so the
+ * sidebar/name render immediately on boot. Everything else (jobs, resumes,
+ * alerts, init payloads) is fetched fresh — there is NO data caching layer.
  *
- * On full app load with no in-memory token, `api.js` will silently call
- * `/api/auth/refresh`, which uses the cookie to mint a fresh access token.
+ * The refresh token is an httpOnly cookie set by the backend and is never
+ * readable from JavaScript.
  */
-const _sessionToken = (() => {
-  try { return sessionStorage.getItem("ja:access_token"); } catch { return null; }
-})();
 
-const useAuthStore = create((set) => ({
-  // Boot from sessionStorage so a hard reload doesn't wait for the silent-
-  // refresh round-trip. The refresh still runs in the background (App.jsx).
-  token: _sessionToken,
-  user: readJson(STORAGE_KEYS.AUTH_USER),
+const TOKEN_KEY = "ja:access_token";
+const USER_KEY = "auth_user";
+
+function readJson(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readToken() {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * API *data* caches written by the old react-query/localStorage architecture.
+ * Removed on login/logout so a stale build can never resurrect old rows.
+ * Durable user content (CV drafts, theme, consent) is intentionally kept.
+ */
+function clearLegacyDataCaches() {
+  const legacyKeys = [
+    "jobs",
+    "resumes",
+    "init",
+    "billing",
+    "profile",
+    "preferences",
+    "dashboard_jobs",
+    "dashboard_resumes",
+    "dashboard_job_alerts",
+    "job_alerts",
+    "settings_profile",
+    "ai_chat_history",
+    "job-search-research",
+    "resume_optimization_tasks",
+    "app-loaded",
+    "access_token",
+    "refresh_token",
+  ];
+  try {
+    legacyKeys.forEach((k) => localStorage.removeItem(k));
+    const dynamic = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("resume_analysis_")) dynamic.push(key);
+    }
+    dynamic.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
+function login(accessToken) {
+  if (!accessToken) return;
+  clearLegacyDataCaches();
+  clearSwrCache();
+  try {
+    sessionStorage.setItem(TOKEN_KEY, accessToken);
+  } catch {
+    /* ignore */
+  }
+  setState({ token: accessToken, user: null, isHydrated: true, isBooting: false });
+}
+
+function setAccessToken(accessToken) {
+  try {
+    sessionStorage.setItem(TOKEN_KEY, accessToken);
+  } catch {
+    /* ignore */
+  }
+  setState({ token: accessToken });
+}
+
+function logout() {
+  clearLegacyDataCaches();
+  clearSwrCache();
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  } catch {
+    /* ignore */
+  }
+  setState({ token: null, user: null, isHydrated: true, isBooting: false });
+}
+
+function setUser(user) {
+  try {
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch {
+    /* ignore */
+  }
+  setState({ user });
+}
+
+function setBooting(v) {
+  setState({ isBooting: !!v });
+}
+
+function setHydrated(v) {
+  setState({ isHydrated: !!v });
+}
+
+/** Current state, including actions — mirrors the zustand `getState()` shape. */
+let state = {
+  token: readToken(),
+  user: readJson(USER_KEY),
   isHydrated: true,
-  // True until the initial silent-refresh attempt finishes.
-  // PrivateRoute uses this to avoid flashing /login while we check cookies.
   isBooting: true,
+  login,
+  setAccessToken,
+  logout,
+  setUser,
+  setBooting,
+  setHydrated,
+};
 
-  /**
-   * Persist a fresh login. The legacy `refreshToken` argument is accepted
-   * for backwards compat but is no longer stored — the cookie is set by
-   * the server and can never be read by JavaScript.
-   * @param {string} accessToken
-   * @param {string} [_refreshToken] - ignored; kept for call-site compat.
-   */
-  login: (accessToken, _refreshToken) => {
-    if (!accessToken) return;
-    clearAllAppStorage();
-    try { sessionStorage.setItem("ja:access_token", accessToken); } catch {}
-    set({ token: accessToken, user: null, isHydrated: true });
-  },
+const listeners = new Set();
 
-  /**
-   * Update only the access token (used after a silent refresh).
-   * @param {string} accessToken
-   */
-  setAccessToken: (accessToken) => {
-    try { sessionStorage.setItem("ja:access_token", accessToken); } catch {}
-    set({ token: accessToken });
-  },
+function setState(partial) {
+  state = { ...state, ...partial };
+  listeners.forEach((listener) => listener());
+}
 
-  /** Clear in-memory + on-disk client state. The httpOnly cookie is cleared by the server's `/auth/logout`. */
-  logout: () => {
-    clearAllAppStorage();
-    removeKey(STORAGE_KEYS.ACCESS_TOKEN);
-    removeKey(STORAGE_KEYS.REFRESH_TOKEN);
-    try { sessionStorage.removeItem("ja:access_token"); } catch {}
-    set({ token: null, user: null, isHydrated: true });
-  },
+function subscribe(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
-  /** @param {object} user */
-  setUser: (user) => {
-    writeJson(STORAGE_KEYS.AUTH_USER, user);
-    set({ user });
-  },
+const getSnapshot = () => state;
 
-  hydrate: () => {
-    const user = readJson(STORAGE_KEYS.AUTH_USER);
-    const token = (() => {
-      try { return sessionStorage.getItem("ja:access_token"); } catch { return null; }
-    })();
-    set({ user, token, isHydrated: true });
-  },
+/**
+ * Auth store hook.
+ * @param {(s: object) => any} [selector] - slice selector, defaults to whole state.
+ */
+function useAuthStore(selector = (s) => s) {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return selector(snapshot);
+}
 
-  setHydrated: (v) => set({ isHydrated: !!v }),
-  setBooting: (v) => set({ isBooting: !!v }),
-}));
+useAuthStore.getState = () => state;
 
 export default useAuthStore;

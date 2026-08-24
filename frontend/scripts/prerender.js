@@ -22,7 +22,6 @@ const PORT = 3456;
 
 const ROUTES = [
   { url: "/", out: "index.html" },
-  { url: "/pricing", out: "pricing/index.html" },
   { url: "/impressum", out: "impressum/index.html" },
   { url: "/terms", out: "terms/index.html" },
   { url: "/privacy", out: "privacy/index.html" },

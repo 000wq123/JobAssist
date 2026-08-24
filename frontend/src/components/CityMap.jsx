@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { X, Plus, Minus, RotateCcw, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 
 const CITY_DATA = {

@@ -22,24 +22,37 @@ const VIEWPORTS = [
   { name: "desktop-lg", width: 1920, height: 1080, deviceScaleFactor: 1 },
 ];
 
+/**
+ * Create a fresh browser context with the given viewport and reduced motion.
+ *
+ * @param {import("@playwright/test").Browser} browser
+ * @param {object} viewport
+ */
+async function newLandingPageContext(browser, viewport) {
+  return browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: viewport.deviceScaleFactor,
+    reducedMotion: "reduce",
+  });
+}
+
+/**
+ * Navigate to the landing page and wait for the hero to be ready.
+ *
+ * @param {import("@playwright/test").Page} page
+ */
+async function gotoLandingPage(page) {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.locator(".landing-root").waitFor({ state: "visible" });
+  await expect(page.locator("h1")).toContainText("Bewerbungen");
+  await page.waitForTimeout(500);
+}
+
 for (const vp of VIEWPORTS) {
-  test(`matches baseline at ${vp.name}`, async ({ browser }) => {
-    const context = await browser.newContext({
-      viewport: { width: vp.width, height: vp.height },
-      deviceScaleFactor: vp.deviceScaleFactor,
-      reducedMotion: "reduce",
-    });
-
+  test(`matches full-page baseline at ${vp.name}`, async ({ browser }) => {
+    const context = await newLandingPageContext(browser, vp);
     const page = await context.newPage();
-
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-
-    // Wait for the landing page root and hero headline to be present.
-    await page.locator(".landing-root").waitFor({ state: "visible" });
-    await expect(page.locator("h1")).toContainText("Bewerbungen");
-
-    // Wait for any initial paint / lazy content.
-    await page.waitForTimeout(500);
+    await gotoLandingPage(page);
 
     await expect(page).toHaveScreenshot(`landing-${vp.name}.png`, {
       fullPage: true,
@@ -48,4 +61,37 @@ for (const vp of VIEWPORTS) {
 
     await context.close();
   });
+}
+
+const SECTIONS = [
+  { name: "hero", selector: "section#hero" },
+  { name: "features", selector: "section#funktionen" },
+  { name: "cta", selector: "section#cta" },
+];
+
+// Section snapshots are captured at representative breakpoints only
+// (mobile, tablet, desktop) to keep the baseline snapshot count manageable.
+// Full-page snapshots already cover all five breakpoints.
+const SECTION_VIEWPORTS = VIEWPORTS.filter((vp) =>
+  ["mobile-sm", "tablet", "desktop-lg"].includes(vp.name),
+);
+
+for (const vp of SECTION_VIEWPORTS) {
+  for (const section of SECTIONS) {
+    test(`matches ${section.name} baseline at ${vp.name}`, async ({ browser }) => {
+      const context = await newLandingPageContext(browser, vp);
+      const page = await context.newPage();
+      await gotoLandingPage(page);
+
+      const locator = page.locator(section.selector).first();
+      await locator.scrollIntoViewIfNeeded();
+
+      await expect(locator).toHaveScreenshot(
+        `landing-${section.name}-${vp.name}.png`,
+        { maxDiffPixelRatio: 0.005 },
+      );
+
+      await context.close();
+    });
+  }
 }

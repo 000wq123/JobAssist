@@ -3,36 +3,33 @@ import { Sparkles, ArrowLeft } from "lucide-react";
 
 /**
  * Shared shell for static legal / marketing pages (Terms, Privacy, Impressum,
- * Contact). Mirrors the landing/auth visual language — page-level radial
- * glows, transparent header, narrow centered content column.
+ * Contact). Theme-aware — glows only shown in dark mode.
  *
  * @param {object} props
  * @param {React.ReactNode} props.children   Page body (sections).
  * @param {string} props.title               H1 title for the page.
- * @param {string} [props.subtitle]          Small caption under the title (e.g. "Stand: …").
- * @param {boolean} [props.wide]              If true, content spans the full 12-col grid (for card grids like pricing).
+ * @param {string} [props.subtitle]          Small caption under the title.
+ * @param {boolean} [props.wide]             If true, content spans the full grid.
  */
 export default function LegalLayout({ children, title, subtitle, wide = false }) {
   const location = useLocation();
   return (
     <div className="relative min-h-screen overflow-x-clip bg-[var(--color-bg)] text-[var(--color-fg)] font-sans" style={{ isolation: 'isolate' }}>
-      {/* Top + bottom radial glows — match the landing page */}
+      {/* Ambient glows — dark mode only */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[600px]"
         style={{
-          background: "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,92,255,0.18), transparent 70%)",
-          willChange: "transform",
-          contain: "paint",
+          display: "var(--ja-glow-display, none)",
+          background: "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,92,255,0.14), transparent 70%)",
         }}
       />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-0 h-[320px]"
         style={{
-          background: "radial-gradient(ellipse 70% 60% at 50% 100%, rgba(124,92,255,0.10), transparent 70%)",
-          willChange: "transform",
-          contain: "paint",
+          display: "var(--ja-glow-display, none)",
+          background: "radial-gradient(ellipse 70% 60% at 50% 100%, rgba(124,92,255,0.08), transparent 70%)",
         }}
       />
 
@@ -50,7 +47,7 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-accent-500)]">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="text-[15px] font-semibold tracking-tight">JobAssist</span>
+            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-fg)]">JobAssist</span>
           </Link>
         </div>
       </header>
@@ -76,11 +73,10 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
 
             {/* Footer link strip */}
             <div className="mt-10 mb-4 pt-6 border-t border-[var(--color-border-subtle)] flex flex-wrap justify-center gap-5 text-[12px] text-[var(--color-fg-dim)]">
-              <Link to="/pricing"   className="hover:text-[var(--color-accent-300)] transition-colors">Preise</Link>
-              <Link to="/terms"     className="hover:text-[var(--color-accent-300)] transition-colors">AGB</Link>
-              <Link to="/privacy"   className="hover:text-[var(--color-accent-300)] transition-colors">Datenschutz</Link>
-              <Link to="/impressum" className="hover:text-[var(--color-accent-300)] transition-colors">Impressum</Link>
-              <Link to="/contact"   className="hover:text-[var(--color-accent-300)] transition-colors">Kontakt</Link>
+              <Link to="/terms"     className="hover:text-[var(--color-accent-400)] transition-colors">AGB</Link>
+              <Link to="/privacy"   className="hover:text-[var(--color-accent-400)] transition-colors">Datenschutz</Link>
+              <Link to="/impressum" className="hover:text-[var(--color-accent-400)] transition-colors">Impressum</Link>
+              <Link to="/contact"   className="hover:text-[var(--color-accent-400)] transition-colors">Kontakt</Link>
             </div>
           </div>
         </div>

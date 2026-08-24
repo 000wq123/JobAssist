@@ -1,6 +1,8 @@
-import { useCallback, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useFetch from "../hooks/useFetch";
+import { usePageTitle } from "../hooks/usePageChrome";
+import useMutation from "../hooks/useMutation";
 import toast from "react-hot-toast";
 import {
   Upload,
@@ -80,48 +82,32 @@ function buildSkills(analysis) {
 }
 
 /**
- * Reads completed-task IDs from localStorage.
- */
-function loadCompletedTasks() {
-  try {
-    const saved = localStorage.getItem("resume_optimization_tasks");
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  } catch { return new Set(); }
-}
-
-function saveCompletedTasks(ids) {
-  try { localStorage.setItem("resume_optimization_tasks", JSON.stringify([...ids])); } catch { /* quota */ }
-}
-
-/**
  * ResumePage — clean two-column layout.
  *  Left:  Upload zone + uploaded files
  *  Right: Skill bars + score + optimization checklist
  */
 export default function ResumePage() {
-  const qc = useQueryClient();
+  usePageTitle("Lebenslauf");
   const { guardedRun } = useUsageGuard("cv_uploads");
 
   const [selectedId, setSelectedId] = useState(null);
-  const [completed, setCompleted] = useState(() => loadCompletedTasks());
+  const [completed, setCompleted] = useState(() => new Set());
 
-  const { data: resumes = [], isFetching } = useQuery({
-    queryKey: ["resumes"],
-    queryFn: () => resumeApi.list().then((r) => r.data),
-    staleTime: 1000 * 60 * 2,
-  });
+  const { data: resumesRaw, loading: isFetching, reload: reloadResumes } = useFetch(
+    () => resumeApi.list().then((r) => r.data),
+    { cacheKey: "resumes:list" }
+  );
+  const resumes = Array.isArray(resumesRaw) ? resumesRaw : [];
 
   const activeResume = useMemo(() => {
     if (!resumes.length) return null;
     return resumes.find((r) => r.id === selectedId) || resumes[0];
   }, [resumes, selectedId]);
 
-  const { data: analysisData, isLoading: analyzing } = useQuery({
-    queryKey: ["resume-analysis", activeResume?.id],
-    queryFn: () => resumeApi.analyze(activeResume.id).then((r) => r.data),
-    enabled: !!activeResume?.id && !!activeResume?.parsed_status,
-    staleTime: 1000 * 60 * 10,
-  });
+  const { data: analysisData, loading: analyzing } = useFetch(
+    () => resumeApi.analyze(activeResume.id).then((r) => r.data),
+    { enabled: !!activeResume?.id && !!activeResume?.parsed_status, deps: [activeResume?.id] }
+  );
 
   const skills = useMemo(() => buildSkills(analysisData), [analysisData]);
   const hasSkills = skills !== null;
@@ -146,57 +132,57 @@ export default function ResumePage() {
   const goalReached = currentScore != null && currentScore >= 85;
 
   // ─── Upload ─────────────────────────────────────────────────
-  const uploadMut = useMutation({
-    mutationFn: (file) => {
-      const fd = new FormData();
-      fd.append("file", file);
-      return resumeApi.upload(fd);
-    },
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["resumes"] });
+  const uploadMut = useMutation((file) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return resumeApi.upload(fd);
+  });
+  const handleUpload = async (file) => {
+    try {
+      const res = await uploadMut.mutate(file);
+      reloadResumes();
       toast.success("Lebenslauf hochgeladen");
       if (res.data?.id) setSelectedId(res.data.id);
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err, "Upload fehlgeschlagen")),
-  });
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Upload fehlgeschlagen"));
+    }
+  };
 
-  const onDrop = useCallback(
-    (files) => {
-      const file = files[0];
-      if (!file) return;
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Datei ist zu groß. Maximal 5 MB.");
-        return;
-      }
-      guardedRun(() => uploadMut.mutate(file));
-    },
-    [guardedRun, uploadMut],
-  );
+  const onDrop = (files) => {
+    const file = files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Datei ist zu groß. Maximal 5 MB.");
+      return;
+    }
+    guardedRun(() => handleUpload(file));
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "application/pdf": [".pdf"], "text/plain": [".txt"] },
     maxFiles: 1,
-    disabled: uploadMut.isPending,
+    disabled: uploadMut.loading,
   });
 
   // ─── Delete ─────────────────────────────────────────────────
-  const deleteMut = useMutation({
-    mutationFn: (id) => resumeApi.delete(id),
-    onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: ["resumes"] });
+  const deleteMut = useMutation((id) => resumeApi.delete(id));
+  const handleDelete = async (id) => {
+    try {
+      await deleteMut.mutate(id);
+      reloadResumes();
       if (selectedId === id) setSelectedId(null);
       toast.success("Lebenslauf gelöscht");
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err, "Löschen fehlgeschlagen")),
-  });
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Löschen fehlgeschlagen"));
+    }
+  };
 
   // ─── Tasks ──────────────────────────────────────────────────
   const toggleTask = (id) => {
     setCompleted((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
-      saveCompletedTasks(next);
       return next;
     });
   };
@@ -338,12 +324,12 @@ export default function ResumePage() {
             {...getRootProps()}
             className={`group flex flex-col items-center justify-center gap-3 px-4 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-colors ${
               isDragActive
-                ? "border-[var(--color-accent-500)] bg-[var(--color-accent-500)]/[0.06]"
+                ? "border-[var(--app-brand)] bg-[var(--app-brand)]/[0.06]"
                 : "border-[var(--color-border-strong)] hover:border-[var(--color-fg-dim)] hover:bg-[var(--color-bg-elev-1)]/40"
-            } ${uploadMut.isPending ? "opacity-60 cursor-not-allowed" : ""}`}
+            } ${uploadMut.loading ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             <input {...getInputProps()} />
-            {uploadMut.isPending ? (
+            {uploadMut.loading ? (
               <>
                 <span
                   className="inline-block w-7 h-7 border-2 border-t-transparent rounded-full animate-spin"
@@ -355,7 +341,7 @@ export default function ResumePage() {
               <>
                 <Upload
                   className={`h-7 w-7 transition-colors ${
-                    isDragActive ? "text-[var(--color-accent-300)]" : "text-[var(--color-fg-faint)] group-hover:text-[var(--color-fg-muted)]"
+                    isDragActive ? "text-[var(--app-brand)]" : "text-[var(--color-fg-faint)] group-hover:text-[var(--color-fg-muted)]"
                   }`}
                 />
                 <div className="text-center">
@@ -401,7 +387,7 @@ export default function ResumePage() {
                       onClick={() => !isActive && setSelectedId(r.id)}
                     >
                       <FileText className={`h-4 w-4 flex-shrink-0 ${
-                        isActive ? "text-[var(--color-accent-300)]" : "text-[var(--color-fg-faint)]"
+                        isActive ? "text-[var(--app-brand)]" : "text-[var(--color-fg-faint)]"
                       }`} />
                       <div className="flex-1 min-w-0">
                         <p className={`text-[13.5px] truncate tracking-tight ${
@@ -417,8 +403,8 @@ export default function ResumePage() {
                       </div>
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); deleteMut.mutate(r.id); }}
-                        disabled={deleteMut.isPending}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }}
+                        disabled={deleteMut.loading}
                         className="flex-shrink-0 w-7 h-7 grid place-items-center rounded-md text-[var(--color-fg-faint)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label="Löschen"
                       >

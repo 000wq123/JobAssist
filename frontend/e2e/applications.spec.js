@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 
 function seedAuthenticatedState() {
   sessionStorage.setItem("ja:access_token", "test-access-token");
+  localStorage.setItem("jobassist_onboarding_done_v1", "1");
+  // Pre-accept cookie consent so the banner doesn't intercept clicks
+  localStorage.setItem("cookie_consent_v1", JSON.stringify({ essential: true, analytics: false, ts: Date.now() }));
   localStorage.setItem(
     "auth_user",
     JSON.stringify({
@@ -21,8 +24,12 @@ function seedAuthenticatedState() {
         is_verified: true,
       },
       profile: {},
+      resumes: [{ id: 7, filename: "resume.pdf" }],
+      resumes_total: 1,
+      jobs_total: 1,
+      jobs_by_status: { bookmarked: 1 },
       usage: [],
-      plan: "basic",
+      plan: "max",
     })
   );
 }
@@ -31,9 +38,18 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
 });
 
-test("applications list can update status and autosave notes", async ({ page }) => {
-  let savedNotes = "";
+test("job detail can update status and save notes", async ({ page }) => {
   let currentStatus = "bookmarked";
+  let savedNotes = "";
+
+  // Mock auth refresh so the interceptor doesn't fire unauthenticated
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ access_token: "test-access-token" }),
+    });
+  });
 
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
@@ -47,55 +63,39 @@ test("applications list can update status and autosave notes", async ({ page }) 
           is_verified: true,
         },
         profile: {},
+        resumes: [{ id: 7, filename: "resume.pdf" }],
+        resumes_total: 1,
+        jobs_total: 1,
+        jobs_by_status: { bookmarked: 1 },
         usage: [],
-        plan: "basic",
+        plan: "max",
       }),
     });
   });
 
-  await page.route("**/api/resume/", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([{ id: 7, filename: "resume.pdf" }]),
-    });
-  });
-
-  await page.route("**/api/jobs/pipeline/stats", async (route) => {
+  await page.route(/\/api\/jobs\/55\/?$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        bookmarked: currentStatus === "bookmarked" ? 1 : 0,
-        applied: currentStatus === "applied" ? 1 : 0,
-        interviewing: 0,
-        offered: 0,
-        rejected: 0,
+        id: 55,
+        company: "JobAssist",
+        role: "QA Engineer",
+        description: "Teste Produktqualität und Nutzerflüsse.",
+        status: currentStatus,
+        notes: savedNotes,
+        deadline: null,
+        url: "https://example.com/jobs/qa",
+        match_score: null,
+        match_feedback: null,
+        cover_letter: null,
+        interview_qa: null,
+        research_data: null,
       }),
     });
   });
 
-  await page.route("**/api/jobs/", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 55,
-          company: "JobAssist",
-          role: "QA Engineer",
-          description: "Teste Produktqualität und Nutzerflüsse.",
-          status: currentStatus,
-          notes: savedNotes,
-          deadline: null,
-          url: "https://example.com/jobs/qa",
-          match_score: null,
-        },
-      ]),
-    });
-  });
-
-  await page.route("**/api/jobs/55/status", async (route) => {
+  await page.route(/\/api\/jobs\/55\/status\/?$/, async (route) => {
     currentStatus = route.request().postDataJSON().status;
     await route.fulfill({
       status: 200,
@@ -109,12 +109,11 @@ test("applications list can update status and autosave notes", async ({ page }) 
         notes: savedNotes,
         deadline: null,
         url: "https://example.com/jobs/qa",
-        match_score: null,
       }),
     });
   });
 
-  await page.route("**/api/jobs/55/notes", async (route) => {
+  await page.route(/\/api\/jobs\/55\/notes\/?$/, async (route) => {
     savedNotes = route.request().postDataJSON().notes;
     await route.fulfill({
       status: 200,
@@ -128,20 +127,21 @@ test("applications list can update status and autosave notes", async ({ page }) 
         notes: savedNotes,
         deadline: null,
         url: "https://example.com/jobs/qa",
-        match_score: null,
       }),
     });
   });
 
-  await page.goto("/jobs");
-  await expect(page.getByText("QA Engineer")).toBeVisible();
+  await page.goto("/jobs/55");
+  await expect(page.getByRole("heading", { name: "QA Engineer" })).toBeVisible();
 
-  const card = page.locator("div.overflow-hidden.rounded-xl.border").filter({ hasText: "QA Engineer" }).first();
-  await page.getByRole("button", { name: /als beworben markieren/i }).click();
-  await expect(card.locator("span").filter({ hasText: /^Beworben$/ })).toBeVisible();
+  // Change status to "Beworben" via the desktop status dropdown.
+  await page.getByRole("button", { name: /status ändern/i }).click();
+  await page.getByRole("button", { name: /beworben/i }).first().click({ force: true });
 
-  const notes = page.getByPlaceholder(/persönliche notizen/i);
-  await notes.fill("Sehr interessante QA-Rolle");
-  await expect(page.getByText(/wird gespeichert/i)).toBeVisible();
+  // Open the Bearbeiten sheet and save notes.
+  await page.getByRole("button", { name: /notizen/i }).first().click({ force: true });
+  await page.getByPlaceholder(/eigene notizen/i).fill("Sehr interessante QA-Rolle");
+  await page.getByRole("button", { name: /^Speichern$/i, exact: true }).click();
+
   await expect.poll(() => savedNotes).toBe("Sehr interessante QA-Rolle");
 });

@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_PRO: str = ""   # Stripe Price ID for Pro plan
     STRIPE_PRICE_MAX: str = ""   # Stripe Price ID for Max plan
+    ENABLE_BILLING: bool = False  # Set True to enable Stripe billing (open-source default: off)
     FRONTEND_URL: str = "https://jobassist.tech"
 
     KV_DEFAULT_SOURCE_URL: str = ""

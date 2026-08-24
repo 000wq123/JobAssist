@@ -2,7 +2,7 @@ import LegalLayout from "../components/ui/LegalLayout";
 
 /** Static Austrian Impressum (legal notice) page as required by §5 ECG. */
 export default function ImpressumPage() {
-  const linkClass = "text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] hover:underline transition-colors";
+  const linkClass = "text-[var(--app-brand)] hover:text-[var(--app-brand-hover)] hover:underline transition-colors";
   const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
   const h2Class = "text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4";
 
@@ -16,7 +16,7 @@ export default function ImpressumPage() {
 
   return (
     <LegalLayout
-      title={<><span className="font-display italic text-[var(--color-accent-300)]">Impressum</span></>}
+      title={<><span className="font-display italic text-[var(--app-brand)]">Impressum</span></>}
       subtitle="Angaben gemäß § 5 E-Commerce-Gesetz (ECG) und § 25 Mediengesetz (MedienG)"
     >
       <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">

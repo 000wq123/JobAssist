@@ -6,10 +6,10 @@ import { createPortal } from "react-dom";
  * `id` is stored in profile.templateId and used by the PDF generator.
  */
 export const TEMPLATES = [
-  { id: "gray-header",   label: "Grau-Header",     desc: "Schlichter Kopfbereich" },
-  { id: "slim-sidebar",  label: "Schlanke Leiste",  desc: "Schmale Leiste links" },
-  { id: "tabellarisch",  label: "Tabellarisch",     desc: "Klassisch österreichisch" },
-  { id: "dark-bands",    label: "Dunkle Bänder",    desc: "Strukturierte Abschnitte" },
+  { id: "gray-header",   label: "Klassisch",      desc: "Diskret, übersichtlich — passt zu traditionellen österreichischen Arbeitgebern" },
+  { id: "slim-sidebar",  label: "Modern",         desc: "Klare Typografie mit Seitenleiste — frisch und zeitgemäß" },
+  { id: "tabellarisch",  label: "Kompakt",         desc: "Effizientes Layout für viel Erfahrung auf einer Seite" },
+  { id: "dark-bands",    label: "Elegant",         desc: "Strukturierte Abschnitte mit typografischem Charakter" },
 ];
 
 // ─── A4 dimensions for scaling ────────────────────────────────────────────────
@@ -184,16 +184,20 @@ function TabellarischCV({ p }) {
   );
 }
 
-function DarkBandsCV({ p }) {
-  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
-  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
-  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
-  const DBSection = ({ title, children }) => (
+/** Shared section wrapper for the dark-bands template (hoisted: stable identity). */
+function DBSection({ title, children }) {
+  return (
     <div key={title}>
       <div style={{ background: "#f5f5f5", padding: "6px 28px", fontSize: "8px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#888" }}>{title}</div>
       <div style={{ padding: "14px 28px" }}>{children}</div>
     </div>
   );
+}
+
+function DarkBandsCV({ p }) {
+  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
+  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
+  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
   return (
     <div style={{ ...S, width: INNER_W, background: "#fff" }}>
       <div style={{ background: "#1a1a1a", color: "#fff", padding: "24px 28px" }}>

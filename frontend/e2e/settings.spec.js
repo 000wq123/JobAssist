@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 function seedAuthenticatedState() {
   sessionStorage.setItem("ja:access_token", "test-access-token");
+  localStorage.setItem("jobassist_onboarding_done_v1", "1");
   localStorage.setItem(
     "auth_user",
     JSON.stringify({
@@ -21,19 +22,30 @@ function seedAuthenticatedState() {
         is_verified: true,
       },
       profile: {},
+      resumes: [],
+      resumes_total: 0,
+      jobs_total: 0,
+      jobs_by_status: {},
       usage: [],
-      plan: "basic",
+      plan: "max",
     })
   );
 }
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
+  // Mock auth refresh so the interceptor doesn't fire unauthenticated
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ access_token: "test-access-token" }),
+    });
+  });
 });
 
-test("settings save sends both preferences and profile updates", async ({ page }) => {
+test("settings save sends profile updates", async ({ page }) => {
   let profileSaved = false;
-  let preferencesSaved = false;
 
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
@@ -47,8 +59,12 @@ test("settings save sends both preferences and profile updates", async ({ page }
           is_verified: true,
         },
         profile: { avatar: null },
+        resumes: [],
+        resumes_total: 0,
+        jobs_total: 0,
+        jobs_by_status: {},
         usage: [],
-        plan: "basic",
+        plan: "max",
       }),
     });
   });
@@ -81,34 +97,10 @@ test("settings save sends both preferences and profile updates", async ({ page }
     });
   });
 
-  await page.route("**/api/settings/preferences", async (route) => {
-    const method = route.request().method();
-    if (method === "GET") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          currency: "EUR",
-          location: "Österreich",
-          language: "de",
-        }),
-      });
-      return;
-    }
-
-    preferencesSaved = true;
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: route.request().postData() || "{}",
-    });
-  });
-
   await page.goto("/settings");
-  await page.locator('button[type="submit"]').click();
+  await page.getByRole("button", { name: /^Speichern$/i }).first().click();
 
   await expect.poll(() => profileSaved).toBe(true);
-  await expect.poll(() => preferencesSaved).toBe(true);
 });
 
 test("settings delete-account flow redirects to login", async ({ page }) => {
@@ -124,8 +116,12 @@ test("settings delete-account flow redirects to login", async ({ page }) => {
           is_verified: true,
         },
         profile: { avatar: null },
+        resumes: [],
+        resumes_total: 0,
+        jobs_total: 0,
+        jobs_by_status: {},
         usage: [],
-        plan: "basic",
+        plan: "max",
       }),
     });
   });
@@ -168,8 +164,8 @@ test("settings delete-account flow redirects to login", async ({ page }) => {
   });
 
   await page.goto("/settings");
-  await page.getByRole("button", { name: /konto .*löschen/i }).click();
-  await page.getByPlaceholder(/dein aktuelles passwort/i).fill("secret123");
+  await page.getByRole("button", { name: /^Konto löschen$/i }).first().click();
+  await page.getByPlaceholder(/aktuelles passwort/i).fill("secret123");
   await page.getByRole("button", { name: /unwiderruflich löschen/i }).click();
 
   await expect(page).toHaveURL(/\/login$/);

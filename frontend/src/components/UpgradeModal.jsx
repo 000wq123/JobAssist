@@ -110,7 +110,7 @@ export default function UpgradeModal() {
             className="flex-1"
             onClick={() => {
               setData(null);
-              navigate("/pricing");
+              navigate("/");
             }}
           >
             Pläne ansehen

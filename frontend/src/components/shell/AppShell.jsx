@@ -1,30 +1,28 @@
 import { useState, useEffect, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Mail, LayoutDashboard, FileText, Briefcase, Bell, X, User, LogOut, Settings, CreditCard, Sparkles } from "lucide-react";
+import { Mail, X, Menu } from "lucide-react";
 import clsx from "clsx";
 
 import useAuthStore from "../../hooks/useAuthStore";
-import { initApi, authApi, jobApi, settingsApi } from "../../services/api";
+import { authApi } from "../../services/api";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { useBootstrap } from "../../context/BootstrapContext";
 
-import TopNav from "./TopNav";
-import LeftRail from "./LeftRail";
+import Sidebar from "./Sidebar";
 import CommandMenu from "./CommandMenu";
 import OnboardingModal from "../OnboardingModal";
 
 const NAV_ITEMS = [
-  { to: "/dashboard",    label: "Dashboard", icon: LayoutDashboard },
-  { to: "/jobs",         label: "Stellen",   icon: Briefcase },
-  { to: "/lebenslauf",   label: "Lebenslauf",icon: FileText },
-  { to: "/job-alerts",   label: "Alerts",    icon: Bell },
+  { to: "/dashboard",    label: "Übersicht",  icon: "LayoutDashboard" },
+  { to: "/jobs",         label: "Stellen",    icon: "Briefcase" },
+  { to: "/lebenslauf",   label: "Lebenslauf", icon: "FileText" },
 ];
 
 /**
- * Mobile drawer — full-height left drawer with nav + user info.
+ * Mobile drawer — full-height left drawer with nav.
  */
-function MobileDrawer({ open, onClose, me, profile }) {
+function MobileDrawer({ open, onClose, me }) {
   const navigate = useNavigate();
   const handleLogout = async () => {
     try { await authApi.logout(); } catch { /* ignore */ }
@@ -36,97 +34,86 @@ function MobileDrawer({ open, onClose, me, profile }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden animate-fade-in"
+        className="fixed inset-0 z-[60] bg-black/40 md:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
       <aside
-        className="fixed inset-y-0 left-0 z-[70] w-[85vw] max-w-sm flex flex-col bg-[var(--color-bg-elev-1)] border-r border-[var(--color-border)] md:hidden"
+        className="fixed inset-y-0 left-0 z-[70] w-[85vw] max-w-sm flex flex-col md:hidden"
+        style={{ background: "var(--sidebar-bg, #FAFAF8)" }}
       >
-        <div className="grid grid-cols-12 items-center gap-2 h-14 px-4 border-b border-[var(--color-border)]">
-          <div className="col-span-10 flex items-center gap-2">
-            <div className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-accent-500)]">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-[14px] font-semibold text-[var(--color-fg)]">JobAssist</span>
+        <div className="flex items-center justify-between h-14 px-4"
+          style={{ borderColor: "var(--sidebar-border, #E7E7E4)" }}>
+          <div className="flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-sm"
+              style={{ background: "var(--app-brand, #E30613)" }}>
+              <span className="text-white text-[10px] font-bold leading-none">JA</span>
+            </span>
+            <span className="text-[14px] font-bold" style={{ color: "var(--sidebar-text-active, #171717)" }}>JobAssist</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="col-span-2 justify-self-end w-9 h-9 grid place-items-center rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+            className="w-9 h-9 grid place-items-center rounded-sm"
+            style={{ color: "var(--sidebar-text, #626262)" }}
             aria-label="Menü schließen"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-12 items-center gap-3 p-4 border-b border-[var(--color-border-subtle)]">
-          {profile?.avatar ? (
-            <img src={profile.avatar} alt="" className="col-span-2 w-9 h-9 rounded-md object-cover" />
-          ) : (
-            <span className="col-span-2 grid place-items-center w-9 h-9 rounded-md bg-[var(--color-bg-elev-3)] text-[var(--color-fg-muted)]">
-              <User className="w-4 h-4" />
-            </span>
-          )}
-          <div className="col-span-10 min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--color-fg)] truncate">{me?.full_name || "Benutzer"}</p>
-            <p className="text-[11.5px] text-[var(--color-fg-dim)] truncate">{me?.email}</p>
+        <div className="flex items-center gap-3 p-4 border-b"
+          style={{ borderColor: "var(--app-border-subtle, #EFEFEC)" }}>
+          <span className="grid place-items-center w-9 h-9 rounded-full text-[11px] font-semibold"
+            style={{ background: "var(--app-accent-soft)", color: "var(--app-accent)" }}>
+            {me?.full_name?.[0] || me?.email?.[0]?.toUpperCase() || "?"}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold truncate" style={{ color: "var(--app-text, #171717)" }}>
+              {me?.full_name || "Benutzer"}
+            </p>
+            <p className="text-[11.5px] truncate" style={{ color: "var(--app-text-muted, #888)" }}>{me?.email}</p>
           </div>
         </div>
 
         <nav className="flex-1 p-2 overflow-y-auto">
-          <p className="px-2.5 mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)]">
-            Navigation
-          </p>
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label }) => (
             <a
               key={to}
               href={to}
               onClick={(e) => { e.preventDefault(); navigate(to); onClose(); }}
-              className="grid grid-cols-12 items-center gap-2 px-2.5 py-2 rounded-md text-[14px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
-            >
-              <Icon className="col-span-1 w-4 h-4" />
-              <span className="col-span-11">{label}</span>
-            </a>
+              className="block px-3 py-2.5 rounded-sm text-[14px] font-medium"
+              style={{ color: "var(--sidebar-text, #626262)" }}
+            >{label}</a>
           ))}
-
-          <p className="px-2.5 mt-4 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-fg-dim)]">
-            Konto
-          </p>
-          {[
-            { to: "/settings", label: "Einstellungen", icon: Settings },
-            { to: "/billing",  label: "Abonnement",    icon: CreditCard },
-          ].map(({ to, label, icon: Icon }) => (
-            <a
-              key={to}
-              href={to}
-              onClick={(e) => { e.preventDefault(); navigate(to); onClose(); }}
-              className="grid grid-cols-12 items-center gap-2 px-2.5 py-2 rounded-md text-[14px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
-            >
-              <Icon className="col-span-1 w-4 h-4" />
-              <span className="col-span-11">{label}</span>
-            </a>
-          ))}
+          <div className="my-2 mx-3" style={{ height: "1px", background: "var(--sidebar-border, #E7E7E4)" }} />
+          <a
+            href="/job-alerts"
+            onClick={(e) => { e.preventDefault(); navigate("/job-alerts"); onClose(); }}
+            className="block px-3 py-2.5 rounded-sm text-[14px] font-medium"
+            style={{ color: "var(--sidebar-text, #626262)" }}
+          >Alerts</a>
+          <a
+            href="/settings"
+            onClick={(e) => { e.preventDefault(); navigate("/settings"); onClose(); }}
+            className="block px-3 py-2.5 rounded-sm text-[14px] font-medium"
+            style={{ color: "var(--sidebar-text, #626262)" }}
+          >Einstellungen</a>
         </nav>
 
-        <div className="p-3 border-t border-[var(--color-border-subtle)]">
+        <div className="p-3 border-t" style={{ borderColor: "var(--app-border-subtle, #EFEFEC)" }}>
           <button
             type="button"
             onClick={handleLogout}
-            className="grid grid-cols-12 items-center gap-2 w-full px-2.5 py-2 rounded-md text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-          >
-            <LogOut className="col-span-1 w-4 h-4" />
-            <span className="col-span-11 text-left">Abmelden</span>
-          </button>
+            className="w-full px-3 py-2.5 rounded-sm text-[13px] font-medium text-left"
+            style={{ color: "var(--app-error, #E05050)" }}
+          >Abmelden</button>
         </div>
       </aside>
     </>
   );
 }
 
-/**
- * VerificationBanner — subtle banner shown when email is unverified.
- */
 function VerificationBanner({ me }) {
   const [sending, setSending] = useState(false);
   if (!me || me.is_verified !== false) return null;
@@ -144,19 +131,22 @@ function VerificationBanner({ me }) {
   };
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-warning)]/25 bg-[var(--color-warning-soft)] px-4 py-3">
-      <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-[var(--color-warning)]/15 border border-[var(--color-warning)]/25">
-        <Mail className="h-4 w-4 text-[var(--color-warning)]" />
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 mb-6"
+      style={{ background: "var(--app-warning-soft)", borderColor: "rgba(183,150,73,0.25)" }}>
+      <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg"
+        style={{ background: "rgba(183,150,73,0.15)" }}>
+        <Mail className="h-4 w-4" style={{ color: "var(--app-warning, #B79649)" }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">E-Mail bestätigen</p>
-        <p className="mt-0.5 text-[12px] text-[var(--color-fg-muted)]">KI-Funktionen werden nach Bestätigung freigeschaltet.</p>
+        <p className="text-[13px] font-semibold leading-tight" style={{ color: "var(--app-text, #171717)" }}>E-Mail bestätigen</p>
+        <p className="mt-0.5 text-[12px]" style={{ color: "var(--app-text-secondary, #626262)" }}>KI-Funktionen werden nach Bestätigung freigeschaltet.</p>
       </div>
       <button
         type="button"
         onClick={handleResend}
         disabled={sending}
-        className="h-8 px-3 rounded-md text-[12px] font-semibold bg-[var(--color-bg-elev-2)] border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors disabled:opacity-50 flex-shrink-0"
+        className="h-8 px-3 rounded-md text-[12px] font-semibold transition-colors disabled:opacity-50 flex-shrink-0"
+        style={{ background: "var(--app-surface, #FFF)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text, #171717)" }}
       >
         {sending ? "Senden…" : "Erneut senden"}
       </button>
@@ -165,14 +155,15 @@ function VerificationBanner({ me }) {
 }
 
 /**
- * AppShell — main authenticated app shell. Replaces ModernLayout.
+ * AppShell v2 — authenticated app shell.
  *
- * Features:
- * - 56px top nav with command palette
- * - Mobile drawer + bottom nav fallback
- * - ⌘K / Ctrl+K command menu
- * - Email verification banner
- * - 12-col content max-width 1200px
+ * - 180px Sidebar (desktop), with red JA brand, thin active line
+ * - Mobile: hamburger menu + drawer + bottom nav
+ * - ⌘K command menu
+ * - Uses --app-* design tokens throughout
+ *
+ * Reads the single `/init` bootstrap payload from BootstrapContext; there is
+ * no data-caching layer — every page fetches its own rows with plain fetch.
  */
 export default function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -181,34 +172,29 @@ export default function AppShell() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const storedUser = useAuthStore((s) => s.user);
-  const queryClient = useQueryClient();
+  const { init } = useBootstrap();
 
-  // Warm critical caches immediately so dashboard + jobs page are instant.
+  // Route chunk prefetch — load all major routes silently so navigation is instant.
   useEffect(() => {
-    queryClient.prefetchQuery({
-      queryKey: ["jobs"],
-      queryFn: () => jobApi.list().then((r) => {
-        const items = r.data?.items ?? r.data ?? [];
-        try {
-          localStorage.setItem("jobs", JSON.stringify(items));
-          localStorage.setItem("jobs_ts", String(Date.now()));
-        } catch { /* quota */ }
-        return items;
-      }),
-      staleTime: 1000 * 60 * 2,
-    });
-    queryClient.prefetchQuery({
-      queryKey: ["profile"],
-      queryFn: () => settingsApi.getProfile().then((r) => {
-        try { localStorage.setItem("profile", JSON.stringify(r.data)); } catch { /* quota */ }
-        return r.data;
-      }),
-      staleTime: 1000 * 60 * 2,
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const prefetchRoutes = () => {
+      const routeChunks = [
+        () => import("../../pages/DashboardPage"),
+        () => import("../../pages/JobsLayout"),
+        () => import("../../pages/JobAlertsPage"),
+        () => import("../../pages/SettingsPage"),
+        () => import("../../pages/CVBuilderPage"),
+      ];
+      routeChunks.forEach((loader) => loader().catch(() => {}));
+    };
+    const id = setTimeout(prefetchRoutes, 0);
+    return () => clearTimeout(id);
   }, []);
 
-  // Hotkey: ⌘K / Ctrl+K
+  // Persist identity from the bootstrap payload so the next hard reload has it.
+  useEffect(() => {
+    if (init?.me) setUser(init.me);
+  }, [init, setUser]);
+
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -220,74 +206,47 @@ export default function AppShell() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const { data: initData } = useQuery({
-    queryKey: ["init"],
-    queryFn: () => {
-      return initApi.fetch().then((r) => {
-        try { localStorage.setItem("init", JSON.stringify(r.data)); } catch { /* ignore quota */ }
-        setUser(r.data.me);
-        return r.data;
-      });
-    },
-    initialData: () => {
-      try {
-        const saved = localStorage.getItem("init");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed?.me) setUser(parsed.me);
-          return parsed;
-        }
-      } catch {}
-      return undefined;
-    },
-    staleTime: 1000 * 60 * 2,
-  });
-
-  const me = initData?.me ?? storedUser;
-  const profile = initData?.profile;
+  const me = init?.me ?? storedUser;
+  const profile = init?.profile;
 
   return (
-    <div className="relative min-h-screen flex flex-col md:flex-row overflow-x-clip bg-[var(--color-bg)]">
-      {/* Desktop persistent left rail (≥ md). Hidden on mobile — phones use
-          TopNav + bottom-nav instead. */}
-      <LeftRail
-        me={me}
-        profile={profile}
-        onCommandClick={() => setCmdOpen(true)}
-      />
+    <div className="relative min-h-screen flex flex-col md:flex-row overflow-x-clip"
+      style={{ background: "var(--app-bg, #FAFAF8)", transition: "var(--app-transition)" }}>
 
-      {/* Right column — content + (mobile-only) chrome. min-w-0 prevents flex
-          children from forcing the parent to overflow when content is wide.
-          Dashboard (Heute) is dark Cron-deep — same surface as the rest of
-          the shell, no per-route override needed anymore. */}
+      {/* Desktop sidebar */}
+      <Sidebar me={me} profile={profile} onCommandClick={() => setCmdOpen(true)} />
+
+      {/* Right column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Mobile-only top bar. On desktop the LeftRail owns nav + search +
-            user menu, so this header is entirely hidden ≥ md. */}
-        <div className="md:hidden">
-          <TopNav
-            me={me}
-            profile={profile}
-            onMenuClick={() => setMobileOpen(true)}
-            onCommandClick={() => setCmdOpen(true)}
-          />
-        </div>
+        {/* Mobile header */}
+        <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-[56px] px-4 border-b"
+          style={{ background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)" }}>
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="grid place-items-center w-10 h-10 -ml-1.5 rounded-sm"
+            style={{ color: "var(--app-text, #171717)" }}
+            aria-label="Menü öffnen"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-1.5">
+            <span className="grid h-6 w-6 place-items-center rounded-sm"
+              style={{ background: "var(--app-brand, #E30613)" }}>
+              <span className="text-white text-[9px] font-bold leading-none">JA</span>
+            </span>
+            <span className="text-[14px] font-bold tracking-[-0.02em]" style={{ color: "var(--app-text, #171717)" }}>JobAssist</span>
+          </div>
+          <div className="w-10" />{/* spacer for centering */}
+        </header>
 
-        <MobileDrawer
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          me={me}
-          profile={profile}
-        />
-
+        <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} me={me} />
         <CommandMenu open={cmdOpen} onClose={() => setCmdOpen(false)} />
         <OnboardingModal />
 
         <main
           className={clsx(
             "relative z-10 flex-1 w-full",
-            // Stellen master/detail wants edge-to-edge — bypass the reading-
-            // width clamp and use a tight desktop gutter so the list pane
-            // sits flush against the left rail (see /demo/v7).
             location.pathname.startsWith("/lebenslauf")
               ? "p-0"
               : location.pathname.startsWith("/jobs")
@@ -296,40 +255,41 @@ export default function AppShell() {
           )}
         >
           <VerificationBanner me={me} />
-          <Suspense fallback={null}>
+          <Suspense fallback={<div className="px-6 pt-8"><div className="animate-pulse rounded-lg mb-6" style={{height: 32, width: 280, background: "var(--app-border, #E7E7E4)"}} /><div className="grid grid-cols-5 gap-4 mb-8">{Array.from({length:5}).map((_,i)=><div key={i} className="rounded-xl" style={{height:100, background:"var(--app-border, #E7E7E4)",opacity:0.3}} />)}</div></div>}>
             <Outlet />
           </Suspense>
         </main>
 
         {/* Mobile bottom nav */}
         <nav
-          className="md:hidden sticky bottom-0 left-0 right-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          className="md:hidden sticky bottom-0 left-0 right-0 z-30 border-t"
+          style={{
+            background: "var(--app-bg, #FAFAF8)",
+            borderColor: "var(--app-border, #E7E7E4)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}
         >
-          {(() => {
-            const items = NAV_ITEMS.filter((item) => item.to !== "/kalender").slice(0, 4);
-            return (
-              <div className="grid grid-cols-4 h-14">
-                {items.map(({ to, label, icon: Icon }) => {
-                  const active = location.pathname === to || location.pathname.startsWith(to + "/");
-                  return (
-                    <a
-                      key={to}
-                      href={to}
-                      onClick={(e) => { e.preventDefault(); navigate(to); }}
-                      className={clsx(
-                        "flex flex-col items-center justify-center gap-0.5 transition-colors",
-                        active ? "text-[var(--color-accent-300)]" : "text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]",
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-[10px] font-medium">{label}</span>
-                    </a>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          <div className="grid grid-cols-3 h-14">
+            {NAV_ITEMS.map(({ to, label }) => {
+              const active = location.pathname === to || location.pathname.startsWith(to + "/");
+              return (
+                <a
+                  key={to}
+                  href={to}
+                  onClick={(e) => { e.preventDefault(); navigate(to); }}
+                  className={clsx(
+                    "flex flex-col items-center justify-center gap-0.5 transition-colors duration-100",
+                    active ? "font-semibold" : "",
+                  )}
+                  style={{
+                    color: active ? "var(--sidebar-text-active, #171717)" : "var(--sidebar-text, #626262)",
+                  }}
+                >
+                  <span className="text-[10px] font-medium">{label}</span>
+                </a>
+              );
+            })}
+          </div>
         </nav>
       </div>
     </div>

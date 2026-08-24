@@ -7,7 +7,6 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   ChevronLeft, ChevronRight, ExternalLink, Trash2,
@@ -15,8 +14,11 @@ import {
 } from "lucide-react";
 
 import {
-  coverLetterApi, jobApi, kvWageApi, resumeApi,
+  coverLetterApi, jobApi, kvWageApi,
 } from "../services/api";
+import useFetch from "../hooks/useFetch";
+import useMutation from "../hooks/useMutation";
+import { useBootstrap } from "../context/BootstrapContext";
 import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
 } from "../components/job-detail/domain";
@@ -27,16 +29,15 @@ import { formatEuro } from "../utils/format";
 
 /** Fetch KV wage for a category (direct endpoint). Falls back to hardcoded floor. */
 function useKvWage(category) {
-  const { data } = useQuery({
-    queryKey: ["kv-wage", (category || "").toLowerCase(), 2025],
-    queryFn: () => kvWageApi.get((category || "").toLowerCase(), 2025).then((r) => r.data),
-    enabled: !!category,
-    staleTime: Infinity,
-  });
+  const { data } = useFetch(
+    () => kvWageApi.get((category || "").toLowerCase(), 2025).then((r) => r.data),
+    { enabled: !!category, deps: [(category || "").toLowerCase()] }
+  );
   return data
     ? { min: data.hourly_min, max: data.hourly_max, kv: data.kollektivvertrag, url: data.source_url }
     : { min: kvMinimumFor(category), max: null, kv: "KV", url: null };
 }
+
 import {
   Spinner, ToolBtn, KpiTile, DescriptionBody,
 } from "../components/job-detail/ui";
@@ -83,32 +84,12 @@ function CommuteSafetyCard({ job, me }) {
   );
 }
 
-// ─── Local storage helpers ───────────────────────────────────────────────────
-
-const loadStored = (key) => { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : undefined; } catch { return undefined; } };
-const saveStored = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* quota */ } };
-
-/** Lightweight click-outside hook for the toolbar dropdowns. */
-function useClickOutside(ref, onClose, active) {
-  useEffect(() => {
-    if (!active) return undefined;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [ref, onClose, active]);
-}
-
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const queryClient = useQueryClient();
 
   const [selectedResume, setSelectedResume] = useState(null);
   const [coverLetterOpen, setCoverLetterOpen] = useState(false);
@@ -119,105 +100,107 @@ export default function JobDetailPage() {
   const mobileToolBtnRef = useRef(null);
   const desktopStatusBtnRef = useRef(null);
 
-  const { data: initData } = useQuery({ queryKey: ["init"], enabled: false });
+  const { init } = useBootstrap();
 
-  const { data: baselines } = useQuery({
-    queryKey: ["response-baselines"],
-    queryFn: () => jobApi.getResponseBaselines().then((r) => r.data),
-    staleTime: 1000 * 60 * 5,
-  });
+  const { data: baselines } = useFetch(() => jobApi.getResponseBaselines().then((r) => r.data));
+  const { data: jobsListRaw } = useFetch(() => jobApi.list().then((r) => r.data?.items ?? r.data ?? []));
 
-  const updateJobCaches = (nextJob) => {
-    if (!nextJob) return;
-    queryClient.setQueryData(["jobs", jobId], nextJob);
-    queryClient.setQueryData(["jobs", Number(jobId)], nextJob);
-    queryClient.setQueryData(["jobs"], (old = []) => old.map((e) => String(e.id) === String(nextJob.id) ? nextJob : e));
-    const allJobs = loadStored("jobs") || [];
-    const merged = allJobs.some((e) => String(e.id) === String(nextJob.id))
-      ? allJobs.map((e) => String(e.id) === String(nextJob.id) ? nextJob : e)
-      : [nextJob, ...allJobs];
-    saveStored("jobs", merged);
-  };
+  // The job itself — refetch + reset whenever the route id changes.
+  const [job, setJob] = useState(null);
+  const [jobLoading, setJobLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    setJobLoading(true);
+    setJob(null);
+    jobApi
+      .get(jobId)
+      .then((res) => {
+        if (!cancelled) { setJob(res.data); setJobLoading(false); }
+      })
+      .catch(() => {
+        if (!cancelled) { setJob(null); setJobLoading(false); }
+      });
+    return () => { cancelled = true; };
+  }, [jobId]);
 
-  const { data: job, isLoading } = useQuery({
-    queryKey: ["jobs", jobId],
-    queryFn: () => jobApi.get(jobId).then((res) => { updateJobCaches(res.data); return res.data; }),
-    placeholderData: () =>
-      queryClient.getQueryData(["jobs"])?.find((e) => String(e.id) === String(jobId)) ||
-      loadStored("jobs")?.find((e) => String(e.id) === String(jobId)),
-  });
-
-  const { data: resumesQuery = [] } = useQuery({
-    queryKey: ["resumes"],
-    queryFn: () => resumeApi.list().then((res) => { saveStored("resumes", res.data); return res.data; }),
-    initialData: () => queryClient.getQueryData(["resumes"]) || initData?.resumes || loadStored("resumes"),
-  });
-
-  const resumes = resumesQuery?.length ? resumesQuery : initData?.resumes || loadStored("resumes") || [];
+  // Resumes come from the bootstrap payload (id + filename).
+  const resumes = init?.resumes || [];
   const resumeId = selectedResume ?? resumes[0]?.id;
-  const invalidateJobs = () => queryClient.invalidateQueries({ queryKey: ["jobs"], exact: true });
+  const allJobs = Array.isArray(jobsListRaw) ? jobsListRaw : [];
+
+  // Must be called before any early return to keep hook order stable.
+  const kvData = useKvWage(job?.category);
 
   useEffect(() => {
     const rid = searchParams.get("resumeId");
     if (rid && selectedResume == null) setSelectedResume(Number(rid));
   }, [searchParams, selectedResume]);
 
-  const coverLetterMutation = useMutation({
-    mutationFn: () => coverLetterApi.generate(Number(jobId), resumeId),
-    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); setCoverLetterOpen(true); toast.success("Anschreiben erstellt"); },
-    onError: (err) => toast.error(err.response?.data?.detail || "Anschreiben konnte nicht erstellt werden"),
-  });
+  const coverLetterMutation = useMutation(() => coverLetterApi.generate(Number(jobId), resumeId));
+  const handleCoverLetter = async () => {
+    try {
+      const res = await coverLetterMutation.mutate();
+      setJob(res.data);
+      setCoverLetterOpen(true);
+      toast.success("Anschreiben erstellt");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Anschreiben konnte nicht erstellt werden");
+    }
+  };
 
-  const matchMutation = useMutation({
-    mutationFn: () => {
-      if (!resumeId) throw new Error("Kein Lebenslauf ausgewählt");
-      return jobApi.match(Number(jobId), resumeId);
-    },
-    onSuccess: (res) => { updateJobCaches(res.data); invalidateJobs(); toast.success("Passung berechnet"); },
-    onError: (err) => toast.error(err.response?.data?.detail || "Passung konnte nicht berechnet werden"),
+  const matchMutation = useMutation(() => {
+    if (!resumeId) throw new Error("Kein Lebenslauf ausgewählt");
+    return jobApi.match(Number(jobId), resumeId);
   });
+  const handleMatch = async () => {
+    try {
+      const res = await matchMutation.mutate();
+      setJob(res.data);
+      toast.success("Passung berechnet");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Passung konnte nicht berechnet werden");
+    }
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: () => jobApi.delete(jobId),
-    onSuccess: () => { toast.success("Stelle gelöscht"); navigate("/jobs"); },
-    onError: (err) => toast.error(err.response?.data?.detail || "Löschen fehlgeschlagen"),
+  const deleteMutation = useMutation(() => jobApi.delete(jobId));
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutate();
+      toast.success("Stelle gelöscht");
+      navigate("/jobs");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Löschen fehlgeschlagen");
+    }
+  };
+
+  const updateMetaMutation = useMutation(async (data) => {
+    const calls = [];
+    if ("deadline" in data) calls.push(jobApi.updateDeadline(jobId, data.deadline));
+    if ("notes" in data) calls.push(jobApi.updateNotes(jobId, data.notes));
+    const results = await Promise.all(calls);
+    return results[results.length - 1];
   });
+  const handleSaveMeta = async (payload) => {
+    try {
+      const res = await updateMetaMutation.mutate(payload);
+      if (res?.data) setJob(res.data);
+      toast.success("Aktualisiert");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Aktualisierung fehlgeschlagen");
+    }
+  };
 
-  const updateMetaMutation = useMutation({
-    mutationFn: async (data) => {
-      const calls = [];
-      if ("deadline" in data) calls.push(jobApi.updateDeadline(jobId, data.deadline));
-      if ("notes"    in data) calls.push(jobApi.updateNotes(jobId, data.notes));
-      const results = await Promise.all(calls);
-      return results[results.length - 1];
-    },
-    onSuccess: (res) => { if (res?.data) updateJobCaches(res.data); toast.success("Aktualisiert"); },
-    onError: (err) => toast.error(err.response?.data?.detail || "Aktualisierung fehlgeschlagen"),
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: (status) => jobApi.updateStatus(jobId, status),
-    onMutate: (status) => {
-      const prev = queryClient.getQueryData(["jobs", jobId]);
-      const prevList = queryClient.getQueryData(["jobs"]);
-      const optimistic = { ...(prev || job || {}), status };
-      queryClient.setQueryData(["jobs", jobId], optimistic);
-      queryClient.setQueryData(["jobs", Number(jobId)], optimistic);
-      queryClient.setQueryData(["jobs"], (old = []) => old.map((e) => String(e.id) === String(jobId) ? optimistic : e));
-      return { prev, prevList };
-    },
-    onSuccess: (res) => { if (res?.data) updateJobCaches(res.data); },
-    onError: (err, _status, ctx) => {
-      if (ctx?.prev) {
-        queryClient.setQueryData(["jobs", jobId], ctx.prev);
-        queryClient.setQueryData(["jobs", Number(jobId)], ctx.prev);
-      }
-      if (ctx?.prevList) queryClient.setQueryData(["jobs"], ctx.prevList);
+  const statusMutation = useMutation((status) => jobApi.updateStatus(jobId, status));
+  const handleStatusChange = async (status) => {
+    try {
+      const res = await statusMutation.mutate(status);
+      if (res?.data) setJob(res.data);
+    } catch (err) {
       toast.error(err.response?.data?.detail || "Status konnte nicht aktualisiert werden");
-    },
-  });
+    }
+  };
 
-  if (isLoading) {
+  if (jobLoading) {
     return (
       <div className="grid place-items-center py-24 text-[var(--color-fg-dim)] gap-2">
         <Spinner /> <span className="text-[13px]">Wird geladen…</span>
@@ -228,10 +211,8 @@ export default function JobDetailPage() {
     return <div className="py-16 text-center text-[var(--color-error)] font-medium">Stelle nicht gefunden.</div>;
   }
 
-  const allJobs = queryClient.getQueryData(["jobs"]) || loadStored("jobs") || [];
   const salary       = parseSalary(job.salary_text);
   const hourly       = salary?.unit === "hour" ? salary.amount : null;
-  const kvData       = useKvWage(job.category);
   const kvMin        = kvData.min;
   const kvMax        = kvData.max;
   const kvName       = kvData.kv;
@@ -251,10 +232,13 @@ export default function JobDetailPage() {
   const showKpis = kpiCount >= 2;
 
   const savedAt   = job.created_at;
+  // eslint-disable-next-line react-hooks/purity -- Date.now() is a clock snapshot; staleness within a render pass is acceptable
   const daysSaved = savedAt ? Math.max(0, Math.floor((Date.now() - new Date(savedAt).getTime()) / (1000 * 60 * 60 * 24))) : null;
+  // Same clock-snapshot pattern for the applied-at age shown in the Einschätzung section.
+  // eslint-disable-next-line react-hooks/purity -- Date.now() is a clock snapshot; staleness within a render pass is acceptable
+  const daysApplied = job.applied_at ? Math.max(0, Math.floor((Date.now() - new Date(job.applied_at).getTime()) / (1000 * 60 * 60 * 24))) : null;
   const kvMonthly = !salary ? Math.round(kvMin * 15 * 4.3) : null;
   const kvCeiling = kvMax || kvMin * 1.2;
-
 
   return (
     <>
@@ -287,8 +271,8 @@ export default function JobDetailPage() {
                       <button
                         key={s.key}
                         type="button"
-                        onClick={() => { statusMutation.mutate(s.key); setMobileToolOpen(false); }}
-                        disabled={statusMutation.isPending || job?.status === s.key}
+                        onClick={() => { handleStatusChange(s.key); setMobileToolOpen(false); }}
+                        disabled={statusMutation.loading || job?.status === s.key}
                         className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] disabled:opacity-40"
                       >
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
@@ -298,7 +282,7 @@ export default function JobDetailPage() {
                   </div>
                   <div className="mx-3 my-1 h-px bg-[var(--color-border-subtle)]" />
                   <button type="button" onClick={() => { setEditOpen(true); setMobileToolOpen(false); }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]"><Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> Bearbeiten</button>
-                  <button type="button" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) { setMobileToolOpen(false); deleteMutation.mutate(); } }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]"><Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen</button>
+                  <button type="button" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) { setMobileToolOpen(false); handleDelete(); } }} className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)]"><Trash2 className="w-3.5 h-3.5 flex-shrink-0" /> Stelle löschen</button>
                 </Popover>
               </div>
               <div className="hidden sm:block w-px h-4 mx-1 bg-[var(--color-border-subtle)]" aria-hidden="true" />
@@ -326,8 +310,8 @@ export default function JobDetailPage() {
                       <button
                         key={s.key}
                         type="button"
-                        onClick={() => { statusMutation.mutate(s.key); setDesktopStatusOpen(false); }}
-                        disabled={statusMutation.isPending || job?.status === s.key}
+                        onClick={() => { handleStatusChange(s.key); setDesktopStatusOpen(false); }}
+                        disabled={statusMutation.loading || job?.status === s.key}
                         className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] disabled:opacity-40"
                       >
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
@@ -337,7 +321,7 @@ export default function JobDetailPage() {
                   </div>
                 </Popover>
                 <ToolBtn icon={Edit3} label="Notizen & Lebenslauf" shortLabel="Bearbeiten" onClick={() => setEditOpen(true)} />
-                <ToolBtn icon={Trash2} label="Stelle löschen" shortLabel="Löschen" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) deleteMutation.mutate(); }} danger disabled={deleteMutation.isPending} />
+                <ToolBtn icon={Trash2} label="Stelle löschen" shortLabel="Löschen" onClick={() => { if (window.confirm("Stelle wirklich löschen?")) handleDelete(); }} danger disabled={deleteMutation.loading} />
               </div>
             </div>
           </div>
@@ -382,7 +366,7 @@ export default function JobDetailPage() {
 
           {/* Commute + safety overlay */}
           {import.meta.env.VITE_ENABLE_COMMUTE_OVERLAY !== "false" && (
-            <CommuteSafetyCard job={job} me={initData?.me} />
+            <CommuteSafetyCard job={job} me={init?.me} />
           )}
 
           {/* KV bar */}
@@ -423,10 +407,7 @@ export default function JobDetailPage() {
           )}
 
           {/* Match card */}
-          {job.match_feedback && <section ref={matchCardRef} className="mt-4"><MatchCard score={job.match_score} feedbackJson={job.match_feedback} onCheckFit={() => resumeId ? matchMutation.mutate() : setEditOpen(true)} onCheckFitPending={matchMutation.isPending} resumeId={resumeId} /></section>}
-
-          {/* Courses */}
-          <section className="mt-4"><CoursesCard job={job} resumeId={resumeId} onOpenEdit={() => setEditOpen(true)} onGenerate={() => coursesMutation.mutate()} generating={coursesMutation.isPending} /></section>
+          {job.match_feedback && <section ref={matchCardRef} className="mt-4"><MatchCard score={job.match_score} feedbackJson={job.match_feedback} onCheckFit={() => resumeId ? handleMatch() : setEditOpen(true)} onCheckFitPending={matchMutation.loading} resumeId={resumeId} /></section>}
 
           {/* Kontext footer */}
           <section className="mt-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg)] p-5">
@@ -434,7 +415,7 @@ export default function JobDetailPage() {
             <p className="mt-2 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
               {job.status === "applied" && job.applied_at ? (
                 <>
-                  Vor {Math.max(0, Math.floor((Date.now() - new Date(job.applied_at).getTime()) / (1000 * 60 * 60 * 24)))} Tagen beworben.
+                  Vor {daysApplied} Tagen beworben.
                   {" "}
                   Schnitt: {Math.round(baselines?.median_days ?? 8)} Tage.
                   {" "}
@@ -473,8 +454,8 @@ export default function JobDetailPage() {
 
           {/* Primary actions */}
           <section className="mt-8 flex flex-wrap items-center gap-3">
-            <button onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) coverLetterMutation.mutate(); else setEditOpen(true); }} disabled={coverLetterMutation.isPending} className="flex-1 min-w-[200px] h-11 px-5 rounded-xl bg-[var(--color-accent-500)] text-white font-semibold text-[13.5px] inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50">
-              {coverLetterMutation.isPending ? <><Spinner />Wird erstellt…</> : job.cover_letter ? <><FileText className="w-4 h-4" />Anschreiben ansehen</> : <><FileText className="w-4 h-4" />Bewerbung schreiben</>}
+            <button onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) handleCoverLetter(); else setEditOpen(true); }} disabled={coverLetterMutation.loading} className="flex-1 min-w-[200px] h-11 px-5 rounded-xl bg-[var(--color-accent-500)] text-white font-semibold text-[13.5px] inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50">
+              {coverLetterMutation.loading ? <><Spinner />Wird erstellt…</> : job.cover_letter ? <><FileText className="w-4 h-4" />Anschreiben ansehen</> : <><FileText className="w-4 h-4" />Bewerbung schreiben</>}
             </button>
             {job.url ? (
               <button type="button" onClick={() => { window.open(job.url, "_blank", "noopener,noreferrer"); }} className={`h-11 px-5 rounded-xl border text-[13.5px] inline-flex items-center justify-center gap-1.5 transition-colors ${urlExpired ? "border-[var(--color-warning)]/40 text-[var(--color-warning)] hover:bg-[var(--color-warning-soft)]" : "border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)]"}`}>
@@ -486,7 +467,7 @@ export default function JobDetailPage() {
       </div>
 
       {/* Modals & sheets */}
-      <BearbeitenSheet open={editOpen} onClose={() => setEditOpen(false)} job={job} resumes={resumes} selectedResume={resumeId} onChangeResume={setSelectedResume} onSaveMeta={(payload) => updateMetaMutation.mutate(payload)} savingMeta={updateMetaMutation.isPending} />
+      <BearbeitenSheet open={editOpen} onClose={() => setEditOpen(false)} job={job} resumes={resumes} selectedResume={resumeId} onChangeResume={setSelectedResume} onSaveMeta={(payload) => handleSaveMeta(payload)} savingMeta={updateMetaMutation.loading} />
       <CoverLetterModal open={coverLetterOpen} onClose={() => setCoverLetterOpen(false)} job={job} followUpDays={Math.round((baselines?.p75_days ?? 14) + 2)} />
     </>
   );

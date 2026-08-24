@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import useFocusTrap from "../../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   LayoutDashboard,
@@ -9,9 +8,7 @@ import {
   Briefcase,
   Bell,
   Settings,
-  CreditCard,
   ArrowRight,
-  Building2,
 } from "lucide-react";
 
 /**
@@ -34,7 +31,6 @@ function buildCommands(navigate, close) {
     { id: "nav-resume",    group: "Navigation", label: "Lebenslauf",    icon: FileText,         action: go("/lebenslauf") },
     { id: "nav-alerts",    group: "Navigation", label: "Job-Alerts",    icon: Bell,             action: go("/job-alerts") },
     { id: "nav-settings",  group: "Navigation", label: "Einstellungen", icon: Settings,         action: go("/settings") },
-    { id: "nav-billing",   group: "Navigation", label: "Mein Plan",    icon: CreditCard,       action: go("/billing") },
   ];
 }
 
@@ -48,7 +44,6 @@ function buildCommands(navigate, close) {
  */
 export default function CommandMenu({ open, onClose }) {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef(null);
@@ -57,19 +52,7 @@ export default function CommandMenu({ open, onClose }) {
 
   const commands = useMemo(() => buildCommands(navigate, onClose), [navigate, onClose]);
 
-  const jobCommands = useMemo(() => {
-    const jobs = qc.getQueryData(["jobs"]) || [];
-    return jobs.map((j) => ({
-      id: `job-${j.id}`,
-      group: "Meine Stellen",
-      label: j.role || j.title || "Stelle",
-      hint: j.company || "",
-      icon: Building2,
-      action: () => { navigate(`/jobs/${j.id}`); onClose(); },
-    }));
-  }, [qc, navigate, onClose]);
-
-  const allCommands = useMemo(() => [...commands, ...jobCommands], [commands, jobCommands]);
+  const allCommands = commands;
 
   const filtered = useMemo(() => {
     if (!query.trim()) return commands;

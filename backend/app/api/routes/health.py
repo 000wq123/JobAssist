@@ -7,10 +7,13 @@ also TCP-probe Groq + Adzuna (cached for `_DEEP_CACHE_TTL_S`).
 from __future__ import annotations
 
 import asyncio
+import json
+import hashlib
 import logging
 import time
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -118,6 +121,7 @@ async def health_dependencies(request: Request, deep: bool = False):
 
 @router.get("/api/init")
 async def init(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -148,14 +152,28 @@ async def init(
     async def _plan():
         return await get_user_plan(db, current_user.id)
 
-    resumes, resumes_total, plan = await asyncio.gather(
-        _resumes(), _resumes_total(), _plan()
+    async def _jobs_summary():
+        total_result = await db.execute(
+            select(func.count()).select_from(Job).where(Job.user_id == current_user.id)
+        )
+        status_result = await db.execute(
+            select(Job.status, func.count(Job.id))
+            .where(Job.user_id == current_user.id)
+            .group_by(Job.status)
+        )
+        return {
+            "jobs_total": total_result.scalar() or 0,
+            "jobs_by_status": {status: count for status, count in status_result.all()},
+        }
+
+    resumes, resumes_total, plan, jobs_summary = await asyncio.gather(
+        _resumes(), _resumes_total(), _plan(), _jobs_summary()
     )
 
     # 3. Usage depends on plan, so it runs after.
     usage = await get_all_usage(db, current_user.id, plan)
 
-    return {
+    payload = {
         "me": {
             "id": current_user.id,
             "email": current_user.email,
@@ -204,9 +222,30 @@ async def init(
             for r in resumes
         ],
         "resumes_total": resumes_total,
+        "jobs_total": jobs_summary["jobs_total"],
+        "jobs_by_status": jobs_summary["jobs_by_status"],
         "plan": plan,
         "usage": usage,
     }
+
+    # ETag-based revalidation. The payload is user-scoped and cheap to hash;
+    # an unchanged payload returns 304 and the SPA keeps its cached copy,
+    # saving the full transfer (the DB queries still run — this is a
+    # bandwidth win, not a compute win).
+    body = json.dumps(payload, default=str, sort_keys=True).encode()
+    etag = f'W/"{hashlib.sha256(body).hexdigest()[:32]}"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})
+    return JSONResponse(
+        content=payload,
+        headers={
+            "ETag": etag,
+            # Override the global no-store: /init responses carry a validator
+            # so the browser may revalidate them, but must never use them
+            # without checking.
+            "Cache-Control": "no-cache",
+        },
+    )
 
 
 @router.get("/metrics")
