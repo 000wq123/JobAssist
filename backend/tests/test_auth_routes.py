@@ -10,11 +10,15 @@ from app.schemas.user import UserLogin
 
 
 class FakeResult:
-    def __init__(self, *, scalar_one_or_none=None):
+    def __init__(self, *, scalar_one_or_none=None, scalars=None):
         self._scalar_one_or_none = scalar_one_or_none
+        self._scalars = scalars or []
 
     def scalar_one_or_none(self):
         return self._scalar_one_or_none
+
+    def scalars(self):
+        return SimpleNamespace(all=lambda: list(self._scalars))
 
 
 def _request(cookies: dict | None = None) -> SimpleNamespace:

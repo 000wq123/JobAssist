@@ -1,3 +1,5 @@
+import hashlib
+import json
 import logging
 from typing import Optional
 
@@ -151,6 +153,7 @@ async def create_job(
 
 @router.get("/", response_model=JobListResponse)
 async def list_jobs(
+    request: Request,
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     status: Optional[str] = Query(None, description="Filter by status"),
@@ -186,7 +189,17 @@ async def list_jobs(
     items = list(result.scalars().all())
     pages = (total + page_size - 1) // page_size if total > 0 else 0
 
-    return JobListResponse(items=items, total=total, page=page, page_size=page_size, pages=pages)
+    payload = JobListResponse(items=items, total=total, page=page, page_size=page_size, pages=pages)
+
+    # ETag revalidation — the SPA keeps its cached copy on 304 (bandwidth win).
+    body = json.dumps(payload.model_dump(), default=str, sort_keys=True).encode()
+    etag = f'W/"{hashlib.sha256(body).hexdigest()[:32]}"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})
+    return JSONResponse(
+        content=json.loads(body),
+        headers={"ETag": etag, "Cache-Control": "no-cache"},
+    )
 
 
 # ── Static routes BEFORE /{job_id} to avoid Starlette path conflicts ──────────

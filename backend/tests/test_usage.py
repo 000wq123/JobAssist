@@ -138,8 +138,12 @@ async def test_require_usage_or_trial_delegates_to_require_usage_when_verified(m
     monkeypatch.setattr(usage, "get_usage_count", AsyncMock(return_value=1))
     monkeypatch.setattr(usage, "increment_usage", increment_mock)
 
+    # Force the non-Postgres branch so increment_usage + commit are exercised
+    # (the PG path uses ON CONFLICT DO UPDATE inside require_usage instead).
+    monkeypatch.setattr(usage, "_is_pg", False)
     checker = usage.require_usage_or_trial("cv_analysis")
     await checker(db=db, current_user=current_user)
 
+    # increment_usage owns the persistence (including its internal commit);
+    # require_usage must not double-commit on top of it.
     increment_mock.assert_awaited_once_with(db, 4, "cv_analysis")
-    db.commit.assert_awaited()

@@ -77,12 +77,12 @@ async def test_resumes_idor_blocked(idor_resume_env):
     client = idor_resume_env["client"]
     session_factory = idor_resume_env["session_factory"]
 
-    a_tokens = await _register_user(client, email="a@example.com")
-    b_tokens = await _register_user(client, email="b@example.com")
+    a_tokens = await _register_user(client, email="a@gmail.com")
+    b_tokens = await _register_user(client, email="b@gmail.com")
 
     async with session_factory() as session:
         from app.models.user import User
-        user_a = (await session.execute(select(User).where(User.email == "a@example.com"))).scalar_one()
+        user_a = (await session.execute(select(User).where(User.email == "a@gmail.com"))).scalar_one()
         r = Resume(
             user_id=user_a.id,
             filename="resume.txt",
