@@ -67,6 +67,7 @@ function NavRow({ to, label, icon: Icon, preload }) {
           {isActive && (
             <span
               style={{
+                // eslint-disable-next-line no-restricted-syntax -- active-link indicator bar
                 position: "absolute", left: 0, top: "6px", bottom: "6px",
                 width: "3px", borderRadius: "9999px",
                 background: "var(--app-brand, #E30613)",

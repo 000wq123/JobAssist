@@ -8,7 +8,7 @@ import { useBootstrap } from "../context/BootstrapContext";
 import toast from "react-hot-toast";
 import {
   Save, Camera, Trash2, User, AlertTriangle, ChevronDown, FileText, Upload, X,
-  MapPin, Briefcase, Moon, Sun, Monitor, SlidersHorizontal,
+  Moon, Sun, Monitor, SlidersHorizontal,
 } from "lucide-react";
 import { authApi, resumeApi, settingsApi } from "../services/api";
 import useAuthStore from "../hooks/useAuthStore";
@@ -16,8 +16,6 @@ import { getApiErrorMessage } from "../utils/apiError";
 import { useTheme } from "../context/ThemeContext";
 import Skeleton from "../components/ui/Skeleton";
 import Popover from "../components/ui/Popover";
-
-const T = (name) => `var(--app-${name})`;
 
 function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -315,6 +313,7 @@ export default function SettingsPage() {
                     onClick={() => field.onChange(!field.value)}
                     className="relative h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-100"
                     style={{ background: field.value ? "var(--app-brand, #E30613)" : "var(--app-border-strong, #D8D8D4)" }}>
+                    {/* eslint-disable-next-line no-restricted-syntax -- toggle knob, not layout */}
                     <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-100"
                       style={{ transform: field.value ? "translateX(20px)" : "translateX(0)" }} />
                   </button>

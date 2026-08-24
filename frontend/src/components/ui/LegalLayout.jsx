@@ -18,6 +18,7 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
       {/* Ambient glows — dark mode only */}
       <div
         aria-hidden="true"
+        // eslint-disable-next-line no-restricted-syntax -- decorative glow, not layout
         className="pointer-events-none absolute inset-x-0 top-0 h-[600px]"
         style={{
           display: "var(--ja-glow-display, none)",
@@ -26,6 +27,7 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
       />
       <div
         aria-hidden="true"
+        // eslint-disable-next-line no-restricted-syntax -- decorative glow, not layout
         className="pointer-events-none absolute inset-x-0 bottom-0 h-[320px]"
         style={{
           display: "var(--ja-glow-display, none)",

@@ -97,7 +97,7 @@ export default function ResumePage() {
     () => resumeApi.list().then((r) => r.data),
     { cacheKey: "resumes:list" }
   );
-  const resumes = Array.isArray(resumesRaw) ? resumesRaw : [];
+  const resumes = useMemo(() => (Array.isArray(resumesRaw) ? resumesRaw : []), [resumesRaw]);
 
   const activeResume = useMemo(() => {
     if (!resumes.length) return null;

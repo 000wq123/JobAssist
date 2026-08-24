@@ -33,6 +33,7 @@ export default function UnsubscribePage() {
       {/* Page-level radial glow — matches AuthLayout/LegalLayout chrome */}
       <div
         aria-hidden="true"
+        // eslint-disable-next-line no-restricted-syntax -- decorative glow, not layout
         className="pointer-events-none absolute inset-x-0 top-0 h-[700px]"
         style={{
           background:

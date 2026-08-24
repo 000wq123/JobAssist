@@ -271,49 +271,6 @@ const CV_RENDERS = {
   "dark-bands":   DarkBandsCV,
 };
 
-
-// ─── Text-list template selector button ───────────────────────────────────────
-const TMPL_DOT = {
-  "gray-header":  "#9ca3af",
-  "slim-sidebar": "#d1d5db",
-  "tabellarisch": "#1C3557",
-  "dark-bands":   "#1a1a1a",
-};
-
-function TextCard({ tmpl, selected, onSelect }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(tmpl.id)}
-      className={[
-        "w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all focus:outline-none",
-        selected
-          ? "border-[var(--color-accent-500)] bg-[var(--color-accent-500)]/[0.06]"
-          : "border-[var(--color-border)] hover:border-[rgba(255,255,255,0.18)]",
-      ].join(" ")}
-      aria-pressed={selected}
-    >
-      <span
-        style={{ width: 12, height: 12, borderRadius: "50%", background: TMPL_DOT[tmpl.id], flexShrink: 0, border: "1.5px solid rgba(255,255,255,0.12)" }}
-      />
-      <span className="flex-1 min-w-0">
-        <span className={`block text-[13px] font-semibold leading-tight ${selected ? "text-[var(--color-accent-400)]" : "text-[var(--color-fg)]"}` }>{tmpl.label}</span>
-        <span className="block text-[11px] text-[var(--color-fg-faint)] mt-0.5">{tmpl.desc}</span>
-      </span>
-      {selected && (
-        <svg width="14" height="11" viewBox="0 0 14 11" fill="none" className="flex-shrink-0">
-          <path d="M1 5.5L5 9.5L13 1" stroke="var(--color-accent-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-// ─── Large template preview for the right panel of FocusModeWizard ─────────────────
-/**
- * Shows the currently selected template at full-panel width.
- * Replaces CVSummaryPanel on the “vorlage” wizard step.
- */
 export function TemplatePreviewPanel({ profile, templateId, onJumpToTemplate }) {
   const id = templateId || profile?.templateId || "tabellarisch";
   const tmpl = TEMPLATES.find((t) => t.id === id) || TEMPLATES[2];

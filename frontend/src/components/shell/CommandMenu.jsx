@@ -139,6 +139,7 @@ export default function CommandMenu({ open, onClose }) {
     >
       {/* Scrim */}
       <div
+// eslint-disable-next-line no-restricted-syntax -- scrim overlay, not layout
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         aria-hidden="true"
       />

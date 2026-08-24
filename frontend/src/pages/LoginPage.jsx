@@ -111,6 +111,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
+              // eslint-disable-next-line no-restricted-syntax -- icon overlay inside relative input, not layout
               className="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
               tabIndex={-1}
               style={{ color: "var(--ja-auth-muted, #909090)" }}

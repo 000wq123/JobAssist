@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { usePageTitle } from "../hooks/usePageChrome";
 import toast from "react-hot-toast";
@@ -112,7 +111,7 @@ function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRen
 }
 
 /* ── CVLandingView ── */
-function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, uploadBusy, profile }) {
+function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, uploadBusy, onReset }) {
   const [library, setLibrary] = useState(() => loadLibrary());
   const [downloadingId, setDownloadingId] = useState(null);
 
@@ -149,11 +148,20 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
             <h2 className="text-[20px] font-bold mb-1" style={{ color: T("text") }}>Dein angefangener Lebenslauf</h2>
             <p className="text-[13px]" style={{ color: T("text-secondary") }}>Mach dort weiter, wo du aufgehört hast.</p>
           </div>
-          <button type="button" onClick={onStart}
-            className="inline-flex items-center gap-2 h-11 px-6 rounded-lg text-[14px] font-semibold flex-shrink-0 transition-colors"
-            style={{ background: T("brand"), color: "#fff" }}>
-            <Wand2 className="w-4 h-4" />Fortsetzen <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+            <button type="button" onClick={onStart}
+              className="inline-flex items-center gap-2 h-11 px-6 rounded-lg text-[14px] font-semibold transition-colors"
+              style={{ background: T("brand"), color: "#fff" }}>
+              <Wand2 className="w-4 h-4" />Fortsetzen <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            {onReset && (
+              <button type="button" onClick={onReset}
+                className="inline-flex items-center h-11 px-4 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+                style={{ border: `1px solid ${T("border")}`, color: T("text-secondary") }}>
+                Verwerfen
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -289,7 +297,7 @@ export default function CVBuilderPage() {
       profileApi.patch(profile).catch(() => {});
       toast.success("PDF heruntergeladen — dein Lebenslauf wurde gespeichert.");
       setMode("landing");
-    } catch (err) { setPdfError("PDF konnte nicht erstellt werden."); }
+    } catch { setPdfError("PDF konnte nicht erstellt werden."); }
     finally { setPdfBusy(false); }
   }, [profile]);
 
@@ -321,9 +329,10 @@ export default function CVBuilderPage() {
   }, [authUser]);
 
   if (mode === "landing") {
-    return <CVLandingView profile={profile} onStart={() => setMode("templatePicker")}
+    return <CVLandingView onStart={() => setMode("templatePicker")}
       hasDraft={hasDraftData(profile)} onLoadFromLibrary={onLoadFromLibrary}
-      onUploadResume={handleUploadResume} uploadBusy={uploadBusy} />;
+      onUploadResume={handleUploadResume} uploadBusy={uploadBusy}
+      onReset={hasDraftData(profile) ? onReset : undefined} />;
   }
 
   if (mode === "templatePicker") {

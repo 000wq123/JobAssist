@@ -16,6 +16,8 @@ export default function Popover({ open, onClose, anchorRef, align = "right", off
   const [pos, setPos] = useState({ top: 0, left: undefined, right: undefined });
   const popoverRef = useRef(null);
 
+  const computePositionRef = useRef(null);
+
   const computePosition = () => {
     const el = anchorRef?.current;
     if (!el) return;
@@ -51,15 +53,19 @@ export default function Popover({ open, onClose, anchorRef, align = "right", off
     setPos({ top, left, right });
   };
 
+  useEffect(() => {
+    computePositionRef.current = computePosition;
+  });
+
   useLayoutEffect(() => {
     if (!open) return;
-    computePosition();
+    computePositionRef.current();
   }, [open, anchorRef, align, offset]);
 
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
-    const onResize = () => computePosition();
+    const onResize = () => computePositionRef.current();
     window.addEventListener("keydown", onKey);
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onResize, true);

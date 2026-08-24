@@ -81,18 +81,6 @@ function AiPolishButton({ value, context, onResult, square = false }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Intro
 // ─────────────────────────────────────────────────────────────────────────────
-function Intro() {
-  return (
-    <SceneShell
-      eyebrow="Lebenslauf"
-      question={<>Ein paar Fragen.<br />Danach hast du deinen<br />Lebenslauf als PDF.</>}
-      hint="Etwa drei Minuten. Du kannst jederzeit aufhören — wir speichern automatisch."
-    >
-      <div />
-    </SceneShell>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Name
 // ─────────────────────────────────────────────────────────────────────────────

@@ -246,7 +246,7 @@ export default function CityMap({ cityKey, onSelect, selected }) {
         setError("Kartendaten konnten nicht geladen werden.");
         setLoading(false);
       });
-  }, [collapsed, cityKey, districts]);
+  }, [collapsed, cityKey, config, districts]);
 
   const sortedDistricts = districts
     ? [...districts].sort((a, b) => shoelaceArea(b.path) - shoelaceArea(a.path))
