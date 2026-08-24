@@ -1,7 +1,12 @@
+import { useRef } from "react";
 import clsx from "clsx";
 
 /**
  * Tabs — controlled segmented tabs using a 12-col friendly inline-flex container.
+ *
+ * Implements roving tabindex + Arrow/Home/End keyboard navigation per WAI-ARIA
+ * tabs pattern: only the active tab is in the tab order; Arrow keys move focus
+ * and selection together, Home/End jump to the first/last tab.
  *
  * @param {object} props
  * @param {Array<{value: string, label: string, count?: number, icon?: any}>} props.items
@@ -10,9 +15,26 @@ import clsx from "clsx";
  * @param {string} [props.className]
  */
 export default function Tabs({ items, value, onChange, className = "" }) {
+  const tabRefs = useRef({});
+
+  const onKeyDown = (e) => {
+    const idx = items.findIndex((it) => it.value === value);
+    let next = null;
+    if (e.key === "ArrowRight") next = items[(idx + 1) % items.length];
+    else if (e.key === "ArrowLeft") next = items[(idx - 1 + items.length) % items.length];
+    else if (e.key === "Home") next = items[0];
+    else if (e.key === "End") next = items[items.length - 1];
+    if (next) {
+      e.preventDefault();
+      onChange(next.value);
+      tabRefs.current[next.value]?.focus();
+    }
+  };
+
   return (
     <div
       role="tablist"
+      onKeyDown={onKeyDown}
       className={clsx(
         "inline-flex items-center gap-1 p-1 rounded-md overflow-x-auto",
         "bg-[var(--color-bg-elev-1)] border border-[var(--color-border-subtle)]",
@@ -25,8 +47,10 @@ export default function Tabs({ items, value, onChange, className = "" }) {
         return (
           <button
             key={v}
+            ref={(el) => { tabRefs.current[v] = el; }}
             role="tab"
             aria-selected={active}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange(v)}
             className={clsx(
               "inline-flex items-center gap-1.5 h-7 px-3 rounded text-[13px] font-medium whitespace-nowrap",

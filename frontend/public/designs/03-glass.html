@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>03 Glassmorphism — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#0F172A,#1E1B4B,#0F172A);color:#E2E8F0;font-family:Inter,system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px;position:relative}
+.glow{position:fixed;width:600px;height:600px;border-radius:50%;filter:blur(120px);opacity:.15;pointer-events:none}
+.glow.top{background:#6366F1;top:-200px;right:-100px}
+.glow.bot{background:#EC4899;bottom:-200px;left:-100px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0;margin:20px 0 60px;background:rgba(255,255,255,.05);backdrop-filter:blur(20px);border-radius:16px;padding:16px 24px;border:1px solid rgba(255,255,255,.1)}
+.logo{font-size:15px;font-weight:700}
+.nav-cta{padding:10px 24px;background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:600;text-decoration:none;border-radius:12px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);transition:all .2s}
+.nav-cta:hover{background:rgba(255,255,255,.25)}
+h1{font-size:clamp(36px,7vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:24px}
+h1 .grad{background:linear-gradient(135deg,#818CF8,#C084FC,#F472B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:16px;color:#94A3B8;max-width:460px;margin-bottom:32px;line-height:1.6}
+.btn{padding:14px 32px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:12px;display:inline-block;box-shadow:0 4px 24px rgba(99,102,241,.3);transition:all .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,.4)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:80px 0}
+.card{background:rgba(255,255,255,.04);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px 24px;transition:all .3s}
+.card:hover{background:rgba(255,255,255,.08);transform:translateY(-4px)}
+.card .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.card p{font-size:13px;color:#94A3B8;line-height:1.5}
+footer{display:flex;justify-content:space-between;padding:32px 0;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:#64748B}
+footer a{color:#94A3B8;text-decoration:none}
+.back{position:fixed;top:20px;right:20px;font-size:12px;color:#94A3B8;text-decoration:none;background:rgba(255,255,255,.06);padding:8px 14px;border-radius:8px;z-index:10;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+<div class="glow top"></div><div class="glow bot"></div>
+<a href="index.html" class="back">← Alle</a>
+<div class="wrap">
+  <nav>
+    <div class="logo">✦ JobAssist</div>
+    <a href="#" class="nav-cta">Kostenlos starten</a>
+  </nav>
+  <h1>Bewerbungen,<br>die sich <span class="grad">selbst schreiben.</span></h1>
+  <p>JobAssist durchsucht karriere.at, willhaben.at, AMS und Stepstone. Gleicht dein Gehalt mit dem Kollektivvertrag ab. Alles automatisch.</p>
+  <a href="#" class="btn">Jetzt registrieren →</a>
+  <div class="cards">
+    <div class="card"><div class="icon" style="background:rgba(99,102,241,.2)">📄</div><h3>Lebenslauf-Builder</h3><p>Fragen beantworten, Live-Vorschau, PDF-Export.</p></div>
+    <div class="card"><div class="icon" style="background:rgba(168,85,247,.2)">🛡️</div><h3>KV-Gehalts-Check</h3><p>Jedes Angebot gegen den Kollektivvertrag geprüft.</p></div>
+    <div class="card"><div class="icon" style="background:rgba(236,72,153,.2)">⚡</div><h3>Autopilot</h3><p>Ein Klick, Formular ausgefüllt. Kein Tippen.</p></div>
+  </div>
+  <footer><span>© 2026 JobAssist · Open Source AGPL-3.0</span><span><a href="#">Datenschutz</a> · <a href="#">AGB</a></span></footer>
+</div>
+</body>
+</html>

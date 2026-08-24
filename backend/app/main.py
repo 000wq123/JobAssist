@@ -162,7 +162,8 @@ app.include_router(ai_assistant.router,         prefix="/api/ai-assistant",     
 app.include_router(job_alerts.router,           prefix="/api/job-alerts",           tags=["Job Alerts"])
 app.include_router(research.router,             prefix="/api/research",             tags=["Research"])
 app.include_router(kv_wage.router,              prefix="/api/kv-wages",           tags=["KV Wages"])
-app.include_router(billing.router,              prefix="/api/billing",              tags=["Billing"])
+if settings.ENABLE_BILLING:
+    app.include_router(billing.router,              prefix="/api/billing",              tags=["Billing"])
 app.include_router(contact.router,              prefix="/api/contact",              tags=["Contact"])
 app.include_router(admin.router,                prefix="/api/admin",                tags=["Admin"])
 app.include_router(logo_proxy.router,           prefix="/api",                      tags=["Utils"])

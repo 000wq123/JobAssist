@@ -6,10 +6,10 @@ import { createPortal } from "react-dom";
  * `id` is stored in profile.templateId and used by the PDF generator.
  */
 export const TEMPLATES = [
-  { id: "gray-header",   label: "Grau-Header",     desc: "Schlichter Kopfbereich" },
-  { id: "slim-sidebar",  label: "Schlanke Leiste",  desc: "Schmale Leiste links" },
-  { id: "tabellarisch",  label: "Tabellarisch",     desc: "Klassisch österreichisch" },
-  { id: "dark-bands",    label: "Dunkle Bänder",    desc: "Strukturierte Abschnitte" },
+  { id: "gray-header",   label: "Klassisch",      desc: "Diskret, übersichtlich — passt zu traditionellen österreichischen Arbeitgebern" },
+  { id: "slim-sidebar",  label: "Modern",         desc: "Klare Typografie mit Seitenleiste — frisch und zeitgemäß" },
+  { id: "tabellarisch",  label: "Kompakt",         desc: "Effizientes Layout für viel Erfahrung auf einer Seite" },
+  { id: "dark-bands",    label: "Elegant",         desc: "Strukturierte Abschnitte mit typografischem Charakter" },
 ];
 
 // ─── A4 dimensions for scaling ────────────────────────────────────────────────
@@ -184,16 +184,20 @@ function TabellarischCV({ p }) {
   );
 }
 
-function DarkBandsCV({ p }) {
-  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
-  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
-  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
-  const DBSection = ({ title, children }) => (
+/** Shared section wrapper for the dark-bands template (hoisted: stable identity). */
+function DBSection({ title, children }) {
+  return (
     <div key={title}>
       <div style={{ background: "#f5f5f5", padding: "6px 28px", fontSize: "8px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#888" }}>{title}</div>
       <div style={{ padding: "14px 28px" }}>{children}</div>
     </div>
   );
+}
+
+function DarkBandsCV({ p }) {
+  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
+  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
+  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
   return (
     <div style={{ ...S, width: INNER_W, background: "#fff" }}>
       <div style={{ background: "#1a1a1a", color: "#fff", padding: "24px 28px" }}>
@@ -267,49 +271,6 @@ const CV_RENDERS = {
   "dark-bands":   DarkBandsCV,
 };
 
-
-// ─── Text-list template selector button ───────────────────────────────────────
-const TMPL_DOT = {
-  "gray-header":  "#9ca3af",
-  "slim-sidebar": "#d1d5db",
-  "tabellarisch": "#1C3557",
-  "dark-bands":   "#1a1a1a",
-};
-
-function TextCard({ tmpl, selected, onSelect }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(tmpl.id)}
-      className={[
-        "w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all focus:outline-none",
-        selected
-          ? "border-[var(--color-accent-500)] bg-[var(--color-accent-500)]/[0.06]"
-          : "border-[var(--color-border)] hover:border-[rgba(255,255,255,0.18)]",
-      ].join(" ")}
-      aria-pressed={selected}
-    >
-      <span
-        style={{ width: 12, height: 12, borderRadius: "50%", background: TMPL_DOT[tmpl.id], flexShrink: 0, border: "1.5px solid rgba(255,255,255,0.12)" }}
-      />
-      <span className="flex-1 min-w-0">
-        <span className={`block text-[13px] font-semibold leading-tight ${selected ? "text-[var(--color-accent-400)]" : "text-[var(--color-fg)]"}` }>{tmpl.label}</span>
-        <span className="block text-[11px] text-[var(--color-fg-faint)] mt-0.5">{tmpl.desc}</span>
-      </span>
-      {selected && (
-        <svg width="14" height="11" viewBox="0 0 14 11" fill="none" className="flex-shrink-0">
-          <path d="M1 5.5L5 9.5L13 1" stroke="var(--color-accent-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-// ─── Large template preview for the right panel of FocusModeWizard ─────────────────
-/**
- * Shows the currently selected template at full-panel width.
- * Replaces CVSummaryPanel on the “vorlage” wizard step.
- */
 export function TemplatePreviewPanel({ profile, templateId, onJumpToTemplate }) {
   const id = templateId || profile?.templateId || "tabellarisch";
   const tmpl = TEMPLATES.find((t) => t.id === id) || TEMPLATES[2];

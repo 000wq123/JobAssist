@@ -30,6 +30,7 @@ coverage/
 # Playwright
 playwright-report/
 test-results/
+audit-screenshots/
 
 # IDE
 .vscode/
@@ -49,3 +50,6 @@ Thumbs.db
 get.pip.py
 sse3_temp.txt
 .aider*
+
+backend/dev.db
+*.db

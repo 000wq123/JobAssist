@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AlertCircle, ArrowRight } from "lucide-react";
+import { useBootstrap } from "../context/BootstrapContext";
 
 const FEATURE_LABELS = {
   cv_analysis: "Lebenslauf-Analysen",
@@ -21,16 +21,17 @@ const FEATURE_PERIODS = {
 
 /**
  * Hook that checks whether the user has remaining quota for a feature.
- * Returns a `guard()` function that shows the UpgradeModal when the limit is hit.
+ * Returns a `guard()` function that shows an upgrade hint when the limit is hit.
+ * Reads the `/init` usage list from BootstrapContext — no caching layer.
+ *
  * @param {'cv_analysis'|'cover_letter'|'job_alerts'|'ai_chat'|'job_search'} feature
  * @returns {{ guard: () => boolean, remaining: number|null }}
  */
 export default function useUsageGuard(feature) {
   const navigate = useNavigate();
-  const { data: initData } = useQuery({ queryKey: ["init"] });
-  const { data: billingData } = useQuery({ queryKey: ["billing-overview"], staleTime: 1000 * 60 * 2 });
+  const { init } = useBootstrap();
 
-  const usageList = billingData?.usage || initData?.usage || [];
+  const usageList = init?.usage || [];
   const entry = usageList.find((u) => u.feature === feature);
 
   const used = entry?.used ?? 0;
@@ -55,14 +56,13 @@ export default function useUsageGuard(feature) {
                 <p className="text-[15px] font-semibold text-[var(--color-fg)]">Limit erreicht</p>
                 <p className="mt-1 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
                   Du hast {used}/{limit} {label} {periodLabel} verbraucht.
-                  Upgrade auf Pro oder Max für mehr Kapazität.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button
-                    onClick={() => { toast.dismiss(t.id); navigate("/pricing"); }}
+                    onClick={() => { toast.dismiss(t.id); navigate("/"); }}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent-500)] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--color-accent-400)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-elev-1)]"
                   >
-                    Upgrade <ArrowRight className="h-3.5 w-3.5" />
+                    Schließen <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => toast.dismiss(t.id)}

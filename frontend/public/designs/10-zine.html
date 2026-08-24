@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>10 Zine Collage — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#FFFBF0;color:#1A1A1A;font-family:system-ui,sans-serif;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L30 55 M5 30 L55 30' stroke='%23EEE' stroke-width='0.5'/%3E%3C/svg%3E")}
+.wrap{max-width:900px;margin:0 auto;padding:0 24px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px;margin:24px 0 60px;background:#FF6347;color:#fff;font-size:14px;font-weight:700}
+nav .logo{background:#fff;color:#FF6347;padding:6px 14px;font-size:18px;transform:rotate(-3deg)}
+nav a{color:#fff;text-decoration:none;border-bottom:2px solid rgba(255,255,255,.5)}
+h1{font-size:clamp(36px,8vw,60px);font-weight:900;line-height:1;margin-bottom:20px}
+h1 span{display:inline-block;background:#FFD700;padding:4px 16px;transform:rotate(-2deg)}
+h1 em{font-style:normal;text-decoration:underline wavy #FF6347 3px}
+.hero p{font-size:15px;color:#555;max-width:440px;margin-bottom:28px;line-height:1.6}
+.btn{padding:14px 32px;background:#FF6347;color:#fff;font-size:15px;font-weight:800;text-decoration:none;display:inline-block;transform:rotate(-1deg);box-shadow:6px 6px 0 #1A1A1A}
+.clippings{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:80px 0}
+.clip{padding:24px;position:relative;border:3px solid #1A1A1A;background:#fff}
+.clip:nth-child(1){background:#E8F4FD;transform:rotate(1deg)}
+.clip:nth-child(2){background:#FFF3E0;transform:rotate(-2deg);margin-top:16px}
+.clip:nth-child(3){background:#E8F5E9;transform:rotate(0.5deg)}
+.clip::before{content:'';position:absolute;top:-8px;left:16px;width:16px;height:8px;background:#FF6347;border-radius:2px}
+.clip .num{font-size:40px;font-weight:900;opacity:.15;margin-bottom:8px}
+.clip h3{font-size:16px;font-weight:800;margin-bottom:6px}
+.clip p{font-size:12px;color:#555;line-height:1.5}
+.sticker{display:inline-block;padding:8px 20px;background:#FFD700;color:#1A1A1A;font-size:11px;font-weight:800;transform:rotate(3deg);margin:8px 0}
+.note{background:#FFF9C4;padding:32px;margin:60px 0;border:2px dashed #FF6347;transform:rotate(-1deg)}
+.note h2{font-size:20px;font-weight:800;margin-bottom:8px}
+.note p{font-size:13px;color:#555;line-height:1.6}
+footer{display:flex;justify-content:space-between;padding:40px 0;font-size:12px;color:#999;border-top:2px dotted #DDD;flex-wrap:wrap;gap:12px}
+footer a{color:#999;text-decoration:underline}
+.back{position:fixed;top:20px;right:20px;font-size:12px;font-weight:800;color:#fff;text-decoration:none;background:#FF6347;padding:8px 14px;z-index:100;transform:rotate(-2deg)}
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← Alle</a>
+<div class="wrap">
+  <nav><div class="logo">JobAssist ✂️</div><a href="#">Anmelden</a></nav>
+  <div class="sticker">für deinen ersten job</div>
+  <h1>Bewerbungen, die sich <span>selbst</span> <em>schreiben</em>.</h1>
+  <p>JobAssist füllt Bewerbungsformulare automatisch aus, gleicht dein Gehalt mit dem Kollektivvertrag ab und generiert Anschreiben. Du kontrollierst und schickst ab.</p>
+  <a href="#" class="btn">Kostenlos loslegen →</a>
+  <div class="clippings">
+    <div class="clip"><div class="num">01</div><h3>Lebenslauf</h3><p>Builder mit Live-Vorschau. Fragen beantworten, PDF exportieren. Kein Formatieren.</p></div>
+    <div class="clip"><div class="num">02</div><h3>KV-Check</h3><p>Kollektivvertrag. Brutto, Netto, Stundenlohn. Automatisch abgeglichen.</p></div>
+    <div class="clip"><div class="num">03</div><h3>Autopilot</h3><p>Browser-Erweiterung. Ein Klick auf karriere.at, Formular ausgefüllt.</p></div>
+  </div>
+  <div class="note">
+    <h2>📌 Open Source</h2>
+    <p>JobAssist ist AGPL-3.0 lizenziert. Der gesamte Code liegt auf GitHub. Keine Paywall, keine versteckten Kosten. Jeder kann mitbauen — die Scraper für karriere.at und willhaben.at brauchen immer Updates.</p>
+  </div>
+  <div class="sticker">100% gratis · keine Kreditkarte</div>
+  <footer>
+    <span>© 2026 JobAssist — Zine Edition</span>
+    <span><a href="#">GitHub</a> · <a href="#">Datenschutz</a> · <a href="#">Impressum</a></span>
+  </footer>
+</div>
+</body>
+</html>

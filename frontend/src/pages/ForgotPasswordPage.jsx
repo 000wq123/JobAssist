@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { authApi } from "../services/api";
 import AuthLayout from "../components/ui/AuthLayout";
-import { ArrowRight, Loader2, Mail } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 
 /** Forgot-password page — submits an email and shows a confirmation screen. */
 export default function ForgotPasswordPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
   const [sent, setSent] = useState(false);
+
+  const t = "var(--ja-auth-transition)";
 
   const onSubmit = async (data) => {
     try {
@@ -20,27 +22,33 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const inputCls = `w-full h-[48px] rounded-[8px] border px-3.5 text-[14px] placeholder:text-[var(--ja-auth-muted)] transition-colors duration-[110ms] outline-none`;
+
   if (sent) {
     return (
       <AuthLayout backTo="/login" backLabel="Zurück zum Login">
-        <div className="text-center py-4">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-success-soft)] mx-auto mb-5">
-            <Mail className="h-7 w-7 text-[var(--color-success)]" />
+        <div className="text-center py-2">
+          <div className="grid h-12 w-12 place-items-center rounded-xl mx-auto mb-5"
+            style={{ background: "rgba(93, 159, 104, 0.10)" }}>
+            <Mail className="h-6 w-6 text-[#5d9f68]" />
           </div>
-          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)]">
-            Check deine{" "}
-            <span className="font-display italic text-[var(--color-accent-300)]">Inbox</span>.
-          </h1>
-          <p className="mt-3 max-w-[44ch] mx-auto text-[14px] text-[var(--color-fg-muted)]">
+          <h2 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.03em] leading-[1.15]"
+            style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
+            Check deine Inbox.
+          </h2>
+          <p className="mt-3 max-w-[44ch] mx-auto text-[14px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
             Falls ein Konto mit dieser E-Mail-Adresse existiert, haben wir dir einen Link zum Zurücksetzen
             deines Passworts gesendet.
           </p>
           <Link
             to="/login"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+            className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
+            style={{
+              background: "var(--ja-auth-cta, #6152F3)",
+              color: "var(--ja-auth-cta-text, #fff)",
+            }}
           >
             Zum Login
-            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </AuthLayout>
@@ -49,41 +57,50 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout backTo="/login" backLabel="Zurück zum Login">
-      <div className="mb-7 text-center">
-        <h1 className="text-[28px] sm:text-[36px] font-semibold tracking-tight leading-[1.1] text-[var(--color-fg)]">
-          Passwort{" "}
-          <span className="font-display italic text-[var(--color-accent-300)]">vergessen?</span>
-        </h1>
-        <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
+      <div className="mb-7">
+        <h2 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.03em] leading-[1.15]"
+          style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
+          Passwort vergessen?
+        </h2>
+        <p className="mt-2 text-[14px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
           Gib deine E-Mail-Adresse ein — wir senden dir einen Link.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-12 gap-y-4">
-        <div className="col-span-12">
-          <label className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]" htmlFor="email">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <label className="block mb-1.5 text-[12px] font-semibold" htmlFor="email"
+            style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
             E-Mail-Adresse
           </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-dim)]" />
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="du@beispiel.at"
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] pl-10 pr-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors"
-              {...register("email", { required: "E-Mail ist erforderlich" })}
-            />
-          </div>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="du@beispiel.at"
+            className={inputCls}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
+            style={{
+              background: "var(--ja-auth-input-bg, #fff)",
+              borderColor: errors.email ? "#ef4444" : "var(--ja-auth-input-border, #e7e6e3)",
+              color: "var(--ja-auth-text, #171717)",
+            }}
+            {...register("email", { required: "E-Mail ist erforderlich" })}
+          />
           {errors.email && (
-            <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.email.message}</p>
+            <p id="email-error" role="alert" className="mt-1.5 text-[12px] text-[#ef4444]">{errors.email.message}</p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="col-span-12 mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="w-full h-[48px] rounded-[8px] inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-colors duration-[110ms] disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{
+            background: isSubmitting ? "var(--ja-auth-cta-hover, #4D40D6)" : "var(--ja-auth-cta, #6152F3)",
+            color: "var(--ja-auth-cta-text, #fff)",
+          }}
         >
           {isSubmitting ? (
             <>
@@ -91,10 +108,7 @@ export default function ForgotPasswordPage() {
               <span>Wird gesendet…</span>
             </>
           ) : (
-            <>
-              <span>Link senden</span>
-              <ArrowRight className="h-4 w-4" />
-            </>
+            <span>Link senden</span>
           )}
         </button>
       </form>

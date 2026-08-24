@@ -1,534 +1,652 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { ArrowRight, FileText, Search, MessageSquare } from "lucide-react";
+import {
+  Check, ChevronDown, Search,
+  Menu, X, Play,
+  ShieldCheck, ExternalLink, Bookmark, MapPin, Briefcase,
+} from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
 
-/**
- * Attaches IntersectionObserver to .reveal elements for scroll animation.
- * @param {React.RefObject} ref
- */
+/* ═══════════════════════════════════════════════════════════════════════════
+   JOBASSIST LANDING PAGE — Light-only, Austrian Red, Asymmetric Workflow
+   ───────────────────────────────────────────────────────────────────────────
+   Always light. Workflow canvas replaces six-card grid.
+   Product UI is the artwork. Truth-grounded copy throughout.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 function useReveal(ref) {
   useEffect(() => {
     const root = ref?.current ?? document;
-    const els = root.querySelectorAll(".reveal");
+    const els = root.querySelectorAll(".lv5-reveal");
     if (!els.length) return;
     const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("visible");
-            obs.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.08 },
+      (entries) => { entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("lv5-visible"); obs.unobserve(e.target); } }); },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
   }, [ref]);
 }
 
-/** Floating company logos data */
-const FLOATING_LOGOS = [
-  { name: "Spar", bg: "#007e3a", x: "12%", y: "20%", delay: "0s", size: 52 },
-  { name: "OMV", bg: "#003B7C", x: "78%", y: "15%", delay: "0.5s", size: 48 },
-  { name: "A1", bg: "#E4002B", x: "85%", y: "55%", delay: "1s", size: 44 },
-  { name: "Billa", bg: "#e60000", x: "8%", y: "60%", delay: "1.5s", size: 46 },
-  { name: "ÖBB", bg: "#E2001A", x: "22%", y: "78%", delay: "0.3s", size: 42 },
-  { name: "Post", bg: "#FFD100", x: "72%", y: "75%", delay: "0.8s", size: 44 },
-  { name: "KTM", bg: "#FF6900", x: "55%", y: "85%", delay: "1.2s", size: 40 },
-  { name: "Raiff.", bg: "#FFE500", x: "35%", y: "12%", delay: "0.6s", size: 46 },
-  { name: "Hofer", bg: "#003882", x: "90%", y: "35%", delay: "1.8s", size: 42 },
-  { name: "dm", bg: "#002D5F", x: "5%", y: "40%", delay: "2s", size: 40 },
+/* ───────────────────────────────────────────────────────────────
+   NAVIGATION
+   ─────────────────────────────────────────────────────────────── */
+const NAV_LINKS = [
+  { label: "Funktionen", href: "#funktionen" },
+  { label: "So funktioniert's", href: "#so-funktionierts" },
+  { label: "KV-Check", href: "#kv-check" },
+  { label: "Open Source", href: "#open-source" },
 ];
 
-/** Dashboard demo steps */
-const DEMO_STEPS = [
-  { action: "Jobsuche öffnen", screen: "search" },
-  { action: "Filter: Wien, Lehrstelle", screen: "filter" },
-  { action: "Job auswählen", screen: "detail" },
-  { action: "Bewerben klicken", screen: "apply" },
+function Nav() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  return (
+    <>
+      {/* Floating pill navbar — desktop */}
+      <header className="lv5-header fixed top-3.5 left-1/2 -translate-x-1/2 z-50 hidden lg:block">
+        <div className="rounded-full border bg-white px-1.5 py-1.5 flex items-center gap-1 shadow-[0_2px_16px_rgba(0,0,0,0.07)] border-[#e8e8e5]">
+          <a href="#hero" className="flex items-center gap-2 flex-shrink-0 pl-2 pr-1" aria-label="JobAssist Startseite">
+            <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]">
+              <span className="text-white text-[10px] font-bold leading-none">JA</span>
+            </span>
+            <span className="text-[15px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
+          </a>
+          <nav className="flex items-center gap-0.5" aria-label="Hauptnavigation">
+            {NAV_LINKS.map((l) => (
+              <a key={l.label} href={l.href} className="px-3 py-1.5 rounded-full text-[13.5px] font-medium text-[#565656] hover:text-[#111] transition-colors duration-150">{l.label}</a>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2 flex-shrink-0 pl-1 pr-1">
+            <Link to="/login" className="text-[13.5px] font-medium text-[#565656] hover:text-[#111] transition-colors duration-150 px-2 py-1.5">Anmelden</Link>
+            <Link to="/register" className="inline-flex items-center h-[38px] px-4 rounded-full text-white text-[13.5px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile: static top bar */}
+      <header className="lv5-header lg:hidden fixed top-0 inset-x-0 z-50 bg-white border-b border-[#e8e8e5]">
+        <div className="flex items-center justify-between h-[60px] px-4">
+          <a href="#hero" className="flex items-center gap-2.5 flex-shrink-0" aria-label="JobAssist Startseite">
+            <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]">
+              <span className="text-white text-[10px] font-bold leading-none">JA</span>
+            </span>
+            <span className="text-[16px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
+          </a>
+          <div className="flex items-center gap-3">
+            <Link to="/register" className="inline-flex items-center h-[36px] px-4 rounded-full text-white text-[13px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
+            <button type="button" onClick={() => setMobileOpen(true)} className="grid place-items-center w-10 h-10 rounded-sm text-[#111]" aria-label="Menü öffnen">
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {mobileOpen && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-black/40 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+          <aside className="fixed inset-y-0 right-0 z-[70] w-[85vw] max-w-sm flex flex-col bg-white lg:hidden">
+            <div className="flex items-center justify-between h-[60px] px-4 border-b border-[#e8e8e5]">
+              <span className="text-[16px] font-bold text-[#111]">JobAssist</span>
+              <button type="button" onClick={() => setMobileOpen(false)} className="grid place-items-center w-10 h-10 rounded-sm text-[#111]" aria-label="Menü schließen"><X className="w-5 h-5" /></button>
+            </div>
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              {NAV_LINKS.map((l) => (
+                <a key={l.label} href={l.href} onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-sm text-[15px] font-medium text-[#111]">{l.label}</a>
+              ))}
+              <hr className="my-3 border-[#e8e8e5]" />
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-sm text-[15px] font-medium text-[#111]">Anmelden</Link>
+            </nav>
+          </aside>
+        </>
+      )}
+    </>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   DASHBOARD MOCKUP — light product preview
+   ─────────────────────────────────────────────────────────────── */
+const DASH_JOBS = [
+  { role: "Marketing Manager (m/w/d)", company: "Sanitas GmbH", status: "Antwort erhalten", date: "12. Mai", color: "#4a6d94", bg: "rgba(110,143,181,.10)" },
+  { role: "Projektleiter:in IT", company: "ÖBB-Infrastruktur AG", status: "Im Gespräch", date: "9. Mai", color: "#3f7a4a", bg: "rgba(93,159,104,.10)" },
+  { role: "HR Generalist (m/w/d)", company: "ACCENTURE", status: "Eingereicht", date: "5. Mai", color: "#75591f", bg: "rgba(183,150,73,.10)" },
+  { role: "Sales Specialist B2B", company: "Hilti Austria", status: "Gespeichert", date: "2. Mai", color: "#5a5a62", bg: "rgba(0,0,0,.04)" },
 ];
 
-/**
- * JobAssist Landing Page — New design from scratch.
- * Circular header, floating logos hero, tools section, dashboard demo, feature widgets.
- */
+function DashboardMockup() {
+  return (
+    <div aria-hidden="true" className="rounded-lg overflow-hidden border w-full bg-white border-[#e8e8e5]" style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.07)" }}>
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b bg-[#faf9f7] border-[#e8e8e5]">
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#FF5F57]" /><div className="w-3 h-3 rounded-full bg-[#FEBC2E]" /><div className="w-3 h-3 rounded-full bg-[#28C840]" />
+        </div>
+        <span className="text-[11px] ml-1 text-[#6f6f6f]">Übersicht — JobAssist</span>
+        <span className="ml-auto text-[10px] text-[#5c5c5c] bg-[#f0efec] px-2 py-0.5 rounded-sm">⌘K Suchen…</span>
+      </div>
+      <div className="flex" style={{ minHeight: "380px" }}>
+        <div className="hidden md:flex flex-col w-[152px] flex-shrink-0 border-r p-3 gap-0.5 bg-[#faf9f7] border-[#f0f0ed]">
+          {["Dashboard","Stellen","Lebenslauf","Anschreiben","Alerts"].map((item) => (
+            <div key={item} className="text-[11px] px-2 py-1.5 rounded-sm" style={{ color: item === "Dashboard" ? "#111" : "#5f5f5f", background: item === "Dashboard" ? "#fff" : "transparent", fontWeight: item === "Dashboard" ? 600 : 400 }}>{item}</div>
+          ))}
+          <div className="mt-auto border-t pt-3 border-[#f0f0ed]">
+            <div className="text-[11px] px-2 py-1.5 rounded-sm text-[#5f5f5f]">⚙ Einstellungen</div>
+            <div className="flex items-center gap-2 px-2 py-1.5 mt-1 text-[#5f5f5f] text-[11px]">
+              <div className="w-5 h-5 rounded-full bg-[#6152F3] grid place-items-center text-[9px] text-white font-bold">L</div>
+              <span>Lisa M.</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 p-4 md:p-5 min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f6f6f] mb-1">Sonntag, 23. Aug.</p>
+          <p className="text-[14px] font-semibold text-[#111]">Guten Morgen, Lisa!</p>
+          <p className="text-[12px] mt-0.5 text-[#5f5f5f]">Hier ist deine aktuelle Übersicht.</p>
+          <div className="grid grid-cols-4 gap-3 mt-5">
+            {[{v:"12",l:"Bewerbungen"},{v:"4",l:"Antworten"},{v:"2",l:"Gespräche"},{v:"1",l:"Angebote"}].map(m => (
+              <div key={m.l} className="text-center">
+                <div className="text-[26px] font-bold leading-none tracking-[-0.03em] text-[#111]">{m.v}</div>
+                <div className="text-[11px] mt-1 leading-tight text-[#5f5f5f]">{m.l}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] mt-5 mb-2.5 text-[#6f6f6f]">Letzte Bewerbungen</p>
+          {DASH_JOBS.map((j) => (
+            <div key={j.role} className="flex items-center gap-3 py-2.5 border-b border-[#f0f0ed] last:border-0">
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-medium truncate text-[#111]">{j.role}</div>
+                <div className="text-[11px] mt-0.5 text-[#5f5f5f]">{j.company}</div>
+              </div>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-sm flex-shrink-0" style={{ background: j.bg, color: j.color }}>{j.status}</span>
+              <span className="text-[11px] flex-shrink-0 hidden sm:inline text-[#6f6f6f]">{j.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   FLOATING KV CARD
+   ─────────────────────────────────────────────────────────────── */
+function FloatingKvCard() {
+  return (
+    <div aria-hidden="true" className="rounded-[6px] border bg-white p-4 w-[200px] flex-shrink-0 border-[#e8e8e5]"
+      style={{ boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="w-2 h-2 rounded-full bg-[#e30613]" />
+        <span className="text-[11px] font-bold text-[#111]">KV-Check</span>
+      </div>
+      <div className="text-[9px] font-semibold uppercase tracking-[0.10em] text-[#6f6f6f] mb-0.5">Handel · Sachbearbeiter:in</div>
+      <div className="text-[26px] font-bold tracking-[-0.03em] text-[#111] mt-1">2.548 €</div>
+      <div className="text-[10px] text-[#5f5f5f] mt-0.5">Brutto / Monat (Vollzeit)</div>
+      <div className="text-[9px] text-[#6f6f6f] mt-1.5">WKO-Daten 2025</div>
+      <div className="mt-2 pt-2 border-t border-[#e8e8e5] flex items-end gap-[2px] h-[24px]">
+        {[8,12,16,22,24].map((h, i) => (
+          <div key={i} className="w-[9px] rounded-t-[1px]" style={{ height: `${h}px`, background: i === 4 ? "#e30613" : "#fff1f1" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   REPO PREVIEW
+   ─────────────────────────────────────────────────────────────── */
+function RepoPreview() {
+  return (
+    <div className="rounded-[6px] border bg-white overflow-hidden border-[#e8e8e5]">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b bg-[#faf9f7] border-[#e8e8e5]">
+        <svg className="w-3.5 h-3.5 text-[#5f5f5f]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
+        <span className="text-[12px] font-medium text-[#111]">davorrr/JobAssist</span>
+        <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-sm text-[#e30613] bg-[#fff1f1]">AGPL-3.0</span>
+      </div>
+      <div className="p-4 font-mono text-[11.5px] leading-relaxed text-[#565656]">
+        <div className="text-[#111]">JobAssist/</div>
+        <div className="ml-3">├── backend/</div><div className="ml-3">├── frontend/</div><div className="ml-3">├── docs/</div>
+        <div className="ml-3">├── extension/</div><div className="ml-3">├── README.md</div><div className="ml-3">└── LICENSE</div>
+      </div>
+      <div className="px-4 pb-4 flex flex-wrap gap-1.5">
+        {["React","FastAPI","PostgreSQL","AGPL-3.0"].map(t => (
+          <span key={t} className="text-[10px] font-medium px-2 py-0.5 rounded-sm text-[#5f5f5f] bg-[#f6f6f4]">{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   WORKFLOW CANVAS — asymmetric product UI storytelling
+   ─────────────────────────────────────────────────────────────── */
+
+const WORKFLOW_CARD = "rounded-[6px] border bg-white border-[#e8e8e5]";
+
+function WorkflowCanvas() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* ── 01: Lebenslauf (tall left column) ──────────────── */}
+        <div className={`lg:col-span-3 lv5-reveal lv5-delay-2 ${WORKFLOW_CARD}`} style={{ minHeight: "280px" }}>
+          <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-[#f0f0ed]">
+            <span className="text-[10px] font-mono font-bold text-[#e30613] bg-[#fff1f1] w-5 h-5 rounded-sm grid place-items-center">01</span>
+            <span className="text-[12px] font-bold text-[#111]">Lebenslauf</span>
+          </div>
+          <div className="p-4 text-[12px] leading-relaxed">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-14 rounded-sm bg-[#e0e0e0] grid place-items-center text-[18px] font-bold text-[#999]">LM</div>
+              <div>
+                <div className="font-semibold text-[#111] text-[13px]">Lisa Muster</div>
+                <div className="text-[#5f5f5f] text-[11px]">Projektmanagerin</div>
+                <div className="text-[#6f6f6f] text-[10px]">Wien, Österreich</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f6f6f] mb-1">Über mich</div>
+                <div className="text-[#565656] text-[11px] leading-[1.5]">Organisierte Projektmanagerin mit 5+ Jahren Erfahrung in der Digitalwirtschaft.</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f6f6f] mb-1">Erfahrung</div>
+                <div className="text-[#111] text-[11px] font-medium">Senior PM · TechCorp</div>
+                <div className="text-[#6f6f6f] text-[10px]">2021 – heute</div>
+                <div className="text-[#111] text-[11px] font-medium mt-1.5">Junior PM · StartUp AG</div>
+                <div className="text-[#6f6f6f] text-[10px]">2019 – 2021</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f6f6f] mb-1">Bildung</div>
+                <div className="text-[#111] text-[11px] font-medium">M.Sc. BWL · WU Wien</div>
+                <div className="text-[#6f6f6f] text-[10px]">2017 – 2019</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 02: Jobs finden (wide top center) ────────────────── */}
+        <div className={`lg:col-span-6 lv5-reveal lv5-delay-2 ${WORKFLOW_CARD}`}>
+          <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-[#f0f0ed]">
+            <span className="text-[10px] font-mono font-bold text-[#e30613] bg-[#fff1f1] w-5 h-5 rounded-sm grid place-items-center">02</span>
+            <span className="text-[12px] font-bold text-[#111]">Jobs finden</span>
+          </div>
+          <div className="p-4">
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="text-[11px] font-medium px-2 py-1 rounded-sm bg-[#fff1f1] text-[#e30613]">IT</span>
+              <span className="text-[11px] font-medium px-2 py-1 rounded-sm bg-[#fff1f1] text-[#e30613]">Wien</span>
+              <span className="text-[11px] font-medium px-2 py-1 rounded-sm bg-[#fff1f1] text-[#e30613]">Praktikum</span>
+              <div className="flex items-center gap-1 flex-1 min-w-0 ml-1 h-[28px] rounded-[3px] border border-[#e8e8e5] px-2.5 text-[11px] text-[#6f6f6f]">
+                <Search className="w-3 h-3" /> Stichwort, Firma...
+              </div>
+            </div>
+            {/* Source pills */}
+            <div className="flex items-center gap-1.5 mb-3">
+              {["karriere.at","willhaben","AMS"].map(s => (
+                <span key={s} className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-[#f6f6f4] text-[#5f5f5f]">{s}</span>
+              ))}
+            </div>
+            {/* Job rows */}
+            <div className="space-y-0 divide-y divide-[#f0f0ed]">
+              {[
+                { role:"IT Projektmanager:in", company:"Erste Digital GmbH", type:"Vollzeit", when:"vor 2 Std." },
+                { role:"Praktikum Software Development", company:"Dynatrace", type:"Praktikum", when:"vor 1 Tag" },
+                { role:"Business Analyst", company:"Raiffeisen", type:"Vollzeit", when:"vor 3 Tagen" },
+              ].map(j => (
+                <div key={j.role} className="flex items-center gap-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium truncate text-[#111]">{j.role}</div>
+                    <div className="flex items-center gap-2 text-[10.5px] text-[#5f5f5f] mt-0.5">
+                      <span>{j.company}</span>
+                      <span className="text-[#e8e8e5]">·</span>
+                      <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />Wien</span>
+                      <span className="text-[#e8e8e5]">·</span>
+                      <span className="flex items-center gap-0.5"><Briefcase className="w-2.5 h-2.5" />{j.type}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-[#6f6f6f] flex-shrink-0">{j.when}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 02A: Job speichern (small right popover) ────────── */}
+        <div className={`lg:col-span-3 lv5-reveal lv5-delay-3 ${WORKFLOW_CARD} p-4`}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-mono font-bold text-[#e30613] bg-[#fff1f1] w-5 h-5 rounded-sm grid place-items-center">02A</span>
+            <span className="text-[11px] font-bold text-[#111]">Job speichern</span>
+          </div>
+          <div className="rounded-[4px] border border-[#e30613]/20 bg-[#fff1f1]/50 p-3">
+            <Bookmark className="w-4 h-4 text-[#e30613] mb-1.5" />
+            <div className="text-[11px] font-semibold text-[#111]">Stelle gespeichert</div>
+            <div className="text-[12px] font-medium text-[#111] mt-1">IT Projektmanager:in</div>
+            <div className="text-[11px] text-[#5f5f5f]">Erste Digital GmbH</div>
+            <div className="mt-2 pt-2 border-t border-[#e30613]/15">
+              <span className="text-[10px] font-medium text-[#e30613]">Zur Stellenübersicht →</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 03: KV-Check (bottom left) ────────────────────── */}
+        <div className={`lg:col-span-3 lv5-reveal lv5-delay-3 ${WORKFLOW_CARD} p-4`}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-mono font-bold text-[#e30613] bg-[#fff1f1] w-5 h-5 rounded-sm grid place-items-center">03</span>
+            <span className="text-[11px] font-bold text-[#111]">KV-Gehalts-Check</span>
+          </div>
+          <div className="space-y-2">
+            {[
+              {l:"Branche",v:"Handel"},{l:"Position",v:"Sachbearbeiter:in"},{l:"Stundenausmaß",v:"38,5 h / Woche"},{l:"Stufe",v:"III / 3. Jahr"}
+            ].map(f => (
+              <div key={f.l}>
+                <div className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#6f6f6f] mb-0.5">{f.l}</div>
+                <div className="h-[28px] rounded-[3px] border border-[#e8e8e5] px-2 flex items-center text-[11px] text-[#111]">{f.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-3 border-t border-[#f0f0ed] flex items-end justify-between">
+            <div>
+              <div className="text-[28px] font-bold tracking-[-0.04em] text-[#111]">2.548 €</div>
+              <div className="text-[10px] text-[#5f5f5f]">Brutto / Monat (Vollzeit)</div>
+            </div>
+            <div className="flex items-end gap-[2px] h-[28px]">
+              {[8,14,18,24,28].map((h,k) => (
+                <div key={k} className="w-[10px] rounded-t-[1px]" style={{height:`${h}px`,background:k===4?"#e30613":"#fff1f1"}} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 04: Anschreiben (bottom center) ────────────────── */}
+        <div className={`lg:col-span-5 lv5-reveal lv5-delay-4 ${WORKFLOW_CARD}`}>
+          <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-[#f0f0ed]">
+            <span className="text-[10px] font-mono font-bold text-[#e30613] bg-[#fff1f1] w-5 h-5 rounded-sm grid place-items-center">04</span>
+            <span className="text-[12px] font-bold text-[#111]">Anschreiben</span>
+          </div>
+          <div className="p-4">
+            {/* Mini toolbar */}
+            <div className="flex items-center gap-1 mb-3 pb-2 border-b border-[#f0f0ed]">
+              {["B","I","U","·","Link","·","AI ✦"].map(b => (
+                <span key={b} className="text-[10px] px-1.5 py-0.5 rounded-sm text-[#5f5f5f] hover:text-[#111] cursor-default">{b}</span>
+              ))}
+            </div>
+            <div className="text-[11px] leading-relaxed text-[#565656] space-y-2">
+              <p className="font-semibold text-[#111] text-[12px]">Sehr geehrte Damen und Herren,</p>
+              <p>mit großem Interesse habe ich Ihre Stellenausschreibung für die Position <span className="text-[#111] font-medium">IT Projektmanager:in</span> bei <span className="text-[#111] font-medium">Erste Digital GmbH</span> gelesen.</p>
+              <p>In meiner aktuellen Position als Senior Projektmanagerin bei TechCorp konnte ich umfassende Erfahrung in der Leitung digitaler Transformationsprojekte sammeln — von der Konzeption bis zur erfolgreichen Implementierung.</p>
+              <p className="font-medium text-[#111]">Mit freundlichen Grüßen</p>
+              <p className="text-[#111]">Lisa Muster</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 05: Bewerbungen verfolgen (bottom right) ─────────── */}
+        <div className={`lg:col-span-4 lv5-reveal lv5-delay-4 ${WORKFLOW_CARD}`}>
+          <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-[#f0f0ed]">
+            <span className="text-[10px] font-mono font-bold text-[#e30613] bg-[#fff1f1] w-5 h-5 rounded-sm grid place-items-center">05</span>
+            <span className="text-[12px] font-bold text-[#111]">Bewerbungen verfolgen</span>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center gap-1 mb-3 overflow-x-auto" tabIndex={0} role="group" aria-label="Anwendungs-Vorschau">
+              {["Alle","Eingereicht","Im Gespräch","Antwort erhalten","Archiviert"].map((tab,i) => (
+                <span key={tab} className="text-[10px] font-medium px-2 py-1 rounded-[3px] whitespace-nowrap cursor-default"
+                  style={{color:i===0?"#111":"#5f5f5f",background:i===0?"#f6f6f4":"transparent"}}>{tab}</span>
+              ))}
+            </div>
+            <div className="divide-y divide-[#f0f0ed]">
+              {[
+                {role:"Marketing Manager",co:"Sanitas GmbH",s:"Antwort erhalten",d:"12. Mai",c:"#4a6d94",bg:"rgba(110,143,181,.10)"},
+                {role:"Projektleiter:in IT",co:"ÖBB-Infrastruktur AG",s:"Im Gespräch",d:"9. Mai",c:"#3f7a4a",bg:"rgba(93,159,104,.10)"},
+                {role:"HR Generalist",co:"ACCENTURE",s:"Eingereicht",d:"5. Mai",c:"#75591f",bg:"rgba(183,150,73,.10)"},
+              ].map(r => (
+                <div key={r.role} className="flex items-center gap-2 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11.5px] font-medium truncate text-[#111]">{r.role}</div>
+                    <div className="text-[10.5px] text-[#5f5f5f]">{r.co}</div>
+                  </div>
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm flex-shrink-0" style={{background:r.bg,color:r.c}}>{r.s}</span>
+                  <span className="text-[10px] text-[#6f6f6f] flex-shrink-0 hidden sm:inline">{r.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   FAQ — two independent columns (no shared grid rows)
+   ─────────────────────────────────────────────────────────────── */
+const FAQ_ITEMS = [
+  { id: "open-source", q: "Ist JobAssist wirklich Open Source?", a: "Ja. Unter der AGPL-3.0. Der gesamte Quellcode ist öffentlich auf GitHub einsehbar — verwenden, verändern, selbst hosten." },
+  { id: "self-host", q: "Kann ich JobAssist selbst hosten?", a: "Ja. Python 3.11+, Node.js 20+, PostgreSQL und ein Groq API-Schlüssel. Die Dokumentation beschreibt die lokale Installation." },
+  { id: "sources", q: "Welche Jobbörsen durchsucht ihr?", a: "Karriere.at, willhaben.at und AMS direkt, plus Adzuna und Jooble für weitere österreichische Quellen." },
+  { id: "data", q: "Was passiert mit meinen Daten?", a: "Kein Verkauf, keine Weitergabe an Dritte. Daten verlassen die Plattform nur bei aktiver Bewerbung." },
+  { id: "free", q: "Ist JobAssist kostenlos?", a: "Ja. Alle Funktionen sind ohne Kosten nutzbar. Keine Paywall, keine Abos — Open Source." },
+  { id: "contribute", q: "Kann ich mitentwickeln?", a: "Ja. Bugs melden, Scraper reparieren, Features beitragen. Pull Requests willkommen im Repository." },
+];
+
+const FAQ_LEFT = FAQ_ITEMS.filter((_, i) => i % 2 === 0);  // 0, 2, 4
+const FAQ_RIGHT = FAQ_ITEMS.filter((_, i) => i % 2 === 1); // 1, 3, 5
+
+function FaqItem({ question, answer, open, onToggle }) {
+  return (
+    <div className="border-b border-[#e8e8e5]">
+      <button type="button" onClick={onToggle} className="w-full flex items-center justify-between py-3.5 text-left gap-3 group" aria-expanded={open}>
+        <span className="text-[13.5px] font-medium transition-colors duration-150" style={{ color: open ? "#111" : "#565656" }}>{question}</span>
+        <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 transition-transform duration-300" style={{ color: open ? "#e30613" : "#9a9a9a", transform: open ? "rotate(180deg)" : "none" }} />
+      </button>
+      <div className={`lv5-faq-answer ${open ? "lv5-open" : ""}`}>
+        <div><p className="pb-3.5 pr-6 text-[12.5px] leading-relaxed text-[#5f5f5f]">{answer}</p></div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SECTION WRAPPER
+   ─────────────────────────────────────────────────────────────── */
+function Section({ children, id, bg }) {
+  return (
+    <section id={id} className="py-[72px] md:py-[88px]" style={{ background: bg || "#ffffff" }}>
+      <div className="mx-auto max-w-[1240px] px-4 md:px-6 lg:px-8">{children}</div>
+    </section>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════
+   MAIN PAGE COMPONENT
+   ═════════════════════════════════════════════════════════════ */
 export default function LandingPage() {
   const token = useAuthStore((s) => s.token);
-  const [scrolled, setScrolled] = useState(false);
-  const [demoStep, setDemoStep] = useState(0);
-  const pageRef = useRef(null);
+  const [faqOpen, setFaqOpen] = useState(null);
+  const mainRef = useRef(null);
 
-  useReveal(pageRef);
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  // Auto-advance demo
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDemoStep((s) => (s + 1) % DEMO_STEPS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  useReveal(mainRef);
 
   if (token) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div ref={pageRef} className="landing-page-white min-h-screen bg-white">
-      {/* ─── Circular Pill Header (Mobbin-style) ───────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 md:pt-5">
-        <nav
-          className={[
-            "flex items-center gap-2 md:gap-5 h-12 px-3 md:px-6 rounded-full transition-all duration-300",
-            scrolled
-              ? "bg-white/90 backdrop-blur-xl shadow-[0_2px_20px_rgba(0,0,0,0.08)] border border-[#f0f0f0]"
-              : "bg-white/70 backdrop-blur-lg border border-[#f0f0f0]/50",
-          ].join(" ")}
-        >
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-[#0B0B0F]">
-              <span className="text-[10px] font-bold text-white">JA</span>
-            </div>
-            <span className="text-[14px] font-semibold tracking-tight text-[#0B0B0F] hidden sm:block">JobAssist</span>
-          </div>
-
-          {/* Nav links */}
-          <div className="hidden md:flex items-center gap-5 ml-4">
-            <a href="#tools" className="text-[13px] text-[#666] hover:text-[#0B0B0F] transition-colors">Features</a>
-            <a href="#demo" className="text-[13px] text-[#666] hover:text-[#0B0B0F] transition-colors">Demo</a>
-            <a href="#preise" className="text-[13px] text-[#666] hover:text-[#0B0B0F] transition-colors">Preise</a>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 ml-3">
-            <Link to="/login" className="text-[13px] text-[#666] hover:text-[#0B0B0F] transition-colors hidden sm:block">
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="h-8 px-4 inline-flex items-center rounded-full bg-[#0B0B0F] text-white text-[12px] font-semibold hover:bg-[#333] transition-colors"
-            >
-              Starten
-            </Link>
-          </div>
-        </nav>
-      </header>
-
-      {/* ─── Hero: Big name + floating logos ───────────────────────── */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
-        {/* Floating company logos in background */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-          {FLOATING_LOGOS.map((logo) => (
-            <div
-              key={logo.name}
-              className="grid place-items-center rounded-2xl opacity-[0.08] animate-[floatSlow_8s_ease-in-out_infinite]"
-              style={{
-                position: "fixed",
-                left: logo.x,
-                top: logo.y,
-                width: `${logo.size}px`,
-                height: `${logo.size}px`,
-                backgroundColor: logo.bg,
-                animationDelay: logo.delay,
-              }}
-            >
-              <span className="text-white text-[10px] font-bold">{logo.name}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Main content */}
-        <div className="reveal flex flex-col items-center text-center z-10">
-          <h1
-            className="text-[#0B0B0F] font-extrabold leading-[0.9] tracking-[-0.05em]"
-            style={{ fontSize: "clamp(4rem, 12vw, 9rem)" }}
-          >
-            JobAssist
-          </h1>
-          <p
-            className="text-[#666] font-medium tracking-[-0.01em] mt-4"
-            style={{ fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)" }}
-          >
-            Dein Weg in die Arbeitswelt.
-          </p>
-          <div className="reveal reveal-delay-2 mt-10">
-            <Link
-              to="/register"
-              className="h-12 px-7 inline-flex items-center gap-2 rounded-full bg-[#0B0B0F] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors"
-            >
-              Kostenlos starten
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Tools Section ─────────────────────────────────────────── */}
-      <section id="tools" className="bg-[#FAFAFA] border-t border-[#f0f0f0] py-28 md:py-36">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="reveal">
-            <span
-              className="text-[#0B0B0F] font-bold leading-[1.1] tracking-[-0.03em] block"
-              style={{ fontSize: "clamp(2rem, 4.5vw, 3.5rem)" }}
-            >
-              Bewerben heißt jonglieren mit
-            </span>
-            {/* Inline platform icons */}
-            <span className="flex items-center justify-center gap-2.5 my-5">
-              <img src="https://cdn.simpleicons.org/linkedin/0A66C2" alt="LinkedIn" className="h-9 w-9 md:h-11 md:w-11 rounded-xl" />
-              <img src="https://cdn.simpleicons.org/indeed/003A9B" alt="Indeed" className="h-9 w-9 md:h-11 md:w-11 rounded-xl" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Karriere.at_Logo.svg/120px-Karriere.at_Logo.svg.png" alt="karriere.at" className="h-9 md:h-11 rounded-xl" />
-              <img src="https://cdn.simpleicons.org/kununu/99C613" alt="kununu" className="h-9 w-9 md:h-11 md:w-11 rounded-xl" />
-              <img src="https://cdn.simpleicons.org/xing/006567" alt="XING" className="h-9 w-9 md:h-11 md:w-11 rounded-xl" />
-            </span>
-            <span
-              className="text-[#0B0B0F] font-bold leading-[1.1] tracking-[-0.03em] block"
-              style={{ fontSize: "clamp(2rem, 4.5vw, 3.5rem)" }}
-            >
-              Werkzeugen.
-            </span>
-          </h2>
-          <p className="reveal reveal-delay-1 text-[#666] text-[16px] md:text-[17px] leading-relaxed mt-7 max-w-xl mx-auto">
-            Du wechselst zwischen Jobbörsen, Word-Dokumenten, Notizen und Mail — verlierst Überblick und Zeit.{" "}
-            <strong className="text-[#0B0B0F]">Es geht auch anders.</strong>
-          </p>
-        </div>
-      </section>
-
-      {/* ─── Dashboard Demo ────────────────────────────────────────── */}
-      <section id="demo" className="py-28 md:py-36">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-14">
-            <span className="reveal text-[11px] font-semibold uppercase tracking-[0.15em] text-[#999] block mb-3">
-              Live Demo
-            </span>
-            <h2
-              className="reveal reveal-delay-1 text-[#0B0B0F] font-bold tracking-[-0.025em] leading-[1.08]"
-              style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}
-            >
-              So findest du deinen Job.
-            </h2>
-          </div>
-
-          {/* Demo browser frame */}
-          <div className="reveal reveal-delay-2 rounded-2xl border border-[#e5e5e5] bg-[#FAFAFA] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.06)]">
-            {/* Browser chrome */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-[#e5e5e5] bg-white">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-                <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
-                <div className="w-3 h-3 rounded-full bg-[#28C840]" />
-              </div>
-              <div className="flex-1 flex justify-center">
-                <div className="h-7 px-4 rounded-md bg-[#f5f5f5] border border-[#e5e5e5] flex items-center text-[11px] text-[#999]">
-                  app.jobassist.at/dashboard
+    <div ref={mainRef} className="landing-v5 relative min-h-screen antialiased max-w-full overflow-x-hidden">
+      <Nav />
+      <main>
+        {/* ═══ HERO ══════════════════════════════════════════════════ */}
+        <section id="hero" className="relative pt-[100px] pb-[48px] md:pt-[112px] md:pb-[56px] overflow-hidden bg-white">
+          <div className="mx-auto max-w-[1280px] px-4 md:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-start min-w-0">
+              <div className="lg:col-span-5 min-w-0">
+                <div className="lv5-reveal flex items-center gap-2 mb-4">
+                  <span aria-hidden className="block w-0 h-0" style={{ borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: "7px solid #e30613" }} />
+                  <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#e30613]">Für Österreich. Für deine Karriere.</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Demo content */}
-            <div className="grid grid-cols-12 min-h-[400px]">
-              {/* Sidebar */}
-              <div className="col-span-3 border-r border-[#e5e5e5] bg-white p-4 hidden md:block">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="h-6 w-6 rounded-full bg-[#0B0B0F] grid place-items-center">
-                    <span className="text-[8px] font-bold text-white">JA</span>
-                  </div>
-                  <span className="text-[12px] font-semibold text-[#0B0B0F]">JobAssist</span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {["Dashboard", "Jobsuche", "Bewerbungen", "Lebenslauf", "Anschreiben"].map((item, i) => (
-                    <div
-                      key={item}
-                      className={[
-                        "text-[12px] px-3 py-2 rounded-lg transition-colors",
-                        i === 1 ? "bg-[#0B0B0F] text-white font-medium" : "text-[#666] hover:bg-[#f5f5f5]",
-                      ].join(" ")}
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Main area */}
-              <div className="col-span-12 md:col-span-9 p-6 md:p-8">
-                {/* Step indicator */}
-                <div className="flex items-center gap-3 mb-6">
-                  {DEMO_STEPS.map((step, i) => (
-                    <button
-                      key={step.action}
-                      type="button"
-                      onClick={() => setDemoStep(i)}
-                      className={[
-                        "text-[11px] px-3 py-1.5 rounded-full border transition-all",
-                        i === demoStep
-                          ? "bg-[#0B0B0F] text-white border-[#0B0B0F]"
-                          : "bg-white text-[#999] border-[#e5e5e5]",
-                      ].join(" ")}
-                    >
-                      {step.action}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Demo screens */}
-                {demoStep === 0 && (
-                  <div className="space-y-3">
-                    <div className="h-10 rounded-lg border border-[#e5e5e5] bg-white px-4 flex items-center text-[13px] text-[#999]">
-                      <Search size={14} className="mr-2 text-[#ccc]" />
-                      Was suchst du?
-                    </div>
-                    <div className="grid grid-cols-12 gap-2">
-                      {["Lehrstelle", "Praktikum", "Ferialjob", "Teilzeit"].map((tag) => (
-                        <span key={tag} className="col-span-3 text-center text-[11px] py-2 rounded-lg bg-[#f5f5f5] text-[#666] border border-[#e5e5e5]">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {demoStep === 1 && (
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <span className="text-[11px] px-3 py-1.5 rounded-full bg-[#0B0B0F] text-white">Wien</span>
-                      <span className="text-[11px] px-3 py-1.5 rounded-full bg-[#0B0B0F] text-white">Lehrstelle</span>
-                      <span className="text-[11px] px-3 py-1.5 rounded-full border border-[#e5e5e5] text-[#666]">+ Filter</span>
-                    </div>
-                    <p className="text-[12px] text-[#999]">23 Ergebnisse</p>
-                  </div>
-                )}
-                {demoStep === 2 && (
-                  <div className="rounded-xl border border-[#e5e5e5] bg-white p-5">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-[14px] font-semibold text-[#0B0B0F]">Lehrling Bürokauffrau (m/w/d)</h4>
-                        <p className="text-[12px] text-[#666] mt-1">Raiffeisen Landesbank · Wien · Lehrstelle</p>
-                      </div>
-                      <span className="text-[10px] font-medium text-[#22c55e] bg-[#22c55e]/10 px-2 py-0.5 rounded-full">93% Match</span>
-                    </div>
-                    <p className="text-[12px] text-[#999] mt-4 leading-relaxed">
-                      Wir suchen eine/n motivierte/n Lehrling für unsere Filiale in Wien...
-                    </p>
-                  </div>
-                )}
-                {demoStep === 3 && (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <div className="h-14 w-14 rounded-full bg-[#22c55e]/10 grid place-items-center mb-4">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </div>
-                    <p className="text-[14px] font-semibold text-[#0B0B0F]">Bewerbung abgeschickt!</p>
-                    <p className="text-[12px] text-[#999] mt-1">Lebenslauf + Anschreiben wurden übermittelt.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Three Feature Widgets ─────────────────────────────────── */}
-      <section className="bg-[#FAFAFA] border-t border-[#f0f0f0] py-28 md:py-36">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2
-              className="reveal text-[#0B0B0F] font-bold tracking-[-0.025em] leading-[1.08]"
-              style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}
-            >
-              Alles was du brauchst.
-            </h2>
-            <p className="reveal reveal-delay-1 text-[#666] text-[15px] mt-4">
-              Drei Tools. Ein Account. Null Chaos.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-12 gap-4 md:gap-5">
-            {/* Widget 1 — CV Builder */}
-            <div className="reveal col-span-12 md:col-span-4 rounded-2xl border border-[#e5e5e5] bg-white p-7 flex flex-col">
-              <div className="h-11 w-11 rounded-xl bg-[#0B0B0F] grid place-items-center mb-5">
-                <FileText size={18} className="text-white" />
-              </div>
-              <h3 className="text-[17px] font-semibold text-[#0B0B0F] mb-2">Lebenslauf-Builder</h3>
-              <p className="text-[14px] text-[#666] leading-relaxed flex-1">
-                Fragen beantworten, PDF runterladen. ATS-optimiert, professionell, fertig in 5 Minuten.
-              </p>
-              <div className="mt-6 rounded-xl bg-[#f5f5f5] border border-[#e5e5e5] p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                  <span className="text-[10px] text-[#999]">Schritt 4/5</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-[#e5e5e5]">
-                  <div className="h-1.5 rounded-full bg-[#0B0B0F] w-[80%]" />
-                </div>
-              </div>
-            </div>
-
-            {/* Widget 2 — Job Search */}
-            <div className="reveal col-span-12 md:col-span-4 rounded-2xl border border-[#e5e5e5] bg-white p-7 flex flex-col" style={{ transitionDelay: "80ms" }}>
-              <div className="h-11 w-11 rounded-xl bg-[#0B0B0F] grid place-items-center mb-5">
-                <Search size={18} className="text-white" />
-              </div>
-              <h3 className="text-[17px] font-semibold text-[#0B0B0F] mb-2">Smarte Jobsuche</h3>
-              <p className="text-[14px] text-[#666] leading-relaxed flex-1">
-                Lehrstellen, Praktika, Ferialjobs in deiner Nähe. Filter setzen, finden, bewerben.
-              </p>
-              <div className="mt-6 rounded-xl bg-[#f5f5f5] border border-[#e5e5e5] p-4">
-                <div className="flex gap-1.5">
-                  <span className="text-[9px] px-2 py-1 rounded-full bg-[#0B0B0F] text-white">Wien</span>
-                  <span className="text-[9px] px-2 py-1 rounded-full bg-[#0B0B0F] text-white">Lehrstelle</span>
-                  <span className="text-[9px] px-2 py-1 rounded-full border border-[#e5e5e5] text-[#999]">IT</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Widget 3 — Cover Letter */}
-            <div className="reveal col-span-12 md:col-span-4 rounded-2xl border border-[#e5e5e5] bg-white p-7 flex flex-col" style={{ transitionDelay: "160ms" }}>
-              <div className="h-11 w-11 rounded-xl bg-[#0B0B0F] grid place-items-center mb-5">
-                <MessageSquare size={18} className="text-white" />
-              </div>
-              <h3 className="text-[17px] font-semibold text-[#0B0B0F] mb-2">Anschreiben-Generator</h3>
-              <p className="text-[14px] text-[#666] leading-relaxed flex-1">
-                Stellenanzeige einfügen — persönliches Anschreiben in 30 Sekunden.
-              </p>
-              <div className="mt-6 rounded-xl bg-[#f5f5f5] border border-[#e5e5e5] p-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#0B0B0F] animate-pulse" />
-                  <span className="text-[10px] text-[#999]">Generiert...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Pricing ──────────────────────────────────────────────── */}
-      <section id="preise" className="py-28 md:py-36">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2
-              className="reveal text-[#0B0B0F] font-bold tracking-[-0.025em] leading-[1.08]"
-              style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}
-            >
-              Einfache Preise.
-            </h2>
-            <p className="reveal reveal-delay-1 text-[#666] text-[15px] mt-4">
-              Gratis starten. Upgrade wenn du mehr willst.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-12 gap-4">
-            {[
-              { name: "Free", price: "€0", sub: "für immer", features: ["1 Lebenslauf", "5 Anschreiben/Mo", "Jobsuche", "Tracker"], highlighted: false },
-              { name: "Pro", price: "€4,99", sub: "/Monat", features: ["25 Anschreiben/Mo", "Interview-Übung", "CV Feedback", "20 Suchen/Tag"], highlighted: true },
-              { name: "Max", price: "€7,99", sub: "/Monat", features: ["Unbegrenzt", "Alle Features", "Prioritäts-Support", "API Zugang"], highlighted: false },
-            ].map((plan, i) => (
-              <div
-                key={plan.name}
-                className={[
-                  "reveal col-span-12 md:col-span-4 rounded-2xl p-7 flex flex-col border",
-                  plan.highlighted ? "bg-[#0B0B0F] border-[#0B0B0F] text-white" : "bg-white border-[#e5e5e5]",
-                ].join(" ")}
-                style={{ transitionDelay: `${i * 60}ms` }}
-              >
-                <span className={["text-[13px] font-medium", plan.highlighted ? "text-white/60" : "text-[#999]"].join(" ")}>
-                  {plan.name}
-                </span>
-                <div className="flex items-baseline gap-1 mt-1 mb-5">
-                  <span className={["text-[34px] font-bold tracking-tight", plan.highlighted ? "text-white" : "text-[#0B0B0F]"].join(" ")}>
-                    {plan.price}
-                  </span>
-                  <span className={["text-[13px]", plan.highlighted ? "text-white/40" : "text-[#999]"].join(" ")}>
-                    {plan.sub}
-                  </span>
-                </div>
-                <ul className="flex flex-col gap-2.5 flex-1 mb-6">
-                  {plan.features.map((f) => (
-                    <li key={f} className={["text-[13px]", plan.highlighted ? "text-white/70" : "text-[#666]"].join(" ")}>
-                      {f}
+                <h1 className="lv5-reveal lv5-delay-1 font-bold tracking-[-0.045em] leading-[0.98] text-balance text-[#111]"
+                  style={{ fontSize: "clamp(2.5rem, 5.5vw, 3.875rem)", maxWidth: "500px" }}>
+                  Bewerbungen.<br />Einfach gemacht.
+                </h1>
+                <p className="lv5-reveal lv5-delay-2 mt-4 text-[15.5px] leading-[1.6] max-w-[440px] text-[#565656]">
+                  JobAssist unterstützt dich bei jedem Schritt deiner Bewerbung — vom Lebenslauf bis Gehaltscheck.
+                </p>
+                <ul className="lv5-reveal lv5-delay-3 mt-5 space-y-2">
+                  {[
+                    "Lebenslauf & Anschreiben in Minuten erstellen",
+                    "Stellen auf unterstützten österreichischen Jobbörsen finden",
+                    "Gehalt mit Kollektivvertrag-Richtsätzen vergleichen",
+                    "Bewerbungen und Rückmeldungen an einem Ort verfolgen",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-[14px] text-[#565656]">
+                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#e30613]" />{item}
                     </li>
                   ))}
                 </ul>
-                <Link
-                  to="/register"
-                  className={[
-                    "h-10 inline-flex items-center justify-center rounded-full text-[13px] font-semibold transition-colors",
-                    plan.highlighted
-                      ? "bg-white text-[#0B0B0F] hover:bg-white/90"
-                      : "bg-[#f5f5f5] text-[#0B0B0F] hover:bg-[#ebebeb]",
-                  ].join(" ")}
-                >
-                  Starten
-                </Link>
+                <div className="lv5-reveal lv5-delay-4 mt-7 flex flex-col sm:flex-row items-start gap-3">
+                  <Link to="/register" className="inline-flex items-center h-[44px] px-6 rounded-[3px] text-white text-[14px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
+                  <a href="#funktionen" className="inline-flex items-center gap-2 h-[44px] px-6 rounded-[3px] border border-[#dcdcd8] text-[14px] font-medium text-[#111] hover:border-[#e30613] transition-colors duration-150">
+                    <Play className="w-3 h-3" /> So funktioniert&apos;s
+                  </a>
+                </div>
+                <div className="lv5-reveal lv5-delay-4 mt-5 flex items-center gap-3 text-[12px] text-[#6f6f6f]">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Transparent. Open Source. AGPL-3.0.</span>
+                  <span aria-hidden className="w-px h-3 bg-[#e8e8e5]" />
+                  <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline text-[#4f4f4f]">Quellcode auf GitHub</a>
+                </div>
               </div>
-            ))}
+              <div className="lg:col-span-7 lv5-reveal lv5-delay-2 min-w-0">
+                <DashboardMockup />
+                <div className="flex justify-end -mt-[80px] mr-[6px] relative z-10">
+                  <FloatingKvCard />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+          <div className="mt-[56px] md:mt-[64px] mx-auto max-w-[1240px] px-4 md:px-6 lg:px-8">
+            <hr className="border-[#e8e8e5]" />
+          </div>
+        </section>
 
-      {/* ─── Final CTA ─────────────────────────────────────────────── */}
-      <section className="border-t border-[#f0f0f0] bg-[#FAFAFA]">
-        <div className="max-w-4xl mx-auto px-6 py-28 md:py-36 text-center">
-          <h2
-            className="reveal text-[#0B0B0F] font-bold tracking-[-0.03em] leading-[1.0]"
-            style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}
-          >
-            Bereit loszulegen?
+        {/* ═══ WORKFLOW — replaces old feature grid + product demo ══ */}
+        <Section id="funktionen" bg="#faf9f7">
+          <div className="lv5-reveal text-center mb-3">
+            <div className="flex items-center justify-center gap-2">
+              <span aria-hidden className="block w-0 h-0" style={{ borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: "7px solid #e30613" }} />
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#e30613]">Alles, was du für deine Bewerbung brauchst</span>
+            </div>
+          </div>
+          <h2 className="lv5-reveal lv5-delay-1 text-center font-semibold tracking-[-0.03em] leading-[1.1] text-[#111] mb-10 md:mb-14"
+            style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.125rem)" }}>
+            Ein Ablauf. Alle Werkzeuge.
           </h2>
-          <p className="reveal reveal-delay-1 text-[#666] text-[15px] mt-5">
-            Kostenlos. Keine Kreditkarte. Kein Abo.
-          </p>
-          <div className="reveal reveal-delay-2 mt-9">
-            <Link
-              to="/register"
-              className="h-12 px-7 inline-flex items-center gap-2 rounded-full bg-[#0B0B0F] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors"
-            >
-              Jetzt starten
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-        </div>
-      </section>
+          <WorkflowCanvas />
+        </Section>
 
-      {/* ─── Footer ────────────────────────────────────────────────── */}
-      <footer className="border-t border-[#f0f0f0]">
-        <div className="grid grid-cols-12 max-w-6xl mx-auto px-6 py-10 items-start gap-y-6">
-          <div className="col-span-12 md:col-span-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="grid h-6 w-6 place-items-center rounded-full bg-[#0B0B0F]">
-                <span className="text-[8px] font-bold text-white">JA</span>
+        {/* ═══ OPEN SOURCE — warm off-white ═════════════════════════ */}
+        <Section id="open-source" bg="#ffffff">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-w-0">
+            <div className="lg:col-span-6 min-w-0 lv5-reveal">
+              <div className="flex items-center gap-2 mb-3">
+                <span aria-hidden className="block w-0 h-0" style={{ borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: "7px solid #e30613" }} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#e30613]">Open Source</span>
               </div>
-              <span className="text-[13px] font-semibold text-[#0B0B0F]">JobAssist</span>
+              <h2 className="font-semibold tracking-[-0.03em] leading-[1.1] text-[#111]" style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.125rem)" }}>Offen. Transparent. Für alle.</h2>
+              <p className="mt-3 text-[15px] leading-relaxed max-w-[480px] text-[#565656]">
+                JobAssist ist Open Source unter der AGPL-3.0. Der Quellcode ist öffentlich einsehbar, Beiträge sind willkommen und du kannst JobAssist auch selbst betreiben.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-[42px] px-5 rounded-[3px] border border-[#111] text-[13px] font-semibold text-[#111] hover:bg-[#111] hover:text-white transition-colors duration-150">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
+                  Auf GitHub ansehen
+                </a>
+                <a href="https://github.com/davorrr/JobAssist#readme" target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#5f5f5f] hover:text-[#111] transition-colors">Dokumentation →</a>
+              </div>
+              <div className="mt-5 pt-3 border-t border-[#e8e8e5] flex flex-wrap items-center gap-3">
+                <span className="text-[12px] font-medium text-[#111]">Mitentwickeln?</span>
+                <span className="text-[12px] text-[#5f5f5f]">Bugs melden, Scraper reparieren oder neue Features beitragen.</span>
+                <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#e30613] hover:text-[#c9000b] transition-colors duration-150">Zum Repository <ExternalLink className="w-3 h-3" /></a>
+              </div>
             </div>
-            <p className="text-[12px] text-[#999] leading-relaxed mt-1">
-              Bewerbungstools für Österreich.
-            </p>
+            <div className="lg:col-span-6 lv5-reveal lv5-delay-2 min-w-0"><RepoPreview /></div>
           </div>
-          <div className="col-span-6 md:col-span-2">
-            <h4 className="text-[11px] font-semibold text-[#0B0B0F] uppercase tracking-[0.05em] mb-3">Produkt</h4>
-            <div className="flex flex-col gap-2">
-              <a href="#tools" className="text-[12px] text-[#666] hover:text-[#0B0B0F] transition-colors">Features</a>
-              <a href="#demo" className="text-[12px] text-[#666] hover:text-[#0B0B0F] transition-colors">Demo</a>
-              <a href="#preise" className="text-[12px] text-[#666] hover:text-[#0B0B0F] transition-colors">Preise</a>
+        </Section>
+
+        {/* ═══ FAQ — two independent columns ══════════════════════ */}
+        <Section id="faq" bg="#faf9f7">
+          <h2 className="lv5-reveal text-center font-semibold tracking-[-0.03em] leading-[1.1] mb-8 md:mb-10 text-[#111]"
+            style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.125rem)" }}>Häufige Fragen</h2>
+          <div className="lv5-reveal grid grid-cols-1 md:grid-cols-2 gap-x-8 max-w-[960px] mx-auto">
+            <div>
+              {FAQ_LEFT.map((item) => (
+                <FaqItem key={item.id} question={item.q} answer={item.a} open={faqOpen === item.id} onToggle={() => setFaqOpen(faqOpen === item.id ? null : item.id)} />
+              ))}
+            </div>
+            <div>
+              {FAQ_RIGHT.map((item) => (
+                <FaqItem key={item.id} question={item.q} answer={item.a} open={faqOpen === item.id} onToggle={() => setFaqOpen(faqOpen === item.id ? null : item.id)} />
+              ))}
             </div>
           </div>
-          <div className="col-span-6 md:col-span-2">
-            <h4 className="text-[11px] font-semibold text-[#0B0B0F] uppercase tracking-[0.05em] mb-3">Rechtliches</h4>
-            <div className="flex flex-col gap-2">
-              <Link to="/privacy" className="text-[12px] text-[#666] hover:text-[#0B0B0F] transition-colors">Datenschutz</Link>
-              <Link to="/terms" className="text-[12px] text-[#666] hover:text-[#0B0B0F] transition-colors">AGB</Link>
-              <Link to="/impressum" className="text-[12px] text-[#666] hover:text-[#0B0B0F] transition-colors">Impressum</Link>
+        </Section>
+
+        {/* ═══ FINAL CTA — light red/pink container ═══════════════ */}
+        <Section bg="#ffffff">
+          <div className="lv5-reveal rounded-[8px] border border-[#e30613]/15 p-8 md:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
+            style={{ background: "#fdf2f2" }}>
+            <div className="max-w-[540px]">
+              <h2 className="font-semibold tracking-[-0.03em] leading-[1.15] text-[#111]"
+                style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)" }}>Bereit für deinen nächsten Karriereschritt?</h2>
+              <p className="mt-2 text-[15px] text-[#565656]">Erstelle dein Profil und starte deine nächste Bewerbung mit JobAssist.</p>
+            </div>
+            <div className="flex-shrink-0 text-center sm:text-right">
+              <Link to="/register" className="inline-flex items-center h-[48px] px-8 rounded-[3px] text-white text-[15px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
+              <p className="mt-2 text-[12px] text-[#6f6f6f]">Keine Kreditkarte · Keine Paywall · Open Source</p>
             </div>
           </div>
-          <div className="col-span-12 md:col-span-4 flex items-end justify-start md:justify-end">
-            <span className="text-[11px] text-[#ccc]">© 2025 JobAssist</span>
+        </Section>
+      </main>
+
+      {/* ═══ FOOTER ══════════════════════════════════════════════ */}
+      <footer className="py-14 md:py-16 bg-[#f7f6f3]">
+        <div className="mx-auto max-w-[1240px] px-4 md:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-8 min-w-0">
+            <div className="col-span-2 md:col-span-4 min-w-0">
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]"><span className="text-white text-[10px] font-bold leading-none">JA</span></span>
+                <span className="text-[16px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
+              </div>
+              <p className="text-[13px] text-[#5f5f5f]">Bewerbungstools für den österreichischen Arbeitsmarkt.</p>
+              <p className="text-[12px] mt-3 text-[#6f6f6f]">Open Source · AGPL-3.0</p>
+              <p className="text-[12px] mt-1 text-[#6f6f6f]">© {new Date().getFullYear()} JobAssist</p>
+            </div>
+            <div className="md:col-span-2 min-w-0">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Produkt</h4>
+              <div className="flex flex-col gap-2">
+                {[{label:"Funktionen",href:"#funktionen"},{label:"KV-Check",href:"#funktionen"},{label:"Jobbörsen",href:"#funktionen"},{label:"Bewerbungs-Tracker",href:"#funktionen"}].map(l=>(
+                  <a key={l.label} href={l.href} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-2 min-w-0">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Open Source</h4>
+              <div className="flex flex-col gap-2">
+                {[{label:"GitHub",href:"https://github.com/davorrr/JobAssist"},{label:"Dokumentation",href:"https://github.com/davorrr/JobAssist#readme"},{label:"Lizenz (AGPL-3.0)",href:"https://github.com/davorrr/JobAssist/blob/main/LICENSE"}].map(l=>(
+                  <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-2 min-w-0">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Ressourcen</h4>
+              <div className="flex flex-col gap-2">
+                {[{label:"So funktioniert's",href:"#funktionen"},{label:"FAQ",href:"#faq"},{label:"Open Source",href:"#open-source"}].map(l=>(
+                  <a key={l.label} href={l.href} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-2 min-w-0">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Rechtliches</h4>
+              <div className="flex flex-col gap-2 mb-4">
+                {[{label:"Datenschutz",to:"/privacy"},{label:"AGB",to:"/terms"},{label:"Impressum",to:"/impressum"}].map(l=>(
+                  <Link key={l.label} to={l.to} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</Link>
+                ))}
+              </div>
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Kontakt</h4>
+              <a href="mailto:hallo@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
+            </div>
           </div>
         </div>
       </footer>

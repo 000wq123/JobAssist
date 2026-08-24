@@ -25,6 +25,7 @@ export default function SkillBars({ skills, className = "" }) {
             </div>
             <div className="col-span-6 sm:col-span-7 relative h-2 rounded-full bg-[var(--color-bg-elev-2)] overflow-hidden">
               <div
+                // eslint-disable-next-line no-restricted-syntax -- progress bar fill overlay
                 className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
                 style={{ width: `${v}%`, background: color }}
               />

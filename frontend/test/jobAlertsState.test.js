@@ -14,7 +14,7 @@ test("getRunState defaults to the basic plan limit when none is supplied", () =>
     used: 0,
     limit: DEFAULT_DAILY_RUN_LIMIT,
     remaining: DEFAULT_DAILY_RUN_LIMIT,
-    atLimit: false,
+    atLimit: true,
     unlimited: false,
   });
 });

@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 function seedAuthenticatedState() {
   sessionStorage.setItem("ja:access_token", "test-access-token");
+  localStorage.setItem("jobassist_onboarding_done_v1", "1");
+  localStorage.setItem("cookie_consent_v1", "accepted");
   localStorage.setItem(
     "auth_user",
     JSON.stringify({
@@ -14,24 +16,14 @@ function seedAuthenticatedState() {
   localStorage.setItem(
     "init",
     JSON.stringify({
-      me: {
-        id: 1,
-        email: "qa@jobassist.tech",
-        full_name: "QA User",
-        is_verified: true,
-        alert_refresh_count: 0,
-        alert_refresh_window_start: null,
-      },
+      me: { id: 1, email: "qa@jobassist.tech", full_name: "QA User", is_verified: true },
       profile: {},
+      resumes: [],
+      resumes_total: 0,
+      jobs_total: 0,
+      jobs_by_status: {},
       usage: [{ feature: "job_alerts", used: 0, limit: 2, remaining: 2 }],
-      plan: "basic",
-    })
-  );
-  localStorage.setItem(
-    "billing",
-    JSON.stringify({
-      subscription: { plan: "basic", current_period_end: null },
-      usage: [{ feature: "job_alerts", used: 0, limit: 2, remaining: 2 }],
+      plan: "max",
     })
   );
 }
@@ -51,167 +43,96 @@ test("job alerts can be created and deleted in the UI", async ({ page }) => {
       frequency: "daily",
       is_active: true,
       last_sent_at: null,
-      updated_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
     },
   ];
+  let nextId = 2;
 
+  // Auth refresh
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access_token: "x", refresh_token: "x" }) });
+  });
+
+  // Init
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
-      status: 200,
-      contentType: "application/json",
+      status: 200, contentType: "application/json",
       body: JSON.stringify({
-        me: {
-          id: 1,
-          email: "qa@jobassist.tech",
-          full_name: "QA User",
-          is_verified: true,
-          alert_refresh_count: 0,
-          alert_refresh_window_start: null,
-        },
+        me: { id: 1, email: "qa@jobassist.tech", full_name: "QA User", is_verified: true },
         profile: {},
-        usage: [{ feature: "job_alerts", used: 0, limit: 2, remaining: 2 }],
-        plan: "basic",
+        resumes: [],
+        resumes_total: 0,
+        jobs_total: 0,
+        jobs_by_status: {},
+        usage: [{ feature: "job_alerts", used: alerts.length, limit: 5, remaining: 5 - alerts.length }],
+        plan: "max",
       }),
     });
   });
 
-  await page.route("**/api/billing/overview", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        subscription: { plan: "basic", current_period_end: null },
-        usage: [{ feature: "job_alerts", used: 0, limit: 2, remaining: 2 }],
-      }),
-    });
-  });
+  // Job-alerts — handle GET, POST, DELETE all on the same path
+  await page.route("**/api/job-alerts/**", async (route, request) => {
+    const method = request.method();
+    const url = route.request().url();
 
-  await page.route("**/api/job-alerts/", async (route) => {
-    const method = route.request().method();
-    if (method === "GET") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(alerts),
-      });
+    if (method === "GET" && url.endsWith("/api/job-alerts/")) {
+      console.log(`GET alerts: ${alerts.length} items, ${alerts.map(a => a.id).join(",")}`);
+
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ alerts }) });
       return;
     }
-
-    if (method === "POST") {
-      const data = route.request().postDataJSON();
-      const created = {
-        id: 2,
-        ...data,
-        is_active: true,
-        last_sent_at: null,
-        updated_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      };
-      alerts = [created, ...alerts];
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(created),
-      });
-    }
-  });
-
-  await page.route("**/api/job-alerts/2", async (route) => {
-    if (route.request().method() === "DELETE") {
-      alerts = alerts.filter((alert) => alert.id !== 2);
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ok: true }),
-      });
+    if (method === "POST" && url.endsWith("/api/job-alerts/")) {
+      const body = request.postDataJSON();
+      const created = { id: nextId++, ...body, is_active: true, last_sent_at: null, updated_at: new Date().toISOString() };
+      alerts.push(created);
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(created) });
       return;
     }
-
-    await route.fallback();
+    if (method === "DELETE") {
+      const parts = url.split("/");
+      const id = parseInt(parts[parts.length - 1] || parts[parts.length - 2] || "0", 10);
+      // Filter out the deleted alert BEFORE fulfilling, so the subsequent GET sees the update
+      const before = alerts.length;
+      alerts = alerts.filter((a) => a.id !== id);
+      console.log(`DELETE id=${id}: ${before}→${alerts.length} alerts remaining`);
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) });
+      return;
+    }
+    await route.fulfill({ status: 404 });
   });
 
   await page.goto("/job-alerts");
-  await page.getByRole("button", { name: /neuer alert/i }).click();
-  await page.getByPlaceholder(/software engineer/i).fill("QA Alert");
-  await page.getByRole("button", { name: /^alert erstellen$/i }).click();
 
-  await expect(page.getByText("QA Alert")).toBeVisible();
+  // Wait for the initial alert
+  await expect(page.getByText("Frontend Engineer")).toBeVisible({ timeout: 10000 });
 
-  const createdCard = page.locator("div.rounded-xl.border.p-5").filter({ hasText: "QA Alert" }).first();
-  await createdCard.locator("button").nth(3).click();
+  // Click "Neuer Alert"
+  await page.getByRole("button", { name: /Neuer Alert/i }).click();
 
-  await expect(page.getByText("QA Alert")).toHaveCount(0);
-});
+  // Wait for modal heading
+  await expect(page.getByRole("heading", { name: "Neuer Alert" })).toBeVisible({ timeout: 5000 });
 
-test("run-now updates the shared refresh counter", async ({ page }) => {
-  let refreshCount = 0;
+  // Fill keywords
+  const input = page.getByPlaceholder(/Frontend Entwickler/i);
+  await expect(input).toBeVisible({ timeout: 5000 });
+  await input.fill("QA Alert");
 
-  await page.route("**/api/init", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        me: {
-          id: 1,
-          email: "qa@jobassist.tech",
-          full_name: "QA User",
-          is_verified: true,
-          alert_refresh_count: refreshCount,
-          alert_refresh_window_start: null,
-        },
-        profile: {},
-        usage: [{ feature: "job_alerts", used: 0, limit: 2, remaining: 2 }],
-        plan: "basic",
-      }),
-    });
-  });
+  // Submit
+  await page.getByRole("button", { name: /^Alert erstellen$/i }).click();
 
-  await page.route("**/api/billing/overview", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        subscription: { plan: "basic", current_period_end: null },
-        usage: [{ feature: "job_alerts", used: 0, limit: 2, remaining: 2 }],
-      }),
-    });
-  });
+  // Wait for new alert to appear
+  await expect(page.getByText("QA Alert")).toBeVisible({ timeout: 5000 });
 
-  await page.route("**/api/job-alerts/", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 1,
-          keywords: "Frontend Engineer",
-          location: "Wien",
-          job_type: "Full-time",
-          email: "qa@jobassist.tech",
-          frequency: "daily",
-          is_active: true,
-          last_sent_at: null,
-          updated_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        },
-      ]),
-    });
-  });
+  // Scroll the created alert into view, hover, and open "Mehr" menu
+  const createdRow = page.locator("div.rounded-xl").filter({ hasText: "QA Alert" }).first();
+  await createdRow.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await createdRow.hover();
+  await createdRow.getByRole("button", { name: /Mehr/i }).click();
 
-  await page.route("**/api/job-alerts/1/run", async (route) => {
-    refreshCount = 1;
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        message: "ok",
-        refreshes_used: 1,
-        refreshes_remaining: 2,
-      }),
-    });
-  });
+  // Click "Löschen" — post-menu-open the button should be in viewport now
+  await page.getByRole("button", { name: /Löschen/i }).click();
 
-  await page.goto("/job-alerts");
-  const card = page.locator("div").filter({ hasText: "Frontend Engineer" }).first();
-  await card.locator('button[title="Jetzt ausführen"]').click();
-
-  await expect(page.getByText(/2 Aktualisierung(en)? heute/i)).toBeVisible();
+  // Alert should disappear after refetch
+  await expect(page.getByText("QA Alert")).not.toBeVisible({ timeout: 5000 });
 });

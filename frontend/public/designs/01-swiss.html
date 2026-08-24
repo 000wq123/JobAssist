@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>01 Swiss Editorial — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#FAFAFA;color:#111;font-family:Helvetica Neue,Helvetica,Arial,sans-serif;line-height:1.4}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:0;max-width:1200px;margin:0 auto;padding:0 24px}
+nav{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-bottom:2px solid #111}
+.logo{font-size:13px;font-weight:800;letter-spacing:-.02em;text-transform:uppercase}
+.nav-links{display:flex;gap:24px;font-size:12px;font-weight:600}
+.nav-links a{color:#111;text-decoration:none}
+.nav-links a.cta{padding:8px 20px;background:#111;color:#fff}
+.hero{grid-column:1/9;padding:120px 0 80px}
+.hero .overline{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#666;margin-bottom:16px}
+.hero h1{font-size:clamp(36px,6vw,72px);font-weight:900;letter-spacing:-.04em;line-height:.95;margin-bottom:24px}
+.hero h1 span{border-bottom:4px solid #111}
+.hero p{font-size:16px;color:#555;max-width:440px;margin-bottom:32px}
+.hero .btn{padding:14px 32px;background:#111;color:#fff;font-size:13px;font-weight:700;text-decoration:none;display:inline-block}
+.features{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#111;margin:60px 0}
+.features .feat{background:#FAFAFA;padding:40px 28px}
+.features .feat .num{font-size:48px;font-weight:900;color:#DDD;margin-bottom:12px}
+.features .feat h3{font-size:15px;font-weight:800;margin-bottom:8px}
+.features .feat p{font-size:12px;color:#666;line-height:1.6}
+footer{grid-column:1/-1;border-top:2px solid #111;padding:40px 0;display:flex;justify-content:space-between;font-size:11px;color:#888}
+footer a{color:#888;text-decoration:none}
+.back{position:fixed;top:20px;right:24px;font-size:11px;color:#888;text-decoration:none;z-index:10}
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← Alle Designs</a>
+<div class="grid">
+  <nav>
+    <div class="logo">JobAssist</div>
+    <div class="nav-links">
+      <a href="#">Funktionen</a>
+      <a href="#">KV-Check</a>
+      <a href="#" class="cta">Registrieren</a>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="overline">Für deinen ersten Job</div>
+    <h1>Bewerbungen,<br><span>die sich selbst</span><br>schreiben.</h1>
+    <p>JobAssist durchsucht karriere.at, willhaben.at, AMS und Stepstone. Gleicht dein Gehalt mit dem Kollektivvertrag ab. Schreibt Anschreiben. Füllt Formulare aus.</p>
+    <a href="#" class="btn">Kostenlos starten</a>
+  </div>
+  <div class="features">
+    <div class="feat"><div class="num">01</div><h3>Lebenslauf-Builder</h3><p>Fragen beantworten, A4-PDF exportieren. Kein Formatieren.</p></div>
+    <div class="feat"><div class="num">02</div><h3>KV-Gehalts-Check</h3><p>Angebot gegen Kollektivvertrag. Brutto, Netto, Stundenlohn.</p></div>
+    <div class="feat"><div class="num">03</div><h3>Autopilot</h3><p>Browser-Erweiterung. Ein Klick — Formular ausgefüllt.</p></div>
+  </div>
+  <footer>
+    <span>© 2026 JobAssist</span>
+    <span><a href="#">Datenschutz</a> · <a href="#">AGB</a> · <a href="#">Impressum</a></span>
+  </footer>
+</div>
+</body>
+</html>

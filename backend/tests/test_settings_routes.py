@@ -23,7 +23,8 @@ class FakeResult:
 
 
 @pytest.mark.asyncio
-async def test_get_profile_creates_default_profile_when_missing():
+async def test_get_profile_returns_transient_default_when_missing():
+    """GET never mutates state: a missing profile yields a transient default."""
     db = AsyncMock()
     db.add = MagicMock()
     current_user = SimpleNamespace(id=1)
@@ -33,8 +34,9 @@ async def test_get_profile_creates_default_profile_when_missing():
     result = await settings_routes.get_profile(db=db, current_user=current_user)
 
     assert result.user_id == 1
-    db.add.assert_called_once()
-    db.commit.assert_awaited_once()
+    # No writes on a GET.
+    db.add.assert_not_called()
+    db.commit.assert_not_awaited()
 
 
 @pytest.mark.asyncio

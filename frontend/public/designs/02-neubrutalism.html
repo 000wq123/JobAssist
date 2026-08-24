@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>02 Neubrutalismus — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap');
+body{background:#FFE600;color:#000;font-family:Space Grotesk,system-ui,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0;margin-bottom:80px}
+.logo{padding:8px 16px;background:#000;color:#FFE600;font-size:14px;font-weight:700;border:3px solid #000;box-shadow:4px 4px 0 #000}
+.nav-cta{padding:8px 20px;background:#FF5E5B;color:#fff;font-size:13px;font-weight:700;text-decoration:none;border:3px solid #000;box-shadow:4px 4px 0 #000}
+h1{font-size:clamp(40px,8vw,80px);font-weight:700;line-height:.9;margin-bottom:24px;max-width:700px}
+h1 .hl{padding:0 12px;background:#FF5E5B;color:#fff;display:inline-block;border:3px solid #000;box-shadow:6px 6px 0 #000}
+.hero p{font-size:18px;font-weight:400;max-width:480px;margin-bottom:32px}
+.btn{padding:16px 32px;background:#000;color:#FFE600;font-size:16px;font-weight:700;text-decoration:none;display:inline-block;border:3px solid #000;box-shadow:6px 6px 0 #FF5E5B;transition:all .1s}
+.btn:hover{transform:translate(2px,2px);box-shadow:4px 4px 0 #FF5E5B}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:80px 0}
+.card{padding:28px 24px;background:#fff;border:3px solid #000;box-shadow:6px 6px 0 #000}
+.card .emoji{font-size:32px;margin-bottom:12px}
+.card h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.card p{font-size:13px;color:#555;line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:60px 0 80px}
+.stat{border:3px solid #000;padding:20px;text-align:center;box-shadow:4px 4px 0 #FF5E5B}
+.stat .val{font-size:36px;font-weight:700}
+.stat .lbl{font-size:11px;text-transform:uppercase;font-weight:700;color:#555;margin-top:4px}
+footer{border-top:3px solid #000;padding:32px 0;display:flex;justify-content:space-between;font-size:12px;font-weight:600}
+.back{position:fixed;top:20px;right:20px;font-size:12px;font-weight:700;color:#000;text-decoration:none;background:#fff;padding:8px 14px;border:3px solid #000;box-shadow:3px 3px 0 #000;z-index:10}
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← Alle</a>
+<div class="wrap">
+  <nav>
+    <div class="logo">JobAssist</div>
+    <a href="#" class="nav-cta">Registrieren</a>
+  </nav>
+  <h1>Finde deinen <span class="hl">ersten Job</span> ohne Stress.</h1>
+  <p>JobAssist füllt Bewerbungen automatisch aus, checkt dein Gehalt gegen den Kollektivvertrag und schreibt Anschreiben.</p>
+  <a href="#" class="btn">Kostenlos loslegen →</a>
+  <div class="cards">
+    <div class="card"><div class="emoji">📄</div><h3>Lebenslauf</h3><p>Builder mit Live-Vorschau. PDF-Export in einem Klick.</p></div>
+    <div class="card"><div class="emoji">💰</div><h3>KV-Check</h3><p>Ist dein Angebot fair? Wir gleichen mit dem Kollektivvertrag ab.</p></div>
+    <div class="card"><div class="emoji">⚡</div><h3>Autopilot</h3><p>Browser-Erweiterung. Ein Klick, Formular fertig.</p></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="val">5</div><div class="lbl">Jobbörsen</div></div>
+    <div class="stat"><div class="val">100%</div><div class="lbl">Kostenlos</div></div>
+    <div class="stat"><div class="val">AGPL</div><div class="lbl">Open Source</div></div>
+    <div class="stat"><div class="val">KV</div><div class="lbl">Gehalts-Check</div></div>
+  </div>
+  <footer><span>© 2026 JobAssist</span><span>Open Source · AGPL-3.0</span></footer>
+</div>
+</body>
+</html>

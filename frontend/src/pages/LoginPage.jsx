@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Loader2, ArrowRight, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { authApi, initApi } from "../services/api";
 import useAuthStore from "../hooks/useAuthStore";
 import AuthLayout from "../components/ui/AuthLayout";
-import queryClient from "../queryClient";
 import { getApiErrorMessage } from "../utils/apiError";
 
-/** Login page — email/password sign-in flow. */
+/** Login page — email/password sign-in with split-screen layout. */
 export default function LoginPage() {
   const {
     register,
@@ -21,123 +20,143 @@ export default function LoginPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const navigate = useNavigate();
 
+  const t = "var(--ja-auth-transition)";
+
   const onSubmit = async (data) => {
     try {
       const res = await authApi.login(data);
-      login(res.data.access_token, res.data.refresh_token);
-      queryClient.clear();
-      navigate("/dashboard");
+      login(res.data.access_token);
 
-      initApi
-        .fetch()
-        .then((initRes) => {
-          const initData = initRes.data;
-          try {
-            localStorage.setItem("init", JSON.stringify(initData));
-          } catch {}
-          queryClient.setQueryData(["init"], initData);
-          if (initData.me) setUser(initData.me);
-        })
-        .catch(() => {});
+      try {
+        const initRes = await initApi.fetch();
+        if (initRes.data?.me) setUser(initRes.data.me);
+      } catch { /* init fetch failure is non-blocking */ }
+
+      navigate("/dashboard");
     } catch (err) {
       toast.error(getApiErrorMessage(err, "Anmeldung fehlgeschlagen"));
     }
   };
 
+  const inputCls = `w-full h-[48px] rounded-[8px] border px-3.5 text-[14px] placeholder:text-[var(--ja-auth-muted)] transition-colors duration-[110ms] outline-none`;
+
   return (
     <AuthLayout>
-      <div className="mb-7 text-center">
-        <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight leading-[1.1] text-[var(--color-fg)]">
-          Willkommen{" "}
-          <span className="font-display italic text-[var(--color-accent-300)]">zurück</span>.
-        </h1>
-        <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
+      {/* ── Heading ──────────────────────────────────────────────── */}
+      <div className="mb-7">
+        <h2 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.03em] leading-[1.15]"
+          style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
+          Willkommen zurück.
+        </h2>
+        <p className="mt-2 text-[14px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
           Setze deine Bewerbung fort.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-12 gap-y-4">
-        <div className="col-span-12">
-          <label className="block mb-1.5 text-[12px] font-semibold text-[var(--color-fg-muted)]" htmlFor="email">
+      {/* ── Form ─────────────────────────────────────────────────── */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Email */}
+        <div>
+          <label className="block mb-1.5 text-[12px] font-semibold" htmlFor="email"
+            style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
             E-Mail-Adresse
           </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-dim)]" />
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="du@beispiel.at"
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] pl-10 pr-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors"
-              {...register("email", { required: "E-Mail ist erforderlich" })}
-            />
-          </div>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="du@beispiel.at"
+            className={inputCls}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
+            style={{
+              background: "var(--ja-auth-input-bg, #fff)",
+              borderColor: errors.email ? "#ef4444" : "var(--ja-auth-input-border, #e7e6e3)",
+              color: "var(--ja-auth-text, #171717)",
+            }}
+            {...register("email", { required: "E-Mail ist erforderlich" })}
+          />
           {errors.email && (
-            <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.email.message}</p>
+            <p id="email-error" role="alert" className="mt-1.5 text-[12px] text-[#ef4444]">{errors.email.message}</p>
           )}
         </div>
 
-        <div className="col-span-12">
+        {/* Password */}
+        <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-[12px] font-semibold text-[var(--color-fg-muted)]" htmlFor="password">
+            <label className="block text-[12px] font-semibold" htmlFor="password"
+              style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
               Passwort
             </label>
             <Link
               to="/forgot-password"
-              className="text-[12px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+              className="text-[12px] font-medium hover:underline transition-colors"
+              style={{ color: "var(--ja-auth-link, #6152F3)" }}
             >
               Vergessen?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-dim)]" />
             <input
               id="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="Dein Passwort"
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] pl-10 pr-10 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors"
+              className={`${inputCls} pr-10`}
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
+              style={{
+                background: "var(--ja-auth-input-bg, #fff)",
+                borderColor: errors.password ? "#ef4444" : "var(--ja-auth-input-border, #e7e6e3)",
+                color: "var(--ja-auth-text, #171717)",
+              }}
               {...register("password", { required: "Passwort ist erforderlich" })}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--color-fg-dim)] hover:text-[var(--color-fg-muted)] transition-colors"
+              // eslint-disable-next-line no-restricted-syntax -- icon overlay inside relative input, not layout
+              className="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
               tabIndex={-1}
+              style={{ color: "var(--ja-auth-muted, #909090)" }}
               aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1.5 text-[12px] text-[var(--color-error)]">{errors.password.message}</p>
+            <p id="password-error" role="alert" className="mt-1.5 text-[12px] text-[#ef4444]">{errors.password.message}</p>
           )}
         </div>
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="col-span-12 mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[var(--color-accent-400)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="w-full h-[48px] rounded-[8px] inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-colors duration-[110ms] disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{
+            background: isSubmitting ? "var(--ja-auth-cta-hover, #4D40D6)" : "var(--ja-auth-cta, #6152F3)",
+            color: "var(--ja-auth-cta-text, #fff)",
+          }}
         >
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              <span>Anmeldung läuft…</span>
+              <span>Anmelden…</span>
             </>
           ) : (
-            <>
-              <span>Anmelden</span>
-              <ArrowRight className="h-4 w-4" />
-            </>
+            <span>Anmelden</span>
           )}
         </button>
       </form>
 
-      <p className="mt-7 text-center text-[13px] text-[var(--color-fg-muted)]">
+      {/* ── Bottom link ──────────────────────────────────────────── */}
+      <p className="mt-6 text-center text-[13px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
         Noch kein Konto?{" "}
         <Link
           to="/register"
-          className="font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+          className="font-semibold hover:underline transition-colors"
+          style={{ color: "var(--ja-auth-link, #6152F3)" }}
         >
           Jetzt registrieren
         </Link>

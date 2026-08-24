@@ -4,7 +4,7 @@ import { getApiErrorMessage } from "../src/utils/apiError.js";
 
 test("returns network fallback when no response exists", () => {
   const result = getApiErrorMessage(new Error("network"));
-  expect(result).toBe("Server nicht erreichbar. Bitte prüfe API-URL, Domain und CORS-Konfiguration.");
+  expect(result).toBe("Server nicht erreichbar. Bitte versuche es in einer Minute erneut.");
 });
 
 test("returns string detail when backend sends plain detail", () => {

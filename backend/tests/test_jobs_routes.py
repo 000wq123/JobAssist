@@ -41,7 +41,7 @@ def _make_job(**kwargs):
         description="Job desc", url="https://example.com/job/1",
         status="bookmarked", match_score=None, match_feedback=None,
         cover_letter=None, interview_qa=None, research_data=None,
-        notes=None, deadline=None,
+        notes=None, deadline=None, applied_at=None,
         created_at="2026-01-01T00:00:00Z",
         updated_at="2026-01-01T00:00:00Z",
     )

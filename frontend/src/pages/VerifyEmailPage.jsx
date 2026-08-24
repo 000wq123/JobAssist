@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Loader2, XCircle, ArrowRight } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 import AuthLayout from "../components/ui/AuthLayout";
 import useAuthStore from "../hooks/useAuthStore";
-import queryClient from "../queryClient";
 import { authApi, initApi } from "../services/api";
-import { STORAGE_KEYS } from "../storageKeys";
 
 /** Email-verification landing page — auto-verifies the token from the URL query string. */
 export default function VerifyEmailPage() {
@@ -15,7 +13,8 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState("loading");
   const setUser = useAuthStore((s) => s.setUser);
   const storedUser = useAuthStore((s) => s.user);
-  const hasSession = Boolean(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
+  const sessionToken = useAuthStore((s) => s.token);
+  const hasSession = Boolean(sessionToken);
 
   useEffect(() => {
     if (!token) {
@@ -29,50 +28,34 @@ export default function VerifyEmailPage() {
         setStatus("success");
         if (!hasSession) return;
 
-        const optimisticUser = storedUser ? { ...storedUser, is_verified: true } : null;
-        if (optimisticUser) {
-          setUser(optimisticUser);
-          queryClient.setQueryData(["init"], (old) =>
-            old ? { ...old, me: { ...old.me, is_verified: true } } : old
-          );
-          try {
-            const raw = localStorage.getItem("init");
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              localStorage.setItem(
-                "init",
-                JSON.stringify({ ...parsed, me: { ...parsed?.me, is_verified: true } })
-              );
-            }
-          } catch {}
-        }
+        if (storedUser) setUser({ ...storedUser, is_verified: true });
 
         try {
-          await queryClient.invalidateQueries({ queryKey: ["init"] });
           const initRes = await initApi.fetch();
-          try {
-            localStorage.setItem("init", JSON.stringify(initRes.data));
-          } catch {}
-          queryClient.setQueryData(["init"], initRes.data);
           if (initRes.data?.me) setUser(initRes.data.me);
-        } catch {}
+        } catch {
+          /* non-blocking */
+        }
       })
       .catch(() => setStatus("error"));
   }, [hasSession, setUser, storedUser, token]);
 
+  const t = "var(--ja-auth-transition)";
+
   return (
     <AuthLayout backTo={hasSession ? "/dashboard" : "/login"} backLabel={hasSession ? "Zum Dashboard" : "Zum Login"}>
-      <div className="text-center py-4">
+      <div className="text-center py-2">
         {status === "loading" && (
           <>
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-accent-500)]/10 mx-auto mb-5">
-              <Loader2 className="h-7 w-7 text-[var(--color-accent-300)] animate-spin" />
+            <div className="grid h-12 w-12 place-items-center rounded-xl mx-auto mb-5"
+              style={{ background: "rgba(97, 82, 243, 0.10)" }}>
+              <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--ja-auth-focus, #6152F3)" }} />
             </div>
-            <h1 className="text-[24px] font-semibold tracking-tight text-[var(--color-fg)]">
-              E-Mail wird{" "}
-              <span className="font-display italic text-[var(--color-accent-300)]">bestätigt</span>…
-            </h1>
-            <p className="mt-3 text-[13px] text-[var(--color-fg-muted)]">
+            <h2 className="text-[24px] font-bold tracking-[-0.03em] leading-[1.15]"
+              style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
+              E-Mail wird bestätigt…
+            </h2>
+            <p className="mt-3 text-[13px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
               Einen Moment bitte.
             </p>
           </>
@@ -80,44 +63,53 @@ export default function VerifyEmailPage() {
 
         {status === "success" && (
           <>
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-success-soft)] mx-auto mb-5">
-              <CheckCircle2 className="h-7 w-7 text-[var(--color-success)]" />
+            <div className="grid h-12 w-12 place-items-center rounded-xl mx-auto mb-5"
+              style={{ background: "rgba(93, 159, 104, 0.10)" }}>
+              <CheckCircle2 className="h-6 w-6 text-[#5d9f68]" />
             </div>
-            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)]">
-              E-Mail{" "}
-              <span className="font-display italic text-[var(--color-accent-300)]">bestätigt</span>.
-            </h1>
-            <p className="mt-3 text-[14px] text-[var(--color-fg-muted)]">
+            <h2 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.03em] leading-[1.15]"
+              style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
+              E-Mail bestätigt.
+            </h2>
+            <p className="mt-3 text-[14px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
               Deine E-Mail-Adresse wurde erfolgreich bestätigt.
             </p>
             <Link
               to={hasSession ? "/dashboard" : "/login"}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+              className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
+              style={{
+                background: "var(--ja-auth-cta, #6152F3)",
+                color: "var(--ja-auth-cta-text, #fff)",
+              }}
             >
               {hasSession ? "Zum Dashboard" : "Zum Login"}
-              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </>
         )}
 
         {status === "error" && (
           <>
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-error-soft)] mx-auto mb-5">
-              <XCircle className="h-7 w-7 text-[var(--color-error)]" />
+            <div className="grid h-12 w-12 place-items-center rounded-xl mx-auto mb-5"
+              style={{ background: "rgba(239, 68, 68, 0.10)" }}>
+              <XCircle className="h-6 w-6 text-[#ef4444]" />
             </div>
-            <h1 className="text-[26px] font-semibold tracking-tight text-[var(--color-fg)]">
+            <h2 className="text-[24px] font-bold tracking-[-0.03em] leading-[1.15]"
+              style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
               Bestätigung fehlgeschlagen
-            </h1>
-            <p className="mt-3 max-w-[40ch] mx-auto text-[14px] text-[var(--color-fg-muted)]">
+            </h2>
+            <p className="mt-3 max-w-[40ch] mx-auto text-[14px]" style={{ color: "var(--ja-auth-secondary, #666)", transition: t }}>
               Der Link ist ungültig oder abgelaufen. Bitte melde dich an und fordere eine neue
               Bestätigungs-Mail an.
             </p>
             <Link
               to="/login"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-500)] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--color-accent-400)] transition-colors"
+              className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
+              style={{
+                background: "var(--ja-auth-cta, #6152F3)",
+                color: "var(--ja-auth-cta-text, #fff)",
+              }}
             >
               Zum Login
-              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </>
         )}

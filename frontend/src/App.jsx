@@ -6,7 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import AppShell from "./components/shell/AppShell";
 import UpgradeModal from "./components/UpgradeModal";
 import useAuthStore from "./hooks/useAuthStore";
-import queryClient from "./queryClient";
+import { BootstrapProvider } from "./context/BootstrapContext";
 import { authApi } from "./services/api";
 
 const loadLandingPage = () => import("./pages/LandingPage");
@@ -16,13 +16,11 @@ const loadDashboardPage = () => import("./pages/DashboardPage");
 const loadCVBuilderPage = () => import("./pages/CVBuilderPage");
 const loadResumePage = () => import("./pages/ResumePage");
 const loadJobsLayout = () => import("./pages/JobsLayout");
-const loadJobsPage = () => import("./pages/JobsPage");
-const loadFindenPage = () => import("./pages/FindenPage");
 const loadJobDetailPage = () => import("./pages/JobDetailPage");
 const loadSettingsPage = () => import("./pages/SettingsPage");
 const loadJobAlertsPage = () => import("./pages/JobAlertsPage");
-const loadPricingPage = () => import("./pages/PricingPage");
-const loadBillingPage = () => import("./pages/BillingPage");
+// PricingPage / BillingPage removed — JobAssist is now free & open-source
+// Routes kept as dead imports for potential future re-enable via ENABLE_BILLING
 const loadTermsPage = () => import("./pages/TermsPage");
 const loadPrivacyPage = () => import("./pages/PrivacyPage");
 const loadImpressumPage = () => import("./pages/ImpressumPage");
@@ -39,12 +37,10 @@ const DashboardPage = lazy(loadDashboardPage);
 const CVBuilderPage = lazy(loadCVBuilderPage);
 const ResumePage = lazy(loadResumePage);
 const JobsLayout = lazy(loadJobsLayout);
-const FindenPage = lazy(loadFindenPage);
 const JobDetailPage = lazy(loadJobDetailPage);
 const SettingsPage = lazy(loadSettingsPage);
 const JobAlertsPage = lazy(loadJobAlertsPage);
-const PricingPage = lazy(loadPricingPage);
-const BillingPage = lazy(loadBillingPage);
+
 const TermsPage = lazy(loadTermsPage);
 const PrivacyPage = lazy(loadPrivacyPage);
 const ImpressumPage = lazy(loadImpressumPage);
@@ -57,7 +53,6 @@ const UnsubscribePage = lazy(loadUnsubscribePage);
 const preloaders = [
   loadDashboardPage,
   loadJobsLayout,
-  loadJobsPage,
 ];
 
 /**
@@ -85,7 +80,6 @@ function useUnauthenticatedRedirect() {
   useEffect(() => {
     const handler = () => {
       logout();
-      queryClient.clear();
       navigate("/login", { replace: true });
     };
     window.addEventListener("auth:unauthenticated", handler);
@@ -103,7 +97,7 @@ function AppRoutes() {
         <Route path="/" element={<Suspense fallback={null}><LandingPage /></Suspense>} />
         <Route path="/login" element={<Suspense fallback={null}><LoginPage /></Suspense>} />
         <Route path="/register" element={<Suspense fallback={null}><RegisterPage /></Suspense>} />
-        <Route path="/pricing" element={<Suspense fallback={null}><PricingPage /></Suspense>} />
+        
         <Route path="/terms" element={<Suspense fallback={null}><TermsPage /></Suspense>} />
         <Route path="/privacy" element={<Suspense fallback={null}><PrivacyPage /></Suspense>} />
         <Route path="/impressum" element={<Suspense fallback={null}><ImpressumPage /></Suspense>} />
@@ -116,21 +110,23 @@ function AppRoutes() {
         <Route
           element={
             <PrivateRoute>
-              <AppShell />
+              <BootstrapProvider>
+                <AppShell />
+              </BootstrapProvider>
             </PrivateRoute>
           }
         >
-          <Route path="/dashboard" element={<Suspense fallback={null}><DashboardPage /></Suspense>} />
-          <Route path="/lebenslauf" element={<Suspense fallback={null}><CVBuilderPage /></Suspense>} />
-          <Route path="/lebenslauf/analyse" element={<Suspense fallback={null}><ResumePage /></Suspense>} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/lebenslauf" element={<CVBuilderPage />} />
+          <Route path="/lebenslauf/analyse" element={<ResumePage />} />
           <Route path="/resume" element={<Navigate to="/lebenslauf" replace />} />
-          <Route path="/finden" element={<Suspense fallback={null}><FindenPage /></Suspense>} />
-          <Route path="/jobs" element={<Suspense fallback={null}><JobsLayout /></Suspense>}>
-            <Route path=":jobId" element={<Suspense fallback={null}><JobDetailPage /></Suspense>} />
+          <Route path="/finden" element={<Navigate to="/jobs?tab=finden" replace />} />
+          <Route path="/jobs" element={<JobsLayout />}>
+            <Route path=":jobId" element={<JobDetailPage />} />
           </Route>
-          <Route path="/job-alerts" element={<Suspense fallback={null}><JobAlertsPage /></Suspense>} />
-          <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
-          <Route path="/billing" element={<Suspense fallback={null}><BillingPage /></Suspense>} />
+          <Route path="/job-alerts" element={<JobAlertsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          
         </Route>
       </Routes>
     </ErrorBoundary>

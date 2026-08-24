@@ -43,6 +43,8 @@ export default function BottomSheet({ open, onClose, title, children }) {
     >
       {/* Backdrop */}
       <div
+        /* overlay, not layout */
+        // eslint-disable-next-line no-restricted-syntax
         className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"

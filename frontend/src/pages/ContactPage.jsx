@@ -46,11 +46,11 @@ export default function ContactPage() {
   };
 
   const inputBase =
-    "w-full rounded-lg border bg-[var(--color-bg-elev-1)] px-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--color-accent-500)]/70 transition-colors";
+    "w-full rounded-lg border bg-[var(--color-bg-elev-1)] px-3 py-2.5 text-[14px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-dim)] focus:outline-none focus:border-[var(--app-brand)]/70 transition-colors";
 
   return (
     <LegalLayout
-      title={<>Kontakt & <span className="font-display italic text-[var(--color-accent-300)]">Support</span></>}
+      title={<>Kontakt & <span className="font-display italic text-[var(--app-brand)]">Support</span></>}
       subtitle="Wir helfen dir gerne weiter — ob technische Frage, Feedback oder Datenschutzanliegen."
     >
       {submitted ? (
@@ -60,14 +60,14 @@ export default function ContactPage() {
           </div>
           <h2 className="text-[24px] sm:text-[28px] font-semibold tracking-tight leading-[1.15] text-[var(--color-fg)]">
             Nachricht{" "}
-            <span className="font-display italic text-[var(--color-accent-300)]">gesendet</span>.
+            <span className="font-display italic text-[var(--app-brand)]">gesendet</span>.
           </h2>
           <p className="mt-3 max-w-[44ch] mx-auto text-[14px] text-[var(--color-fg-muted)]">
             Vielen Dank für deine Nachricht. Wir melden uns in der Regel innerhalb von 24 Stunden bei dir.
           </p>
           <button
             onClick={() => setSubmitted(false)}
-            className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+            className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--app-brand)] hover:text-[var(--app-brand-hover)] transition-colors"
           >
             Weitere Nachricht senden
           </button>
@@ -162,13 +162,13 @@ export default function ContactPage() {
             <div className="col-span-12 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-5">
               <div className="flex items-start gap-3">
                 <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-[var(--color-accent-500)]/15 border border-[var(--color-accent-500)]/25">
-                  <Mail className="h-4 w-4 text-[var(--color-accent-300)]" aria-hidden="true" />
+                  <Mail className="h-4 w-4 text-[var(--app-brand)]" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">Direkter Kontakt</p>
                   <a
                     href="mailto:info@jobassist.tech"
-                    className="mt-0.5 inline-block text-[12px] text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] hover:underline transition-colors"
+                    className="mt-0.5 inline-block text-[12px] text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors"
                   >
                     info@jobassist.tech
                   </a>
@@ -186,13 +186,13 @@ export default function ContactPage() {
                 className="col-span-12 group rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-5 flex items-center gap-3 hover:border-[var(--color-accent-500)]/40 hover:bg-[var(--color-bg-elev-1)]/80 transition-colors"
               >
                 <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] group-hover:border-[var(--color-accent-500)]/30 transition-colors">
-                  <Icon className="h-4 w-4 text-[var(--color-fg-muted)] group-hover:text-[var(--color-accent-300)] transition-colors" />
+                  <Icon className="h-4 w-4 text-[var(--color-fg-muted)] group-hover:text-[var(--app-brand)] transition-colors" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">{label}</p>
                   <p className="mt-0.5 text-[11px] text-[var(--color-fg-dim)]">{sub}</p>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-fg-dim)] group-hover:text-[var(--color-accent-300)] group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-fg-dim)] group-hover:text-[var(--app-brand)] group-hover:translate-x-0.5 transition-all" />
               </div>
             ))}
           </div>

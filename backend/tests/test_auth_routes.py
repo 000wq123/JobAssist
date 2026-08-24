@@ -10,11 +10,15 @@ from app.schemas.user import UserLogin
 
 
 class FakeResult:
-    def __init__(self, *, scalar_one_or_none=None):
+    def __init__(self, *, scalar_one_or_none=None, scalars=None):
         self._scalar_one_or_none = scalar_one_or_none
+        self._scalars = scalars or []
 
     def scalar_one_or_none(self):
         return self._scalar_one_or_none
+
+    def scalars(self):
+        return SimpleNamespace(all=lambda: list(self._scalars))
 
 
 def _request(cookies: dict | None = None) -> SimpleNamespace:
@@ -58,7 +62,11 @@ async def test_login_allows_unverified_user(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_refresh_revokes_old_token_and_returns_new_tokens(monkeypatch):
+async def test_refresh_returns_new_access_token_keeping_refresh_token(monkeypatch):
+    """Non-rotating refresh: returns a new access token but keeps the same
+    refresh token. This is idempotent and concurrent-safe — multi-tab races
+    (where one tab rotates the token and another tab's in-flight request gets
+    rejected as revoked) cannot happen."""
     refresh_row = SimpleNamespace(
         user_id=3,
         expires_at=datetime.now(timezone.utc) + timedelta(days=1),
@@ -69,7 +77,6 @@ async def test_refresh_revokes_old_token_and_returns_new_tokens(monkeypatch):
     db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=refresh_row))
 
     monkeypatch.setattr(auth, "hash_refresh_token", lambda raw: "hashed-old")
-    monkeypatch.setattr(auth, "generate_refresh_token", lambda: ("new-refresh", "new-hash"))
     monkeypatch.setattr(auth, "create_access_token", lambda payload: "new-access")
 
     response = Response()
@@ -80,13 +87,16 @@ async def test_refresh_revokes_old_token_and_returns_new_tokens(monkeypatch):
         payload=auth.RefreshRequest(refresh_token="raw-refresh"),
     )
 
-    assert refresh_row.revoked is True
+    # Token must NOT be revoked — no rotation.
+    assert refresh_row.revoked is False
     assert result.access_token == "new-access"
-    assert result.refresh_token == "new-refresh"
-    set_cookie = response.headers.get("set-cookie", "")
-    assert "ja_refresh=new-refresh" in set_cookie
-    db.add.assert_called_once()
-    db.commit.assert_awaited_once()
+    # Same refresh token returned — no new token created.
+    assert result.refresh_token == "raw-refresh"
+    # No new cookie set — the existing one is still valid.
+    assert "ja_refresh" not in (response.headers.get("set-cookie") or "")
+    # No new row added to the DB.
+    db.add.assert_not_called()
+    db.commit.assert_not_awaited()
 
 
 @pytest.mark.asyncio

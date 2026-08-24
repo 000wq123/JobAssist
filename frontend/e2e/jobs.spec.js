@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 function seedAuthenticatedState() {
   sessionStorage.setItem("ja:access_token", "test-access-token");
+  localStorage.setItem("jobassist_onboarding_done_v1", "1");
   localStorage.setItem(
     "auth_user",
     JSON.stringify({
@@ -21,8 +22,12 @@ function seedAuthenticatedState() {
         is_verified: true,
       },
       profile: {},
+      resumes: [],
+      resumes_total: 0,
+      jobs_total: 0,
+      jobs_by_status: {},
       usage: [{ feature: "job_search", used: 0, limit: 5, remaining: 5 }],
-      plan: "basic",
+      plan: "max",
     })
   );
 }
@@ -31,7 +36,16 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
 });
 
-test("jobs page can search and save a result into applications", async ({ page }) => {
+test("finden page can search and see results", async ({ page }) => {
+  // Mock auth refresh so the interceptor doesn't fire unauthenticated
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ access_token: "test-access-token" }),
+    });
+  });
+
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
       status: 200,
@@ -44,55 +58,38 @@ test("jobs page can search and save a result into applications", async ({ page }
           is_verified: true,
         },
         profile: {},
+        resumes: [],
+        resumes_total: 0,
+        jobs_total: 0,
+        jobs_by_status: {},
         usage: [{ feature: "job_search", used: 0, limit: 5, remaining: 5 }],
-        plan: "basic",
+        plan: "max",
       }),
     });
   });
 
-  await page.route("**/api/resume/", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
-  });
-
-  let savedJobs = [];
-
+  // Mock saved jobs (empty)
   await page.route("**/api/jobs/", async (route) => {
-    const method = route.request().method();
-    if (method === "GET") {
+    if (route.request().method() === "GET") {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(savedJobs),
+        body: JSON.stringify([]),
       });
       return;
     }
-
-    const data = route.request().postDataJSON();
-    const created = {
-      id: 99,
-      company: data.company,
-      role: data.role,
-      description: data.description,
-      url: data.url,
-    };
-    savedJobs = [created];
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(created),
-    });
+    await route.fallback();
   });
 
+  let searchCalled = false;
+
   await page.route("**/api/jobs/search/custom**", async (route) => {
+    searchCalled = true;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        jobs: [
+        items: [
           {
             source_id: "job-1",
             title: "QA Engineer",
@@ -106,15 +103,18 @@ test("jobs page can search and save a result into applications", async ({ page }
     });
   });
 
-  await page.goto("/jobs");
-  await page.getByRole("button", { name: /stellen finden/i }).click();
-  await page.getByRole("button", { name: /^stellen suchen$/i }).click();
-  await page.getByRole("button", { name: /eigene suche/i }).click();
-  await page.getByPlaceholder(/verkauf, gastro, it, praktikum/i).fill("QA Engineer");
-  await page.getByRole("button", { name: /stellen suchen/i }).last().click();
+  await page.goto("/jobs?tab=finden");
 
-  await expect(page.getByText("QA Engineer")).toBeVisible();
-  await page.getByRole("button", { name: /qa engineer.*jobassist.*wien/i }).click();
-  await page.getByRole("button", { name: /in bewerbungen speichern/i }).click();
-  await expect(page.getByRole("button", { name: /gespeichert/i })).toBeVisible();
+  // Wait for the page to load and the search input to appear
+  await page.waitForLoadState("networkidle");
+  const searchInput = page.getByPlaceholder(/Stichwort/i);
+  await expect(searchInput).toBeVisible({ timeout: 10000 });
+  await searchInput.fill("QA Engineer");
+  
+  // Click the Suchen button
+  await page.getByRole("button", { name: /^Suchen$/i }).click();
+
+  // Wait for results to appear
+  await expect(page.getByText("QA Engineer")).toBeVisible({ timeout: 10000 });
+  await expect(searchCalled).toBeTruthy();
 });

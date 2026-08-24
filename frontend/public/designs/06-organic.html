@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>06 Organic Soft — JobAssist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#F5F2EB;color:#3D3929;font-family:Georgia,serif;line-height:1.6}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:28px 0;margin-bottom:80px}
+.logo{font-size:16px;font-style:italic;color:#6B8F71}
+.nav-cta{padding:10px 24px;background:#6B8F71;color:#fff;font-size:13px;text-decoration:none;border-radius:24px;font-family:system-ui,sans-serif;font-weight:600;transition:all .2s}
+.nav-cta:hover{background:#5A7D60}
+h1{font-size:clamp(36px,7vw,56px);font-weight:400;line-height:1.15;margin-bottom:24px;font-style:italic}
+h1 em{color:#6B8F71;font-style:italic}
+.hero p{font-size:16px;color:#7A7668;max-width:440px;margin-bottom:36px;font-family:system-ui,sans-serif;line-height:1.7}
+.btn{padding:14px 32px;background:#6B8F71;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:24px;display:inline-block;font-family:system-ui,sans-serif;transition:all .2s;box-shadow:0 4px 16px rgba(107,143,113,.2)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(107,143,113,.3)}
+.illustration{margin:60px 0;display:flex;gap:12px;flex-wrap:wrap}
+.leaf{flex:1;min-width:120px;height:160px;border-radius:100px 20px 100px 20px;opacity:.7}
+.leaf:nth-child(1){background:linear-gradient(135deg,#6B8F71,#8DB89A)}
+.leaf:nth-child(2){background:linear-gradient(135deg,#8DB89A,#A8C9B0);border-radius:20px 100px 20px 100px}
+.leaf:nth-child(3){background:linear-gradient(135deg,#5A7D60,#6B8F71)}
+.leaf:nth-child(4){background:linear-gradient(135deg,#A8C9B0,#C5DDC8);border-radius:20px 100px 20px 100px}
+.leaf:nth-child(5){background:linear-gradient(135deg,#6B8F71,#8DB89A)}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin:80px 0}
+.feat{text-align:center}
+.feat .dot{width:60px;height:60px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.feat:nth-child(1) .dot{background:#E8F0EA}
+.feat:nth-child(2) .dot{background:#F0E8E0}
+.feat:nth-child(3) .dot{background:#E0ECF0}
+.feat h3{font-size:16px;font-weight:400;font-style:italic;margin-bottom:6px}
+.feat p{font-size:13px;color:#7A7668;font-family:system-ui,sans-serif}
+footer{padding:40px 0;border-top:2px solid #E0DCD0;display:flex;justify-content:space-between;font-size:12px;color:#999;font-family:system-ui,sans-serif}
+.back{position:fixed;top:20px;right:20px;font-size:12px;color:#6B8F71;text-decoration:none;background:#fff;padding:8px 14px;border-radius:16px;z-index:10;font-family:system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← Alle</a>
+<div class="wrap">
+  <nav><div class="logo">JobAssist</div><a href="#" class="nav-cta">Kostenlos starten</a></nav>
+  <h1>Bewerbungen, die sich <em>selbst schreiben.</em></h1>
+  <p>JobAssist durchsucht karriere.at, willhaben.at, AMS und Stepstone. Gleicht dein Gehalt mit dem Kollektivvertrag ab. Alles automatisch.</p>
+  <a href="#" class="btn">Jetzt registrieren →</a>
+  <div class="illustration">
+    <div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div>
+  </div>
+  <div class="features">
+    <div class="feat"><div class="dot">📄</div><h3>Lebenslauf-Builder</h3><p>Fragen beantworten, Vorschau, PDF-Export.</p></div>
+    <div class="feat"><div class="dot">🛡️</div><h3>KV-Check</h3><p>Kollektivvertrag. Brutto. Netto. Stundenlohn.</p></div>
+    <div class="feat"><div class="dot">⚡</div><h3>Autopilot</h3><p>Ein Klick, Formular ausgefüllt. Browser-Addon.</p></div>
+  </div>
+  <footer><span>© 2026 JobAssist — Open Source</span><span>Bewerbungstools für Österreich</span></footer>
+</div>
+</body>
+</html>

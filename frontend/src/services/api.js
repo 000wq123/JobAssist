@@ -1,7 +1,4 @@
-import axios from "axios";
 import useAuthStore from "../hooks/useAuthStore";
-import queryClient from "../queryClient";
-import { STORAGE_KEYS, removeKey } from "../storageKeys";
 
 export const defaultBaseURL = (() => {
   const url = import.meta.env.VITE_API_URL || (() => {
@@ -26,13 +23,13 @@ export const defaultBaseURL = (() => {
 })();
 
 // Default timeouts per endpoint. AI endpoints can take 30+ s, so the default
-// 10 s timeout was killing legitimate requests mid-flight.
+// 15 s timeout would kill legitimate requests mid-flight.
 const TIMEOUT_DEFAULT_MS = 15000;
 const TIMEOUT_AI_MS = 90000;
 const AI_PATH_HINTS = [
   "/cover-letter/",
   "/interview/",
-  "/resume/", // upload + analyze can be slow
+  "/resume/",
   "/jobs/match",
   "/match",
   "/courses",
@@ -44,186 +41,174 @@ function pickTimeout(url = "") {
   return AI_PATH_HINTS.some((hint) => url.includes(hint)) ? TIMEOUT_AI_MS : TIMEOUT_DEFAULT_MS;
 }
 
-const api = axios.create({
-  baseURL: defaultBaseURL,
-  headers: { "Content-Type": "application/json" },
-  timeout: TIMEOUT_DEFAULT_MS,
-  // Required so the browser sends the httpOnly refresh-token cookie
-  // on /auth/refresh and accepts Set-Cookie on /auth/login.
-  withCredentials: true,
-});
-
-// Access tokens live only in sessionStorage / Zustand (memory).
-// Refresh tokens are httpOnly cookies set by the backend.
-
-const USAGE_FEATURES = [
-  { match: "/resume/analyze", feature: "cv_analysis" },
-  { match: "/cover-letter/generate", feature: "cover_letter" },
-  { match: "/interview/generate", feature: "ai_chat" },
-  { match: "/interview/rate",     feature: "ai_chat" },
-  { match: "/jobs/match", feature: "cv_analysis" },
-  { match: "/research/", feature: "ai_chat" },
-  { match: "/jobs/search/recommended", feature: "job_search" },
-  { match: "/jobs/search/custom", feature: "job_search" },
-  { match: "/jobs/search/jooble", feature: "job_search" },
-  { match: "/jobs/search/karriere", feature: "job_search" },
-  { match: "/jobs/search/willhaben", feature: "job_search" },
-  { match: "/jobs/search/ams", feature: "job_search" },
-];
-
-function updateUsageList(usage = [], feature, delta = 1) {
-  return usage.map((item) => {
-    if (item.feature !== feature) return item;
-    const nextUsed = (item.used || 0) + delta;
-    return {
-      ...item,
-      used: nextUsed,
-      remaining: item.limit === -1 ? -1 : Math.max(0, (item.limit || 0) - nextUsed),
-    };
-  });
-}
-
-function syncLocalStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
-}
-
-function bumpUsageCaches(feature) {
-  if (!feature) return;
-
-  queryClient.setQueryData(["billing-overview"], (old) => {
-    if (!old?.usage) return old;
-    const next = { ...old, usage: updateUsageList(old.usage, feature, 1) };
-    syncLocalStorage("billing", next);
-    return next;
-  });
-
-  queryClient.setQueryData(["init"], (old) => {
-    if (!old?.usage) return old;
-    const next = { ...old, usage: updateUsageList(old.usage, feature, 1) };
-    syncLocalStorage("init", next);
-    return next;
-  });
-}
-
-// Attach the in-memory access token + a per-route timeout to every request.
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+/**
+ * Error object shaped like an axios error so call sites that read
+ * `err.response?.status` / `err.response?.data` keep working unchanged.
+ */
+export class ApiError extends Error {
+  constructor(message, { status, data, url, config } = {}) {
+    super(message);
+    this.name = "ApiError";
+    if (status != null) this.response = { status, data };
+    this.config = config || { url };
   }
-  // Honour an explicit `timeout` set at the call site, otherwise pick by URL.
-  if (config.timeout == null || config.timeout === TIMEOUT_DEFAULT_MS) {
-    config.timeout = pickTimeout(config.url || "");
-  }
-  return config;
-});
+}
 
-// Silent token refresh state
+// Single-flight silent token refresh.
 let isRefreshing = false;
-let refreshQueue = []; // callbacks waiting for new token
+let refreshQueue = [];
 
 function processQueue(error, token = null) {
   refreshQueue.forEach((cb) => (error ? cb.reject(error) : cb.resolve(token)));
   refreshQueue = [];
 }
 
-/** Tell the rest of the app the session is gone — handled in `App.jsx`. */
 function broadcastUnauthenticated() {
-  removeKey(STORAGE_KEYS.ACCESS_TOKEN);
-  removeKey(STORAGE_KEYS.REFRESH_TOKEN);
-  // Custom event so the navigation handler stays in React-Router land —
-  // never use `window.location.href` (which kills the SPA cache + bundle).
+  try {
+    sessionStorage.removeItem("ja:access_token");
+  } catch {
+    /* ignore */
+  }
+  // Custom event so the navigation handler stays in React-Router land.
   window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
 }
 
-// Handle 401 globally — attempt silent refresh before giving up.
-// The refresh endpoint reads the httpOnly cookie set at login, so this
-// works even though JavaScript can no longer see the refresh token.
-api.interceptors.response.use(
-  (res) => {
-    // Keep monthly usage counters in sync immediately, then refetch in background.
-    const url = res.config?.url || "";
-    const usageFeature = USAGE_FEATURES.find((entry) => url.includes(entry.match))?.feature;
-    if (usageFeature) {
-      bumpUsageCaches(usageFeature);
-      queryClient.invalidateQueries({ queryKey: ["billing-overview"] });
-      queryClient.invalidateQueries({ queryKey: ["init"] });
-    }
-    return res;
-  },
-  async (err) => {
-    // Usage limit hit — trigger upgrade modal
-    if (err.response?.status === 403 && err.response?.data?.detail?.error === "usage_limit") {
-      queryClient.invalidateQueries({ queryKey: ["billing-overview"] });
-      queryClient.invalidateQueries({ queryKey: ["init"] });
-      const event = new CustomEvent("usage-limit", { detail: err.response.data.detail });
-      window.dispatchEvent(event);
-      return Promise.reject(err);
+async function rawRequest(method, url, body, config = {}) {
+  const { params, headers = {}, signal: externalSignal, timeout, _retried } = config;
+
+  let fullUrl = url.startsWith("http") ? url : `${defaultBaseURL}${url}`;
+  if (params) {
+    const qs = new URLSearchParams(params).toString();
+    if (qs) fullUrl += (fullUrl.includes("?") ? "&" : "?") + qs;
+  }
+
+  const token = useAuthStore.getState().token;
+  const finalHeaders = { "Content-Type": "application/json", ...headers };
+  if (token) finalHeaders.Authorization = `Bearer ${token}`;
+
+  let fetchBody;
+  if (body === undefined || body === null) {
+    fetchBody = undefined;
+  } else if (typeof FormData !== "undefined" && body instanceof FormData) {
+    // Let the browser set the multipart boundary.
+    delete finalHeaders["Content-Type"];
+    fetchBody = body;
+  } else {
+    fetchBody = JSON.stringify(body);
+  }
+
+  const effectiveTimeout = timeout ?? pickTimeout(url);
+  const controller = new AbortController();
+  let timer;
+  if (effectiveTimeout) {
+    timer = setTimeout(() => controller.abort(), effectiveTimeout);
+  }
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", onExternalAbort);
+  }
+
+  try {
+    const res = await fetch(fullUrl, {
+      method,
+      headers: finalHeaders,
+      body: fetchBody,
+      credentials: "include",
+      signal: controller.signal,
+    });
+
+    const text = await res.text();
+    let data = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
     }
 
-    // Job-cap (per-user 500 max) → surfaced via the same upgrade-modal pattern
-    if (err.response?.status === 403 && err.response?.data?.detail?.error === "job_cap_reached") {
-      const detail = err.response.data.detail;
-      window.dispatchEvent(new CustomEvent("rate-limited", { detail: { message: detail.message } }));
-      return Promise.reject(err);
+    if (!res.ok) {
+      const detail = data?.detail;
+      const message =
+        typeof detail === "string" ? detail : detail?.message || `Request failed (${res.status})`;
+      throw new ApiError(message, {
+        status: res.status,
+        data,
+        url,
+        config: { url, method, _retried },
+      });
     }
 
-    // Rate limit hit (slowapi / job alert cooldown)
-    if (err.response?.status === 429) {
-      const detail = err.response?.data?.detail || err.response?.data?.error;
-      const message = typeof detail === "string" ? detail : "Zu viele Anfragen. Bitte warte kurz.";
-      const event = new CustomEvent("rate-limited", { detail: { message } });
-      window.dispatchEvent(event);
-      return Promise.reject(err);
-    }
+    return { data, status: res.status, headers: res.headers, config: { url, method } };
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (externalSignal) externalSignal.removeEventListener("abort", onExternalAbort);
+  }
+}
 
-    const url = err.config?.url || "";
+async function request(method, url, body, config = {}) {
+  try {
+    return await rawRequest(method, url, body, config);
+  } catch (err) {
+    const status = err?.response?.status;
     const isAuthEndpoint =
       url.includes("/auth/login") ||
       url.includes("/auth/register") ||
       url.includes("/auth/refresh");
 
-    if (err.response?.status === 401 && !isAuthEndpoint && !err.config._retried) {
+    // 401 → one silent refresh, then retry the original request once.
+    if (status === 401 && !isAuthEndpoint && !config._retried) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
           refreshQueue.push({ resolve, reject });
-        }).then((token) => {
-          err.config.headers.Authorization = `Bearer ${token}`;
-          err.config._retried = true;
-          return api(err.config);
         });
+        return rawRequest(method, url, body, { ...config, _retried: true });
       }
 
       isRefreshing = true;
-      err.config._retried = true;
-
       try {
-        // No body — refresh token rides on the httpOnly cookie. Legacy clients
-        // can still send `{ refresh_token: ... }`; the backend prefers the cookie.
-        const res = await api.post("/auth/refresh", {});
-        const { access_token } = res.data;
+        // No body — the refresh token rides on the httpOnly cookie.
+        const res = await rawRequest("POST", "/auth/refresh", {}, {});
+        const access_token = res.data?.access_token;
         if (!access_token) throw new Error("Refresh response missing access_token");
         useAuthStore.getState().setAccessToken(access_token);
-        // Invalidate cached queries so they re-fetch with the fresh token.
-        queryClient.invalidateQueries();
-
         processQueue(null, access_token);
-        err.config.headers.Authorization = `Bearer ${access_token}`;
-        return api(err.config);
+        return rawRequest(method, url, body, { ...config, _retried: true });
       } catch (refreshErr) {
         processQueue(refreshErr, null);
         broadcastUnauthenticated();
-        return Promise.reject(refreshErr);
+        throw refreshErr;
       } finally {
         isRefreshing = false;
       }
     }
 
-    return Promise.reject(err);
+    // Usage / cap / rate-limit signals are kept for future re-enablement of billing.
+    if (status === 403 && err?.response?.data?.detail?.error === "usage_limit") {
+      window.dispatchEvent(new CustomEvent("usage-limit", { detail: err.response.data.detail }));
+    }
+    if (status === 403 && err?.response?.data?.detail?.error === "job_cap_reached") {
+      const detail = err.response.data.detail;
+      window.dispatchEvent(new CustomEvent("rate-limited", { detail: { message: detail.message } }));
+    }
+    if (status === 429) {
+      const detail = err?.response?.data?.detail || err?.response?.data?.error;
+      const message = typeof detail === "string" ? detail : "Zu viele Anfragen. Bitte warte kurz.";
+      window.dispatchEvent(new CustomEvent("rate-limited", { detail: { message } }));
+    }
+
+    throw err;
   }
-);
+}
+
+const api = {
+  get: (url, config) => request("GET", url, undefined, config),
+  post: (url, body, config) => request("POST", url, body, config),
+  patch: (url, body, config) => request("PATCH", url, body, config),
+  put: (url, body, config) => request("PUT", url, body, config),
+  delete: (url, config) => request("DELETE", url, undefined, config),
+};
 
 // --- Auth ---
 // Refresh / logout rely on the httpOnly cookie — no body required.
@@ -347,11 +332,13 @@ export const initApi = {
 };
 
 // --- Billing ---
+// Billing is disabled by default (ENABLE_BILLING env toggle).
+// Stubbed with no-ops so existing imports don't break.
 export const billingApi = {
-  overview: () => api.get("/billing/overview"),
-  plans: () => api.get("/billing/plans"),
-  createCheckout: (plan) => api.post("/billing/create-checkout-session", { plan }),
-  createPortal: () => api.post("/billing/create-portal-session"),
+  overview: () => Promise.resolve({ data: { plan: "max", usage: [] } }),
+  plans: () => Promise.resolve({ data: [] }),
+  createCheckout: () => Promise.reject(new Error("Billing is disabled")),
+  createPortal: () => Promise.reject(new Error("Billing is disabled")),
 };
 
 // --- Profile / CV Builder ---
@@ -384,6 +371,5 @@ export const kvWageApi = {
   list: (year = 2025) => api.get(`/kv-wages?year=${year}`),
   get: (category, year = 2025) => api.get(`/kv-wages/${category}?year=${year}`),
 };
-
 
 export default api;

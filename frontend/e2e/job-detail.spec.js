@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 function seedAuthenticatedState() {
   sessionStorage.setItem("ja:access_token", "test-access-token");
+  localStorage.setItem("jobassist_onboarding_done_v1", "1");
   localStorage.setItem(
     "auth_user",
     JSON.stringify({
@@ -21,8 +22,12 @@ function seedAuthenticatedState() {
         is_verified: true,
       },
       profile: {},
+      resumes: [{ id: 7, filename: "resume.pdf" }],
+      resumes_total: 1,
+      jobs_total: 1,
+      jobs_by_status: { bookmarked: 1 },
       usage: [],
-      plan: "basic",
+      plan: "max",
     })
   );
 }
@@ -31,7 +36,16 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
 });
 
-test("job detail can generate interview preparation", async ({ page }) => {
+test("job detail can generate a cover letter", async ({ page }) => {
+  // Mock auth refresh so the interceptor doesn't fire unauthenticated
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ access_token: "test-access-token" }),
+    });
+  });
+
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
       status: 200,
@@ -44,21 +58,20 @@ test("job detail can generate interview preparation", async ({ page }) => {
           is_verified: true,
         },
         profile: {},
+        resumes: [{ id: 7, filename: "resume.pdf" }],
+        resumes_total: 1,
+        jobs_total: 1,
+        jobs_by_status: { bookmarked: 1 },
         usage: [],
-        plan: "basic",
+        plan: "max",
       }),
     });
   });
 
-  await page.route("**/api/resume/", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([{ id: 7, filename: "resume.pdf" }]),
-    });
-  });
+  let coverLetterGenerated = false;
 
-  await page.route("**/api/jobs/123", async (route) => {
+  // Mock the single job endpoint (used by both JobDetailPage and the list page)
+  await page.route(/\/api\/jobs\/123/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -67,55 +80,41 @@ test("job detail can generate interview preparation", async ({ page }) => {
         company: "JobAssist",
         role: "QA Engineer",
         description: "Teste Produktqualität und Nutzerflüsse.",
+        status: "bookmarked",
+        notes: "",
+        deadline: null,
         url: "https://example.com/jobs/qa",
         match_score: null,
         match_feedback: null,
-        cover_letter: null,
+        cover_letter: coverLetterGenerated
+          ? "Sehr geehrte Damen und Herren,\n\nich bewerbe mich als QA Engineer."
+          : null,
         interview_qa: null,
         research_data: null,
       }),
     });
   });
 
-  await page.route("**/api/jobs/", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 123,
-          company: "JobAssist",
-          role: "QA Engineer",
-          description: "Teste Produktqualität und Nutzerflüsse.",
-          url: "https://example.com/jobs/qa",
-        },
-      ]),
-    });
-  });
-
-  await page.route("**/api/interview/generate", async (route) => {
+  await page.route("**/api/cover-letter/generate", async (route) => {
+    coverLetterGenerated = true;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         id: 123,
-        interview_qa: JSON.stringify([
-          {
-            question: "Wie strukturierst du einen Regressionstest?",
-            type: "technical",
-            answer: "Ich priorisiere Kernflüsse und risikoreiche Bereiche.",
-            tip: "Nenne ein konkretes Beispiel aus einem Projekt.",
-          },
-        ]),
+        cover_letter: "Sehr geehrte Damen und Herren,\n\nich bewerbe mich als QA Engineer.",
       }),
     });
   });
 
   await page.goto("/jobs/123");
 
-  const actionButtons = page.locator("div.animate-slide-up.mb-8.flex.flex-wrap.gap-3 button");
-  await actionButtons.nth(2).click();
+  // Click the cover letter button
+  const ctaButton = page.getByRole("button", { name: /bewerbung schreiben/i });
+  await expect(ctaButton).toBeVisible({ timeout: 10000 });
+  await ctaButton.click();
 
-  await expect(page.getByText(/wie strukturierst du einen regressionstest/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: /q1/i })).toBeVisible();
+  // After generation, the button should change to "Anschreiben ansehen"
+  await expect(page.getByRole("button", { name: /anschreiben ansehen/i })).toBeVisible({ timeout: 15000 });
+  await expect(coverLetterGenerated).toBeTruthy();
 });

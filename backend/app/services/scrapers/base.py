@@ -103,7 +103,7 @@ async def _fetch_html(url: str, params: Optional[dict] = None) -> BeautifulSoup:
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         resp = await client.get(url, params=params, headers=_HEADERS)
         resp.raise_for_status()
-        return BeautifulSoup(resp.text, "lxml")
+        return BeautifulSoup(resp.text, "html.parser")
 
 
 # ── Normalisation helpers ────────────────────────────────────────────────────

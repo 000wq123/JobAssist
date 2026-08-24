@@ -72,7 +72,7 @@ export default function CookieConsentBanner() {
             Einstellungen widerrufen.{" "}
             <Link
               to="/privacy"
-              className="underline decoration-dotted text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] transition-colors"
+              className="underline decoration-dotted text-[var(--color-fg)] hover:text-[var(--color-fg-muted)] transition-colors"
             >
               Datenschutzerklärung
             </Link>

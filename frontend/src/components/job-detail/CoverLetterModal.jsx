@@ -77,11 +77,11 @@ export default function CoverLetterModal({ open, onClose, job, followUpDays = 10
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Anschreiben"
+        aria-labelledby="coverletter-title"
         className="w-full sm:max-w-2xl flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60"
       >
         <div className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <h2 className="col-span-9 text-[14px] font-semibold tracking-tight text-[var(--color-fg)] truncate">
+          <h2 id="coverletter-title" className="col-span-9 text-[14px] font-semibold tracking-tight text-[var(--color-fg)] truncate">
             Anschreiben{job.company ? ` · ${job.company}` : ""}
           </h2>
           <div className="col-span-3 justify-self-end flex items-center gap-1">

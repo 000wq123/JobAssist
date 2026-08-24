@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0A0A0A" />
+    <meta name="theme-color" content="#FAFAF8" />
+    <!-- Anti-flash: apply theme before first paint -->
+    <script>
+      (function() {
+        var t = 'system';
+        try { var raw = localStorage.getItem('jobassist_theme_v1'); if (raw) t = raw; } catch(e) {}
+        var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', isDark ? '#0C0C10' : '#FAFAF8');
+      })();
+    </script>
 
     <!-- SEO / AEO core signals -->
     <title>JobAssist – Bewerben. Klar. Schnell. Mit KI.</title>
@@ -51,20 +62,8 @@
             "offers": [
               {
                 "@type": "Offer",
-                "name": "Basic",
+                "name": "Kostenlos",
                 "price": "0",
-                "priceCurrency": "EUR"
-              },
-              {
-                "@type": "Offer",
-                "name": "Pro",
-                "price": "4.99",
-                "priceCurrency": "EUR"
-              },
-              {
-                "@type": "Offer",
-                "name": "Max",
-                "price": "7.99",
                 "priceCurrency": "EUR"
               }
             ],

@@ -3,14 +3,14 @@ import LegalLayout from "../components/ui/LegalLayout";
 
 /** Static GDPR-compliant privacy policy page. */
 export default function PrivacyPage() {
-  const linkClass = "text-[var(--color-accent-300)] hover:text-[var(--color-accent-200)] hover:underline transition-colors";
+  const linkClass = "text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors";
   const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
   const h2Class = "text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-3";
   const h3Class = "text-[14px] font-semibold text-[var(--color-fg)] mt-4 mb-2";
 
   return (
     <LegalLayout
-      title={<><span className="font-display italic text-[var(--color-accent-300)]">Datenschutz</span>­erklärung</>}
+      title={<><span className="font-display italic text-[var(--app-brand)]">Datenschutz</span>­erklärung</>}
       subtitle="Stand: 5. April 2026 — gemäß DSGVO (EU-Datenschutz-Grundverordnung)"
     >
       <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
 
         <section className={sectionClass}>
           <h2 className={h2Class}>4. KI-Verarbeitung (Lebenslauf-Analyse)</h2>
-          <div className="rounded-xl border border-[var(--color-accent-500)]/25 bg-[var(--color-accent-500)]/10 p-4">
+          <div className="rounded-xl border border-[var(--app-brand)]/25 bg-[var(--app-brand)]/10 p-4">
             <p>
               Wenn du einen Lebenslauf hochlädst oder ein Anschreiben generierst, werden die Inhalte an{" "}
               <strong className="text-[var(--color-fg)]">Groq, Inc.</strong> (KI-API) übermittelt, um die Analyse

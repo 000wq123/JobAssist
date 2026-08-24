@@ -70,8 +70,8 @@ async def _register_user(client: AsyncClient, email: str):
 async def test_jobs_idor_blocked(idor_env):
     client = idor_env["client"]
 
-    a_tokens = await _register_user(client, email="a@example.com")
-    b_tokens = await _register_user(client, email="b@example.com")
+    a_tokens = await _register_user(client, email="a@gmail.com")
+    b_tokens = await _register_user(client, email="b@gmail.com")
 
     create = await client.post(
         "/api/jobs/",
@@ -110,6 +110,6 @@ async def test_jobs_idor_blocked(idor_env):
         headers={"Authorization": f"Bearer {b_tokens['access_token']}"},
     )
     assert list_b.status_code == 200
-    assert all(item["id"] != job_id for item in list_b.json()) or (
-        isinstance(list_b.json(), dict) and all(i["id"] != job_id for i in list_b.json().get("items", []))
-    )
+    body = list_b.json()
+    items = body.get("items", []) if isinstance(body, dict) else body
+    assert all(item["id"] != job_id for item in items)

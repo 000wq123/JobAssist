@@ -112,7 +112,9 @@ async def test_auth_register_verify_refresh_and_delete_account_integration(integ
     assert refresh_response.status_code == 200, refresh_response.text
     refreshed = refresh_response.json()
     assert refreshed["access_token"]
-    assert refreshed["refresh_token"] != tokens["refresh_token"]
+    # Refresh is intentionally non-rotating: the same refresh token stays
+    # valid so parallel tabs don't invalidate each other (multi-tab fix).
+    assert refreshed["refresh_token"] == tokens["refresh_token"]
 
     delete_response = await client.post(
         "/api/auth/delete-account",
