@@ -33,12 +33,12 @@ export default function BearbeitenSheet({ open, onClose, job, resumes, selectedR
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Bearbeiten"
+      aria-labelledby="bearbeiten-title"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div ref={dialogRef} className="w-full sm:max-w-md grid grid-cols-12 gap-0 rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
         <div className="col-span-12 grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <h2 className="col-span-10 text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Bearbeiten</h2>
+          <h2 id="bearbeiten-title" className="col-span-10 text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Bearbeiten</h2>
           <button onClick={onClose} className="col-span-2 justify-self-end grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
             <X className="w-4 h-4" />
           </button>

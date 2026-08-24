@@ -44,13 +44,13 @@ export default function ReportModal({ open, onClose, job, onSubmit }) {
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Stelle melden"
+        aria-labelledby="report-title"
         className="w-full sm:max-w-md flex flex-col max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60"
       >
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2">
             <Flag className="w-4 h-4 text-[var(--color-fg-dim)]" />
-            <h2 className="text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Stelle melden</h2>
+            <h2 id="report-title" className="text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Stelle melden</h2>
           </div>
           <button onClick={onClose} className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
             <X className="w-4 h-4" />

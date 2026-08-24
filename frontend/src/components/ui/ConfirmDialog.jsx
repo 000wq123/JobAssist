@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import useFocusTrap from "../../hooks/useFocusTrap";
 
@@ -87,7 +87,10 @@ function ConfirmDialogSurface({ open, opts, onCancel, onConfirm }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onCancel]);
 
+  const titleId = useId();
+
   if (!open) return null;
+  const bodyId = `${titleId}-body`;
 
   const {
     title = "Bist du sicher?",
@@ -102,7 +105,8 @@ function ConfirmDialogSurface({ open, opts, onCancel, onConfirm }) {
       className="fixed inset-0 z-[110] flex items-center justify-center px-4"
       role="alertdialog"
       aria-modal="true"
-      aria-label={title}
+      aria-labelledby={titleId}
+      aria-describedby={bodyId}
     >
       {/* Backdrop — overlay, not layout */}
       <div
@@ -124,11 +128,11 @@ function ConfirmDialogSurface({ open, opts, onCancel, onConfirm }) {
         "
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-[16px] font-bold tracking-[-0.01em] text-[var(--color-fg)]">
+        <h2 id={titleId} className="text-[16px] font-bold tracking-[-0.01em] text-[var(--color-fg)]">
           {title}
         </h2>
         {body && (
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-fg-muted)]">
+          <p id={bodyId} className="mt-2 text-[13px] leading-relaxed text-[var(--color-fg-muted)]">
             {body}
           </p>
         )}

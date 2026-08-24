@@ -15,7 +15,6 @@
     "test:e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
-    "@fingerprintjs/fingerprintjs": "^5.1.0",
     "@react-pdf/renderer": "^4.5.1",
     "@sentry/react": "^8.0.0",
     "clsx": "^2.1.1",
