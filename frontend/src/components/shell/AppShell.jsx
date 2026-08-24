@@ -1,7 +1,8 @@
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Mail, X, Menu } from "lucide-react";
+import useFocusTrap from "../../hooks/useFocusTrap";
 import clsx from "clsx";
 
 import useAuthStore from "../../hooks/useAuthStore";
@@ -23,6 +24,17 @@ const NAV_ITEMS = [
  * Mobile drawer — full-height left drawer with nav.
  */
 function MobileDrawer({ open, onClose, me }) {
+  const drawerRef = useRef(null);
+  useFocusTrap(open, drawerRef);
+
+  // Close on Escape while open.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   const navigate = useNavigate();
   const handleLogout = async () => {
     try { await authApi.logout(); } catch { /* ignore */ }
@@ -39,6 +51,10 @@ function MobileDrawer({ open, onClose, me }) {
         aria-hidden="true"
       />
       <aside
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigationsmenü"
         className="fixed inset-y-0 left-0 z-[70] w-[85vw] max-w-sm flex flex-col md:hidden"
         style={{ background: "var(--sidebar-bg, #FAFAF8)" }}
       >
@@ -218,6 +234,13 @@ export default function AppShell() {
 
       {/* Right column */}
       <div className="flex-1 min-w-0 flex flex-col">
+        {/* Skip link — first focusable element; visible only on focus */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:h-10 focus:px-4 focus:inline-flex focus:items-center focus:rounded-md focus:bg-[var(--app-brand, #E30613)] focus:text-white focus:text-[13px] focus:font-semibold"
+        >
+          Zum Inhalt springen
+        </a>
         {/* Mobile header */}
         <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-[56px] px-4 border-b"
           style={{ background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)" }}>
@@ -245,6 +268,8 @@ export default function AppShell() {
         <OnboardingModal />
 
         <main
+          id="main-content"
+          tabIndex={-1}
           className={clsx(
             "relative z-10 flex-1 w-full",
             location.pathname.startsWith("/lebenslauf")
