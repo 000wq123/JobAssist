@@ -50,3 +50,6 @@ Thumbs.db
 get.pip.py
 sse3_temp.txt
 .aider*
+
+backend/dev.db
+*.db
