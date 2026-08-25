@@ -19,7 +19,7 @@ function T(name) {
 // must reference these CSS variables instead of hardcoding hex values so
 // light/dark themes stay consistent.
 const BUCKETS = [
-  { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,     color: "var(--status-saved)",    soft: "var(--status-saved-soft)" },
+  { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,     color: "var(--status-saved-icon)", soft: "var(--status-saved-soft)", textColor: "var(--status-saved)" },
   { key: "applied",      label: "Beworben",    icon: Send,          color: "var(--status-applied)",  soft: "var(--status-applied-soft)" },
   { key: "interviewing", label: "Gespräch",    icon: MessageCircle, color: "var(--status-interview)", soft: "var(--status-interview-soft)" },
   { key: "offered",      label: "Angebot",     icon: CheckCircle2,  color: "var(--status-offered)",  soft: "var(--status-offered-soft)" },
@@ -351,7 +351,7 @@ export default function DashboardPage() {
                         {/* Subtle badge; amber intensifies only on hover via group */}
                         <span
                           className="text-[11px] font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block"
-                          style={{ color: bucket.color, background: bucket.soft }}
+                          style={{ color: bucket.textColor || bucket.color, background: bucket.soft }}
                         >
                           {bucket.label}
                         </span>

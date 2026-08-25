@@ -246,7 +246,8 @@
      Gemerkt/Saved=amber · Beworben/Applied=blue · Gespräch=purple
      Angebot/Offer=green · Archiviert/Archived=slate. Components MUST use
      these instead of hardcoded hex values so themes stay consistent. */
-  --status-saved:        #B45309;   /* amber-700: AA on light tints */
+  --status-saved:        #B45309;   /* amber-700 — badge text (AA) */
+  --status-saved-icon:   #D97706;   /* amber-600 — icons (3:1 non-text) */
   --status-saved-soft:   rgba(245, 158, 11, 0.12);
   --status-applied:      #2563EB;   /* blue-600 */
   --status-applied-soft: rgba(59, 130, 246, 0.10);
@@ -391,6 +392,7 @@
   --app-orange-soft: rgba(251, 191, 36, 0.10);
   /* Semantic status tokens — dark theme values (brighter for contrast). */
   --status-saved:        #FBBF24;
+  --status-saved-icon:   #FBBF24;
   --status-saved-soft:   rgba(251, 191, 36, 0.14);
   --status-applied:      #60A5FA;
   --status-applied-soft: rgba(96, 165, 250, 0.14);
