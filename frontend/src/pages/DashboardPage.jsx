@@ -15,13 +15,18 @@ function T(name) {
   return `var(--app-${name})`;
 }
 
+// Semantic status tokens — single source of truth (see index.css). Components
+// must reference these CSS variables instead of hardcoding hex values so
+// light/dark themes stay consistent.
 const BUCKETS = [
-  { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,      color: "#f59e0b" },
-  { key: "applied",      label: "Beworben",    icon: Send,           color: "#3b82f6" },
-  { key: "interviewing", label: "Gespräch",    icon: MessageCircle,  color: "#8b5cf6" },
-  { key: "offered",      label: "Angebot",     icon: CheckCircle2,   color: "#22c55e" },
-  { key: "archived",     label: "Archiviert",  icon: Archive,        color: "#6b7280", pill: "#4b5563" },
+  { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,     color: "var(--status-saved)",    soft: "var(--status-saved-soft)" },
+  { key: "applied",      label: "Beworben",    icon: Send,          color: "var(--status-applied)",  soft: "var(--status-applied-soft)" },
+  { key: "interviewing", label: "Gespräch",    icon: MessageCircle, color: "var(--status-interview)", soft: "var(--status-interview-soft)" },
+  { key: "offered",      label: "Angebot",     icon: CheckCircle2,  color: "var(--status-offered)",  soft: "var(--status-offered-soft)" },
+  { key: "archived",     label: "Archiviert",  icon: Archive,       color: "var(--status-archived)", soft: "var(--status-archived-soft)" },
 ];
+
+const STATUS_TOKEN = Object.fromEntries(BUCKETS.map((b) => [b.key, b]));
 
 function getGreeting(name) {
   const hour = new Date().getHours();
@@ -183,7 +188,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* KPI strip — unified container */}
+      {/* Status rail — five equal semantic regions, one unified surface */}
       <div className="mb-12 pb-8" style={{ borderBottom: `1px solid ${T("border")}` }}>
         <div className="grid grid-cols-5 rounded-2xl overflow-hidden" style={{ background: T("surface-hover"), border: `1px solid ${T("border-subtle")}` }}>
           {BUCKETS.map((b, i) => {
@@ -194,26 +199,40 @@ export default function DashboardPage() {
                 key={b.key}
                 type="button"
                 onClick={() => navigate(`/jobs?status=${b.key}`)}
-                className="group flex flex-col items-center gap-3 py-5 px-4 transition-all cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
-                style={{ borderRight: i < BUCKETS.length - 1 ? `1px solid ${T("border-subtle")}` : "none" }}
+                aria-label={`${count} ${b.label}`}
+                className="group relative flex flex-col items-center justify-center gap-2.5 py-5 px-4 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:z-10"
+                style={{
+                  borderRight: i < BUCKETS.length - 1 ? `1px solid ${T("border-subtle")}` : "none",
+                }}
+                onFocus={(e) => { e.currentTarget.style.background = T("surface"); }}
+                onBlur={(e) => { e.currentTarget.style.background = ""; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = T("surface");
+                  e.currentTarget.style.boxShadow = `inset 0 -2px 0 ${b.color}`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                  style={{ background: `${b.color}14` }}
+                {/* Semantic tinted icon chip — slightly larger presence on hover only */}
+                <span
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.06]"
+                  style={{ background: b.soft }}
                 >
                   <Icon className="w-[17px] h-[17px]" style={{ color: b.color }} />
-                </div>
-                <div className="text-center">
+                </span>
+                <span className="text-center">
                   <span
-                    className="text-[22px] font-bold tracking-[-0.02em] tabular-nums block mb-0.5"
-                    style={{ color: T("text"), fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}
+                    className="text-[24px] font-bold tracking-[-0.02em] tabular-nums block leading-none mb-1 transition-colors duration-150 group-hover:text-[var(--app-brand)]"
+                    style={{ color: T("text"), fontVariantNumeric: "tabular-nums" }}
                   >
                     {count}
                   </span>
-                  <span className="text-[11.5px] font-medium" style={{ color: T("text-secondary") }}>
+                  <span className="block text-[11.5px] font-medium" style={{ color: T("text-secondary") }}>
                     {b.label}
                   </span>
-                </div>
+                </span>
               </button>
             );
           })}
@@ -221,110 +240,137 @@ export default function DashboardPage() {
       </div>
 
       {/* Two-column main area */}
-      <div className="grid grid-cols-12 gap-8 mb-12">
-        {/* Left: Recent activity */}
+      <div className="grid grid-cols-12 gap-8 mb-10">
+        {/* Left: Recent activity — grouped workspace region */}
         <div className="col-span-12 lg:col-span-7">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[15px] font-semibold tracking-[-0.01em]" style={{ color: T("text") }}>
-              Letzte Aktivität
-            </h2>
-            {jobs.length > 5 && (
+          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: T("border-subtle"), background: T("surface") }}>
+            {/* Section header inside the container — one visual unit */}
+            <div
+              className="flex items-center justify-between px-5 py-3.5"
+              style={{ borderBottom: `1px solid ${T("border-subtle")}`, background: T("surface-hover") }}
+            >
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em]" style={{ color: T("text-muted") }}>
+                Letzte Aktivität
+              </h2>
               <button
                 type="button"
                 onClick={() => navigate("/jobs")}
-                className="btn btn-link text-[13px] gap-1.5">
-                Alle Stellen <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {showJobSkeleton && (
-            [0, 1, 2].map((i) => <JobRowSkeleton key={i} isLast={i === 2} />)
-          )}
-
-          {/* Error — compact inline banner */}
-          {jobsFailed && (
-            <div
-              className="flex items-center gap-4 rounded-lg px-4 py-3 mb-3"
-              style={{ background: T("error-soft"), borderLeft: `3px solid ${T("error")}` }}
-            >
-              <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: T("error") }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium" style={{ color: T("text") }}>
-                  Stellen konnten nicht geladen werden.
-                </p>
-                <p className="text-[12px]" style={{ color: T("text-muted") }}>
-                  Überprüfe deine Verbindung und versuche es erneut.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => jobsReload()}
-                className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0">
-                <RefreshCw className="w-3 h-3" /> Erneut versuchen
+                className="section-link inline-flex items-center text-[13px] font-medium gap-1.5 cursor-pointer bg-transparent border-none p-0"
+              >
+                Alle Stellen <ArrowRight className="arrow-shift w-3.5 h-3.5" />
               </button>
             </div>
-          )}
 
-          {!showJobSkeleton && !jobsFailed && recentJobs.length === 0 && (bootstrapEmpty || !jobsLoading) && (
-            <div className="py-12 text-center">
-              <p className="text-[14px]" style={{ color: T("text-muted") }}>
-                Noch keine Stellen gespeichert.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate("/jobs?tab=finden")}
-                className="btn btn-link text-[13px] mt-3 gap-1.5">
-                <Plus className="w-3.5 h-3.5" /> Jobs finden
-              </button>
-            </div>
-          )}
+            <div className="px-3 py-1">
+              {showJobSkeleton && (
+                [0, 1, 2].map((i) => <JobRowSkeleton key={i} isLast={i === 2} />)
+              )}
 
-          {!showJobSkeleton && !jobsFailed && recentJobs.length > 0 && (
-            <div className="flex flex-col">
-              {recentJobs.map((job, i) => {
-                const bucket = BUCKETS.find((b) => b.key === normalizeStatus(job.status)) || BUCKETS[0];
-                const StatusIcon = bucket.icon;
-                const role = job.role || job.title || "Stelle";
-                const company = job.company || "";
-                const date = job.updated_at || job.created_at;
-                const dateStr = date
-                  ? new Date(date).toLocaleDateString("de-AT", { day: "numeric", month: "short" })
-                  : "";
-                return (
-                  <div
-                    key={job.id || i}
-                    className="group flex items-center gap-4 py-3.5 cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] -mx-2 px-2 rounded-lg"
-                    style={{ borderBottom: i < recentJobs.length - 1 ? `1px solid ${T("border")}` : "none" }}
-                    onClick={() => navigate(`/jobs/${job.id}`)}
-                  >
-                    <div className="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${bucket.color}15` }}>
-                      <StatusIcon className="w-[15px] h-[15px]" style={{ color: bucket.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-medium truncate" style={{ color: T("text") }}>{role}</p>
-                      <p className="text-[12px] mt-0.5 truncate" style={{ color: T("text-muted") }}>
-                        {company}
-                        {dateStr ? ` · ${dateStr}` : ""}
-                      </p>
-                    </div>
-                    <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block" style={{ color: bucket.pill, background: `${bucket.color}10` }}>
-                      {bucket.label}
-                    </span>
-                    <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: T("text-faint") }} />
+              {/* Error — compact inline banner */}
+              {jobsFailed && (
+                <div
+                  role="alert"
+                  className="flex items-center gap-4 rounded-lg px-4 py-3 my-3"
+                  style={{ background: T("error-soft"), borderLeft: `3px solid ${T("error")}` }}
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: T("error") }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium" style={{ color: T("text") }}>
+                      Stellen konnten nicht geladen werden.
+                    </p>
+                    <p className="text-[12px]" style={{ color: T("text-muted") }}>
+                      Überprüfe deine Verbindung und versuche es erneut.
+                    </p>
                   </div>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={() => jobsReload()}
+                    className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0">
+                    <RefreshCw className="w-3 h-3" /> Erneut versuchen
+                  </button>
+                </div>
+              )}
+
+              {!showJobSkeleton && !jobsFailed && recentJobs.length === 0 && (bootstrapEmpty || !jobsLoading) && (
+                <div className="py-12 text-center">
+                  <p className="text-[14px]" style={{ color: T("text-muted") }}>
+                    Noch keine Stellen gespeichert.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/jobs?tab=finden")}
+                    className="btn btn-link text-[13px] mt-3 gap-1.5">
+                    <Plus className="w-3.5 h-3.5" /> Jobs finden
+                  </button>
+                </div>
+              )}
+
+              {!showJobSkeleton && !jobsFailed && recentJobs.length > 0 && (
+                <div className="flex flex-col" role="list">
+                  {recentJobs.map((job, i) => {
+                    const bucket = STATUS_TOKEN[normalizeStatus(job.status)] || BUCKETS[0];
+                    const StatusIcon = bucket.icon;
+                    const role = job.role || job.title || "Stelle";
+                    const company = job.company || "";
+                    const date = job.updated_at || job.created_at;
+                    const dateStr = date
+                      ? new Date(date).toLocaleDateString("de-AT", { day: "numeric", month: "short" })
+                      : "";
+                    return (
+                      <div
+                        key={job.id || i}
+                        role="listitem"
+                        tabIndex={0}
+                        aria-label={`${role} bei ${company || "Unbekannt"}, ${bucket.label}`}
+                        className="interactive-row group flex items-center gap-3.5 py-3 px-2.5 rounded-lg focus:outline-none"
+                        style={{
+                          borderBottom: i < recentJobs.length - 1 ? `1px solid ${T("border-subtle")}` : "none",
+                        }}
+                        onClick={() => navigate(`/jobs/${job.id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            navigate(`/jobs/${job.id}`);
+                          }
+                        }}
+                      >
+                        {/* Muted semantic icon — state identifiable without screaming yellow */}
+                        <span
+                          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity duration-150"
+                          style={{ background: bucket.soft }}
+                        >
+                          <StatusIcon className="w-[15px] h-[15px]" style={{ color: bucket.color }} />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[14px] font-medium truncate" style={{ color: T("text") }}>{role}</span>
+                          <span className="block text-[12px] mt-0.5 truncate" style={{ color: T("text-muted") }}>
+                            {company}
+                            {dateStr ? ` · ${dateStr}` : ""}
+                          </span>
+                        </span>
+                        {/* Subtle badge; amber intensifies only on hover via group */}
+                        <span
+                          className="text-[11px] font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block"
+                          style={{ color: bucket.color, background: bucket.soft }}
+                        >
+                          {bucket.label}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: T("text-faint") }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Right: CV + Alerts */}
         <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
-          {/* CV card */}
+          {/* CV card — green semantic */}
           <div
-            className="rounded-xl border p-5 flex flex-col gap-3"
-            style={{ borderColor: hasCV ? "rgba(34,197,94,0.15)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
+            className={`rounded-xl border p-5 flex flex-col justify-between gap-3 min-h-[132px] ${hasCV ? "interactive-row" : ""}`}
+            style={{ borderColor: hasCV ? "var(--status-offered-soft)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
           >
             {showResumeSkeleton ? (
               <>
@@ -347,42 +393,45 @@ export default function DashboardPage() {
               </>
             ) : resumesFailed ? (
               <>
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: T("error-soft") }}>
                     <AlertCircle className="w-[18px] h-[18px]" style={{ color: T("error") }} />
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold" style={{ color: T("text") }}>Nicht verfügbar</p>
-                    <p className="text-[12px]" style={{ color: T("text-muted") }}>Lebenslauf-Daten konnten nicht geladen werden.</p>
+                    <p className="mt-0.5 text-[12px]" style={{ color: T("text-muted") }}>Lebenslauf-Daten konnten nicht geladen werden.</p>
                   </div>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${hasCV ? "#22c55e" : "var(--app-brand)"}15` }}>
-                    <FileText className="w-[18px] h-[18px]" style={{ color: hasCV ? "#22c55e" : "var(--app-brand)" }} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: T("text") }}>
+                  <span
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: hasCV ? "var(--status-offered-soft)" : "var(--app-accent-soft)" }}
+                  >
+                    <FileText className="w-[18px] h-[18px]" style={{ color: hasCV ? "var(--status-offered)" : "var(--app-brand)" }} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13.5px] font-semibold leading-tight" style={{ color: T("text") }}>
                       {hasCV ? "Lebenslauf bereit" : "Noch kein Lebenslauf"}
-                    </p>
-                    <p className="text-[12px]" style={{ color: T("text-muted") }}>
+                    </span>
+                    <span className="block mt-1 text-[12px]" style={{ color: T("text-muted") }}>
                       {hasCV ? `${resumes.length} ${resumes.length === 1 ? "Datei" : "Dateien"} gespeichert` : "Erstelle deinen ersten Lebenslauf"}
-                    </p>
-                  </div>
+                    </span>
+                  </span>
                 </div>
-                <button type="button" onClick={() => navigate("/lebenslauf")} className="btn btn-link text-[13px] gap-1.5 self-start font-medium">
-                  {hasCV ? "Bearbeiten" : "Jetzt erstellen"} <ArrowRight className="w-3.5 h-3.5" />
+                <button type="button" onClick={(e) => { e.stopPropagation(); navigate("/lebenslauf"); }} className="btn btn-link text-[13px] gap-1.5 self-end font-medium">
+                  {hasCV ? "Bearbeiten" : "Jetzt erstellen"} <ArrowRight className="arrow-shift w-3.5 h-3.5" />
                 </button>
               </>
             )}
           </div>
 
-          {/* Alerts card */}
+          {/* Alerts card — amber semantic */}
           <div
-            className="rounded-xl border p-5 flex flex-col gap-3"
-            style={{ borderColor: activeAlerts > 0 ? "rgba(245,158,11,0.15)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
+            className="rounded-xl border p-5 flex flex-col justify-between gap-3 min-h-[132px]"
+            style={{ borderColor: activeAlerts > 0 ? "var(--status-saved-soft)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
           >
             {showAlertSkeleton ? (
               <>
@@ -405,36 +454,39 @@ export default function DashboardPage() {
               </>
             ) : alertsFailed ? (
               <>
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: T("error-soft") }}>
                     <AlertCircle className="w-[18px] h-[18px]" style={{ color: T("error") }} />
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold" style={{ color: T("text") }}>Nicht verfügbar</p>
-                    <p className="text-[12px]" style={{ color: T("text-muted") }}>Alert-Daten konnten nicht geladen werden.</p>
+                    <p className="mt-0.5 text-[12px]" style={{ color: T("text-muted") }}>Alert-Daten konnten nicht geladen werden.</p>
                   </div>
                 </div>
-                <button type="button" onClick={() => alertsReload()} className="btn btn-link text-[13px] gap-1.5 self-start">
+                <button type="button" onClick={() => alertsReload()} className="btn btn-link text-[13px] gap-1.5 self-end">
                   <RefreshCw className="w-3.5 h-3.5" /> Erneut versuchen
                 </button>
               </>
             ) : (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: activeAlerts > 0 ? "rgba(245,158,11,0.15)" : "var(--app-brand)08" }}>
-                    <Bell className="w-[18px] h-[18px]" style={{ color: activeAlerts > 0 ? "#f59e0b" : "var(--app-brand)" }} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: T("text") }}>
-                      {activeAlerts > 0 ? `${activeAlerts} aktive Alerts` : "Keine Alerts"}
-                    </p>
-                    <p className="text-[12px]" style={{ color: T("text-muted") }}>
+                  <span
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: activeAlerts > 0 ? "var(--status-saved-soft)" : "var(--app-accent-soft)" }}
+                  >
+                    <Bell className="w-[18px] h-[18px]" style={{ color: activeAlerts > 0 ? "var(--status-saved)" : "var(--app-brand)" }} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13.5px] font-semibold leading-tight" style={{ color: T("text") }}>
+                      {activeAlerts > 0 ? `${activeAlerts} aktive ${activeAlerts === 1 ? "Alert" : "Alerts"}` : "Keine Alerts"}
+                    </span>
+                    <span className="block mt-1 text-[12px]" style={{ color: T("text-muted") }}>
                       {activeAlerts > 0 ? "Neue Stellen per E-Mail" : "Werde benachrichtigt über neue Jobs"}
-                    </p>
-                  </div>
+                    </span>
+                  </span>
                 </div>
-                <button type="button" onClick={() => navigate("/job-alerts")} className="btn btn-link text-[13px] gap-1.5 self-start font-medium">
-                  {activeAlerts > 0 ? "Verwalten" : "Alert anlegen"} <ArrowRight className="w-3.5 h-3.5" />
+                <button type="button" onClick={() => navigate("/job-alerts")} className="btn btn-link text-[13px] gap-1.5 self-end font-medium">
+                  {activeAlerts > 0 ? "Verwalten" : "Alert anlegen"} <ArrowRight className="arrow-shift w-3.5 h-3.5" />
                 </button>
               </>
             )}
@@ -442,19 +494,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Workbench promo panel */}
+      {/* Workbench promo panel — secondary content, reduced dominance */}
       <div
         className="rounded-2xl border overflow-hidden grid grid-cols-12"
-        style={{ borderColor: T("border"), background: T("surface") }}
+        style={{ borderColor: T("border-subtle"), background: T("surface") }}
       >
-        <div className="col-span-12 lg:col-span-7 p-7 flex flex-col justify-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.10em] mb-2" style={{ color: T("text-muted") }}>
+        <div className="col-span-12 lg:col-span-7 px-7 py-6 flex flex-col justify-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.10em] mb-1.5" style={{ color: T("text-muted") }}>
             Mehr entdecken
           </p>
-          <h2 className="text-[18px] font-bold tracking-[-0.01em] leading-[1.3] mb-2" style={{ color: T("text") }}>
+          <h2 className="text-[17px] font-bold tracking-[-0.01em] leading-[1.3] mb-1.5" style={{ color: T("text") }}>
             Lebenslauf, KV-Check und mehr
           </h2>
-          <p className="text-[13px] leading-relaxed mb-4" style={{ color: T("text-secondary") }}>
+          <p className="text-[13px] leading-relaxed mb-3.5 max-w-md" style={{ color: T("text-secondary") }}>
             Erstelle deinen Lebenslauf, vergleiche Gehälter mit dem Kollektivvertrag und behalte deine Bewerbungen im Blick.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -466,12 +518,12 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-        <div className="col-span-12 lg:col-span-5 min-h-[180px] lg:min-h-0 flex items-center justify-center p-5"
+        <div className="col-span-12 lg:col-span-5 min-h-[140px] lg:min-h-0 flex items-center justify-center px-5 py-4"
           style={{ background: "color-mix(in srgb, var(--app-border-subtle) 60%, var(--app-bg, #FAFAF8))" }}>
           <img
             src="/illustrations/person-laptop.png"
             alt=""
-            className="w-full max-w-[200px] h-auto object-contain pointer-events-none"
+            className="w-full max-w-[170px] h-auto object-contain pointer-events-none"
           />
         </div>
       </div>

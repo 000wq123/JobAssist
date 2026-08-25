@@ -216,6 +216,9 @@
   --app-bg: #FAFAF8;
   --app-surface: #FFFFFF;
   --app-surface-hover: #F5F5F3;
+  
+  --app-surface-selected: #EFEFEA;
+  --app-surface-card: #FFFFFF;
   --app-border: #E7E7E4;
   --app-border-subtle: #EFEFEC;
   --app-text: #171717;
@@ -239,6 +242,20 @@
   --app-info-soft: rgba(59, 130, 246, 0.08);
   --app-orange: #F59E0B;
   --app-orange-soft: rgba(245, 158, 11, 0.10);
+  /* ── Semantic status tokens (single source of truth) ────────────────
+     Gemerkt/Saved=amber · Beworben/Applied=blue · Gespräch=purple
+     Angebot/Offer=green · Archiviert/Archived=slate. Components MUST use
+     these instead of hardcoded hex values so themes stay consistent. */
+  --status-saved:        #B45309;   /* amber-700: AA on light tints */
+  --status-saved-soft:   rgba(245, 158, 11, 0.12);
+  --status-applied:      #2563EB;   /* blue-600 */
+  --status-applied-soft: rgba(59, 130, 246, 0.10);
+  --status-interview:    #7C3AED;   /* violet-600 */
+  --status-interview-soft: rgba(139, 92, 246, 0.10);
+  --status-offered:      #16A34A;   /* green-600 */
+  --status-offered-soft: rgba(34, 197, 94, 0.10);
+  --status-archived:     #64748B;   /* slate-500 */
+  --status-archived-soft: rgba(100, 116, 139, 0.10);
   --app-shadow-card: 0 1px 3px rgba(0,0,0,0.04);
   --app-shadow-card-hover: 0 2px 8px rgba(0,0,0,0.06);
   --app-shadow-modal: 0 8px 32px rgba(0,0,0,0.08);
@@ -343,9 +360,12 @@
   --ja-auth-card-header-bg: rgba(255, 255, 255, 0.03);
 
   /* ═══ APP DESIGN SYSTEM (v2) — dark ═════════════════════════════ */
-  --app-bg: #0C0C10;
-  --app-surface: #111116;
-  --app-surface-hover: #1A1A21;
+  --app-bg: #0B0B0F;
+  --app-surface: #121218;
+  --app-surface-hover: #1A1A22;
+  
+  --app-surface-selected: #20202a;
+  --app-surface-card: #15151c;
   --app-border: rgba(255, 255, 255, 0.08);
   --app-border-subtle: rgba(255, 255, 255, 0.05);
   --app-text: #EEEEF2;
@@ -369,6 +389,17 @@
   --app-info-soft: rgba(96, 165, 250, 0.10);
   --app-orange: #FBBF24;
   --app-orange-soft: rgba(251, 191, 36, 0.10);
+  /* Semantic status tokens — dark theme values (brighter for contrast). */
+  --status-saved:        #FBBF24;
+  --status-saved-soft:   rgba(251, 191, 36, 0.14);
+  --status-applied:      #60A5FA;
+  --status-applied-soft: rgba(96, 165, 250, 0.14);
+  --status-interview:    #A78BFA;
+  --status-interview-soft: rgba(167, 139, 250, 0.14);
+  --status-offered:      #4ADE80;
+  --status-offered-soft: rgba(74, 222, 128, 0.14);
+  --status-archived:     #94A3B8;
+  --status-archived-soft: rgba(148, 163, 184, 0.14);
   --app-shadow-card: 0 1px 3px rgba(0,0,0,0.20);
   --app-shadow-card-hover: 0 2px 12px rgba(0,0,0,0.35);
   --app-shadow-modal: 0 8px 32px rgba(0,0,0,0.40);
@@ -420,6 +451,40 @@
   [role="menuitem"],
   select:not(:disabled) {
     cursor: pointer;
+  }
+
+  /* ── Interactive row / surface affordances (design-system) ─────────── */
+  .interactive-row {
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease,
+      box-shadow 150ms ease, transform 150ms ease;
+  }
+  .interactive-row:hover {
+    background: var(--app-surface-hover, #F5F5F3);
+    box-shadow: inset 0 0 0 1px var(--app-border-subtle, #EFEFEC);
+  }
+  [data-theme="dark"] .interactive-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  }
+  .interactive-row:focus-visible {
+    outline: 2px solid var(--app-focus-ring, #6152F3);
+    outline-offset: -2px;
+  }
+
+  .section-link {
+    color: var(--app-text-muted, #888888);
+    transition: color 150ms ease, gap 150ms ease;
+  }
+  .section-link:hover {
+    color: var(--app-brand, #E30613);
+  }
+  .section-link:hover .arrow-shift {
+    transform: translateX(2px);
+  }
+  .arrow-shift {
+    display: inline-block;
+    transition: transform 150ms ease;
   }
 
   button:focus-visible,
