@@ -44,6 +44,7 @@ export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey 
       if (key) {
         if (next === undefined) swrCache.delete(key);
         else swrCache.set(key, { data: next, ts: Date.now() });
+        persistSwrCache();
       }
       return next;
     });
@@ -97,8 +98,28 @@ export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey 
 
 // ── SWR plumbing ─────────────────────────────────────────────────────────────
 
+const CACHE_STORAGE_KEY = "ja:swr_cache";
+
 /** @type {Map<string, { data: any, ts: number }>} */
-const swrCache = new Map();
+const swrCache = (() => {
+  // Seed from sessionStorage so hard reloads render last-known data instantly.
+  try {
+    const raw = sessionStorage.getItem(CACHE_STORAGE_KEY);
+    if (raw) return new Map(JSON.parse(raw));
+  } catch { /* ignore */ }
+  return new Map();
+})();
+
+let persistTimer = null;
+function persistSwrCache() {
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    try {
+      sessionStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify([...swrCache]));
+    } catch { /* quota/private mode — ignore */ }
+  }, 300);
+}
 
 /**
  * Drop every cached resource. Called on login/logout so user data is never
@@ -107,6 +128,7 @@ const swrCache = new Map();
 export function clearSwrCache() {
   swrCache.clear();
   swrInflight.clear();
+  try { sessionStorage.removeItem(CACHE_STORAGE_KEY); } catch { /* ignore */ }
 }
 
 /** @type {Map<string, Promise<any>>} */

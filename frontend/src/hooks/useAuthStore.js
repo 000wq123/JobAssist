@@ -39,6 +39,7 @@ function readToken() {
  * Durable user content (CV drafts, theme, consent) is intentionally kept.
  */
 function clearLegacyDataCaches() {
+  try { sessionStorage.removeItem("ja:init_cache"); } catch { /* ignore */ }
   const legacyKeys = [
     "jobs",
     "resumes",
