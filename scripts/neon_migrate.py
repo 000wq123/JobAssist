@@ -127,6 +127,25 @@ async def main():
         except Exception:
             pass
 
+    # Create missing id sequences + attach defaults (schema reflection doesn't
+    # carry serial/identity defaults, so tables would otherwise have no auto-id).
+    repair_rows = await tgt.fetch("""
+        SELECT t.table_name FROM information_schema.tables t
+        JOIN information_schema.columns c ON c.table_name = t.table_name
+            AND c.column_name = 'id' AND c.column_default IS NULL
+        WHERE t.table_schema='public' AND t.table_type='BASE TABLE'
+          AND c.data_type IN ('integer','bigint')
+    """)
+    for r in repair_rows:
+        t = r["table_name"]
+        try:
+            await tgt.execute('CREATE SEQUENCE IF NOT EXISTS "' + t + '_id_seq" OWNED BY "' + t + '"."id"')
+            await tgt.execute('SELECT setval(\'' + t + '_id_seq\', COALESCE((SELECT MAX(id) FROM "' + t + '"), 1))')
+            await tgt.execute('ALTER TABLE "' + t + '" ALTER COLUMN id SET DEFAULT nextval(\'' + t + '_id_seq\')')
+            print(f"  seq fixed: {t}")
+        except Exception as e:
+            print(f"  seq !! {t}: {str(e)[:100]}")
+
     v = await tgt.fetchval("SELECT version_num FROM alembic_version")
     print(f"\nalembic head: {v}")
     await tgt.close()
