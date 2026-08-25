@@ -51,5 +51,10 @@ get.pip.py
 sse3_temp.txt
 .aider*
 
+# Local installer binaries
+*.rpm
+*.deb
+*.msi
+
 backend/dev.db
 *.db
