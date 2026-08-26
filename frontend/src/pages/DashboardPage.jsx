@@ -9,6 +9,7 @@ import useAuthStore from "../hooks/useAuthStore";
 import { jobApi, jobAlertsApi } from "../services/api";
 import useFetch from "../hooks/useFetch";
 import { Skel, useDelayedSkeleton, usePageTitle } from "../hooks/usePageChrome";
+import useCountUp from "../hooks/useCountUp";
 import { useBootstrap } from "../context/BootstrapContext";
 
 function T(name) {
@@ -18,6 +19,14 @@ function T(name) {
 // Semantic status tokens — single source of truth (see index.css). Components
 // must reference these CSS variables instead of hardcoding hex values so
 // light/dark themes stay consistent.
+/** Animated counter for the status rail (transitions.dev pop-in pattern). */
+function CountUp({ value }) {
+  const display = useCountUp(value);
+  return (
+    <span key={value} className="ja-num-pop inline-block">{display}</span>
+  );
+}
+
 const BUCKETS = [
   { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,     color: "var(--status-saved-icon)", soft: "var(--status-saved-soft)", textColor: "var(--status-saved)" },
   { key: "applied",      label: "Beworben",    icon: Send,          color: "var(--status-applied)",  soft: "var(--status-applied-soft)" },
@@ -227,7 +236,7 @@ export default function DashboardPage() {
                     className="text-[24px] font-bold tracking-[-0.02em] tabular-nums block leading-none mb-1 transition-colors duration-150 group-hover:text-[var(--app-brand)]"
                     style={{ color: T("text"), fontVariantNumeric: "tabular-nums" }}
                   >
-                    {count}
+                    <CountUp value={count} />
                   </span>
                   <span className="block text-[11.5px] font-medium" style={{ color: T("text-secondary") }}>
                     {b.label}
@@ -430,7 +439,7 @@ export default function DashboardPage() {
 
           {/* Alerts card — amber semantic */}
           <div
-            className="rounded-xl border p-5 flex flex-col justify-between gap-3 min-h-[132px]"
+            className="ja-lift rounded-xl border p-5 flex flex-col justify-between gap-3 min-h-[132px]"
             style={{ borderColor: activeAlerts > 0 ? "var(--status-saved-soft)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
           >
             {showAlertSkeleton ? (

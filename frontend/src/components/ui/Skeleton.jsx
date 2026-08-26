@@ -10,7 +10,7 @@ export default function Skeleton({ className = "" }) {
   return (
     <div
       className={clsx(
-        "animate-pulse rounded-md bg-[var(--color-bg-elev-2)]",
+        "animate-pulse ja-shimmer rounded-md bg-[var(--color-bg-elev-2)]",
         className,
       )}
     />
