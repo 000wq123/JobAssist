@@ -76,3 +76,21 @@ export function unregisterWebMcpTools() {
   }
   registered = false;
 }
+
+
+/**
+ * Dev-only debug surface: `window.__webmcp` exposes current state so the
+ * browser console can inspect what's registered without touching prod
+ * behavior (register.js is dynamically imported, so this module only loads
+ * when VITE_ENABLE_WEBMCP=1 anyway).
+ */
+export function installDebugSurface(toolDefs) {
+  if (import.meta.env?.DEV) {
+    window.__webmcp = {
+      get available() { return isWebMcpAvailable(); },
+      get registered() { return registered; },
+      toolNames: () => toolDefs.map((t) => t.name),
+      unregister: unregisterWebMcpTools,
+    };
+  }
+}

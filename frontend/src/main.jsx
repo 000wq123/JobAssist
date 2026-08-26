@@ -41,6 +41,7 @@ if (import.meta.env.VITE_ENABLE_WEBMCP === "1") {
     import("./webmcp/register"),
   ])
     .then(([tools, reg]) => {
+      reg.installDebugSurface(tools.TOOL_DEFS);
       const result = reg.registerWebMcpTools(tools.TOOL_DEFS);
       if (import.meta.env.DEV) {
         // eslint-disable-next-line no-console
