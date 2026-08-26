@@ -189,7 +189,9 @@ export default function App() {
     const id = setInterval(() => {
       authApi.refresh().then((res) => {
         const { access_token } = res.data || {};
-        if (access_token) setAccessToken(access_token);
+        // Silent: the value changed, the session didn't — no need to re-render
+        // the whole app tree for a rotated token.
+        if (access_token) setAccessToken(access_token, { silent: true });
       }).catch((err) => {
         // Proactively drop a session whose refresh token was revoked while
         // the user was idle, instead of waiting for the next 401.

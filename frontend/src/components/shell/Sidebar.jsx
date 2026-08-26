@@ -9,6 +9,7 @@ import clsx from "clsx";
 import useAuthStore from "../../hooks/useAuthStore";
 import { authApi } from "../../services/api";
 import { useTheme } from "../../context/ThemeContext";
+import { getInitials } from "../../utils/initials";
 
 const PRIMARY = [
   { to: "/dashboard",  label: "Übersicht",   icon: LayoutDashboard, preload: () => import("../../pages/DashboardPage") },
@@ -20,16 +21,6 @@ const PRIMARY = [
 function isMac() {
   if (typeof navigator === "undefined") return false;
   return /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-}
-
-function getInitials(name, email) {
-  if (name) {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  if (email) return email[0].toUpperCase();
-  return "?";
 }
 
 /* ── NavRow ── */

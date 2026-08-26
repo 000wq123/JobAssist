@@ -76,14 +76,16 @@ export default function DashboardPage() {
 
   const { init, loading: bootstrapLoading, error: bootstrapError, cvLibrary } = useBootstrap();
 
-  // SWR-backed: revisits render instantly from cache, then refresh silently.
+  // SWR-backed: revisits render instantly from cache, then refresh silently —
+  // but only when the cache is older than maxAge, so bouncing between pages
+  // doesn't refetch the dashboard widgets on every visit.
   const { data: jobsRaw, loading: jobsLoading, error: jobsErr, reload: jobsReload } = useFetch(
     () => jobApi.list().then((r) => r.data?.items ?? r.data ?? []),
-    { cacheKey: "jobs:list" }
+    { cacheKey: "jobs:list", maxAge: 60_000 }
   );
   const { data: alertsRaw, loading: alertsLoading, error: alertsErr, reload: alertsReload } = useFetch(
     () => jobAlertsApi.list().then((r) => r.data?.alerts ?? r.data ?? []),
-    { cacheKey: "alerts:list" }
+    { cacheKey: "alerts:list", maxAge: 60_000 }
   );
 
   const jobs = useMemo(() => (Array.isArray(jobsRaw) ? jobsRaw : []), [jobsRaw]);

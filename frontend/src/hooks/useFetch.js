@@ -19,10 +19,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * @param {boolean} [options.enabled=true]  - skip the fetch entirely when false
  * @param {any[]} [options.deps=[]]         - extra values that trigger a reload
  * @param {string} [options.cacheKey]       - opt-in SWR cache key for this resource
+ * @param {number} [options.maxAge=0]       - ms; with a cacheKey, an initial mount
+ *        skips the background refetch while the cache entry is younger than this
+ *        (explicit `reload()` always refetches)
  */
-export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey } = {}) {
+export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey, maxAge = 0 } = {}) {
   // Seed synchronously from the cache so a revisit renders instantly.
-  const cached = cacheKey ? swrCache.get(cacheKey)?.data : undefined;
+  const cachedEntry = cacheKey ? swrCache.get(cacheKey) : undefined;
+  const cached = cachedEntry?.data;
+  const fresh = Boolean(
+    cachedEntry && maxAge > 0 && Date.now() - cachedEntry.ts < maxAge
+  );
   const [data, setDataState] = useState(cached);
   const [loading, setLoading] = useState(enabled && cached === undefined);
   const [error, setError] = useState(null);
@@ -54,6 +61,9 @@ export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey 
 
   useEffect(() => {
     if (!enabled) return;
+    // Fresh cache on an initial mount: render it as-is, no background refetch.
+    // Explicit `reload()` (tick > 0) always refetches.
+    if (fresh && tick === 0) return;
     let cancelled = false;
     setLoading(true);
     setError(null);

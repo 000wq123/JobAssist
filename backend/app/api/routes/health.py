@@ -13,7 +13,7 @@ import logging
 import time
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import Response
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -263,8 +263,14 @@ async def init(
     etag = f'W/"{hashlib.sha256(body).hexdigest()[:32]}"'
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})
-    return JSONResponse(
-        content=payload,
+    # Serialize with the same `default=str` used for the ETag: payloads contain
+    # datetime fields (e.g. `daily_counts_reset_at`, resume `created_at`) which
+    # the default json encoder rejects — that 500'd /init for every user with
+    # usage data and left the SPA without identity ("Benutzer" + "?" avatar)
+    # while the rest of the page rendered from cache.
+    return Response(
+        content=json.dumps(payload, default=str),
+        media_type="application/json",
         headers={
             "ETag": etag,
             # Override the global no-store: /init responses carry a validator

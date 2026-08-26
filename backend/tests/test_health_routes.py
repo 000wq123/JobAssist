@@ -3,6 +3,7 @@ import importlib
 import json
 import sys
 import types
+from datetime import datetime, timezone
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -320,6 +321,80 @@ async def test_init_returns_etag_and_304_on_matching_if_none_match(monkeypatch):
                 "/api/init", headers={"If-None-Match": etag}
             )
             assert second.status_code == 304
+    finally:
+        main.app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_init_serializes_datetime_fields(monkeypatch):
+    """`/api/init` must return 200 even when the payload carries real datetime
+    values (e.g. `daily_counts_reset_at` set by the job-alerts flow). The raw
+    `JSONResponse(content=payload)` path 500'd with "Object of type datetime is
+    not JSON serializable", which left the SPA without identity ("Benutzer" +
+    "?" avatar) while the rest of the page rendered from cache."""
+    main = _load_main_module()
+    from app.api.routes import health as health_module
+
+    fake_user = types.SimpleNamespace(
+        id=1,
+        email="t@example.com",
+        full_name="T",
+        is_verified=True,
+        currency="EUR",
+        location=None,
+        language="de",
+        daily_manual_run_count=0,
+        daily_creation_count=0,
+        daily_counts_reset_at=datetime(2026, 8, 26, 0, 0, tzinfo=timezone.utc),
+    )
+
+    class _FakeResult:
+        def __init__(self, value=None):
+            self._value = value if value is not None else ()
+
+        def scalar_one_or_none(self):
+            return None
+
+        def scalars(self):
+            return types.SimpleNamespace(all=lambda: list(self._value))
+
+        def all(self):
+            return list(self._value)
+
+        def scalar(self):
+            return 0
+
+    class _InitSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def execute(self, _query):
+            return _FakeResult(None)
+
+    async def _fake_usage(_db, _user_id, _plan):
+        return []
+
+    monkeypatch.setattr(health_module, "get_all_usage", _fake_usage)
+    from app.core.database import get_db
+    from app.core.security import get_current_user as gcu
+
+    async def _override_db():
+        async with _InitSession() as session:
+            yield session
+
+    main.app.dependency_overrides[get_db] = _override_db
+    main.app.dependency_overrides[gcu] = lambda: fake_user
+    try:
+        transport = ASGITransport(app=main.app)
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            response = await client.get("/api/init")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["me"]["full_name"] == "T"
+        assert body["me"]["daily_counts_reset_at"].startswith("2026-08-26")
     finally:
         main.app.dependency_overrides.clear()
 

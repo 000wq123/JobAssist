@@ -84,11 +84,19 @@ function login(accessToken) {
   setState({ token: accessToken, user: null, isHydrated: true, isBooting: false });
 }
 
-function setAccessToken(accessToken) {
+function setAccessToken(accessToken, { silent = false } = {}) {
+  if (!accessToken) return;
   try {
     sessionStorage.setItem(TOKEN_KEY, accessToken);
   } catch {
     /* ignore */
+  }
+  if (silent) {
+    // Background refresh (pre-emptive 30-min rotation): update the token the
+    // API layer reads WITHOUT notifying subscribers, so the whole app tree
+    // doesn't re-render just because the access token changed value.
+    state.token = accessToken;
+    return;
   }
   setState({ token: accessToken });
 }

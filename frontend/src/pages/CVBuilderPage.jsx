@@ -35,6 +35,28 @@ function hasDraftData(draft) {
   return !!(draft?.vorname || draft?.nachname || draft?.schultyp);
 }
 
+// Session-scoped builder view persistence — keeps the user on the overview
+// (library visible) across visits instead of forcing the wizard every time.
+const MODE_STORAGE_KEY = "ja:cv_builder_mode";
+const BUILD_MODES = ["landing", "wizard", "templatePicker"];
+
+function readLastMode() {
+  try {
+    const m = sessionStorage.getItem(MODE_STORAGE_KEY);
+    return BUILD_MODES.includes(m) ? m : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistMode(mode) {
+  try {
+    sessionStorage.setItem(MODE_STORAGE_KEY, mode);
+  } catch {
+    /* private mode / quota — ignore */
+  }
+}
+
 function formatDate(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric" });
@@ -245,7 +267,15 @@ export default function CVBuilderPage() {
     if (!draft.email && authUser?.email) draft.email = authUser.email;
     return draft;
   });
-  const [mode, setMode] = useState(() => hasDraftData(loadDraft()) ? "wizard" : "landing");
+  // Remember which view the user last left the builder on (session-scoped):
+  // auto-entering the wizard on EVERY visit hid the saved-CV library and made
+  // the cards appear to reload each time the page was opened. First visit in a
+  // session still auto-resumes a draft (wizard); afterwards the last view wins.
+  const [mode, setModeState] = useState(() => readLastMode() ?? (hasDraftData(loadDraft()) ? "wizard" : "landing"));
+  const setMode = useCallback((next) => {
+    setModeState(next);
+    if (next !== "finish") persistMode(next); // "finish" is a transient post-download view
+  }, []);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
   const [finishLightboxOpen, setFinishLightboxOpen] = useState(false);
@@ -308,7 +338,7 @@ export default function CVBuilderPage() {
       setMode("landing");
     } catch { setPdfError("PDF konnte nicht erstellt werden."); }
     finally { setPdfBusy(false); }
-  }, [profile, setCvLibrary]);
+  }, [profile, setCvLibrary, setMode]);
 
   const handleUploadResume = useCallback(async (file) => {
     setUploadBusy(true);
@@ -327,9 +357,9 @@ export default function CVBuilderPage() {
       setMode("templatePicker");
     } catch (err) { toast.error(getApiErrorMessage(err, "Lebenslauf konnte nicht gelesen werden.")); }
     finally { setUploadBusy(false); }
-  }, [profile.templateId, authUser]);
+  }, [profile.templateId, authUser, setMode]);
 
-  const onLoadFromLibrary = useCallback((libProfile) => { setProfile({ ...libProfile }); saveDraftNow(libProfile); setMode("wizard"); }, []);
+  const onLoadFromLibrary = useCallback((libProfile) => { setProfile({ ...libProfile }); saveDraftNow(libProfile); setMode("wizard"); }, [setMode]);
   const onReset = useCallback(async () => {
     const ok = await confirm({
       title: "Entwurf verwerfen?",
@@ -341,7 +371,7 @@ export default function CVBuilderPage() {
     const empty = emptyProfile(); if (authUser?.email) empty.email = authUser.email;
     setProfile(empty); saveDraftNow(empty); profileApi.patch(empty).catch(() => {});
     setMode("landing");
-  }, [authUser, confirm]);
+  }, [authUser, confirm, setMode]);
 
   if (mode === "landing") {
     return (

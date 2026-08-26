@@ -8,6 +8,7 @@ import clsx from "clsx";
 import useAuthStore from "../../hooks/useAuthStore";
 import { authApi } from "../../services/api";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { getInitials } from "../../utils/initials";
 import { useBootstrap } from "../../context/BootstrapContext";
 
 import Sidebar from "./Sidebar";
@@ -82,7 +83,7 @@ function MobileDrawer({ open, onClose, me }) {
           style={{ borderColor: "var(--app-border-subtle, #EFEFEC)" }}>
           <span className="grid place-items-center w-9 h-9 rounded-full text-[11px] font-semibold"
             style={{ background: "var(--app-accent-soft)", color: "var(--app-accent)" }}>
-            {me?.full_name?.[0] || me?.email?.[0]?.toUpperCase() || "?"}
+            {getInitials(me?.full_name, me?.email)}
           </span>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold truncate" style={{ color: "var(--app-text, #171717)" }}>

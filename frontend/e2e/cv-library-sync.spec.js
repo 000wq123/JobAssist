@@ -281,8 +281,9 @@ test("a CV created offline survives a boot that pulls an empty server list", asy
   net.blockPush = true;
   await pageA.reload();
 
-  // The reload lands back on the builder (draft present → wizard mode).
-  // Navigate to the dashboard to see the merged CV state after the empty pull.
+  // The reload lands on the builder overview (library visible — the draft
+  // card offers "Fortsetzen"). Navigate to the dashboard to see the merged
+  // CV state after the empty pull.
   await pageA.goto("/dashboard");
 
   // Still there after the empty pull, and the server remains empty the whole
@@ -291,9 +292,14 @@ test("a CV created offline survives a boot that pulls an empty server list", asy
   await expect(pageA.getByText("1 Lebenslauf gespeichert")).toBeVisible();
   expect(serverLibrary).toHaveLength(0);
 
-  // And the CV is still listed in the builder's library (back to landing view).
+  // And the CV is still listed in the builder's library. The overview is
+  // shown directly when the last view was persisted, otherwise the wizard
+  // auto-resumed the draft — hop back to the overview in that case.
   await pageA.goto("/lebenslauf");
-  await pageA.getByRole("button", { name: "Übersicht" }).click();
+  const uebersicht = pageA.getByRole("button", { name: "Übersicht" });
+  const libraryHeading = pageA.getByRole("heading", { name: "Gespeicherte Lebensläufe" });
+  await expect(uebersicht.or(libraryHeading)).toBeVisible({ timeout: 10_000 });
+  if (await uebersicht.isVisible()) await uebersicht.click();
   const librarySection = pageA.getByRole("heading", { name: "Gespeicherte Lebensläufe" }).locator("../..");
   await expect(librarySection.getByText("Anna Muster")).toBeVisible();
 
@@ -323,11 +329,15 @@ test("an offline-created CV deleted before reconnect never reaches the server", 
   expect(net.puts).toBe(0);
 
   // ── Delete it while still offline ─────────────────────────────────────────
-  // Reload while offline (draft present → wizard mode), then go back to the
-  // landing view where the library card shows the Entfernen button. The
+  // Reload while offline. The overview may be shown directly (last view
+  // persisted) or the wizard auto-resumes the draft — get to the overview
+  // either way, where the library card shows the Entfernen button. The
   // delete writes localStorage + pushes (swallowed).
   await pageA.reload();
-  await pageA.getByRole("button", { name: "Übersicht" }).click();
+  const uebersicht = pageA.getByRole("button", { name: "Übersicht" });
+  const entf = pageA.getByTitle("Entfernen");
+  await expect(uebersicht.or(entf)).toBeVisible({ timeout: 10_000 });
+  if (await uebersicht.isVisible()) await uebersicht.click();
   await expect(pageA.getByTitle("Entfernen")).toBeVisible();
   await pageA.getByTitle("Entfernen").click();
 
