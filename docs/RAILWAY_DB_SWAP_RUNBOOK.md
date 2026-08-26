@@ -21,6 +21,30 @@ what you want for serverless/Railway; do **not** use the direct/non-pooler host)
 > session. Rotate it in Neon (Project → Roles → neondb_owner → Reset password)
 > when convenient, then update BOTH `backend/.env` and this Railway variable.
 
+
+
+## Step 0.5 — DNS is currently BROKEN (discovered 2026-08-26)
+
+`api.jobassist.tech` and the apex are **NXDOMAIN**: Namecheap BasicDNS
+serves only MX records (email forwarding) — no A/CNAME records exist.
+Nothing can be verified until these are added at Namecheap:
+
+| Type | Host | Value | Notes |
+|---|---|---|---|
+| A | `@` | `76.76.21.21` | Vercel frontend (apex) |
+| CNAME | `www` | `cname.vercel-dns.com.` | www → Vercel |
+| CNAME | `api` | *(your Railway domain)* | Find it: Railway → backend service → Settings → Networking → Generate Domain (looks like `backend-production-xxxx.up.railway.app`) |
+
+After adding, propagation is usually minutes on BasicDNS. Then verify:
+
+```bash
+host api.jobassist.tech        # should resolve
+curl -s https://api.jobassist.tech/health
+```
+
+Also add in Railway: variable `CORS_ORIGINS=https://jobassist.tech,https://www.jobassist.tech`
+(if not already set) so the browser can call the API cross-origin.
+
 ## Step 1 — Update the variable in Railway
 
 1. Open <https://railway.app> → your JobAssist project → **backend** service.
