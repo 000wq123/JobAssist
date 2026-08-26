@@ -4,13 +4,15 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import delete as sa_delete, select
 
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.usage import require_usage, increment_usage
+from app.models.cv_library_entry import CvLibraryEntry
 from app.models.profile_v2 import ProfileV2
 from app.models.user import User
+from app.schemas.cv_library import CvLibraryEntryIn, CvLibraryOut, CvLibraryPut
 from app.schemas.profile_v2 import ProfileV2Out, ProfileV2Update
 
 router = APIRouter()
@@ -116,6 +118,67 @@ async def patch_my_profile(
     await db.commit()
     await db.refresh(profile)
     return profile
+
+
+def _entry_to_out(row: CvLibraryEntry) -> dict:
+    """Map a CvLibraryEntry row to the frontend's `cv_library_v1` shape."""
+    return {
+        "id": row.entry_id,
+        "name": row.name,
+        "templateId": row.template_id,
+        "createdAt": row.created_at_client,
+        "profile": row.profile or {},
+    }
+
+
+@router.get("/cv-library", response_model=CvLibraryOut)
+async def get_cv_library(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CvLibraryOut:
+    """Return the user's saved CV library (mirror of `cv_library_v1`).
+
+    Insertion order is preserved (newest first, as the client sends it), so
+    the SPA can merge by id without re-sorting.
+    """
+    result = await db.execute(
+        select(CvLibraryEntry)
+        .where(CvLibraryEntry.user_id == current_user.id)
+        .order_by(CvLibraryEntry.id)
+    )
+    return CvLibraryOut(entries=[_entry_to_out(r) for r in result.scalars().all()])
+
+
+@router.put("/cv-library", response_model=CvLibraryOut)
+async def put_cv_library(
+    payload: CvLibraryPut,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CvLibraryOut:
+    """Replace the user's CV library with the client's full list.
+
+    The client owns the list (it edits locally and syncs), so this is a
+    simple delete-all + insert in one transaction. Max 10 entries (schema-
+    enforced) keeps the payload small; the global 5 MiB body cap applies
+    per request.
+    """
+    await db.execute(
+        sa_delete(CvLibraryEntry).where(CvLibraryEntry.user_id == current_user.id)
+    )
+    saved: list[CvLibraryEntry] = []
+    for entry in payload.entries:
+        row = CvLibraryEntry(
+            user_id=current_user.id,
+            entry_id=entry.id,
+            name=entry.name,
+            template_id=entry.templateId,
+            created_at_client=entry.createdAt,
+            profile=entry.profile,
+        )
+        db.add(row)
+        saved.append(row)
+    await db.commit()
+    return CvLibraryOut(entries=[_entry_to_out(r) for r in saved])
 
 
 @router.post("/cv/generate", response_model=CVGenerateResponse)

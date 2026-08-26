@@ -23,6 +23,7 @@ from app.core.provider_health import get_provider_health
 from app.core.security import get_current_user
 from app.core.usage import get_all_usage, get_user_plan
 from app.models.job import Job
+from app.models.profile_v2 import ProfileV2
 from app.models.resume import Resume
 from app.models.user import User
 from app.models.user_profile import UserProfile
@@ -166,8 +167,33 @@ async def init(
             "jobs_by_status": {status: count for status, count in status_result.all()},
         }
 
-    resumes, resumes_total, plan, jobs_summary = await asyncio.gather(
-        _resumes(), _resumes_total(), _plan(), _jobs_summary()
+    async def _cv_profile():
+        """Summarize the CV builder profile (profiles_v2) so the SPA can tell
+        whether the user has a CV without a separate request. Uploaded PDFs
+        (resumes) are counted separately."""
+        result = await db.execute(
+            select(ProfileV2).where(ProfileV2.user_id == current_user.id)
+        )
+        cv = result.scalar_one_or_none()
+        if cv is None:
+            return {"has_content": False, "completion_pct": 0, "updated_at": None}
+        has_content = bool(
+            (cv.vorname and cv.nachname)
+            or (cv.vorname and cv.geburtsdatum)
+            or cv.schulname
+            or (cv.erfahrungen and len(cv.erfahrungen) > 0)
+            or (cv.faehigkeiten and len(cv.faehigkeiten) > 0)
+            or (cv.weiterbildungen and len(cv.weiterbildungen) > 0)
+            or (cv.profil and cv.profil.strip())
+        )
+        return {
+            "has_content": has_content,
+            "completion_pct": cv.completion_pct or 0,
+            "updated_at": cv.updated_at,
+        }
+
+    resumes, resumes_total, plan, jobs_summary, cv_profile = await asyncio.gather(
+        _resumes(), _resumes_total(), _plan(), _jobs_summary(), _cv_profile()
     )
 
     # 3. Usage depends on plan, so it runs after.
@@ -222,6 +248,7 @@ async def init(
             for r in resumes
         ],
         "resumes_total": resumes_total,
+        "cv": cv_profile,
         "jobs_total": jobs_summary["jobs_total"],
         "jobs_by_status": jobs_summary["jobs_by_status"],
         "plan": plan,

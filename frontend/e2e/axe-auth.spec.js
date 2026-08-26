@@ -86,11 +86,22 @@ const ROUTES = [
 
 test.describe.configure({ mode: "serial" });
 
+/**
+ * Wait for fonts + mount animations (`animate-slide-up`, `ja-num-pop`,
+ * skeleton shimmer) to settle before analyzing — axe flags phantom
+ * color-contrast violations on elements it catches mid-animation.
+ */
+async function waitForSettled(page) {
+  await page.evaluate(() => document.fonts?.ready);
+  await page.waitForTimeout(1500);
+}
+
 for (const route of ROUTES) {
   test(`axe (auth): ${route}`, async ({ page }) => {
     await login(page);
     await mockApi(page);
     await page.goto(route, { waitUntil: "networkidle" });
+    await waitForSettled(page);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
       .analyze();

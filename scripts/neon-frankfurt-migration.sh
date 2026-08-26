@@ -4,6 +4,8 @@
 set -euo pipefail
 
 SOURCE_URL="postgresql+asyncpg://neondb_owner:***REMOVED***@ep-damp-heart-adgf2h2k-pooler.c-2.us-east-1.aws.neon.tech/neondb?ssl=require"
+# NOTE: the old password was exposed in git history (public repo) — it was
+# rotated in Neon. Paste the NEW password into SOURCE_URL above before use.
 # 1. Create the new project in the Neon console: Region = AWS eu-central-1 (Frankfurt).
 #    Then export the new connection string:
 NEW_URL="${NEW_URL:?Set NEW_URL to the Frankfurt connection string first}"

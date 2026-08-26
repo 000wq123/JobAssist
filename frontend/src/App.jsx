@@ -158,8 +158,18 @@ export default function App() {
         const res = await authApi.refresh();
         const { access_token } = res.data || {};
         if (access_token && active) setAccessToken(access_token);
-      } catch {
-        // Silent refresh failed — the interceptor will retry on the next 401.
+      } catch (err) {
+        // The refresh cookie is gone or revoked (401/403) → the session is
+        // dead. Drop the stale token and the cached user data immediately so
+        // the app lands on the logged-out state instead of rendering a
+        // phantom dashboard seeded from the sessionStorage cache
+        // (BootstrapContext/useFetch render cached saved jobs + CVs first).
+        const status = err?.response?.status;
+        if ((status === 401 || status === 403) && active) {
+          useAuthStore.getState().logout();
+        }
+        // Network errors (no status) are left alone — the interceptor will
+        // retry on the next 401 if the connection comes back.
       } finally {
         finishBoot();
       }
@@ -180,7 +190,14 @@ export default function App() {
       authApi.refresh().then((res) => {
         const { access_token } = res.data || {};
         if (access_token) setAccessToken(access_token);
-      }).catch(() => {});
+      }).catch((err) => {
+        // Proactively drop a session whose refresh token was revoked while
+        // the user was idle, instead of waiting for the next 401.
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) {
+          useAuthStore.getState().logout();
+        }
+      });
     }, 30 * 60 * 1000);
     return () => clearInterval(id);
   }, [setAccessToken, token]);

@@ -20,6 +20,7 @@ import { profileApi, resumeApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
 import PageHeader from "../components/ui/PageHeader";
 import { CVTemplatePicker, TemplatePreviewPanel, TemplateLightbox } from "../cv/CVTemplatePicker";
+import { useBootstrap } from "../context/BootstrapContext";
 
 function T(n) { return `var(--app-${n})`; }
 
@@ -113,7 +114,10 @@ function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRen
 
 /* ── CVLandingView ── */
 function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, uploadBusy, onReset }) {
-  const [library, setLibrary] = useState(() => loadLibrary());
+  // Library state is owned by BootstrapContext so the dashboard count and the
+  // server mirror stay in sync (BootstrapProvider merges the server library
+  // into this on boot).
+  const { cvLibrary: library, setCvLibrary } = useBootstrap();
   const [downloadingId, setDownloadingId] = useState(null);
 
   const handleLibraryDownload = async (entry) => {
@@ -122,11 +126,11 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
     catch { toast.error("PDF konnte nicht erstellt werden."); }
     finally { setDownloadingId(null); }
   };
-  const handleLibraryDelete = (id) => { deleteFromLibrary(id); setLibrary(loadLibrary()); };
-  const handleLibraryDuplicate = (entry) => { duplicateInLibrary(entry.id); setLibrary(loadLibrary()); toast.success("Lebenslauf dupliziert."); };
+  const handleLibraryDelete = (id) => { deleteFromLibrary(id); setCvLibrary(loadLibrary()); };
+  const handleLibraryDuplicate = (entry) => { duplicateInLibrary(entry.id); setCvLibrary(loadLibrary()); toast.success("Lebenslauf dupliziert."); };
   const handleLibraryRename = (entry) => {
     const newName = window.prompt("Neuer Name:", entry.name);
-    if (newName && newName.trim() && newName.trim() !== entry.name) { renameInLibrary(entry.id, newName.trim()); setLibrary(loadLibrary()); }
+    if (newName && newName.trim() && newName.trim() !== entry.name) { renameInLibrary(entry.id, newName.trim()); setCvLibrary(loadLibrary()); }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -234,6 +238,7 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
 export default function CVBuilderPage() {
   usePageTitle("CV-Builder");
   const { confirm, element: confirmElement } = useConfirmDialog();
+  const { setCvLibrary } = useBootstrap();
   const authUser = useAuthStore((s) => s.user);
   const [profile, setProfile] = useState(() => {
     const draft = loadDraft();
@@ -291,6 +296,8 @@ export default function CVBuilderPage() {
   const handleDownload = useCallback(async () => {
     setPdfError(""); setPdfBusy(true);
     saveDraftNow(profile); saveToLibrary(profile);
+    // Reflect the new library snapshot in shared state (storage already pushed it).
+    setCvLibrary(loadLibrary());
     try { await profileApi.generateCv(); }
     catch (err) { setPdfError(getApiErrorMessage(err, "PDF-Limit erreicht.")); setPdfBusy(false); return; }
     try {
@@ -301,7 +308,7 @@ export default function CVBuilderPage() {
       setMode("landing");
     } catch { setPdfError("PDF konnte nicht erstellt werden."); }
     finally { setPdfBusy(false); }
-  }, [profile]);
+  }, [profile, setCvLibrary]);
 
   const handleUploadResume = useCallback(async (file) => {
     setUploadBusy(true);

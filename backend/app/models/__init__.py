@@ -11,8 +11,9 @@ from app.models.web_push_subscription import WebPushSubscription
 from app.models.inbox_item import InboxItem
 from app.models.kv_wage import KvWage
 from app.models.deadline import Deadline
+from app.models.cv_library_entry import CvLibraryEntry
 
 __all__ = [
     "User", "UserProfile", "Resume", "Job", "JobAlert", "RefreshToken", "Subscription", "UsageRecord",
-    "ProfileV2", "WebPushSubscription", "InboxItem", "KvWage", "Deadline",
+    "ProfileV2", "WebPushSubscription", "InboxItem", "KvWage", "Deadline", "CvLibraryEntry",
 ]

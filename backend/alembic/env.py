@@ -32,6 +32,7 @@ from app.models import (  # noqa: F401 — registers models with Base.metadata
     inbox_item,
     kv_wage,
     deadline,
+    cv_library_entry,
 )
 
 config = context.config

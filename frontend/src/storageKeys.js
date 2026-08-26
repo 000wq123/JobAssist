@@ -12,6 +12,10 @@ export const STORAGE_KEYS = Object.freeze({
   COOKIE_CONSENT: "cookie_consent_v1",
   CV_PROFILE: "cv_profile_v1",
   CV_LIBRARY: "cv_library_v1",
+  // Ids of library entries the server has acknowledged (pushed or pulled).
+  // Lets the merge on boot distinguish "created offline" (keep) from
+  // "deleted on another device" (drop) without resurrecting removals.
+  CV_LIBRARY_SYNCED: "cv_library_synced_ids_v1",
   CV_GEN_COUNT: "ja:cv_gen",
 });
 

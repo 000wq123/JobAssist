@@ -1,4 +1,5 @@
 import useAuthStore from "../hooks/useAuthStore";
+import { clearSwrCache } from "../hooks/useFetch";
 
 export const defaultBaseURL = (() => {
   const url = import.meta.env.VITE_API_URL || (() => {
@@ -66,9 +67,13 @@ function processQueue(error, token = null) {
 function broadcastUnauthenticated() {
   try {
     sessionStorage.removeItem("ja:access_token");
+    // Drop the cached bootstrap payload + SWR rows too, so a later boot can
+    // never re-flash another (or this) user's saved jobs/CVs after logout.
+    sessionStorage.removeItem("ja:init_cache");
   } catch {
     /* ignore */
   }
+  clearSwrCache();
   // Custom event so the navigation handler stays in React-Router land.
   window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
 }
@@ -346,6 +351,10 @@ export const profileApi = {
   get: () => api.get("/profile/me"),
   patch: (data) => api.patch("/profile/me", data),
   generateCv: () => api.post("/profile/cv/generate"),
+  // Saved-CV library sync — server-side mirror of `cv_library_v1` so saved
+  // CVs follow the user across devices (pull on boot, push on every edit).
+  getCvLibrary: () => api.get("/profile/cv-library"),
+  putCvLibrary: (entries) => api.put("/profile/cv-library", { entries }),
 };
 
 // --- AI Text Polish ---

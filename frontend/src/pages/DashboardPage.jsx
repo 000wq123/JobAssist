@@ -11,6 +11,7 @@ import useFetch from "../hooks/useFetch";
 import { Skel, useDelayedSkeleton, usePageTitle } from "../hooks/usePageChrome";
 import useCountUp from "../hooks/useCountUp";
 import { useBootstrap } from "../context/BootstrapContext";
+import { hasDraftContent } from "../cv/storage";
 
 function T(name) {
   return `var(--app-${name})`;
@@ -73,7 +74,7 @@ export default function DashboardPage() {
   const _fullName = authUser?.full_name || authUser?.email?.split("@")[0] || "";
   const meName = _fullName.split(" ")[0];
 
-  const { init, loading: bootstrapLoading, error: bootstrapError } = useBootstrap();
+  const { init, loading: bootstrapLoading, error: bootstrapError, cvLibrary } = useBootstrap();
 
   // SWR-backed: revisits render instantly from cache, then refresh silently.
   const { data: jobsRaw, loading: jobsLoading, error: jobsErr, reload: jobsReload } = useFetch(
@@ -86,9 +87,22 @@ export default function DashboardPage() {
   );
 
   const jobs = useMemo(() => (Array.isArray(jobsRaw) ? jobsRaw : []), [jobsRaw]);
-  // CV existence comes straight from the bootstrap payload — no extra request.
+  // CV existence comes from three places, so a CV never shows up as
+  // "Noch kein Lebenslauf":
+  //   1. uploaded files (init.resumes)
+  //   2. a CV built in the Lebenslauf-Builder and synced to the backend
+  //      (init.cv, backed by the profiles_v2 row)
+  //   3. the local CV library (cv_library_v1, held in BootstrapContext and
+  //      merged with the server mirror) — covers users whose builder profile
+  //      hasn't synced yet (offline, failed patch, or local-only copy)
+  //   4. a non-empty builder draft (cv_profile_v1) — e.g. a CV the user
+  //      started but never saved to the library (auto-prefilled email alone
+  //      does NOT count, see hasDraftContent)
   const initResumes = init?.resumes;
   const resumes = Array.isArray(initResumes) ? initResumes : [];
+  const hasCvProfile = Boolean(init?.cv?.has_content);
+  const localCvLibraryCount = cvLibrary.length;
+  const hasBuilderDraft = hasDraftContent();
   const jobAlerts = useMemo(() => (Array.isArray(alertsRaw) ? alertsRaw : []), [alertsRaw]);
 
   const bootstrapEmpty = init?.jobs_total === 0;
@@ -131,12 +145,12 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [jobs]);
 
-  const hasCV = resumes.length > 0;
+  const hasCV = resumes.length > 0 || hasCvProfile || localCvLibraryCount > 0 || hasBuilderDraft;
   const activeAlerts = jobAlerts.filter((a) => a.is_active).length;
   const totalApplications = jobs.filter((j) => j.status !== "bookmarked" && j.status !== "archived" && j.status !== "rejected").length;
 
   const allSettled = (!jobsLoading || jobsErr) && !bootstrapLoading && (!alertsLoading || alertsErr);
-  const trulyEmpty = allSettled && !jobsFailed && !resumesFailed && !alertsFailed && jobs.length === 0 && resumes.length === 0 && jobAlerts.length === 0;
+  const trulyEmpty = allSettled && !jobsFailed && !resumesFailed && !alertsFailed && jobs.length === 0 && resumes.length === 0 && !hasCvProfile && localCvLibraryCount === 0 && !hasBuilderDraft && jobAlerts.length === 0;
 
   const greeting = getGreeting(meName);
 
@@ -426,7 +440,13 @@ export default function DashboardPage() {
                       {hasCV ? "Lebenslauf bereit" : "Noch kein Lebenslauf"}
                     </span>
                     <span className="block mt-1 text-[12px]" style={{ color: T("text-muted") }}>
-                      {hasCV ? `${resumes.length} ${resumes.length === 1 ? "Datei" : "Dateien"} gespeichert` : "Erstelle deinen ersten Lebenslauf"}
+                      {resumes.length > 0
+                        ? `${resumes.length} ${resumes.length === 1 ? "Datei" : "Dateien"} gespeichert`
+                        : localCvLibraryCount > 0
+                        ? `${localCvLibraryCount} ${localCvLibraryCount === 1 ? "Lebenslauf" : "Lebensläufe"} gespeichert`
+                        : hasBuilderDraft
+                        ? "Entwurf im Lebenslauf-Builder gespeichert"
+                        : "Profil im Lebenslauf-Builder gespeichert"}
                     </span>
                   </span>
                 </div>
