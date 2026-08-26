@@ -32,6 +32,27 @@ window.addEventListener("cookie-consent-changed", (e) => {
   }
 });
 
+// WebMCP: expose read-only workspace tools to MCP clients (Chrome 152+ with
+// WebMCPTesting flag). Opt-in via env; dynamic import so the module never
+// lands in the main bundle and absence of the API is a graceful no-op.
+if (import.meta.env.VITE_ENABLE_WEBMCP === "1") {
+  Promise.all([
+    import("./webmcp/tools/workspace"),
+    import("./webmcp/register"),
+  ])
+    .then(([tools, reg]) => {
+      const result = reg.registerWebMcpTools(tools.TOOL_DEFS);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.info("[webmcp]", result);
+      }
+      if (import.meta.hot) {
+        import.meta.hot.dispose(() => reg.unregisterWebMcpTools());
+      }
+    })
+    .catch(() => {/* webmcp is best-effort; never block app boot */});
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
