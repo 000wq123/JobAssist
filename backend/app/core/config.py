@@ -30,6 +30,34 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
 
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _normalize_asyncpg_ssl(cls, v: str) -> str:
+        """Make asyncpg URLs tolerate the psycopg2/libpq-style `sslmode` query
+        param. SQLAlchemy's asyncpg dialect forwards URL query params to
+        asyncpg.connect() as keyword arguments, and asyncpg accepts `ssl`, not
+        `sslmode` — so `postgresql+asyncpg://…?sslmode=require` dies with
+        `TypeError: connect() got an unexpected keyword argument 'sslmode'` in
+        both Alembic and the app engine. Rewrite `sslmode` → `ssl` so such URLs
+        work as-is."""
+        try:
+            from sqlalchemy.engine import make_url
+
+            url = make_url(v)
+        except Exception:
+            return v  # leave malformed values alone; SQLAlchemy raises later
+
+        if not url.drivername.endswith("asyncpg"):
+            return v
+
+        query = dict(url.query)
+        if "sslmode" not in query:
+            return v
+
+        sslmode = query.pop("sslmode")
+        query.setdefault("ssl", sslmode)
+        return url.set(query=query).render_as_string(hide_password=False)
+
     # Auth (JWT)
     SECRET_KEY: str = "change-me-in-production"
     ALGORITHM: str = "HS256"

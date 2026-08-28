@@ -32,7 +32,7 @@ export default function JobsLayout() {
       {hasDetail && (
         <section className="block lg:col-span-7 xl:col-span-8 lg:min-h-0 lg:overflow-y-auto lg:border-l lg:pl-6"
           style={{ borderColor: "var(--app-border-subtle, #EFEFEC)" }}>
-          <Suspense fallback={<div className="animate-pulse rounded-xl" style={{height:200,background:"var(--app-border, #E7E7E4)",opacity:0.25}} />}>
+          <Suspense fallback={null}>
             <Outlet />
           </Suspense>
         </section>

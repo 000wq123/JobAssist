@@ -312,7 +312,10 @@ export default function AppShell() {
           )}
         >
           {location.pathname.startsWith("/dashboard") && <VerificationBanner me={me} />}
-          <Suspense fallback={<div className="px-6 pt-8"><div className="animate-pulse rounded-lg mb-6" style={{height: 32, width: 280, background: "var(--app-border, #E7E7E4)"}} /><div className="grid grid-cols-5 gap-4 mb-8">{Array.from({length:5}).map((_,i)=><div key={i} className="rounded-xl" style={{height:100, background:"var(--app-border, #E7E7E4)",opacity:0.3}} />)}</div></div>}>
+          {/* No skeleton fallback: a blank frame is strictly preferable to any
+              pulse/flash UI during a lazy page-chunk load. Pages are preloaded
+              on idle, so transitions render near-instantly. */}
+          <Suspense fallback={null}>
             <Outlet />
           </Suspense>
         </main>

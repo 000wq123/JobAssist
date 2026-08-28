@@ -107,6 +107,33 @@ export default function CommandMenu({ open, onClose }) {
     setActiveIdx(0);
   }, [query]);
 
+  // Scroll the active item into view whenever it changes (keyboard/nav).
+  const activeRef = useRef(null);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
+  // Mouse-wheel scrolling over the list must move the highlight to the item
+  // now at the top of the visible viewport — otherwise the selection stays
+  // stuck on whatever was last hovered/keyed (e.g. Einstellungen at the bottom)
+  // while the list scrolls away from it.
+  const handleScroll = () => {
+    const list = listRef.current;
+    if (!list) return;
+    const rows = list.querySelectorAll('[data-row]');
+    if (!rows.length) return;
+    let active = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.getBoundingClientRect().top < list.getBoundingClientRect().top + 16) {
+        active = i;
+      } else {
+        break;
+      }
+    }
+    setActiveIdx(active);
+  };
+
   const handleKeyDown = useCallback(
     (e) => {
       if (e.key === "Escape") {
@@ -174,7 +201,7 @@ export default function CommandMenu({ open, onClose }) {
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[420px] overflow-y-auto p-2">
+        <div ref={listRef} onScroll={handleScroll} className="max-h-[420px] overflow-y-auto p-2">
           {filtered.length === 0 ? (
             <div className="py-10 text-center text-[13px] text-[var(--color-fg-dim)]">
               Keine Ergebnisse
@@ -193,8 +220,12 @@ export default function CommandMenu({ open, onClose }) {
                     return (
                       <button
                         key={c.id}
+                        ref={isActive ? activeRef : undefined}
+                        data-row
+                        data-active={isActive ? "true" : "false"}
                         onMouseEnter={() => setActiveIdx(runningIdx)}
                         onClick={c.action}
+                        onFocus={() => setActiveIdx(runningIdx)}
                         className={`grid grid-cols-12 items-center gap-3 w-full text-left px-3 py-2.5 rounded-md transition-colors ${
                           isActive
                             ? "bg-[var(--color-bg-elev-3)]"

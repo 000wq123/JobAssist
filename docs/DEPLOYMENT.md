@@ -59,7 +59,7 @@ copy the real values; never invent new ones):
 
 | Key                      | Value                                                                  |
 |--------------------------|------------------------------------------------------------------------|
-| `DATABASE_URL`           | `postgresql+asyncpg://neondb_owner:***@ep-noisy-scene-b1tap4ls-pooler.c-5.eu-central-1.aws.neon.tech/neondb?sslmode=require` — **not currently in `backend/.env`** (that file now points at local SQLite `./dev.db` for dev; leave it that way). Grab the Frankfurt URL fresh from the **Neon dashboard** (Project → Connect → Pooled connection), rewrite `postgresql://` → `postgresql+asyncpg://`, and keep the `-pooler` host (pooled = correct for Railway). |
+| `DATABASE_URL`           | `postgresql+asyncpg://neondb_owner:***@ep-noisy-scene-b1tap4ls-pooler.c-5.eu-central-1.aws.neon.tech/neondb?ssl=require` — **not currently in `backend/.env`** (that file now points at local SQLite `./dev.db` for dev; leave it that way). Grab the Frankfurt URL fresh from the **Neon dashboard** (Project → Connect → Pooled connection), rewrite `postgresql://` → `postgresql+asyncpg://`, use **`?ssl=require`** (asyncpg accepts `ssl`, not `sslmode` — an `sslmode` URL crashes with `TypeError: connect() got an unexpected keyword argument 'sslmode'`; the code normalizes it, but prefer `ssl`), and keep the `-pooler` host (pooled = correct for Railway). |
 | `SECRET_KEY`             | copy from `backend/.env` — must stay **stable** across restarts          |
 | `ALGORITHM`              | `HS256`                                                               |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `30`                                                              |
@@ -101,7 +101,12 @@ full env access; `alembic` and `gunicorn` are installed by `requirements.txt`):
 alembic upgrade head && gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --timeout 120 --bind 0.0.0.0:$PORT
 ```
 
-- **Remove** any pre-deploy step.
+- **Remove any pre-deploy step** (Railway → backend → Settings → Deploy → the
+  **Pre-Deploy Command** field must be **empty**). A leftover pre-deploy step
+  still runs `alembic` in the build stage — where `DATABASE_URL` is **not**
+  available — and aborts the deploy at *`Pre deploy command failed`* even when
+  the Start Command is correct. It is the #1 gotcha after switching to the
+  inline migration.
 - Keep **Healthcheck Path** set to `/health`.
 - Safe on every deploy: `upgrade head` on an already-migrated DB is a no-op.
 
@@ -217,4 +222,5 @@ browser console shows `API URL: https://api.jobassist.tech/api` (not localhost).
 | Job search empty (Adzuna source) | API keys invalid | Check `adzuna.configured` in `/health/dependencies`; circuit breaker |
 | No verification e-mail | Brevo key IP-restricted or sender unverified | Allowlist deploy IP in Brevo; verify sender |
 | New deploy can't find tables | Alembic not run / wrong `DATABASE_URL` | Run `alembic upgrade head`; fix Railway DB var to Neon |
-| Deploy fails at `Pre deploy command` | Pre-deploy step can't see `DATABASE_URL` (build stage has no env) | Move migration into Start Command: `alembic upgrade head && gunicorn …` (see §1.3) |
+| Deploy crashes at startup with `TypeError: connect() got an unexpected keyword argument 'sslmode'` | `DATABASE_URL` uses psycopg2-style `?sslmode=require` on an `+asyncpg` URL; SQLAlchemy passes `sslmode` straight to asyncpg, which only accepts `ssl` | Change the URL to `?ssl=require` (the app normalizes `sslmode` → `ssl` as a safety net, but fix the var) and redeploy |
+| Deploy fails at `Pre deploy command` | A **leftover Pre-Deploy Command** still runs `alembic` in the build stage where `DATABASE_URL` isn't available | Delete the Pre-Deploy Command field entirely (Settings → Deploy → Pre-Deploy must be empty); keep migration only in the Start Command (see §1.3) |

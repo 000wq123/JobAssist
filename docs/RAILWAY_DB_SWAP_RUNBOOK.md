@@ -11,11 +11,16 @@ old us-east-1 project, which is slow (`/init` ~5s, `/jobs` broken→3.8s pre-fix
 It is already on disk, line 4 of `backend/.env`:
 
 ```
-DATABASE_URL=postgresql+asyncpg://neondb_owner:<PASSWORD>@ep-noisy-scene-b1tap4ls-pooler.c-5.eu-central-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql+asyncpg://neondb_owner:<PASSWORD>@ep-noisy-scene-b1tap4ls-pooler.c-5.eu-central-1.aws.neon.tech/neondb?ssl=require
 ```
 
 Copy the whole value exactly (keep the `-pooler` host — pooled connections are
 what you want for serverless/Railway; do **not** use the direct/non-pooler host).
+
+> ⚠️ Use `?ssl=require` — not `?sslmode=require`. `sslmode` is psycopg2/libpq
+> syntax; SQLAlchemy forwards it to asyncpg, which crashes with
+> `TypeError: connect() got an unexpected keyword argument 'sslmode'`. The app
+> normalizes `sslmode` → `ssl` as a safety net, but `ssl` is the correct param.
 
 > ⚠️ Hygiene note: this password was pasted into chat during the migration
 > session. Rotate it in Neon (Project → Roles → neondb_owner → Reset password)

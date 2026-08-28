@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import {
   Bookmark, Send, MessageCircle, CheckCircle2, Archive,
-  FileText, Bell, ArrowRight, Plus, Search, RefreshCw, AlertCircle,
+  FileText, Bell, ArrowRight, Plus, Search, RefreshCw, AlertCircle, Upload,
 } from "lucide-react";
 
 import useAuthStore from "../hooks/useAuthStore";
@@ -240,6 +240,14 @@ export default function DashboardPage() {
             >
               <Search className="w-4 h-4" />
               Jobs finden
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/lebenslauf")}
+              className="btn btn-secondary btn-xl gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Lebenslauf hochladen
             </button>
           </div>
         </div>
