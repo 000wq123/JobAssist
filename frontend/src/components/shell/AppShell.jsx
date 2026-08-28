@@ -134,8 +134,11 @@ function MobileDrawer({ open, onClose, me }) {
 /**
  * VerificationBanner — dashboard system notice for unverified e-mail.
  *
- * Polished amber notice: icon block, title + subtitle, resend action and an
- * optional dismiss (session-scoped, so it stays gone until the tab closes).
+ * Polished amber notice: icon block, title + subtitle and a resend action.
+ * Renders on every login and disappears ONLY once the backend confirms the
+ * e-mail (me.is_verified === true) — there is no dismiss, because hiding it
+ * before verification would leave users blocked by API gates they don't
+ * understand.
  *
  * @param {object} props
  * @param {object|null} [props.me] - Authenticated user from bootstrap/store.
@@ -143,16 +146,10 @@ function MobileDrawer({ open, onClose, me }) {
  */
 function VerificationBanner({ me }) {
   const [sending, setSending] = useState(false);
-  // Dismiss only hides the notice for this browser session — verification is
-  // still pending, so a fresh visit brings the banner back.
-  const [dismissed, setDismissed] = useState(() => {
-    try {
-      return sessionStorage.getItem("ja:verify_banner_dismissed_v1") === "1";
-    } catch {
-      return false;
-    }
-  });
-  if (!me || me.is_verified !== false || dismissed) return null;
+  // Hide strictly on `=== true`: a missing/undefined flag (e.g. a stale
+  // cached payload) counts as unverified, so it can never silently hide the
+  // notice while the API still gates features.
+  if (!me || me.is_verified === true) return null;
 
   const handleResend = async () => {
     setSending(true);
@@ -164,13 +161,6 @@ function VerificationBanner({ me }) {
     } finally {
       setSending(false);
     }
-  };
-
-  const handleDismiss = () => {
-    try {
-      sessionStorage.setItem("ja:verify_banner_dismissed_v1", "1");
-    } catch { /* private mode — session-only dismiss still works in-memory */ }
-    setDismissed(true);
   };
 
   return (
@@ -204,15 +194,6 @@ function VerificationBanner({ me }) {
         className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0 cursor-pointer"
       >
         {sending ? "Senden…" : "Erneut senden"}
-      </button>
-      <button
-        type="button"
-        onClick={handleDismiss}
-        aria-label="Hinweis schließen"
-        className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-md border-none cursor-pointer transition-colors duration-150 hover:bg-[var(--app-surface-hover)]"
-        style={{ background: "transparent", color: "var(--app-text-muted)" }}
-      >
-        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );

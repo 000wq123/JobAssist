@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 import AuthLayout from "../components/ui/AuthLayout";
 import useAuthStore from "../hooks/useAuthStore";
+import { useBootstrap } from "../context/BootstrapContext";
 import { authApi, initApi } from "../services/api";
 
 /** Email-verification landing page — auto-verifies the token from the URL query string. */
@@ -15,6 +16,10 @@ export default function VerifyEmailPage() {
   const storedUser = useAuthStore((s) => s.user);
   const sessionToken = useAuthStore((s) => s.token);
   const hasSession = Boolean(sessionToken);
+  // Flip the bootstrap payload too, so the verification banner disappears
+  // immediately when the user lands back on the dashboard — without it, the
+  // stale init.me keeps reporting unverified for the whole session.
+  const { setInit } = useBootstrap();
 
   useEffect(() => {
     if (!token) {
@@ -29,16 +34,22 @@ export default function VerifyEmailPage() {
         if (!hasSession) return;
 
         if (storedUser) setUser({ ...storedUser, is_verified: true });
+        // Optimistically mark the bootstrap payload verified so the banner
+        // unmounts on the very next render (no reload needed).
+        setInit((prev) => (prev ? { ...prev, me: { ...prev.me, is_verified: true } } : prev));
 
         try {
           const initRes = await initApi.fetch();
-          if (initRes.data?.me) setUser(initRes.data.me);
+          if (initRes.data?.me) {
+            setUser(initRes.data.me);
+            setInit((prev) => (prev ? { ...prev, me: initRes.data.me } : prev));
+          }
         } catch {
           /* non-blocking */
         }
       })
       .catch(() => setStatus("error"));
-  }, [hasSession, setUser, storedUser, token]);
+  }, [hasSession, setInit, setUser, storedUser, token]);
 
   const t = "var(--ja-auth-transition)";
 
