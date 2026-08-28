@@ -58,3 +58,5 @@ sse3_temp.txt
 
 backend/dev.db
 *.db
+.vercel
+.env*
