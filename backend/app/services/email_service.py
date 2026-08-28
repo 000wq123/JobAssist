@@ -417,7 +417,7 @@ def send_verification_email(to_email: str, token: str) -> bool:
       </p>
       { _attrs(["Lebenslauf erstellen", "Stellen finden &amp; speichern", "KI-Hilfe f&#252;r Bewerbungen"]) }
       { _button("E-Mail-Adresse best&#228;tigen", verify_url) }
-      { _note("&#128337;", "Der Link ist <strong>24\u00a0Stunden</strong> g&#252;ltig. Falls du dich nicht registriert hast, ignoriere diese E-Mail einfach.") }
+      { _note("&#128337;", "Der Link ist <strong>24&nbsp;Stunden</strong> g&#252;ltig. Falls du dich nicht registriert hast, ignoriere diese E-Mail einfach.") }
     """
     return send_transactional_email(
         to_email,
@@ -436,7 +436,7 @@ def send_password_reset_email(to_email: str, token: str) -> bool:
       </p>
       { _attrs(["Du kannst weiterhin alle Bewerbungen ansehen", "Der Link funktioniert einmalig"]) }
       { _button("Passwort zur&#252;cksetzen", reset_url) }
-      { _note("&#128337;", "Der Link ist <strong>1\u00a0Stunde</strong> g&#252;ltig. Falls du kein neues Passwort angefordert hast, ignoriere diese E-Mail einfach.") }
+      { _note("&#128337;", "Der Link ist <strong>1&nbsp;Stunde</strong> g&#252;ltig. Falls du kein neues Passwort angefordert hast, ignoriere diese E-Mail einfach.") }
     """
     return send_transactional_email(
         to_email,
