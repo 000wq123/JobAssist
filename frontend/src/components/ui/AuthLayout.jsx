@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -16,6 +17,19 @@ import { useTheme } from "../../context/ThemeContext";
 export default function AuthLayout({ children, backTo = "/", backLabel = "Zur Startseite" }) {
   const location = useLocation();
   const { preference, setTheme } = useTheme();
+
+  // The auth scene (like the landing) is designed light — force light mode
+  // while it's mounted so a dark OS theme doesn't render a dark login page,
+  // and restore the user's theme when they leave.
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.getAttribute("data-theme");
+    root.setAttribute("data-theme", "light");
+    return () => {
+      if (previous) root.setAttribute("data-theme", previous);
+      else root.removeAttribute("data-theme");
+    };
+  }, []);
 
   const iconCls = "w-3.5 h-3.5";
 

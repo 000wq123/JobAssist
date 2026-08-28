@@ -206,11 +206,11 @@
   --ja-auth-theme-active: #ffffff;
   --ja-auth-input-bg: #ffffff;
   --ja-auth-input-border: #e7e6e3;
-  --ja-auth-focus: #6152F3;
-  --ja-auth-cta: #6152F3;
-  --ja-auth-cta-hover: #4D40D6;
+  --ja-auth-focus: #e30613;
+  --ja-auth-cta: #e30613;
+  --ja-auth-cta-hover: #c9000b;
   --ja-auth-cta-text: #ffffff;
-  --ja-auth-link: #6152F3;
+  --ja-auth-link: #e30613;
   --ja-auth-chart-bg: #fff1f1;
   /* ── Legal page tokens ───────────────────────────────────────── */
   --ja-glow-display: none;
@@ -362,11 +362,11 @@
   --ja-auth-theme-active: #202027;
   --ja-auth-input-bg: #111116;
   --ja-auth-input-border: rgba(255, 255, 255, 0.09);
-  --ja-auth-focus: #7C6BFF;
-  --ja-auth-cta: #6152F3;
-  --ja-auth-cta-hover: #7C6BFF;
+  --ja-auth-focus: #F25A62;
+  --ja-auth-cta: #e30613;
+  --ja-auth-cta-hover: #FF4545;
   --ja-auth-cta-text: #ffffff;
-  --ja-auth-link: #9D8FFF;
+  --ja-auth-link: #F25A62;
   --ja-auth-chart-bg: rgba(227, 6, 19, 0.08);
   /* ── Legal page tokens ───────────────────────────────────────── */
   --ja-glow-display: block;
