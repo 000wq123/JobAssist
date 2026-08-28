@@ -7,6 +7,30 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _INSECURE_SECRET_KEY = "change-me-in-production"
 
+# libpq-only query params that asyncpg's connect() rejects as keyword
+# arguments. Neon connection strings append several of these (sslmode,
+# channel_binding, sslnegotiation, …); SQLAlchemy's asyncpg dialect forwards
+# URL query params verbatim, which crashes asyncpg with
+# `TypeError: connect() got an unexpected keyword argument '…'`. See
+# _normalize_asyncpg_url below.
+_ASYNC_PG_UNSUPPORTED_PARAMS = frozenset({
+    "channel_binding",
+    "sslnegotiation",
+    "sslcert",
+    "sslkey",
+    "sslrootcert",
+    "sslcrl",
+    "sslcrldir",
+    "ssl_min_protocol_version",
+    "ssl_max_protocol_version",
+    "gssencmode",
+    "connect_timeout",
+    "keepalives",
+    "keepalives_idle",
+    "keepalives_interval",
+    "keepalives_count",
+})
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -32,14 +56,16 @@ class Settings(BaseSettings):
 
     @field_validator("DATABASE_URL")
     @classmethod
-    def _normalize_asyncpg_ssl(cls, v: str) -> str:
-        """Make asyncpg URLs tolerate the psycopg2/libpq-style `sslmode` query
-        param. SQLAlchemy's asyncpg dialect forwards URL query params to
-        asyncpg.connect() as keyword arguments, and asyncpg accepts `ssl`, not
-        `sslmode` — so `postgresql+asyncpg://…?sslmode=require` dies with
-        `TypeError: connect() got an unexpected keyword argument 'sslmode'` in
-        both Alembic and the app engine. Rewrite `sslmode` → `ssl` so such URLs
-        work as-is."""
+    def _normalize_asyncpg_url(cls, v: str) -> str:
+        """Make asyncpg URLs tolerate psycopg2/libpq-style query params.
+        SQLAlchemy's asyncpg dialect forwards URL query params to
+        asyncpg.connect() as keyword arguments, but asyncpg only accepts `ssl`
+        — not `sslmode` (libpq syntax), `channel_binding` (Neon appends it to
+        connection strings), `sslnegotiation`, client cert paths, etc. Any of
+        those crash with `TypeError: connect() got an unexpected keyword
+        argument '…'` in both Alembic and the app engine. Translate `sslmode`
+        → `ssl` and drop the params asyncpg has no equivalent for, so URLs
+        copied from Neon's dashboard work as-is."""
         try:
             from sqlalchemy.engine import make_url
 
@@ -51,11 +77,19 @@ class Settings(BaseSettings):
             return v
 
         query = dict(url.query)
-        if "sslmode" not in query:
-            return v
+        changed = False
 
-        sslmode = query.pop("sslmode")
-        query.setdefault("ssl", sslmode)
+        if "sslmode" in query:
+            sslmode = query.pop("sslmode")
+            query.setdefault("ssl", sslmode)
+            changed = True
+
+        for param in _ASYNC_PG_UNSUPPORTED_PARAMS:
+            if query.pop(param, None) is not None:
+                changed = True
+
+        if not changed:
+            return v
         return url.set(query=query).render_as_string(hide_password=False)
 
     # Auth (JWT)

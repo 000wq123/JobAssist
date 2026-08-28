@@ -17,10 +17,12 @@ DATABASE_URL=postgresql+asyncpg://neondb_owner:<PASSWORD>@ep-noisy-scene-b1tap4l
 Copy the whole value exactly (keep the `-pooler` host — pooled connections are
 what you want for serverless/Railway; do **not** use the direct/non-pooler host).
 
-> ⚠️ Use `?ssl=require` — not `?sslmode=require`. `sslmode` is psycopg2/libpq
-> syntax; SQLAlchemy forwards it to asyncpg, which crashes with
-> `TypeError: connect() got an unexpected keyword argument 'sslmode'`. The app
-> normalizes `sslmode` → `ssl` as a safety net, but `ssl` is the correct param.
+> ⚠️ Use `?ssl=require` — not `?sslmode=require` and not `channel_binding`
+> (Neon appends `channel_binding=require` to newer connection strings). Those
+> are psycopg2/libpq params; SQLAlchemy forwards them to asyncpg, which crashes
+> with `TypeError: connect() got an unexpected keyword argument '…'`. The app
+> normalizes `sslmode` → `ssl` and strips the rest as a safety net, but `ssl`
+> is the correct param.
 
 > ⚠️ Hygiene note: this password was pasted into chat during the migration
 > session. Rotate it in Neon (Project → Roles → neondb_owner → Reset password)
