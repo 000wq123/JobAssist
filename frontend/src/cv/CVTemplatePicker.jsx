@@ -4,6 +4,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
+import { ChevronLeft, ChevronRight, Download, FileText, Loader2, Maximize2, Minimize2, Minus, Plus, X } from "lucide-react";
 import { CV_TEMPLATES, TEMPLATE_FILTERS, templateMatchesFilter } from "./templateRegistry";
 import { renderCVBody } from "./cvPreview.jsx";
 import { renderCVThumbnail, THUMB } from "./cvThumbnail.jsx";
@@ -11,6 +13,45 @@ import { normalizeProfile, DESIGN_PREVIEW, A4 } from "./cvModel.js";
 
 const DESIGN_MODEL = normalizeProfile(DESIGN_PREVIEW.profile);
 const THUMBNAIL_HEIGHT = 300;
+
+/* ── Fullscreen viewer design tokens ────────────────────────────────────────
+   The preview is a dark, premium document viewer in BOTH themes (like the
+   approved mockup): layered charcoal tones — overlay → modal shell → toolbar
+   → preview stage → bottom action bar — never a single pure-black block. */
+const VIEWER = {
+  overlay: "rgba(8, 8, 12, 0.66)",
+  shell: "#1A1A1F",
+  toolbar: "#202026",
+  stage: "#101013",
+  footer: "#1D1D22",
+  border: "rgba(255, 255, 255, 0.09)",
+  focus: "#F25A62",
+};
+
+/* Zoom clamps (absolute A4 scale). Wide enough to inspect detail, never so
+   far that the page escapes the stage entirely (stage scrolls to pan). */
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 2;
+/* Breathing room around the page inside the stage (accounts for the side
+   arrows and the position pill). */
+const STAGE_PAD = 56;
+
+/** Compact square toolbar button with hover / focus-visible / tooltip. */
+function ToolbarButton({ onClick, disabled, label, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-white/75 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-35"
+      style={{ outlineColor: VIEWER.focus }}
+    >
+      {children}
+    </button>
+  );
+}
 
 
 /** @param {{ template: object }} props */
@@ -96,44 +137,210 @@ function SelectionDock({ template, onPreview, onContinue }) {
   );
 }
 
-/** @param {{ startId: string, onClose: function, onSelect: function }} props */
-function PreviewOverlay({ startId, onClose, onSelect }) {
+/**
+ * Fullscreen CV preview — document-viewer modal matching the approved mockup.
+ *
+ * Dark layered surface (overlay → shell → toolbar → stage → footer), A4 page
+ * on a presentation stage with fit/fill/manual zoom, side template arrows,
+ * position pill, PDF export and a CTA anchored to the modal. Reuses the
+ * shared renderCVBody renderer and the lazy downloadCVPdf export flow.
+ *
+ * @param {{ startId: string, profile?: object, onClose: function, onSelect: function }} props
+ */
+function PreviewOverlay({ startId, profile, onClose, onSelect }) {
   const [index, setIndex] = useState(Math.max(0, CV_TEMPLATES.findIndex((item) => item.id === startId)));
-  const [zoom, setZoom] = useState(0.72);
-  const [fit, setFit] = useState(true);
-  const canvasRef = useRef(null);
+  const [mode, setMode] = useState("fit"); // "fit" | "fill" | "manual"
+  const [scale, setScale] = useState(0.5);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const stageRef = useRef(null);
+  const modalRef = useRef(null);
+  const modeRef = useRef(mode);
+  const fitScaleRef = useRef(0.5);
+  const fillScaleRef = useRef(0.6);
   const active = CV_TEMPLATES[index];
+  const model = profile ? normalizeProfile(profile) : DESIGN_MODEL;
+  modeRef.current = mode;
 
+  // Measure the stage and keep the page fitted to it while in fit/fill mode.
   useEffect(() => {
-    const oldOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    return () => { document.documentElement.style.overflow = oldOverflow; focused?.focus(); };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (event) => { if (event.key === "Escape") onClose(); if (event.key === "ArrowLeft") setIndex((value) => Math.max(0, value - 1)); if (event.key === "ArrowRight") setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1)); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  useEffect(() => {
-    const node = canvasRef.current;
+    const node = stageRef.current;
     if (!node) return undefined;
-    const measure = () => { if (fit) setZoom(Math.min((node.clientWidth - 48) / A4.W, (node.clientHeight - 48) / A4.H)); };
+    const measure = () => {
+      const w = node.clientWidth - STAGE_PAD;
+      const h = node.clientHeight - STAGE_PAD;
+      fitScaleRef.current = Math.max(0.1, Math.min(w / A4.W, h / A4.H));
+      fillScaleRef.current = Math.max(0.1, w / A4.W);
+      if (modeRef.current === "fit") setScale(fitScaleRef.current);
+      else if (modeRef.current === "fill") setScale(fillScaleRef.current);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [fit]);
+  }, []);
 
-  const scale = fit ? zoom : zoom;
+  // Re-apply the fit/fill scale whenever the mode switches.
+  useEffect(() => {
+    if (mode === "fit") setScale(fitScaleRef.current);
+    else if (mode === "fill") setScale(fillScaleRef.current);
+  }, [mode]);
+
+  // Scroll-lock the page, trap focus inside the modal, restore focus to the
+  // triggering card on close.
+  useEffect(() => {
+    const root = modalRef.current;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const oldOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    root?.querySelector("button")?.focus();
+    const onTab = (event) => {
+      if (event.key !== "Tab" || !root) return;
+      const items = Array.from(root.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])")).filter((el) => !el.disabled && el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onTab);
+    return () => {
+      document.documentElement.style.overflow = oldOverflow;
+      document.removeEventListener("keydown", onTab);
+      previouslyFocused?.focus();
+    };
+  }, []);
+
+  // Keyboard: Esc close · ←/→ template · +/= zoom in · − zoom out.
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+      else if (event.key === "ArrowLeft") setIndex((value) => Math.max(0, value - 1));
+      else if (event.key === "ArrowRight") setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1));
+      else if (event.key === "+" || event.key === "=") { setMode("manual"); setScale((value) => Math.min(MAX_ZOOM, value * 1.15)); }
+      else if (event.key === "-") { setMode("manual"); setScale((value) => Math.max(MIN_ZOOM, value * 0.85)); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const zoomIn = () => { setMode("manual"); setScale((value) => Math.min(MAX_ZOOM, value * 1.15)); };
+  const zoomOut = () => { setMode("manual"); setScale((value) => Math.max(MIN_ZOOM, value * 0.85)); };
+  const toggleFill = () => setMode((value) => (value === "fill" ? "fit" : "fill"));
+
+  const handleDownload = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      const { downloadCVPdf } = await import("./exportPdf.jsx");
+      await downloadCVPdf(model);
+    } catch {
+      toast.error("PDF konnte nicht erstellt werden");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex flex-col" role="dialog" aria-modal="true" aria-label={`${active.name} — große Vorschau`} style={{ background: "rgba(10,10,12,0.95)" }}>
-      <header className="flex shrink-0 items-center gap-3 border-b px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.1)" }}><button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} disabled={index === 0} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10 disabled:opacity-30" aria-label="Vorherige Vorlage">←</button><button type="button" onClick={() => setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1))} disabled={index === CV_TEMPLATES.length - 1} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10 disabled:opacity-30" aria-label="Nächste Vorlage">→</button><h2 className="m-0 min-w-0 flex-1 truncate text-[15px] font-semibold text-white">{active.name}</h2><button type="button" onClick={() => { setFit(false); setZoom((value) => Math.min(1.35, value + 0.15)); }} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10" aria-label="Vergrößern">+</button><button type="button" onClick={() => { setFit(false); setZoom((value) => Math.max(0.4, value - 0.15)); }} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10" aria-label="Verkleinern">−</button><button type="button" onClick={onClose} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10" aria-label="Schließen">✕</button></header>
-      <div ref={canvasRef} className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-6" onClick={onClose}><div className="shrink-0 overflow-hidden rounded-sm" style={{ width: A4.W * scale, height: A4.H * scale, background: "#fff", boxShadow: "0 16px 70px rgba(0,0,0,0.55)" }} onClick={(event) => event.stopPropagation()}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(active.id, DESIGN_MODEL)}</div></div></div>
-      <footer className="flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.1)" }}><span className="text-[12px] text-white/60">{index + 1} / {CV_TEMPLATES.length}</span><button type="button" onClick={() => { onSelect(active.id); onClose(); }} className="h-10 cursor-pointer rounded-lg px-4 text-[13px] font-semibold" style={{ background: "var(--color-accent-500)", color: "#fff" }}>Diese Vorlage verwenden →</button></footer>
-    </div>, document.body
+    <div
+      className="fixed inset-0 z-[200] grid place-items-center overflow-hidden p-0 sm:p-6"
+      style={{ background: VIEWER.overlay, backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
+      onClick={onClose}
+    >
+      {/* ── Modal shell (the dialog) ────────────────────────────── */}
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${active.name} — Vollbildvorschau`}
+        className="flex h-full w-full flex-col overflow-hidden sm:h-[88vh] sm:w-[min(1280px,82vw)] sm:rounded-2xl sm:border"
+        style={{ background: VIEWER.shell, borderColor: VIEWER.border, boxShadow: "0 40px 120px rgba(0,0,0,0.6), 0 8px 32px rgba(0,0,0,0.35)" }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* ── Top toolbar ───────────────────────────────────────── */}
+        <header className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5 sm:px-4 sm:py-3" style={{ background: VIEWER.toolbar, borderColor: VIEWER.border }}>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md" style={{ background: "rgba(227, 6, 19, 0.16)" }} aria-hidden="true">
+              <FileText className="h-4 w-4" style={{ color: "#F25A62" }} />
+            </span>
+            <div className="min-w-0 leading-tight">
+              <p className="m-0 truncate text-[13px] font-semibold text-white">{active.name}</p>
+              <p className="m-0 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">Vollbildvorschau</p>
+            </div>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <ToolbarButton onClick={zoomOut} label="Verkleinern (Minus)"><Minus className="h-4 w-4" /></ToolbarButton>
+            <ToolbarButton onClick={zoomIn} label="Vergrößern (Plus)"><Plus className="h-4 w-4" /></ToolbarButton>
+            <ToolbarButton onClick={toggleFill} label={mode === "fill" ? "Auf Seite einpassen" : "Breite ausfüllen"}>
+              {mode === "fill" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </ToolbarButton>
+            <ToolbarButton onClick={handleDownload} disabled={pdfBusy} label="Als PDF herunterladen">
+              {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            </ToolbarButton>
+            <span className="mx-0.5 h-5 w-px shrink-0" style={{ background: "rgba(255,255,255,0.12)" }} aria-hidden="true" />
+            <ToolbarButton onClick={onClose} label="Schließen (Esc)"><X className="h-4 w-4" /></ToolbarButton>
+          </div>
+        </header>
+
+        {/* ── Preview stage ─────────────────────────────────────── */}
+        <div ref={stageRef} className="relative min-h-0 flex-1 overflow-auto" style={{ background: VIEWER.stage }}>
+          <div className="flex min-h-full min-w-full" style={{ padding: "clamp(18px, 3.5vh, 40px) 48px" }}>
+            <div className="m-auto shrink-0 rounded-[2px]" style={{ width: A4.W * scale, height: A4.H * scale, boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 3px 10px rgba(0,0,0,0.4)" }}>
+              <div className="cv-stage" style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "var(--app-cv-paper, #FDFCF9)" }}>
+                {renderCVBody(active.id, model)}
+              </div>
+            </div>
+          </div>
+
+          {/* Side template navigation — sits in the stage padding, never over the page */}
+          <button
+            type="button"
+            onClick={() => setIndex((value) => Math.max(0, value - 1))}
+            disabled={index === 0}
+            aria-label="Vorherige Vorlage"
+            className="absolute left-1.5 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-30 sm:left-2 sm:h-9 sm:w-9"
+            style={{ background: "rgba(0,0,0,0.38)", outlineColor: VIEWER.focus }}
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1))}
+            disabled={index === CV_TEMPLATES.length - 1}
+            aria-label="Nächste Vorlage"
+            className="absolute right-1.5 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-30 sm:right-2 sm:h-9 sm:w-9"
+            style={{ background: "rgba(0,0,0,0.38)", outlineColor: VIEWER.focus }}
+          >
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+
+          {/* Position indicator */}
+          <div className="pointer-events-none absolute bottom-3 left-4 z-10 rounded-full px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80" style={{ background: "rgba(0,0,0,0.45)" }}>
+            {index + 1} / {CV_TEMPLATES.length}
+          </div>
+        </div>
+
+        {/* ── Bottom action bar ─────────────────────────────────── */}
+        <footer className="flex shrink-0 items-center justify-between gap-3 border-t px-3 py-3 sm:px-4" style={{ background: VIEWER.footer, borderColor: VIEWER.border }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 cursor-pointer rounded-lg border px-4 text-[13px] font-medium text-white/80 transition-colors duration-150 hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+            style={{ borderColor: "rgba(255,255,255,0.16)", outlineColor: VIEWER.focus }}
+          >
+            Zurück zur Auswahl
+          </button>
+          <button
+            type="button"
+            onClick={() => { onSelect(active.id); onClose(); }}
+            className="h-10 cursor-pointer rounded-lg px-5 text-[13px] font-semibold text-white transition-[filter] duration-150 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+            style={{ background: "#E30613", outlineColor: VIEWER.focus }}
+          >
+            Diese Vorlage verwenden →
+          </button>
+        </footer>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -167,7 +374,7 @@ export function CVTemplatePicker({ profile, onChange, onContinue }) {
   </div>;
 }
 
-export function TemplateLightbox({ templateId, onClose, onSelect }) { return <PreviewOverlay startId={templateId} onClose={onClose} onSelect={onSelect} />; }
+export function TemplateLightbox({ templateId, profile, onClose, onSelect }) { return <PreviewOverlay startId={templateId} profile={profile} onClose={onClose} onSelect={onSelect} />; }
 
 /** Live builder preview retaining the shared model and renderer. */
 export function TemplatePreviewPanel({ profile, templateId }) {

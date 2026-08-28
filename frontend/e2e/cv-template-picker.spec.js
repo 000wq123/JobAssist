@@ -62,7 +62,7 @@ test.describe("CV template gallery", () => {
     const firstCard = page.locator("article").first();
     const previewButton = firstCard.getByRole("button", { name: /Große Vorschau/u });
     await previewButton.click();
-    const dialog = page.getByRole("dialog", { name: /— große Vorschau/u });
+    const dialog = page.getByRole("dialog", { name: /— Vollbildvorschau/u });
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute("aria-modal", "true");
     await expect(dialog.getByRole("button", { name: "Vergrößern" })).toBeVisible();
