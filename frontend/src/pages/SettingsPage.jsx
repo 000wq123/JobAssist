@@ -46,7 +46,9 @@ const INDUSTRIES = ["Gastronomie", "Handel/Verkauf", "Technik/IT", "Gesundheit",
 
 // ─── Shared primitives ───────────────────────────────────────────
 const CARD = "rounded-[10px] border p-5 sm:p-6";
-const cardStyle = { background: "var(--app-surface, #FFF)", borderColor: "var(--app-border, #E7E7E4)", transition: "var(--app-transition)" };
+// Cards match every other page: no per-card transition. Theme switches
+// still cross-fade smoothly via the global html.theme-anim rule.
+const cardStyle = { background: "var(--app-surface, #FFF)", borderColor: "var(--app-border, #E7E7E4)" };
 const labelCls = "block text-[11px] font-semibold uppercase tracking-[0.08em] mb-1.5";
 const inputCls = "w-full h-10 rounded-[6px] border px-3 text-[13.5px] outline-none transition-colors duration-100";
 const inputStyle = { background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text, #171717)" };
@@ -90,7 +92,7 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
         )}
         <ChevronDown className={`ml-auto h-4 w-4 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--app-text-faint, #B0B0AD)" }} />
       </div>
-      <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchorRef} align="left" className="w-[min(100%,320px)] rounded-[8px] border overflow-hidden mt-1"
+      <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchorRef} align="left" className="w-[min(100%,320px)] rounded-[8px] border overflow-hidden"
         style={{ borderColor: "var(--app-border, #E7E7E4)", background: "var(--app-surface, #FFF)" }}>
         {options.map((option) => (
           <label key={option} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none" style={{ color: "var(--app-text, #171717)" }}>
@@ -112,6 +114,7 @@ export default function SettingsPage() {
   usePageTitle("Einstellungen");
   const fileInputRef = useRef(null);
   const [avatar, setAvatar] = useState(null);
+  const [activeSection, setActiveSection] = useState("profil");
   const me = useAuthStore((s) => s.user);
   const { init, loading: bootstrapLoading, setInit } = useBootstrap();
 
@@ -194,10 +197,21 @@ export default function SettingsPage() {
               { id: "darstellung", label: "Darstellung", icon: Monitor },
               { id: "account", label: "Account", icon: AlertTriangle },
             ].map((item) => (
-              <a key={item.id} href={`#${item.id}`}
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={() => setActiveSection(item.id)}
                 className="flex items-center gap-2.5 h-8 px-2.5 rounded-[4px] text-[13px] font-medium transition-colors duration-100"
-                style={{ color: "var(--app-text-muted, #888)" }}>
-                <item.icon className="w-3.5 h-3.5" />
+                style={{
+                  color: activeSection === item.id ? "var(--app-text, #171717)" : "var(--app-text-muted, #888)",
+                  background: activeSection === item.id ? "var(--app-surface-hover, #F5F5F3)" : "transparent",
+                }}
+                aria-current={activeSection === item.id ? "true" : undefined}
+              >
+                <item.icon
+                  className="w-3.5 h-3.5"
+                  style={{ color: activeSection === item.id ? "var(--app-brand, #E30613)" : "inherit" }}
+                />
                 {item.label}
               </a>
             ))}
@@ -356,7 +370,7 @@ export default function SettingsPage() {
 
 function SettingsSkeleton() {
   return (
-    <div className="animate-slide-up">
+    <div>
       <div className="mb-6"><Skeleton className="h-8 w-48" /></div>
       <div className="flex flex-col gap-5">
         {[0, 1, 2].map((i) => (
@@ -375,7 +389,7 @@ function CVUploadSection() {
   const cvInputRef = useRef(null);
   const { data: resumesRaw, reload: reloadResumes } = useFetch(
     () => resumeApi.list().then((r) => r.data),
-    { cacheKey: "resumes:list" }
+    { cacheKey: "resumes:list", maxAge: 30_000 }
   );
   const resumes = Array.isArray(resumesRaw) ? resumesRaw : [];
 

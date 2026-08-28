@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 import { resumeApi } from "../services/api";
-import useUsageGuard from "../hooks/useUsageGuard";
 import { getApiErrorMessage } from "../utils/apiError";
 
 import Badge from "../components/ui/Badge";
@@ -88,7 +87,6 @@ function buildSkills(analysis) {
  */
 export default function ResumePage() {
   usePageTitle("Lebenslauf");
-  const { guardedRun } = useUsageGuard("cv_uploads");
 
   const [selectedId, setSelectedId] = useState(null);
   const [completed, setCompleted] = useState(() => new Set());
@@ -155,7 +153,7 @@ export default function ResumePage() {
       toast.error("Datei ist zu groß. Maximal 5 MB.");
       return;
     }
-    guardedRun(() => handleUpload(file));
+    handleUpload(file);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

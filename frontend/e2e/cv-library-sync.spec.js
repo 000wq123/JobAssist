@@ -232,9 +232,13 @@ test("a CV saved offline is pushed to the server after reconnect", async ({ brow
   // …but the server mirror is still empty (the push was swallowed offline).
   expect(serverLibrary).toHaveLength(0);
 
-  // ── Reconnect: the browser fires `online`, the boot pull replays the push ──
+  // ── Reconnect: the browser fires `offline` then `online` (a real network
+  // transition), and the boot pull replays the push ──
   net.offline = false;
-  await pageA.evaluate(() => window.dispatchEvent(new Event("online")));
+  await pageA.evaluate(() => {
+    window.dispatchEvent(new Event("offline"));
+    window.dispatchEvent(new Event("online"));
+  });
 
   await expect.poll(() => serverLibrary.length, { timeout: 10_000 }).toBe(1);
   expect(serverLibrary[0].name).toBe("Anna Muster");
@@ -350,7 +354,10 @@ test("an offline-created CV deleted before reconnect never reaches the server", 
 
   // ── Reconnect: the pull runs again — and must NOT replay anything ─────────
   net.offline = false;
-  await pageA.evaluate(() => window.dispatchEvent(new Event("online")));
+  await pageA.evaluate(() => {
+    window.dispatchEvent(new Event("offline"));
+    window.dispatchEvent(new Event("online"));
+  });
 
   // The reconnect pull completes (one fulfilled GET)…
   await expect.poll(() => net.gets, { timeout: 10_000 }).toBe(1);
@@ -404,7 +411,10 @@ test("offline renames and duplicates replay to the server after reconnect", asyn
   expect(serverLibrary[0].name).toBe("Anna Muster");
 
   net.offline = false;
-  await pageA.evaluate(() => window.dispatchEvent(new Event("online")));
+  await pageA.evaluate(() => {
+    window.dispatchEvent(new Event("offline"));
+    window.dispatchEvent(new Event("online"));
+  });
 
   // The RENAME alone (same id, changed content) must trigger the replay push.
   await expect
@@ -421,7 +431,10 @@ test("offline renames and duplicates replay to the server after reconnect", asyn
   expect(serverLibrary).toHaveLength(1); // nothing pushed yet
 
   net.offline = false;
-  await pageA.evaluate(() => window.dispatchEvent(new Event("online")));
+  await pageA.evaluate(() => {
+    window.dispatchEvent(new Event("offline"));
+    window.dispatchEvent(new Event("online"));
+  });
 
   await expect.poll(() => serverLibrary.length, { timeout: 10_000 }).toBe(2);
   const names = serverLibrary.map((e) => e.name).sort();

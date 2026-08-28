@@ -1,8 +1,10 @@
 """karriere.at job scraper.
 
-Karriere is the largest Austrian job board. It serves server-rendered HTML
-with JSON-LD structured data on detail pages. We scrape the search results
-page first, then follow detail links to get full descriptions.
+Karriere is the largest Austrian job board. The old ``/jobs?keywords=...``
+URL no longer server-renders results (empty shell), but the SEO paths
+(``/jobs/{keyword}/{location}``) still return the full listing with
+``.m-jobsListItem`` cards, and detail pages expose JSON-LD ``JobPosting``
+data.
 
 Because detail-page fetching is slow (N serial requests), we limit to the
 first 10 results per search. This keeps latency under ~5 seconds.
@@ -11,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Optional
 
 from bs4 import BeautifulSoup
@@ -33,15 +36,30 @@ logger = logging.getLogger(__name__)
 _DOMAIN = "karriere.at"
 _SEARCH_URL = "https://www.karriere.at/jobs"
 
+_UMLAUT_MAP = {
+    "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+    "Ä": "ae", "Ö": "oe", "Ü": "ue",
+}
+
+
+def _slugify(text: str) -> str:
+    """Normalise a keyword/location to karriere.at's URL slug form."""
+    out = []
+    for ch in text:
+        if ch in _UMLAUT_MAP:
+            out.append(_UMLAUT_MAP[ch])
+        elif ch.isalnum():
+            out.append(ch.lower())
+        else:
+            out.append("-")
+    return re.sub(r"-+", "-", "".join(out)).strip("-")
+
 
 def _parse_search_item(card: BeautifulSoup) -> Optional[dict]:
     """Extract minimal job data from a search-result card."""
-    # Try multiple title selectors
     title_el = (
-        card.select_one("h2 a")
-        or card.select_one("a[data-gtm*='job-title']")
-        or card.select_one(".m-jobs__title a")
-        or card.select_one(".job__title a")
+        card.select_one(".m-jobsListItem__titleLink")
+        or card.select_one("h2 a")
         or card.select_one("a[href*='/jobs/']")
     )
     if not title_el:
@@ -54,51 +72,47 @@ def _parse_search_item(card: BeautifulSoup) -> Optional[dict]:
 
     # Company
     company_el = (
-        card.select_one(".m-jobs__company")
-        or card.select_one(".job__company")
+        card.select_one(".m-jobsListItem__companyName")
         or card.select_one("[data-gtm*='company']")
     )
     company = _strip(company_el.get_text()) if company_el else ""
 
-    # Location
-    loc_el = (
-        card.select_one(".m-jobs__location")
-        or card.select_one(".job__location")
-        or card.select_one("[data-gtm*='location']")
-    )
-    location = _strip(loc_el.get_text()) if loc_el else ""
+    # Location(s) — each in its own anchor inside the location pill; the
+    # trailing comma span is decorative, so strip stray commas.
+    loc_els = card.select(".m-jobsListItem__location")
+    locations = [_strip(el.get_text()).rstrip(",") for el in loc_els]
+    location = _strip(", ".join(loc for loc in locations if loc))
 
-    # Salary (sometimes shown in search results)
-    salary_el = (
-        card.select_one(".m-jobs__salary")
-        or card.select_one(".job__salary")
-    )
-    salary_text = _extract_salary(_strip(salary_el.get_text()) if salary_el else "")
-
-    # Type / tags
-    type_el = (
-        card.select_one(".m-jobs__type")
-        or card.select_one(".job__type")
-        or card.select_one(".m-jobs__badge")
-    )
-    job_type = _extract_job_type(_strip(type_el.get_text()) if type_el else "")
+    # Pills carry job type and salary, e.g. "Vollzeit, Teilzeit" / "ab 2.165 € monatlich"
+    salary_text = ""
+    job_type = ""
+    for pill in card.select(".m-jobsListItem__pill"):
+        text = _strip(pill.get_text())
+        if not text:
+            continue
+        if "€" in text:
+            salary_text = _extract_salary(text) or text
+        else:
+            t = _extract_job_type(text)
+            if t:
+                job_type = t if not job_type else job_type
 
     # Posted date
-    date_el = (
-        card.select_one(".m-jobs__date")
-        or card.select_one(".job__date")
-        or card.select_one("time")
-    )
+    date_el = card.select_one(".m-jobsListItem__date")
     posted_at = None
     if date_el:
         datetime_attr = date_el.get("datetime", "")
         posted_at = _parse_eu_date(datetime_attr) or _parse_eu_date(_strip(date_el.get_text()))
 
+    # Inline summary (often present in search results now)
+    desc_el = card.select_one(".m-jobListSummary__text--preview")
+    description = _strip(desc_el.get_text()) if desc_el else ""
+
     return {
         "title": title,
         "company": company,
         "location": location,
-        "description": "",  # populated from detail page
+        "description": description,
         "full_url": href,
         "salary": salary_text,
         "source": "karriere.at",
@@ -111,10 +125,12 @@ def _parse_search_item(card: BeautifulSoup) -> Optional[dict]:
 
 
 def _extract_source_id(url: str) -> str:
-    """Extract a stable ID from a karriere.at job URL."""
-    # URLs look like: https://www.karriere.at/jobs/1234567-software-developer
-    import re as _re
-    m = _re.search(r"/jobs/(\d+)-", url)
+    """Extract a stable ID from a karriere.at job URL.
+
+    Modern URLs look like: https://www.karriere.at/jobs/1234567
+    (older ones had a trailing slug: /jobs/1234567-software-developer)
+    """
+    m = re.search(r"/jobs/(\d+)(?:-|$)", url)
     return m.group(1) if m else url
 
 
@@ -191,23 +207,20 @@ async def search_karriere(
     if cached:
         return cached
 
-    params: dict = {"page": page}
-    if keywords:
-        params["keywords"] = keywords
-    if location:
-        params["locations"] = location
+    # Results are only server-rendered on the SEO path /jobs/{keyword}/{location}.
+    path = _slugify(keywords) if keywords else ""
+    if location and path:
+        path = f"{path}/{_slugify(location)}"
+    url = f"{_SEARCH_URL}/{path}" if path else _SEARCH_URL
 
     try:
         await _rate_limited(_DOMAIN)
-        soup = await _fetch_html(_SEARCH_URL, params=params)
+        soup = await _fetch_html(url)
 
-        # karriere.at search results are typically in <article> or <div> cards
         cards = (
-            soup.select("article.m-jobs__item")
-            or soup.select("[data-gtm*='job']")
-            or soup.select(".job-listing")
-            or soup.select(".m-jobs__list > div")
-            or soup.select(".job")
+            soup.select("div.m-jobsListItem")
+            or soup.select("article")
+            or soup.select("li.m-jobsListItem")
         )
 
         if not cards:

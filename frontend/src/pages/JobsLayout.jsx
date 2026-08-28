@@ -15,7 +15,7 @@ export default function JobsLayout() {
   const hasDetail = Boolean(jobId);
 
   return (
-    <div className={clsx(hasDetail && "lg:grid lg:grid-cols-12 lg:gap-6 lg:h-[calc(100vh-3rem)]")}>
+    <div className={clsx("animate-slide-up", hasDetail && "lg:grid lg:grid-cols-12 lg:gap-6 lg:h-[calc(100vh-3rem)]")}>
       {/* List pane */}
       <aside
         className={clsx(

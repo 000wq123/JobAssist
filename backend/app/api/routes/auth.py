@@ -197,6 +197,18 @@ async def refresh(
         clear_refresh_cookie(response)
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
+    # The refresh token may survive the user row (e.g. a DB swap/restore that
+    # re-seeded other tables but not `users`). Minting an access token for a
+    # deleted user produces a token that passes signature checks but fails
+    # get_current_user, which makes the SPA loop on 401 forever. Reject and
+    # revoke the token instead so the client falls back to login cleanly.
+    user = await db.get(User, rt.user_id)
+    if user is None:
+        rt.revoked = True
+        await db.commit()
+        clear_refresh_cookie(response)
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
     # Non-rotating refresh: issue a fresh access token but keep the same
     # refresh token. Rotating here caused a multi-tab race — two tabs share one
     # `ja_refresh` cookie, and if both refresh concurrently one would revoke the

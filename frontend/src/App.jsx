@@ -4,7 +4,6 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppShell from "./components/shell/AppShell";
-import UpgradeModal from "./components/UpgradeModal";
 import useAuthStore from "./hooks/useAuthStore";
 import { BootstrapProvider } from "./context/BootstrapContext";
 import { authApi } from "./services/api";
@@ -206,7 +205,6 @@ export default function App() {
 
   return (
     <>
-      <UpgradeModal />
       <AppRoutes />
       <CookieConsentBanner />
     </>

@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class CVExperience(BaseModel):
@@ -41,6 +41,14 @@ class ProfileV2Update(BaseModel):
     vorname: Optional[str] = None
     nachname: Optional[str] = None
     geburtsdatum: Optional[date] = None
+
+    @field_validator("geburtsdatum", mode="before")
+    @classmethod
+    def _empty_geburtsdatum_is_unset(cls, v):
+        # The CV builder clears the date fields to "" (and partial input like
+        # "1998-" is a normal mid-edit state); Pydantic would otherwise reject
+        # the empty string with an English validation error. Treat it as unset.
+        return None if v == "" else v
     geburtsort: Optional[str] = None
     strasse: Optional[str] = None
     plz: Optional[str] = None

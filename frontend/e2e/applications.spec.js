@@ -51,6 +51,19 @@ test("job detail can update status and save notes", async ({ page }) => {
     });
   });
 
+  // The boot pulls the CV-library mirror; without this mock it hits the real
+  // backend, 401s with the seeded token and logs the session out.
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
+  });
+  // Boot also lists jobs + alerts; mock them so no real 401 can log us out.
+  await page.route("**/api/jobs/**", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
+  });
+  await page.route("**/api/job-alerts/**", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ alerts: [] }) });
+  });
+
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
       status: 200,

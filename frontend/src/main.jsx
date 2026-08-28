@@ -62,8 +62,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <App />
         </I18nProvider>
       </ThemeProvider>
+      {/* Bottom-right keeps toasts clear of browser translation UI (top-center)
+          and the mobile bottom nav / CV selection dock (raised via .ja-toast-region). */}
       <Toaster
-        position="top-right"
+        position="bottom-right"
+        containerClassName="ja-toast-region"
+        containerStyle={{ right: 24, bottom: 24 }}
         gutter={10}
         toastOptions={{
           duration: 3500,

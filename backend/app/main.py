@@ -16,6 +16,7 @@ import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
@@ -106,6 +107,40 @@ app = FastAPI(
 # every route module can import it without a circular dep on this file.
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Field name → German label for validation errors. Unknown field names fall
+# back to the raw API key; either way the message stays German (Pydantic's
+# default messages are English and would otherwise leak into the UI).
+_VALIDATION_FIELD_LABELS = {
+    "geburtsdatum": "Geburtsdatum",
+    "abschlussjahr": "Abschlussjahr",
+    "email": "E-Mail",
+    "telefon": "Telefon",
+    "password": "Passwort",
+    "deadline": "Frist",
+    "url": "URL",
+}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Translate Pydantic request-validation errors to German so no English
+    framework text reaches the UI."""
+    fields = []
+    for err in exc.errors():
+        parts = [
+            str(p)
+            for p in err.get("loc", [])
+            if p not in ("body", "query", "path", "header")
+        ]
+        name = parts[0] if parts else ""
+        fields.append(_VALIDATION_FIELD_LABELS.get(name, name or "Eingabe"))
+    if fields:
+        # Dedupe while preserving order (e.g. two errors on the same field).
+        detail = f"Bitte prüfe deine Eingabe: {', '.join(dict.fromkeys(fields))}"
+    else:
+        detail = "Bitte prüfe deine Eingaben und versuche es erneut."
+    return JSONResponse(status_code=422, content={"detail": detail})
 
 # Middleware stack. Order matters — FastAPI runs the LAST `add_middleware`
 # call FIRST on the way in, so we install in reverse-execution order:

@@ -100,6 +100,44 @@ async def test_refresh_returns_new_access_token_keeping_refresh_token(monkeypatc
 
 
 @pytest.mark.asyncio
+async def test_refresh_revokes_token_when_user_row_is_gone(monkeypatch):
+    """A refresh token whose user was deleted (DB swap/restore) must be revoked
+    and rejected — minting an access token for a missing user makes the SPA
+    loop on 401 forever (token passes signature checks but get_current_user
+    rejects it).
+    """
+    refresh_row = SimpleNamespace(
+        user_id=3,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+        revoked=False,
+    )
+    db = AsyncMock()
+    db.add = MagicMock()
+    db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=refresh_row))
+    # The user row no longer exists.
+    db.get = AsyncMock(return_value=None)
+
+    monkeypatch.setattr(auth, "hash_refresh_token", lambda raw: "hashed-old")
+    monkeypatch.setattr(auth, "create_access_token", lambda payload: "should-not-mint")
+
+    response = Response()
+    with pytest.raises(HTTPException) as exc:
+        await auth.refresh(
+            request=_request(),
+            response=response,
+            db=db,
+            payload=auth.RefreshRequest(refresh_token="raw-refresh"),
+        )
+
+    assert exc.value.status_code == 401
+    # Token is revoked so it can't keep minting new access tokens.
+    assert refresh_row.revoked is True
+    db.commit.assert_awaited_once()
+    # Cookie cleared so the SPA falls back to /login instead of looping.
+    assert "ja_refresh" in response.headers.get("set-cookie", "")
+
+
+@pytest.mark.asyncio
 async def test_refresh_rejects_expired_tokens(monkeypatch):
     refresh_row = SimpleNamespace(
         user_id=3,

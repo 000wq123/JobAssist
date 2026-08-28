@@ -1,567 +1,180 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+/**
+ * Curated CV template picker. Uses the shared lightweight preview renderer;
+ * PDF generation remains lazy-loaded by the existing export flow.
+ */
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CV_TEMPLATES, TEMPLATE_FILTERS, templateMatchesFilter } from "./templateRegistry";
+import { renderCVBody } from "./cvPreview.jsx";
+import { renderCVThumbnail, THUMB } from "./cvThumbnail.jsx";
+import { normalizeProfile, DESIGN_PREVIEW, A4 } from "./cvModel.js";
+
+const DESIGN_MODEL = normalizeProfile(DESIGN_PREVIEW.profile);
+const THUMBNAIL_HEIGHT = 300;
+
+
+/** @param {{ template: object }} props */
+function PhotoBadge({ template }) {
+  const label = template.photo === "no" ? "Ohne Foto" : template.photo === "yes" ? "Mit Foto" : "Foto möglich";
+  return (
+    <span className="absolute right-2 top-2 z-10 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-white" style={{ background: "rgba(22, 22, 27, 0.78)" }}>
+      {label}
+    </span>
+  );
+}
+
+/** @param {{ template: object, selected: boolean, scale: number, onSelect: function, onPreview: function }} props */
+function TemplateCard({ template, selected, scale, onSelect, onPreview }) {
+  return (
+    <article
+      data-template-id={template.id}
+      tabIndex={0}
+      onClick={() => onSelect(template.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(template.id);
+        }
+      }}
+      className={`group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border shadow-[0_5px_18px_rgba(0,0,0,0.1)] transition-[border-color,box-shadow,translate] duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(0,0,0,0.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${selected ? "border-[var(--app-brand)]" : "border-[var(--color-border)] hover:border-[var(--color-border-strong)]"}`}
+      style={{
+        outlineColor: "var(--app-focus-ring)",
+        background: selected ? "color-mix(in srgb, var(--app-brand) 3%, var(--color-bg-elev-1))" : "var(--color-bg-elev-1)",
+      }}
+    >
+      <div className="p-2.5 sm:p-3">
+        <div data-paper-frame className="relative w-full overflow-hidden rounded-[5px]" style={{ height: `clamp(210px, 18vw, ${THUMBNAIL_HEIGHT}px)`, background: "var(--app-cv-paper, #F7F6F2)", boxShadow: "0 0 0 1px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.08), 0 10px 24px rgba(0,0,0,0.14)" }}>
+          <div style={{ width: THUMB.W * scale, height: THUMB.H * scale, margin: "0 auto", overflow: "hidden", position: "relative", pointerEvents: "none" }}>
+            <div className="cv-stage" style={{ width: THUMB.W, height: THUMB.H, boxSizing: "border-box", transform: `scale(${scale})`, transformOrigin: "top left" }}>
+              {renderCVThumbnail(template.id, DESIGN_MODEL)}
+            </div>
+          </div>
+          {/* eslint-disable-next-line no-restricted-syntax -- hover scrim overlay, not layout */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+          <button type="button" onClick={(event) => { event.stopPropagation(); onPreview(template.id); }} className="absolute left-1/2 top-1/2 z-10 flex h-9 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[12px] font-medium text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" style={{ background: "rgba(22, 22, 27, 0.82)" }} aria-label={`Große Vorschau für ${template.name} öffnen`}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+            Vorschau
+          </button>
+          {selected && <span className="absolute left-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "var(--app-brand)", boxShadow: "0 2px 8px rgba(0,0,0,0.28)" }} aria-hidden="true"><svg width="11" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>}
+          <PhotoBadge template={template} />
+        </div>
+      </div>
+      <div className="flex items-start justify-between gap-3 px-4 pb-4 sm:px-5">
+        <div className="min-w-0"><h2 className="m-0 text-[16px] font-semibold leading-tight" style={{ color: "var(--color-fg)" }}>{template.name}</h2><p className="m-0 mt-1 line-clamp-2 text-[12.5px] leading-snug" style={{ color: "var(--color-fg-dim)" }}>{template.description}</p></div>
+      </div>
+    </article>
+  );
+}
 
 /**
- * Template definitions shown in the picker.
- * `id` is stored in profile.templateId and used by the PDF generator.
+ * Compact floating selection dock — appears (portal to body) only after the
+ * user actively selects a template. Centered near the bottom on desktop; a
+ * compact bottom bar above the mobile navigation on small screens.
+ *
+ * @param {{ template: object, onPreview: function, onContinue: function }} props
  */
-export const TEMPLATES = [
-  { id: "gray-header",   label: "Klassisch",      desc: "Diskret, übersichtlich — passt zu traditionellen österreichischen Arbeitgebern" },
-  { id: "slim-sidebar",  label: "Modern",         desc: "Klare Typografie mit Seitenleiste — frisch und zeitgemäß" },
-  { id: "tabellarisch",  label: "Kompakt",         desc: "Effizientes Layout für viel Erfahrung auf einer Seite" },
-  { id: "dark-bands",    label: "Elegant",         desc: "Strukturierte Abschnitte mit typografischem Charakter" },
-];
-
-// ─── A4 dimensions for scaling ────────────────────────────────────────────────
-const INNER_W = 595;  // A4 render width (pt)
-const INNER_H = 842;  // A4 render height
-
-// ─── Shared data helpers ──────────────────────────────────────────────────────
-function profileName(p) { return [p.vorname, p.nachname].filter(Boolean).join(" ") || "Dein Name"; }
-function profileContact(p) {
-  return [p.email, p.telefon ? `+43 ${p.telefon}` : null].filter(Boolean).join("  ·  ");
-}
-function profileAddress(p) {
-  return [[p.plz, p.ort].filter(Boolean).join(" "), p.strasse].filter(Boolean).join(", ");
-}
-function profileSchool(p) { return [p.schultyp, p.schulname].filter(Boolean).join(" — "); }
-function profileJobs(p)   { return (p.erfahrungen || []).filter(j => j.organisation).sort((a, b) => (b.von || "").localeCompare(a.von || "")).slice(0, 3); }
-function profileLangs(p)  { return (p.sprachkenntnisse || []).filter(l => l.sprache).slice(0, 3); }
-function profileSkills(p) { return (p.faehigkeiten || []).slice(0, 6); }
-function profileWeiterbildungen(p) { return (p.weiterbildungen || []).slice(0, 3); }
-function profileAktivitaeten(p) { return (p.aktivitaeten || []).slice(0, 3); }
-function fmtIsoDate(iso) {
-  if (!iso) return "";
-  const s = String(iso).trim();
-  const [y, m, d] = s.split("-");
-  if (!y || !m || isNaN(Number(y))) return s; // not ISO, return raw
-  return d && !isNaN(Number(d)) ? `${d}.${m}.${y}` : `${m}.${y}`;
-}
-function rangeLabel(von, bis) {
-  if (!von) return "";
-  const v = fmtIsoDate(von) || String(von);
-  const b = bis ? (fmtIsoDate(bis) || String(bis)) : "heute";
-  return `${v} — ${b}`;
-}
-
-// ─── Mini CV renders ──────────────────────────────────────────────────────────
-// All inner divs: width 595px, rendered as white paper, scaled via transform.
-
-function GrayHeaderCV({ p }) {
-  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
-  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
-  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
-  return (
-    <div style={{ ...S, width: INNER_W, background: "#fff" }}>
-      <div style={{ background: "#f2f2f2", padding: "24px 32px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-        <div>
-          <div style={{ fontSize: "24px", fontWeight: 700 }}>{profileName(p)}</div>
-          <div style={{ fontSize: "9px", color: "#666", marginTop: 4 }}>{profileContact(p) || "E-Mail · Telefon"}</div>
-        </div>
-        <div style={{ textAlign: "right", fontSize: "9px", color: "#555" }}>
-          {fmtIsoDate(p.geburtsdatum)}{p.geburtsort ? `, ${p.geburtsort}` : ""}
-          {(profileAddress(p) || "Wien, Österreich").split(", ").map((l, i) => <div key={i}>{l}</div>)}
-        </div>
-      </div>
-      <div style={{ padding: "26px 32px 40px" }}>
-        {p.profil && (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#4a6fa5", marginBottom: 8 }}>PROFIL</div>
-            <div style={{ fontSize: "10px", borderBottom: "1px solid #e5e5e5", paddingBottom: 12 }}>{p.profil}</div>
-          </div>
-        )}
-        {[
-          ["AUSBILDUNG", school || "HTL · Klasse"],
-          ...(weiter.length ? [["WEITERBILDUNG", weiter.map(w => `${w.name}${w.institution ? ` — ${w.institution}` : ""}${w.jahr ? ` (${w.jahr})` : ""}`).join(" · ")]] : []),
-          ["BERUFSERFAHRUNG", jobs.length ? jobs.map(j => `${j.titel || j.art || "Tätigkeit"} — ${j.organisation}${j.von ? ` (${rangeLabel(j.von, j.bis)})` : ""}`).join(" · ") : "—"],
-          ["SPRACHEN", langs.map(l => `${l.sprache}${l.niveau ? ` (${l.niveau})` : ""}`).join(" · ") || "Deutsch"],
-          ["KENNTNISSE", skills.join(" · ") || "—"],
-          ...(aktiv.length ? [["AKTIVITÄTEN", aktiv.map(a => `${a.name}${a.organisation ? ` — ${a.organisation}` : ""}`).join(" · ")]] : []),
-        ].map(([lbl, val]) => (
-          <div key={lbl} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#4a6fa5", marginBottom: 8 }}>{lbl}</div>
-            <div style={{ fontSize: "10px", borderBottom: "1px solid #e5e5e5", paddingBottom: 12 }}>{val}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SlimSidebarCV({ p }) {
-  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
-  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
-  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
-  return (
-    <div style={{ ...S, width: INNER_W, background: "#fff", display: "flex", minHeight: INNER_H }}>
-      <div style={{ width: 170, background: "#f0f0f0", padding: "24px 16px", flexShrink: 0 }}>
-        {p.foto ? (
-          <img src={p.foto} alt="" style={{ width: 80, height: 96, borderRadius: 2, margin: "0 auto 16px", display: "block", objectFit: "cover" }} />
-        ) : (
-          <div style={{ width: 80, height: 96, background: "#d0d0d0", borderRadius: 2, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", fontWeight: 700, color: "#999" }}>
-            {(p.vorname || "D")[0]}{(p.nachname || "R")[0]}
-          </div>
-        )}
-        {[["KONTAKT", [`${fmtIsoDate(p.geburtsdatum)}${p.geburtsort ? `, ${p.geburtsort}` : ""}`, profileAddress(p) || "Wien", p.email, p.telefon ? `+43 ${p.telefon}` : null].filter(Boolean)],
-          ["SPRACHEN", langs.map(l => `${l.sprache}${l.niveau ? ` — ${l.niveau}` : ""}`)],
-          ["EDV", skills],
-        ].map(([lbl, items]) => (
-          <div key={lbl} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#aaa", marginBottom: 6 }}>{lbl}</div>
-            {(items.length ? items : ["—"]).map((it, i) => <div key={i} style={{ fontSize: "9px", color: "#444", marginBottom: 2 }}>{it}</div>)}
-          </div>
-        ))}
-      </div>
-      <div style={{ flex: 1, padding: "28px 22px 40px" }}>
-        <div style={{ fontSize: "22px", fontWeight: 700 }}>{profileName(p)}</div>
-        <div style={{ fontSize: "9px", color: "#666", marginBottom: 22, marginTop: 4 }}>{p.schultyp || "Schüler"} · {p.klasse || ""}</div>
-        {p.profil && (
-          <div style={{ marginBottom: 18, paddingBottom: 10, borderBottom: "1px solid #e0e0e0" }}>
-            <div style={{ fontSize: "10px", lineHeight: 1.45 }}>{p.profil}</div>
-          </div>
-        )}
-        {[
-          ["AUSBILDUNG", school ? [`${school}${p.abschlussjahr ? ` — Abschluss geplant ${p.abschlussjahr}` : ""}`] : ["—"]],
-          ...(weiter.length ? [["WEITERBILDUNG", weiter.map(w => `${w.name}${w.institution ? ` — ${w.institution}` : ""}${w.jahr ? ` (${w.jahr})` : ""}`)]] : []),
-          ["BERUFSERFAHRUNG", jobs.length ? jobs.map(j => `${j.titel || j.art || "Tätigkeit"} — ${j.organisation}${j.von ? ` (${rangeLabel(j.von, j.bis)})` : ""}`) : ["—"]],
-          ...(aktiv.length ? [["AKTIVITÄTEN", aktiv.map(a => `${a.name}${a.organisation ? ` — ${a.organisation}` : ""}`)]] : []),
-        ].map(([lbl, rows]) => (
-          <div key={lbl} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#999", marginBottom: 8 }}>{lbl}</div>
-            <div style={{ borderTop: "1px solid #e0e0e0", paddingTop: 8 }}>
-              {rows.map((r, i) => <div key={i} style={{ fontSize: "10px", marginBottom: 4 }}>{r}</div>)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TabellarischCV({ p }) {
-  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
-  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
-  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
-  const TRow = ({ date, content }) => (
-    <tr>
-      <td style={{ width: 90, color: "#777", fontSize: "9px", paddingBottom: 8, verticalAlign: "top", paddingRight: 14 }}>{date}</td>
-      <td style={{ paddingBottom: 8, verticalAlign: "top" }}>{content}</td>
-    </tr>
-  );
-  const sections = [
-    ["Ausbildung", [[p.abschlussjahr ? String(p.abschlussjahr - 4) : "2021", school || "HTL Spengergasse"]]],
-    ...(weiter.length ? [["Weiterbildung", weiter.map(w => [w.jahr || "—", `${w.name}${w.institution ? ` — ${w.institution}` : ""}`])]] : []),
-    ["Berufserfahrung", jobs.length ? jobs.map(j => [rangeLabel(j.von, j.bis) || "—", `${j.titel || j.art || "Tätigkeit"} — ${j.organisation}`]) : [["—", "—"]]],
-    ["Sprachen", langs.length ? langs.map(l => [l.niveau || "Muttersprache", l.sprache]) : [["Muttersprache", "Deutsch"]]],
-    ["EDV-Kenntnisse", skills.length ? [["", skills.join(", ")]] : [["—", "—"]]],
-    ...(aktiv.length ? [["Aktivitäten", aktiv.map(a => [rangeLabel(a.von, a.bis) || "—", `${a.name}${a.organisation ? ` — ${a.organisation}` : ""}`])]] : []),
-  ];
-  return (
-    <div style={{ ...S, width: INNER_W, background: "#fff", padding: "32px 36px" }}>
-      <div style={{ fontSize: "22px", fontWeight: 700, marginBottom: 6 }}>{profileName(p)}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto 1fr", gap: "4px 16px", fontSize: "9px", marginBottom: 14 }}>
-        <span style={{ fontWeight: 700, color: "#555" }}>Geburtsdatum:</span><span>{fmtIsoDate(p.geburtsdatum) || "—"}{p.geburtsort ? `, ${p.geburtsort}` : ""}</span>
-        <span style={{ fontWeight: 700, color: "#555" }}>Telefon:</span><span>{p.telefon ? `+43 ${p.telefon}` : "—"}</span>
-        <span style={{ fontWeight: 700, color: "#555" }}>Adresse:</span><span>{profileAddress(p) || "Wien"}</span>
-        <span style={{ fontWeight: 700, color: "#555" }}>E-Mail:</span><span>{p.email || "—"}</span>
-      </div>
-      <div style={{ borderTop: "2px solid #111", marginBottom: 14 }} />
-      {p.profil && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Profil</div>
-          <div style={{ fontSize: "10px", lineHeight: 1.45 }}>{p.profil}</div>
-        </div>
-      )}
-      {sections.map(([sec, rows]) => (
-        <div key={sec} style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{sec}</div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <tbody>{rows.map(([d, c], i) => <TRow key={i} date={d} content={c} />)}</tbody>
-          </table>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Shared section wrapper for the dark-bands template (hoisted: stable identity). */
-function DBSection({ title, children }) {
-  return (
-    <div key={title}>
-      <div style={{ background: "#f5f5f5", padding: "6px 28px", fontSize: "8px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#888" }}>{title}</div>
-      <div style={{ padding: "14px 28px" }}>{children}</div>
-    </div>
-  );
-}
-
-function DarkBandsCV({ p }) {
-  const school = profileSchool(p), jobs = profileJobs(p), langs = profileLangs(p), skills = profileSkills(p);
-  const weiter = profileWeiterbildungen(p), aktiv = profileAktivitaeten(p);
-  const S = { fontFamily: "Arial,Helvetica,sans-serif", fontSize: "10px", lineHeight: 1.45, color: "#111" };
-  return (
-    <div style={{ ...S, width: INNER_W, background: "#fff" }}>
-      <div style={{ background: "#1a1a1a", color: "#fff", padding: "24px 28px" }}>
-        <div style={{ fontSize: "24px", fontWeight: 700 }}>{profileName(p)}</div>
-        <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{p.schultyp || "Schüler"} · {p.klasse || "Informatik"}</div>
-        <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: "9px", color: "rgba(255,255,255,0.55)" }}>
-          {[fmtIsoDate(p.geburtsdatum) + (p.geburtsort ? `, ${p.geburtsort}` : ""), profileContact(p) || "—", profileAddress(p) || "Wien"].filter(Boolean).map((t, i) => <span key={i}>{t}</span>)}
-        </div>
-      </div>
-      {p.profil && (
-        <DBSection title="Profil">
-          <div style={{ fontSize: "10px", lineHeight: 1.45 }}>{p.profil}</div>
-        </DBSection>
-      )}
-      <DBSection title="Ausbildung">
-        {school ? (
-          <div style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 700, fontSize: "10px", color: "#111" }}>{school}</div>
-            {p.abschlussjahr ? <div style={{ fontSize: "9px", color: "#555", marginTop: 2 }}>{`Abschluss geplant ${p.abschlussjahr}`}</div> : null}
-          </div>
-        ) : (
-          <div style={{ fontWeight: 700, fontSize: "10px", color: "#111" }}>HTL Spengergasse</div>
-        )}
-      </DBSection>
-      {weiter.length > 0 && (
-        <DBSection title="Weiterbildung">
-          {weiter.map((w, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
-              <div style={{ fontWeight: 700, fontSize: "10px", color: "#111" }}>{w.name}</div>
-              <div style={{ fontSize: "9px", color: "#555", marginTop: 2 }}>{[w.institution, w.jahr].filter(Boolean).join(" – ")}</div>
-            </div>
-          ))}
-        </DBSection>
-      )}
-      <DBSection title="Berufserfahrung">
-        {jobs.length ? jobs.map((j, i) => (
-          <div key={i} style={{ marginBottom: 8 }}>
-            <div style={{ fontWeight: 700, fontSize: "10px", color: "#111" }}>{`${j.titel || j.art || "Tätigkeit"} — ${j.organisation}`}</div>
-            <div style={{ fontSize: "9px", color: "#555", marginTop: 2 }}>{rangeLabel(j.von, j.bis)}</div>
-            {(j.bullets || []).filter(b => b?.trim()).map((b, bi) => (
-              <div key={bi} style={{ fontSize: "9px", color: "#555", marginTop: 2, marginLeft: 10 }}>› {b}</div>
-            ))}
-          </div>
-        )) : <div style={{ fontWeight: 700, fontSize: "10px", color: "#111" }}>—</div>}
-      </DBSection>
-      <DBSection title="Kenntnisse & Sprachen">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {[...(skills.length ? skills : []), ...langs.map(l => `${l.sprache}${l.niveau ? ` (${l.niveau})` : ""}`)].map((s, i) => (
-            <span key={i} style={{ background: "#f0f0f0", borderRadius: 3, padding: "3px 8px", fontSize: "9px", color: "#333" }}>{s}</span>
-          ))}
-        </div>
-      </DBSection>
-      {aktiv.length > 0 && (
-        <DBSection title="Aktivitäten">
-          {aktiv.map((a, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
-              <div style={{ fontWeight: 700, fontSize: "10px", color: "#111" }}>{a.name}{a.organisation ? ` — ${a.organisation}` : ""}</div>
-              {a.beschreibung ? <div style={{ fontSize: "9px", color: "#555", marginTop: 2 }}>{a.beschreibung}</div> : null}
-            </div>
-          ))}
-        </DBSection>
-      )}
-    </div>
-  );
-}
-
-const CV_RENDERS = {
-  "gray-header":  GrayHeaderCV,
-  "slim-sidebar": SlimSidebarCV,
-  "tabellarisch": TabellarischCV,
-  "dark-bands":   DarkBandsCV,
-};
-
-export function TemplatePreviewPanel({ profile, templateId, onJumpToTemplate }) {
-  const id = templateId || profile?.templateId || "tabellarisch";
-  const tmpl = TEMPLATES.find((t) => t.id === id) || TEMPLATES[2];
-  const Render = CV_RENDERS[id];
-  const [scale, setScale] = useState(0.5);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-
-  const measuredRef = useCallback((node) => {
-    if (!node) return;
-    const measure = () => {
-      if (!node) return;
-      setScale(node.offsetWidth / INNER_W);
-    };
-    requestAnimationFrame(measure);
-    const ro = new ResizeObserver(measure);
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, []);
-
-  if (!Render) return null;
-
-  return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-fg-faint)]">
-          Vorlage &mdash; <span className="text-[var(--color-fg-muted)]">{tmpl.label}</span>
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setLightboxOpen(true)}
-            className="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors flex items-center gap-1"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-            Vollbild
-          </button>
-          {onJumpToTemplate && (
-            <button
-              type="button"
-              onClick={onJumpToTemplate}
-              className="text-[11px] text-[var(--color-fg-faint)] hover:text-[var(--color-accent-400)] transition-colors"
-            >
-              Wechseln &rarr;
-            </button>
-          )}
-        </div>
-      </div>
-      <div
-        ref={measuredRef}
-        className="relative"
-        style={{
-          width: "100%",
-          height: INNER_H * scale,
-          overflow: "hidden",
-          borderRadius: 10,
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        }}
-      >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: INNER_W, height: INNER_H, background: "#fff" }}>
-          <Render p={profile} />
-        </div>
-      </div>
-      {lightboxOpen && (
-        <TemplateLightbox
-          templateId={id}
-          profile={profile}
-          onClose={() => setLightboxOpen(false)}
-          onSelect={() => setLightboxOpen(false)}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── Lightbox portal ──────────────────────────────────────────────────────────
-/** Full-size preview modal — bottom sheet on mobile, centered dialog on desktop. */
-export function TemplateLightbox({ templateId, profile, onClose, onSelect }) {
-  const startIdx = TEMPLATES.findIndex((t) => t.id === templateId);
-  const [activeIdx, setActiveIdx] = useState(startIdx < 0 ? 0 : startIdx);
-  const activeId = TEMPLATES[activeIdx]?.id;
-  const Render = CV_RENDERS[activeId];
-  const [scale, setScale] = useState(0.48);
-  const dialogRef = useRef(null);
-  const previewRef = useCallback((node) => {
-    if (!node) return;
-    const measure = () => setScale(node.offsetWidth / INNER_W);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") setActiveIdx((i) => Math.max(0, i - 1));
-      if (e.key === "ArrowRight") setActiveIdx((i) => Math.min(TEMPLATES.length - 1, i + 1));
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  // Focus trap: keep Tab cycling inside the lightbox.
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const focusables = () =>
-      Array.from(
-        dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-      ).filter((el) => !el.disabled && el.offsetParent !== null);
-    // Auto-focus first element on open
-    const first = focusables()[0];
-    if (first) first.focus();
-
-    const onTab = (e) => {
-      if (e.key !== "Tab") return;
-      const els = focusables();
-      if (els.length === 0) return;
-      const firstEl = els[0];
-      const lastEl = els[els.length - 1];
-      if (e.shiftKey && document.activeElement === firstEl) {
-        e.preventDefault();
-        lastEl.focus();
-      } else if (!e.shiftKey && document.activeElement === lastEl) {
-        e.preventDefault();
-        firstEl.focus();
-      }
-    };
-    dialog.addEventListener("keydown", onTab);
-    return () => dialog.removeEventListener("keydown", onTab);
-  }, []);
-
+function SelectionDock({ template, onPreview, onContinue }) {
   return createPortal(
-    <div
-      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/85"
-      onClick={onClose}
-    >
-      <div
-        ref={dialogRef}
-        className="bg-white rounded-t-[20px] sm:rounded-[16px] w-full sm:max-w-[720px] overflow-hidden flex flex-col"
-        style={{ maxHeight: "94dvh" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Nav bar */}
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-200 bg-white/95 backdrop-blur-sm flex-shrink-0">
-          <div className="flex gap-1">
-            <button type="button" onClick={() => setActiveIdx((i) => Math.max(0, i - 1))} disabled={activeIdx === 0}
-              className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 disabled:opacity-30 text-sm hover:bg-gray-200 transition-colors">
-              ←
-            </button>
-            <button type="button" onClick={() => setActiveIdx((i) => Math.min(TEMPLATES.length - 1, i + 1))} disabled={activeIdx === TEMPLATES.length - 1}
-              className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 disabled:opacity-30 text-sm hover:bg-gray-200 transition-colors">
-              →
-            </button>
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+66px)] z-[90] md:inset-x-auto md:bottom-6 md:left-1/2 md:w-[min(660px,calc(100vw-48px))] md:-translate-x-1/2">
+      <div data-selection-dock role="region" aria-label="Ausgewählte Vorlage" className="rounded-xl border" style={{ borderColor: "var(--color-border-strong)", background: "var(--color-bg-elev-2)", boxShadow: "0 12px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)" }}>
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--app-brand)" }} aria-hidden="true"><svg width="11" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+            <div className="min-w-0 leading-tight">
+              <p className="m-0 text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-muted)" }}>Ausgewählt</p>
+              <p className="m-0 truncate text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>{template.name}</p>
+            </div>
           </div>
-          <span className="flex-1 text-[13px] font-semibold text-gray-700 text-center">{TEMPLATES[activeIdx]?.label}</span>
-          <div className="flex gap-1.5">
-            <button type="button" onClick={onClose}
-              className="h-8 px-3 rounded-lg bg-gray-100 text-gray-600 text-[12px] font-medium hover:bg-gray-200 transition-colors">
-              ✕
-            </button>
-            <button type="button" onClick={() => { onSelect(activeId); onClose(); }}
-              className="h-8 px-3 rounded-lg text-[12px] font-semibold text-[#0b0b14] transition-colors"
-              style={{ background: "var(--color-accent-500)" }}>
-              Auswählen
-            </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => onPreview(template.id)} className="h-9 cursor-pointer rounded-lg border px-3 text-[12.5px] font-medium transition-colors hover:bg-[var(--color-bg-elev-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ borderColor: "var(--color-border)", color: "var(--color-fg)", outlineColor: "var(--app-focus-ring)" }}>Vorschau</button>
+            <button type="button" onClick={onContinue} className="h-9 cursor-pointer rounded-lg px-3.5 text-[12.5px] font-semibold transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ background: "var(--app-brand)", color: "#fff", outlineColor: "var(--app-focus-ring)" }}>Weiter →</button>
           </div>
-        </div>
-
-        {/* Template render */}
-        <div className="overflow-y-auto flex-1 px-0 sm:px-3 py-3">
-          <div ref={previewRef}
-            style={{ width: "100%", height: INNER_H * scale, overflow: "hidden", borderRadius: 8, boxShadow: "0 4px 24px rgba(0,0,0,0.18)" }}>
-            {Render && (
-              <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: INNER_W, height: INNER_H, background: "#fff" }}>
-                <Render p={profile} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Dot indicators */}
-        <div className="flex justify-center gap-2 py-3 flex-shrink-0">
-          {TEMPLATES.map((t, i) => (
-            <button key={t.id} type="button" onClick={() => setActiveIdx(i)}
-              className="w-2 h-2 rounded-full transition-all"
-              style={{ background: i === activeIdx ? "var(--color-accent-500)" : "#d1d5db" }} />
-          ))}
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 }
 
-// ─── Public scene component ───────────────────────────────────────────────────
-/**
- * Template picker scene — 2×2 visual grid with expand-to-lightbox.
- * Desktop right panel shows the live template preview (handled by FocusModeWizard).
- *
- * @param {{ profile: any, onChange: (patch: any) => void }} props
- */
-export function CVTemplatePicker({ profile, onChange }) {
-  const selected = profile.templateId || "tabellarisch";
-  const [lightboxId, setLightboxId] = useState(null);
-  const [cardScale, setCardScale] = useState(0.26);
+/** @param {{ startId: string, onClose: function, onSelect: function }} props */
+function PreviewOverlay({ startId, onClose, onSelect }) {
+  const [index, setIndex] = useState(Math.max(0, CV_TEMPLATES.findIndex((item) => item.id === startId)));
+  const [zoom, setZoom] = useState(0.72);
+  const [fit, setFit] = useState(true);
+  const canvasRef = useRef(null);
+  const active = CV_TEMPLATES[index];
 
-  const gridRef = useCallback((node) => {
-    if (!node) return;
-    const measure = () => {
-      const firstCard = node.querySelector(':scope > div');
-      if (firstCard) setCardScale(firstCard.offsetWidth / INNER_W);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(node);
-    return () => ro.disconnect();
+  useEffect(() => {
+    const oldOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => { document.documentElement.style.overflow = oldOverflow; focused?.focus(); };
   }, []);
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-[24px] sm:text-[28px] font-semibold leading-[1.15] text-[var(--color-fg)]">Wähle eine Vorlage</h2>
-        <p className="text-[13px] text-[var(--color-fg-muted)]">Tippe zum Auswählen — Lupe für Vollbild-Vorschau.</p>
-      </div>
-      <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-        {TEMPLATES.map((tmpl) => {
-          const Render = CV_RENDERS[tmpl.id];
-          if (!Render) return null;
-          const isSelected = selected === tmpl.id;
-          return (
-            <div
-              key={tmpl.id}
-              role="button"
-              tabIndex={0}
-              aria-pressed={isSelected}
-              onClick={() => onChange({ templateId: tmpl.id })}
-              onKeyDown={(e) => e.key === "Enter" && onChange({ templateId: tmpl.id })}
-              className="relative rounded-xl overflow-hidden cursor-pointer transition-all select-none bg-[var(--color-bg-elev-1)]"
-              style={{
-                border: isSelected ? "2px solid var(--color-accent-500)" : "1px solid var(--color-border)",
-                boxShadow: isSelected ? "0 0 0 3px rgba(124,125,240,0.18)" : "none",
-              }}
-            >
-              {/* Header */}
-              <div className="px-3 py-2.5 border-b border-[var(--color-border)]">
-                <div className="text-[13px] font-semibold text-[var(--color-fg)]">{tmpl.label}</div>
-                <div className="text-[11px] text-[var(--color-fg-dim)] mt-0.5">{tmpl.desc}</div>
-              </div>
+  useEffect(() => {
+    const onKey = (event) => { if (event.key === "Escape") onClose(); if (event.key === "ArrowLeft") setIndex((value) => Math.max(0, value - 1)); if (event.key === "ArrowRight") setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1)); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
-              {/* Preview body */}
-              <div className="relative overflow-hidden bg-[var(--color-bg)]" style={{ aspectRatio: `${INNER_W}/${INNER_H}` }}>
-                <div style={{ transform: `scale(${cardScale})`, transformOrigin: "top left", width: INNER_W, height: INNER_H, background: "#fff", pointerEvents: "none" }}>
-                  <Render p={profile} />
-                </div>
+  useEffect(() => {
+    const node = canvasRef.current;
+    if (!node) return undefined;
+    const measure = () => { if (fit) setZoom(Math.min((node.clientWidth - 48) / A4.W, (node.clientHeight - 48) / A4.H)); };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fit]);
 
-                {/* Expand icon */}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setLightboxId(tmpl.id); }}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center text-white"
-                  style={{ background: "rgba(0,0,0,0.55)" }}
-                  aria-label="Vollbild-Vorschau"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                  </svg>
-                </button>
-
-                {isSelected && (
-                  <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "var(--color-accent-500)" }}>
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {lightboxId && (
-        <TemplateLightbox
-          templateId={lightboxId}
-          profile={profile}
-          onClose={() => setLightboxId(null)}
-          onSelect={(id) => onChange({ templateId: id })}
-        />
-      )}
-    </div>
+  const scale = fit ? zoom : zoom;
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex flex-col" role="dialog" aria-modal="true" aria-label={`${active.name} — große Vorschau`} style={{ background: "rgba(10,10,12,0.95)" }}>
+      <header className="flex shrink-0 items-center gap-3 border-b px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.1)" }}><button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} disabled={index === 0} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10 disabled:opacity-30" aria-label="Vorherige Vorlage">←</button><button type="button" onClick={() => setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1))} disabled={index === CV_TEMPLATES.length - 1} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10 disabled:opacity-30" aria-label="Nächste Vorlage">→</button><h2 className="m-0 min-w-0 flex-1 truncate text-[15px] font-semibold text-white">{active.name}</h2><button type="button" onClick={() => { setFit(false); setZoom((value) => Math.min(1.35, value + 0.15)); }} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10" aria-label="Vergrößern">+</button><button type="button" onClick={() => { setFit(false); setZoom((value) => Math.max(0.4, value - 0.15)); }} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10" aria-label="Verkleinern">−</button><button type="button" onClick={onClose} className="h-9 w-9 cursor-pointer rounded-lg text-white/80 hover:bg-white/10" aria-label="Schließen">✕</button></header>
+      <div ref={canvasRef} className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-6" onClick={onClose}><div className="shrink-0 overflow-hidden rounded-sm" style={{ width: A4.W * scale, height: A4.H * scale, background: "#fff", boxShadow: "0 16px 70px rgba(0,0,0,0.55)" }} onClick={(event) => event.stopPropagation()}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(active.id, DESIGN_MODEL)}</div></div></div>
+      <footer className="flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.1)" }}><span className="text-[12px] text-white/60">{index + 1} / {CV_TEMPLATES.length}</span><button type="button" onClick={() => { onSelect(active.id); onClose(); }} className="h-10 cursor-pointer rounded-lg px-4 text-[13px] font-semibold" style={{ background: "var(--color-accent-500)", color: "#fff" }}>Diese Vorlage verwenden →</button></footer>
+    </div>, document.body
   );
+}
+
+/** @param {{ profile: object, onChange: function, onContinue: function }} props */
+export function CVTemplatePicker({ profile, onChange, onContinue }) {
+  const selectedId = profile.templateId || "tabellarisch";
+  const selectedTemplate = CV_TEMPLATES.find((item) => item.id === selectedId) || CV_TEMPLATES[0];
+  const [filter, setFilter] = useState("all");
+  const [previewId, setPreviewId] = useState(null);
+  const [picked, setPicked] = useState(false);
+  const [scale, setScale] = useState(0.5);
+  const galleryRef = useCallback((node) => {
+    if (!node) return undefined;
+    const measure = () => { const frame = node.querySelector("[data-paper-frame]"); if (frame) setScale(frame.offsetWidth / THUMB.W); };
+    requestAnimationFrame(measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const handleSelect = useCallback((id) => { setPicked(true); onChange({ templateId: id }); }, [onChange]);
+  const visible = CV_TEMPLATES.filter((item) => templateMatchesFilter(item, filter));
+
+  return <div className={`mx-auto max-w-[1120px] ${picked ? "pb-40 md:pb-32" : "pb-6"}`}>
+    <div className="min-w-0">
+      <header><h1 className="m-0 text-[28px] font-bold leading-tight tracking-tight sm:text-[32px]" style={{ color: "var(--color-fg)" }}>Wähle deinen Lebenslauf</h1><p className="m-0 mt-2 max-w-2xl text-[14px] leading-relaxed" style={{ color: "var(--color-fg-muted)" }}>Wähle ein Design, das zu dir und deiner Bewerbung passt.</p></header>
+      <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="Vorlagen filtern">{TEMPLATE_FILTERS.map((item) => { const active = filter === item.key; return <button key={item.key} type="button" aria-pressed={active} onClick={() => setFilter(item.key)} className="h-8 cursor-pointer whitespace-nowrap rounded-full border px-3.5 text-[12px] font-medium transition-colors hover:border-[var(--color-border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ outlineColor: "var(--app-focus-ring)", borderColor: active ? "var(--color-border-strong)" : "var(--color-border)", background: active ? "var(--color-bg-elev-3)" : "transparent", color: active ? "var(--color-fg)" : "var(--color-fg-dim)" }}>{item.label}</button>; })}</div>
+      <section ref={galleryRef} className="mt-6 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 sm:gap-7" aria-label="Vorlagen-Galerie">{visible.map((item) => <div key={item.id} className="min-w-0"><TemplateCard template={item} selected={selectedId === item.id} scale={scale} onSelect={handleSelect} onPreview={setPreviewId} /></div>)}{visible.length === 0 && <p className="col-span-2 py-12 text-center text-sm" style={{ color: "var(--color-fg-faint)" }}>Keine Vorlagen für diesen Filter.</p>}</section>
+    </div>
+    {picked && <SelectionDock template={selectedTemplate} onPreview={setPreviewId} onContinue={onContinue} />}
+    {previewId && <PreviewOverlay startId={previewId} onClose={() => setPreviewId(null)} onSelect={handleSelect} />}
+  </div>;
+}
+
+export function TemplateLightbox({ templateId, onClose, onSelect }) { return <PreviewOverlay startId={templateId} onClose={onClose} onSelect={onSelect} />; }
+
+/** Live builder preview retaining the shared model and renderer. */
+export function TemplatePreviewPanel({ profile, templateId }) {
+  const id = templateId || profile?.templateId || "tabellarisch";
+  const model = normalizeProfile(profile);
+  const [scale, setScale] = useState(0.5);
+  const [open, setOpen] = useState(false);
+  const ref = useCallback((node) => { if (!node) return undefined; const measure = () => setScale(node.offsetWidth / A4.W); requestAnimationFrame(measure); const observer = new ResizeObserver(measure); observer.observe(node); return () => observer.disconnect(); }, []);
+  return <div className="flex h-full flex-col gap-3" data-live-preview><div className="flex items-center justify-between"><p className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-faint)" }}>Vorlage — {CV_TEMPLATES.find((item) => item.id === id)?.name || id}</p><button type="button" onClick={() => setOpen(true)} className="cursor-pointer text-[11px]" style={{ color: "var(--color-fg-dim)" }}>Vollbild</button></div><div ref={ref} className="relative overflow-hidden rounded-md" style={{ height: A4.H * scale, border: "1px solid var(--color-border)", background: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.22)" }}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(id, model)}</div></div>{open && <TemplateLightbox templateId={id} onClose={() => setOpen(false)} onSelect={() => setOpen(false)} />}</div>;
 }

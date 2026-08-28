@@ -3,66 +3,69 @@
 /* ═══════════════════════════════════════════════════════════════════════
    JOBASSIST DESIGN SYSTEM v3 — Dual-Theme (Light + Dark)
    ───────────────────────────────────────────────────────────────────────
-   All @theme color tokens point to runtime CSS variables (--ja-*).
-   Values change based on <html data-theme="light|dark">.
+   SINGLE source of truth: the `--app-*` runtime tokens (defined per theme
+   on <html data-theme="light|dark"> below). The `--color-*` names in this
+   @theme block are ALIASES of `--app-*` so Tailwind utilities and older
+   components keep working while the whole product resolves to one palette.
    System default follows prefers-color-scheme when unset.
 
-   Brand accent: red (#e30613) — used on public pages
-   Product accent: violet (#6152F3) — used in the authenticated workspace
+   Brand accent: red (#e30613) — primary CTAs, logo, active nav, page eyebrows
+   Product accent: violet (#6152F3) — links, focus rings
    ═══════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── Accent (violet — workspace product interactions) ─────────── */
-  --color-accent-50:  var(--ja-accent-50);
-  --color-accent-100: var(--ja-accent-100);
-  --color-accent-200: var(--ja-accent-200);
-  --color-accent-300: var(--ja-accent-300);
-  --color-accent-400: var(--ja-accent-400);
-  --color-accent-500: var(--ja-accent-500);
-  --color-accent-600: var(--ja-accent-600);
-  --color-accent-700: var(--ja-accent-700);
-  --color-accent-800: var(--ja-accent-800);
-  --color-accent-900: var(--ja-accent-900);
+  /* ── Accent aliases → app tokens (primary CTA = brand red) ───── */
+  --color-accent-50:  var(--app-brand-soft);
+  --color-accent-100: var(--app-brand-soft);
+  --color-accent-200: var(--app-focus-ring);
+  --color-accent-300: var(--app-focus-ring);
+  --color-accent-400: var(--app-focus-ring);
+  --color-accent-500: var(--app-brand);
+  --color-accent-soft: var(--app-accent-soft);
+  --color-accent-600: var(--app-brand-hover);
+  --color-accent-700: var(--app-brand-hover);
+  --color-accent-800: var(--app-brand-hover);
+  --color-accent-900: var(--app-brand-hover);
 
-  /* ── Brand (red — public marketing) ───────────────────────────── */
-  --color-brand-50:  var(--ja-brand-50);
-  --color-brand-100: var(--ja-brand-100);
-  --color-brand-200: var(--ja-brand-200);
-  --color-brand-300: var(--ja-brand-300);
-  --color-brand-400: var(--ja-brand-400);
-  --color-brand-500: var(--ja-brand-500);
-  --color-brand-600: var(--ja-brand-600);
-  --color-brand-700: var(--ja-brand-700);
-  --color-brand-800: var(--ja-brand-800);
-  --color-brand-900: var(--ja-brand-900);
+  /* ── Brand (red) → app tokens ────────────────────────────────── */
+  --color-brand-50:  var(--app-brand-soft);
+  --color-brand-100: var(--app-brand-soft);
+  --color-brand-200: var(--app-brand-soft);
+  --color-brand-300: var(--app-brand);
+  --color-brand-400: var(--app-brand);
+  --color-brand-500: var(--app-brand);
+  --color-brand-600: var(--app-brand-hover);
+  --color-brand-700: var(--app-brand-hover);
+  --color-brand-800: var(--app-brand-hover);
+  --color-brand-900: var(--app-brand-hover);
 
-  /* ── Base surfaces ────────────────────────────────────────────── */
-  --color-bg:         var(--ja-bg);
-  --color-bg-elev-1:  var(--ja-bg-elev-1);
-  --color-bg-elev-2:  var(--ja-bg-elev-2);
-  --color-bg-elev-3:  var(--ja-bg-elev-3);
-  --color-bg-input:   var(--ja-bg-input);
+  /* ── Base surfaces → app tokens ──────────────────────────────── */
+  --color-bg:         var(--app-bg);
+  --color-bg-elev-1:  var(--app-surface);
+  --color-bg-elev-2:  var(--app-surface-hover);
+  --color-bg-elev-3:  var(--app-surface-selected);
+  --color-bg-input:   var(--app-surface);
 
   /* ── Borders ──────────────────────────────────────────────────── */
-  --color-border:        var(--ja-border);
-  --color-border-subtle: var(--ja-border-subtle);
-  --color-border-strong: var(--ja-border-strong);
+  --color-border:        var(--app-border);
+  --color-border-subtle: var(--app-border-subtle);
+  --color-border-strong: var(--app-border-strong);
 
-  /* ── Foreground ───────────────────────────────────────────────── */
-  --color-fg:       var(--ja-fg);
-  --color-fg-muted: var(--ja-fg-muted);
-  --color-fg-dim:   var(--ja-fg-dim);
-  --color-fg-faint: var(--ja-fg-faint);
+  /* ── Foreground → app tokens ─────────────────────────────────── */
+  --color-fg:       var(--app-text);
+  --color-fg-muted: var(--app-text-secondary);
+  --color-fg-dim:   var(--app-text-muted);
+  --color-fg-faint: var(--app-text-faint);
 
-  /* ── Semantic ─────────────────────────────────────────────────── */
-  --color-success:      var(--ja-success);
-  --color-success-soft: var(--ja-success-soft);
-  --color-warning:      var(--ja-warning);
-  --color-warning-soft: var(--ja-warning-soft);
-  --color-error:        var(--ja-error);
-  --color-error-soft:   var(--ja-error-soft);
-  --color-info:         var(--ja-info);
-  --color-info-soft:    var(--ja-info-soft);
+  /* ── Semantic → app tokens ───────────────────────────────────── */
+  --color-success:      var(--app-success);
+  --color-success-soft: var(--app-success-soft);
+  --color-warning:      var(--app-warning);
+  --color-warning-soft: var(--app-warning-soft);
+  --color-error:        var(--app-error);
+  --color-error-soft:   var(--app-error-soft);
+  --color-info:         var(--app-info);
+  --color-info-soft:    var(--app-info-soft);
 
   /* ── Legacy aliases ───────────────────────────────────────────── */
   --color-surface-base:     var(--color-bg);
@@ -108,7 +111,9 @@
   --radius-lg: 10px;
   --radius-xl: 14px;
 
-  /* ── Shadows (theme-dependent via --ja-*) ─────────────────────── */
+  /* ── Shadows (theme-dependent via --ja-* — the landing page's own
+     scale; intentionally NOT aliased to --app-* so the marketing surface
+     keeps its distinct elevation language) ──────────────────────── */
   --shadow-card:  var(--ja-shadow-card);
   --shadow-tile:  var(--ja-shadow-tile);
   --shadow-brand: var(--ja-shadow-brand);
@@ -219,12 +224,19 @@
   
   --app-surface-selected: #EFEFEA;
   --app-surface-card: #FFFFFF;
-  --app-border: #E7E7E4;
-  --app-border-subtle: #EFEFEC;
+  --app-border: #E0E0DC;
+  --app-border-subtle: #E8E8E4;
+  --app-border-strong: #D2D2CD;
+  /* CV picker document surface: warm paper mounted on the card surface */
+  --app-cv-paper: #FDFCF9;
+  /* Verification notice banner: warm amber-brown translucent surface */
+  --app-notice-surface: #FBF3E1;
+  --app-notice-border: rgba(183, 150, 73, 0.32);
+  --app-notice-icon: rgba(183, 150, 73, 0.16);
   --app-text: #171717;
-  --app-text-secondary: #626262;
-  --app-text-muted: #666666;
-  --app-text-faint: #6e6e68;
+  --app-text-secondary: #525252;
+  --app-text-muted: #5A5A5A;
+  --app-text-faint: #61615C;
   --app-brand: #E30613;
   --app-brand-hover: #C9000B;
   --app-brand-soft: #FFF0F1;
@@ -369,6 +381,13 @@
   --app-surface-card: #15151c;
   --app-border: rgba(255, 255, 255, 0.08);
   --app-border-subtle: rgba(255, 255, 255, 0.05);
+  --app-border-strong: rgba(255, 255, 255, 0.14);
+  /* CV picker document surface: warm paper mounted on the card surface */
+  --app-cv-paper: #F7F6F2;
+  /* Verification notice banner: dark amber/brown translucent surface */
+  --app-notice-surface: rgba(196, 138, 47, 0.10);
+  --app-notice-border: rgba(251, 191, 36, 0.22);
+  --app-notice-icon: rgba(251, 191, 36, 0.12);
   --app-text: #EEEEF2;
   --app-text-secondary: #B5B5BE;
   --app-text-muted: #9E9EA8;
@@ -482,14 +501,22 @@
     animation: ja-shimmer 1.6s ease-in-out infinite;
   }
 
-  /* Card hover lift (beui spring-press feel, CSS-only approximation)       */
+  /* Card hover lift — shadow only, no translate, so cards never "jump" */
   .ja-lift {
-    transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 160ms ease;
+    transition: box-shadow 160ms ease;
   }
   .ja-lift:hover {
-    transform: translateY(-2px);
     box-shadow: var(--app-shadow-card-hover);
+  }
+
+  /* Theme cross-fade — during a data-theme switch, animate the color
+     tokens so no widget snaps or lags behind the rest of the UI. */
+  html.theme-anim *,
+  html.theme-anim *::before,
+  html.theme-anim *::after {
+    transition: background-color 180ms ease-out, border-color 180ms ease-out,
+      color 180ms ease-out, box-shadow 180ms ease-out,
+      fill 180ms ease-out, stroke 180ms ease-out !important;
   }
 
   /* ── Interactive row / surface affordances (design-system) ─────────── */
@@ -725,28 +752,6 @@
   /* Stretched variant — full width */
   .btn-block { width: 100%; }
 
-  /* ── Button (legacy .btn-primary) ────────────────────────────── */
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md);
-    background-color: var(--color-accent-500);
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #ffffff;
-    transition: background-color 0.15s ease;
-    outline: none;
-  }
-  .btn-primary:hover  { background-color: var(--color-accent-400); }
-  .btn-primary:active { background-color: var(--color-accent-600); }
-  .btn-primary:focus-visible {
-    outline: 2px solid var(--color-accent-400);
-    outline-offset: 2px;
-  }
-  .btn-primary:disabled { cursor: not-allowed; opacity: 0.5; }
 
   /* ── Card (legacy) ────────────────────────────────────────────── */
   .card {
@@ -1114,6 +1119,24 @@ input[type="password"]::-webkit-textfield-decoration-container { display: none; 
 /* Prevent iOS viewport zoom on input focus */
 @media (max-width: 767px) {
   input, select, textarea { font-size: 16px !important; }
+}
+
+/* ── CV picker: floating selection dock ─────────────────────────── */
+@keyframes ja-dock-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+[data-selection-dock] { animation: ja-dock-in 200ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  [data-selection-dock] { animation: none; }
+}
+
+/* ── Toast region: bottom-right, clear of mobile nav + selection dock ── */
+@media (max-width: 767px) {
+  .ja-toast-region {
+    bottom: calc(env(safe-area-inset-bottom) + 132px) !important;
+    right: 16px !important;
+  }
 }
 
 /* Reduced motion */

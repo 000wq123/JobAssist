@@ -2,20 +2,26 @@
 
 Willhaben is Austria's largest classifieds platform and has a significant
 jobs section (especially for part-time, mini-jobs, and informal work).
-We scrape the "iad/jobs" search results.
+
+The old scrape path (``/iad/jobs`` + HTML cards) is dead: the site moved to a
+Next.js app at ``/jobs`` and results are server-rendered into the
+``__NEXT_DATA__`` JSON blob, so we parse that instead of DOM selectors.
+
+URL scheme (verified 2026-08):
+    https://www.willhaben.at/jobs/suche/{keyword-slug}[-{location-slug}]?page=N
+    detail: https://www.willhaben.at/jobs/job/{slugTitle}/{id}
 """
 from __future__ import annotations
 
+import json
 import logging
+import re
 from typing import Optional
-
-from bs4 import BeautifulSoup
 
 from app.services.scrapers.base import (
     _build_result,
     _cached_search,
     _extract_job_type,
-    _extract_salary,
     _fetch_html,
     _rate_limited,
     _store_result,
@@ -26,77 +32,85 @@ from app.services.job_search import _find_contact_email
 logger = logging.getLogger(__name__)
 
 _DOMAIN = "willhaben.at"
-_SEARCH_URL = "https://www.willhaben.at/iad/jobs"
+_SEARCH_URL = "https://www.willhaben.at/jobs/suche"
+
+_UMLAUT_MAP = {
+    "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+    "Ä": "ae", "Ö": "oe", "Ü": "ue",
+}
 
 
-def _parse_item(card: BeautifulSoup) -> Optional[dict]:
-    """Extract job data from a willhaben search-result card."""
-    # Title + link
-    title_el = (
-        card.select_one("h3 a")
-        or card.select_one("a[data-testid*='job-title']")
-        or card.select_one(".Text-Box-Heading a")
-        or card.select_one("a[href*='/iad/jobs/']")
-    )
-    if not title_el:
+def _slugify(text: str) -> str:
+    """Normalise a keyword/location to willhaben's URL slug form.
+
+    Lowercase, umlauts expanded (kaernten, oberoesterreich), non-word chars
+    collapsed to single dashes.
+    """
+    out = []
+    for ch in text:
+        if ch in _UMLAUT_MAP:
+            out.append(_UMLAUT_MAP[ch])
+        elif ch.isalnum():
+            out.append(ch.lower())
+        else:
+            out.append("-")
+    slug = re.sub(r"-+", "-", "".join(out)).strip("-")
+    return slug
+
+
+def _parse_entry(entry: dict) -> Optional[dict]:
+    """Map one ``__NEXT_DATA__`` job entry to the standard scraper schema."""
+    entry_id = entry.get("id")
+    title = _strip(entry.get("title") or "")
+    slug_title = entry.get("slugTitle") or ""
+    if not entry_id or not title:
         return None
 
-    title = _strip(title_el.get_text())
-    href = title_el.get("href", "")
-    if href.startswith("/"):
-        href = f"https://www.willhaben.at{href}"
+    locations = entry.get("jobLocations") or []
+    location = _strip(", ".join(l["name"] for l in locations if l.get("name")))
 
-    # Company / advertiser
-    company_el = (
-        card.select_one("[data-testid*='company']")
-        or card.select_one(".Text-Box-SubHeadline")
-        or card.select_one(".SellerInfo")
-    )
-    company = _strip(company_el.get_text()) if company_el else ""
+    company = (entry.get("company") or {}).get("title") or ""
 
-    # Location
-    loc_el = (
-        card.select_one("[data-testid*='location']")
-        or card.select_one(".Text-Box-Area")
-        or card.select_one("[class*='location']")
-    )
-    location = _strip(loc_el.get_text()) if loc_el else ""
+    salary = entry.get("salary")
+    timeframe = _strip(entry.get("salaryTimeFrame") or "")
+    salary_text = ""
+    if salary:
+        salary_text = f"€ {salary:,}".replace(",", ".")
+        if timeframe:
+            salary_text += f" {timeframe}"
 
-    # Description snippet (often visible in results)
-    desc_el = (
-        card.select_one("[data-testid*='description']")
-        or card.select_one(".Text-Box-Description")
-        or card.select_one("p")
-    )
-    description = _strip(desc_el.get_text()) if desc_el else ""
+    modes = entry.get("employmentModes") or []
+    job_type = _extract_job_type(" ".join(modes)) if modes else ""
 
-    # Salary
-    salary_text = _extract_salary(description) or _extract_salary(title)
-
-    # Job type from tags/badges
-    type_el = (
-        card.select_one("[data-testid*='employment-type']")
-        or card.select_one(".Badge")
-        or card.select_one("[class*='badge']")
-    )
-    job_type = _extract_job_type(_strip(type_el.get_text()) if type_el else "")
-
-    # Image / source_id from URL
-    source_id = href.split("/")[-1].split("?")[0] if href else ""
+    description = _strip(entry.get("description") or "")
 
     return {
         "title": title,
         "company": company,
         "location": location,
         "description": description,
-        "full_url": href,
+        "full_url": f"https://www.willhaben.at/jobs/job/{slug_title}/{entry_id}",
         "salary": salary_text,
         "source": "willhaben.at",
-        "source_id": source_id,
-        "updated": "",
+        "source_id": str(entry_id),
+        "updated": entry.get("firstPublishDate") or entry.get("creationDate") or "",
         "contact_email": _find_contact_email(company, ""),
         "job_type": job_type,
     }
+
+
+def _extract_entries(soup) -> list[dict]:
+    """Pull the job entries out of the __NEXT_DATA__ blob."""
+    script = soup.find("script", id="__NEXT_DATA__")
+    if not script or not script.string:
+        return []
+    try:
+        data = json.loads(script.string)
+        root = data["props"]["pageProps"]["jobsSearchResultRoot"]
+        return root.get("data", {}).get("entries", [])
+    except (KeyError, TypeError, ValueError) as e:
+        logger.warning("willhaben.at: could not parse __NEXT_DATA__: %s", e)
+        return []
 
 
 async def search_willhaben(
@@ -110,37 +124,34 @@ async def search_willhaben(
     if cached:
         return cached
 
-    params: dict = {"page": page}
-    if keywords:
-        params["keyword"] = keywords
-    if location:
-        params["location"] = location
+    # Location is part of the search URL path, not a query param.
+    path = _slugify(keywords) if keywords else ""
+    if location and path:
+        path = f"{path}-{_slugify(location)}"
+    if not path:
+        path = "alle-jobs"
+    url = f"{_SEARCH_URL}/{path}"
 
     try:
         await _rate_limited(_DOMAIN)
-        soup = await _fetch_html(_SEARCH_URL, params=params)
+        soup = await _fetch_html(url, params={"page": page} if page > 1 else None)
 
-        # Willhaben uses React components; cards are typically in article or div wrappers
-        cards = (
-            soup.select("article")
-            or soup.select("[data-testid*='result-item']")
-            or soup.select(".Box")
-            or soup.select(".SearchResult")
-            or soup.select("[class*='result']")
-        )
-
-        if not cards:
-            logger.warning(
-                "willhaben.at: no job cards found — selectors may be stale."
-            )
-
+        entries = _extract_entries(soup)
         jobs: list[dict] = []
-        for card in cards[:20]:
-            parsed = _parse_item(card)
+        for entry in entries:
+            parsed = _parse_entry(entry)
             if parsed and parsed.get("title") and parsed.get("full_url"):
-                # Filter out non-job results (willhaben mixes categories)
-                if "/iad/jobs/" in parsed["full_url"]:
-                    jobs.append(parsed)
+                jobs.append(parsed)
+
+        # De-duplicate by source_id in case the API repeats entries across pages.
+        seen: set[str] = set()
+        unique: list[dict] = []
+        for job in jobs:
+            if job["source_id"] in seen:
+                continue
+            seen.add(job["source_id"])
+            unique.append(job)
+        jobs = unique
 
         result = _build_result(jobs, page)
         logger.info("willhaben.at: %d jobs (keywords=%r, location=%r)", len(result["jobs"]), keywords, location)

@@ -83,6 +83,14 @@ export default function CommandMenu({ open, onClose }) {
     }
   }, [open]);
 
+  // Lock background scroll while the palette is open (it is a modal dialog)
+  useEffect(() => {
+    if (!open) return undefined;
+    const oldOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => { document.documentElement.style.overflow = oldOverflow; };
+  }, [open]);
+
   // Trap focus while open and return focus on close
   useFocusTrap(open, dialogRef);
 

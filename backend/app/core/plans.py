@@ -1,28 +1,33 @@
-"""Plan definitions and usage limits for each subscription tier."""
+"""Plan definitions.
+
+JobAssist is free and open source: every plan is unlimited (-1) for every
+feature. The plan keys/names are kept for schema compatibility so the
+subscription tables and /init usage payload keep working unchanged.
+"""
 
 PLAN_LIMITS = {
     "basic": {
-        "cv_analysis": 5,
-        "cv_generate": 1,
-        "cover_letter": 5,
-        "job_alerts": 1,
-        "ai_chat": 15,
-        "job_search": 5,
-        "daily_manual_runs": 3,   # manual "Run Now" clicks per day
-        "daily_alert_edits": 3,   # alert creates + edits per day
+        "cv_analysis": -1,
+        "cv_generate": -1,
+        "cover_letter": -1,
+        "job_alerts": -1,
+        "ai_chat": -1,
+        "job_search": -1,
+        "daily_manual_runs": -1,
+        "daily_alert_edits": -1,
     },
     "pro": {
-        "cv_analysis": 15,
-        "cv_generate": 5,
-        "cover_letter": 25,
-        "job_alerts": 10,
-        "ai_chat": 200,
-        "job_search": 20,
-        "daily_manual_runs": 10,
-        "daily_alert_edits": 10,
+        "cv_analysis": -1,
+        "cv_generate": -1,
+        "cover_letter": -1,
+        "job_alerts": -1,
+        "ai_chat": -1,
+        "job_search": -1,
+        "daily_manual_runs": -1,
+        "daily_alert_edits": -1,
     },
     "max": {
-        "cv_analysis": -1,  # unlimited
+        "cv_analysis": -1,
         "cv_generate": -1,
         "cover_letter": -1,
         "job_alerts": -1,
@@ -45,19 +50,19 @@ PLAN_LIMITS = {
 
 PLAN_PRICES = {
     "basic": 0,
-    "pro": 4.99,
-    "max": 7.99,
-    "enterprise": None,  # contact us
+    "pro": 0,
+    "max": 0,
+    "enterprise": 0,
 }
 
 PLAN_NAMES = {
-    "basic": "Basic (Free)",
-    "pro": "Pro",
-    "max": "Max",
-    "enterprise": "Enterprise",
+    "basic": "JobAssist (Free)",
+    "pro": "JobAssist (Free)",
+    "max": "JobAssist (Free)",
+    "enterprise": "JobAssist (Free)",
 }
 
 
 def get_limit(plan: str, feature: str) -> int:
     """Return the limit for a feature on a plan. -1 means unlimited."""
-    return PLAN_LIMITS.get(plan, PLAN_LIMITS["basic"]).get(feature, 0)
+    return PLAN_LIMITS.get(plan, PLAN_LIMITS["basic"]).get(feature, -1)

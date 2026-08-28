@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import {
   Bookmark, Send, MessageCircle, CheckCircle2, Archive,
@@ -20,20 +21,24 @@ function T(name) {
 // Semantic status tokens — single source of truth (see index.css). Components
 // must reference these CSS variables instead of hardcoding hex values so
 // light/dark themes stay consistent.
+
 /** Animated counter for the status rail (transitions.dev pop-in pattern). */
 function CountUp({ value }) {
   const display = useCountUp(value);
+  // No key on the span: keying it by the animated value remounts it on every
+  // animation frame, restarting the CSS pop so it only visibly "jumps" in at
+  // the very end. Mount once, pop once, then let the JS counter run smoothly.
   return (
-    <span key={value} className="ja-num-pop inline-block">{display}</span>
+    <span className="ja-num-pop inline-block">{display}</span>
   );
 }
 
 const BUCKETS = [
-  { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,     color: "var(--status-saved-icon)", soft: "var(--status-saved-soft)", textColor: "var(--status-saved)" },
-  { key: "applied",      label: "Beworben",    icon: Send,          color: "var(--status-applied)",  soft: "var(--status-applied-soft)" },
-  { key: "interviewing", label: "Gespräch",    icon: MessageCircle, color: "var(--status-interview)", soft: "var(--status-interview-soft)" },
-  { key: "offered",      label: "Angebot",     icon: CheckCircle2,  color: "var(--status-offered)",  soft: "var(--status-offered-soft)" },
-  { key: "archived",     label: "Archiviert",  icon: Archive,       color: "var(--status-archived)", soft: "var(--status-archived-soft)" },
+  { key: "bookmarked",   label: "Gemerkt",    stripLabel: "Gemerkt",   icon: Bookmark,     color: "var(--status-saved-icon)", soft: "var(--status-saved-soft)", textColor: "var(--status-saved)" },
+  { key: "applied",      label: "Beworben",   stripLabel: "Beworben",  icon: Send,          color: "var(--status-applied)",  soft: "var(--status-applied-soft)" },
+  { key: "interviewing", label: "Gespräch",   stripLabel: "Gespräche", icon: MessageCircle, color: "var(--status-interview)", soft: "var(--status-interview-soft)" },
+  { key: "offered",      label: "Angebot",    stripLabel: "Angebote",  icon: CheckCircle2,  color: "var(--status-offered)",  soft: "var(--status-offered-soft)" },
+  { key: "archived",     label: "Archiviert", stripLabel: "Archiviert", icon: Archive,       color: "var(--status-archived)", soft: "var(--status-archived-soft)" },
 ];
 
 const STATUS_TOKEN = Object.fromEntries(BUCKETS.map((b) => [b.key, b]));
@@ -50,7 +55,7 @@ function JobRowSkeleton({ isLast }) {
   return (
     <div
       className="flex items-center gap-4 py-3.5"
-      style={{ borderBottom: isLast ? "none" : `1px solid ${T("border")}` }}
+      style={{ borderBottom: isLast ? "none" : `1px solid ${T("border-subtle")}` }}
     >
       <Skel className="w-9 h-9 rounded-md flex-shrink-0" />
       <div className="flex-1">
@@ -65,6 +70,55 @@ function JobRowSkeleton({ isLast }) {
 /** Map the backend `rejected` status to the frontend `archived` bucket. */
 function normalizeStatus(status) {
   return status === "rejected" ? "archived" : status || "bookmarked";
+}
+
+/** Shared card surface — every dashboard card uses one visual language. */
+const CARD = {
+  borderRadius: 16,
+  border: `1px solid ${T("border-subtle")}`,
+  background: T("surface"),
+  boxShadow: "var(--app-shadow-card)",
+};
+
+/**
+ * Contained inline failure panel used inside cards (never a page-level block).
+ * Renders the retry action only when `onRetry` is provided.
+ */
+function InlineError({ title, detail, onRetry, retryLabel = "Erneut versuchen" }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-wrap items-center gap-3.5 rounded-xl px-4 py-3.5"
+      style={{
+        background: T("error-soft"),
+        border: `1px solid color-mix(in srgb, ${T("error")} 22%, transparent)`,
+      }}
+    >
+      <div
+        className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg"
+        style={{ background: `color-mix(in srgb, ${T("error")} 14%, transparent)` }}
+      >
+        <AlertCircle className="w-4 h-4" style={{ color: T("error") }} />
+      </div>
+      <div className="flex-1 min-w-[160px]">
+        <p className="text-[13px] font-semibold" style={{ color: T("text") }}>
+          {title}
+        </p>
+        <p className="text-[12px] mt-0.5" style={{ color: T("text-muted") }}>
+          {detail}
+        </p>
+      </div>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0 cursor-pointer"
+        >
+          <RefreshCw className="w-3 h-3" /> {retryLabel}
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -113,12 +167,12 @@ export default function DashboardPage() {
   const resumesFailed = bootstrapError && !init;
   const alertsFailed = alertsErr && jobAlerts.length === 0;
 
+  // Structural skeletons only: the cards have fixed geometry (min-h-[132px]),
+  // so rendering the skeleton shape immediately causes no layout shift and
+  // avoids the "bare title card → skeleton → content" pop-in sequence.
   const showJobSkeleton = useDelayedSkeleton(jobsLoading && !jobsErr && jobs.length === 0 && !bootstrapEmpty);
-  const showResumeSkeleton = useDelayedSkeleton(bootstrapLoading && !init && !resumesFailed);
-  const showAlertSkeleton = useDelayedSkeleton(alertsLoading && !alertsErr && jobAlerts.length === 0);
-
-  const resumeUndetermined = bootstrapLoading && !init && !resumesFailed && !showResumeSkeleton;
-  const alertsUndetermined = alertsLoading && !alertsErr && jobAlerts.length === 0 && !showAlertSkeleton;
+  const showResumeSkeleton = bootstrapLoading && !init && !resumesFailed;
+  const showAlertSkeleton = alertsLoading && !alertsErr && jobAlerts.length === 0;
 
   const statusCounts = useMemo(() => {
     const counts = {};
@@ -149,7 +203,6 @@ export default function DashboardPage() {
 
   const hasCV = resumes.length > 0 || hasCvProfile || localCvLibraryCount > 0 || hasBuilderDraft;
   const activeAlerts = jobAlerts.filter((a) => a.is_active).length;
-  const totalApplications = jobs.filter((j) => j.status !== "bookmarked" && j.status !== "archived" && j.status !== "rejected").length;
 
   const allSettled = (!jobsLoading || jobsErr) && !bootstrapLoading && (!alertsLoading || alertsErr);
   const trulyEmpty = allSettled && !jobsFailed && !resumesFailed && !alertsFailed && jobs.length === 0 && resumes.length === 0 && !hasCvProfile && localCvLibraryCount === 0 && !hasBuilderDraft && jobAlerts.length === 0;
@@ -195,27 +248,28 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto pt-6 pb-16 px-0">
-      {/* Greeting */}
-      <div className="mb-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: T("brand") }}>
+    <div className="animate-slide-up max-w-[1200px] mx-auto pt-2 pb-24 px-0">
+      {/* ── Greeting ──────────────────────────────────────────────────── */}
+      <header className="mb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-2" style={{ color: T("brand") }}>
           {new Date().toLocaleDateString("de-AT", {
             weekday: "long", day: "numeric", month: "long", year: "numeric",
-          })}
+          }).toUpperCase()}
         </p>
-        <h1 className="text-[36px] font-bold tracking-[-0.03em] leading-[1.1]" style={{ color: T("text") }}>
+        <h1 className="text-[34px] font-bold tracking-[-0.02em] leading-[1.15]" style={{ color: T("text") }}>
           {greeting}
         </h1>
-        {totalApplications > 0 && (
-          <p className="mt-2 text-[14px]" style={{ color: T("text-secondary") }}>
-            Du hast {totalApplications} aktive {totalApplications === 1 ? "Bewerbung" : "Bewerbungen"}.
-          </p>
-        )}
-      </div>
+        <p className="mt-2 text-[15px]" style={{ color: T("text-secondary") }}>
+          Hier ist dein aktueller Überblick.
+        </p>
+      </header>
 
-      {/* Status rail — five equal semantic regions, one unified surface */}
-      <div className="mb-12 pb-8" style={{ borderBottom: `1px solid ${T("border")}` }}>
-        <div className="grid grid-cols-5 rounded-2xl overflow-hidden" style={{ background: T("surface-hover"), border: `1px solid ${T("border-subtle")}` }}>
+      {/* ── Status strip — one unified panel, five semantic columns ───── */}
+      <section aria-label="Bewerbungsstatus" className="mb-10 pb-9" style={{ borderBottom: `1px solid ${T("border-subtle")}` }}>
+        <div
+          className="grid grid-cols-2 md:grid-cols-5 gap-px rounded-2xl overflow-hidden"
+          style={{ background: T("border-subtle"), boxShadow: "var(--app-shadow-card)" }}
+        >
           {BUCKETS.map((b, i) => {
             const Icon = b.icon;
             const count = statusCounts[b.key] ?? 0;
@@ -224,57 +278,47 @@ export default function DashboardPage() {
                 key={b.key}
                 type="button"
                 onClick={() => navigate(`/jobs?status=${b.key}`)}
-                aria-label={`${count} ${b.label}`}
-                className="group relative flex flex-col items-center justify-center gap-2.5 py-5 px-4 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:z-10"
-                style={{
-                  borderRight: i < BUCKETS.length - 1 ? `1px solid ${T("border-subtle")}` : "none",
-                }}
-                onFocus={(e) => { e.currentTarget.style.background = T("surface"); }}
-                onBlur={(e) => { e.currentTarget.style.background = ""; }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = T("surface");
-                  e.currentTarget.style.boxShadow = `inset 0 -2px 0 ${b.color}`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
+                aria-label={`${count} ${b.stripLabel}`}
+                className={clsx(
+                  "group flex flex-col items-center justify-center gap-2.5 py-6 px-4 cursor-pointer",
+                  "bg-[var(--app-surface)] transition-colors duration-150 hover:bg-[var(--app-surface-hover)]",
+                  "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--app-brand)] focus-visible:z-10",
+                  i >= BUCKETS.length - 1 && "max-md:col-span-2",
+                )}
               >
-                {/* Semantic tinted icon chip — slightly larger presence on hover only */}
                 <span
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.06]"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.05]"
                   style={{ background: b.soft }}
                 >
-                  <Icon className="w-[17px] h-[17px]" style={{ color: b.color }} />
+                  <Icon className="w-[18px] h-[18px]" style={{ color: b.color }} />
                 </span>
                 <span className="text-center">
                   <span
-                    className="text-[24px] font-bold tracking-[-0.02em] tabular-nums block leading-none mb-1 transition-colors duration-150 group-hover:text-[var(--app-brand)]"
+                    className="text-[26px] font-bold tracking-[-0.02em] block leading-none mb-1.5 transition-colors duration-150 group-hover:text-[var(--app-brand)]"
                     style={{ color: T("text"), fontVariantNumeric: "tabular-nums" }}
                   >
                     <CountUp value={count} />
                   </span>
-                  <span className="block text-[11.5px] font-medium" style={{ color: T("text-secondary") }}>
-                    {b.label}
+                  <span className="block text-[12px] font-medium" style={{ color: T("text-muted") }}>
+                    {b.stripLabel}
                   </span>
                 </span>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Two-column main area */}
-      <div className="grid grid-cols-12 gap-8 mb-10">
-        {/* Left: Recent activity — grouped workspace region */}
-        <div className="col-span-12 lg:col-span-7">
-          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: T("border-subtle"), background: T("surface") }}>
-            {/* Section header inside the container — one visual unit */}
+      {/* ── Main content — activity left (60%), status cards right (40%) ── */}
+      <div className="grid grid-cols-12 gap-6 mb-10">
+        {/* Left: Latest activity */}
+        <div className="col-span-12 lg:col-span-7 min-w-0">
+          <div className="rounded-2xl border overflow-hidden h-full flex flex-col" style={CARD}>
             <div
-              className="flex items-center justify-between px-5 py-3.5"
+              className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
               style={{ borderBottom: `1px solid ${T("border-subtle")}`, background: T("surface-hover") }}
             >
-              <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em]" style={{ color: T("text-muted") }}>
+              <h2 className="text-[12px] font-semibold uppercase tracking-[0.10em]" style={{ color: T("text-muted") }}>
                 Letzte Aktivität
               </h2>
               <button
@@ -286,33 +330,19 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="px-3 py-1">
+            <div className="px-3 py-1 flex-1">
               {showJobSkeleton && (
                 [0, 1, 2].map((i) => <JobRowSkeleton key={i} isLast={i === 2} />)
               )}
 
-              {/* Error — compact inline banner */}
+              {/* Failure stays contained inside the activity card */}
               {jobsFailed && (
-                <div
-                  role="alert"
-                  className="flex items-center gap-4 rounded-lg px-4 py-3 my-3"
-                  style={{ background: T("error-soft"), borderLeft: `3px solid ${T("error")}` }}
-                >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: T("error") }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium" style={{ color: T("text") }}>
-                      Stellen konnten nicht geladen werden.
-                    </p>
-                    <p className="text-[12px]" style={{ color: T("text-muted") }}>
-                      Überprüfe deine Verbindung und versuche es erneut.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => jobsReload()}
-                    className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0">
-                    <RefreshCw className="w-3 h-3" /> Erneut versuchen
-                  </button>
+                <div className="p-3">
+                  <InlineError
+                    title="Stellen konnten nicht geladen werden."
+                    detail="Überprüfe deine Verbindung und versuche es erneut."
+                    onRetry={() => jobsReload()}
+                  />
                 </div>
               )}
 
@@ -359,7 +389,6 @@ export default function DashboardPage() {
                           }
                         }}
                       >
-                        {/* Muted semantic icon — state identifiable without screaming yellow */}
                         <span
                           className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity duration-150"
                           style={{ background: bucket.soft }}
@@ -373,7 +402,6 @@ export default function DashboardPage() {
                             {dateStr ? ` · ${dateStr}` : ""}
                           </span>
                         </span>
-                        {/* Subtle badge; amber intensifies only on hover via group */}
                         <span
                           className="text-[11px] font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline-block"
                           style={{ color: bucket.textColor || bucket.color, background: bucket.soft }}
@@ -390,12 +418,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right: CV + Alerts */}
-        <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
-          {/* CV card — green semantic */}
+        {/* Right: CV status + alert status */}
+        <div className="col-span-12 lg:col-span-5 min-w-0 flex flex-col gap-5">
+          {/* CV card — restrained green accenting */}
           <div
-            className={`rounded-xl border p-5 flex flex-col justify-between gap-3 min-h-[132px] ${hasCV ? "interactive-row" : ""}`}
-            style={{ borderColor: hasCV ? "var(--status-offered-soft)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
+            className={`rounded-2xl border p-5 flex flex-col justify-between gap-3 min-h-[132px] ${hasCV ? "interactive-row" : ""}`}
+            style={{
+              ...CARD,
+              borderRadius: 16,
+              borderColor: hasCV ? `color-mix(in srgb, var(--status-offered) 30%, transparent)` : T("border-subtle"),
+              transition: "border-color 0.2s ease",
+            }}
           >
             {showResumeSkeleton ? (
               <>
@@ -405,28 +438,12 @@ export default function DashboardPage() {
                 </div>
                 <Skel className="w-24 h-4" />
               </>
-            ) : resumeUndetermined ? (
-              <>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: T("border-subtle") }}>
-                    <FileText className="w-[18px] h-[18px]" style={{ color: T("text-faint") }} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: T("text") }}>Lebenslauf</p>
-                  </div>
-                </div>
-              </>
             ) : resumesFailed ? (
               <>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: T("error-soft") }}>
-                    <AlertCircle className="w-[18px] h-[18px]" style={{ color: T("error") }} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: T("text") }}>Nicht verfügbar</p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: T("text-muted") }}>Lebenslauf-Daten konnten nicht geladen werden.</p>
-                  </div>
-                </div>
+                <InlineError
+                  title="Nicht verfügbar"
+                  detail="Lebenslauf-Daten konnten nicht geladen werden."
+                />
               </>
             ) : (
               <>
@@ -459,10 +476,15 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Alerts card — amber semantic */}
+          {/* Alerts card — amber accent, contained error state */}
           <div
-            className="ja-lift rounded-xl border p-5 flex flex-col justify-between gap-3 min-h-[132px]"
-            style={{ borderColor: activeAlerts > 0 ? "var(--status-saved-soft)" : T("border"), background: T("surface"), transition: "border-color 0.2s ease" }}
+            className="rounded-2xl border p-5 flex flex-col justify-between gap-3 min-h-[132px]"
+            style={{
+              ...CARD,
+              borderRadius: 16,
+              borderColor: activeAlerts > 0 ? `color-mix(in srgb, var(--status-saved) 30%, transparent)` : T("border-subtle"),
+              transition: "border-color 0.2s ease",
+            }}
           >
             {showAlertSkeleton ? (
               <>
@@ -472,31 +494,13 @@ export default function DashboardPage() {
                 </div>
                 <Skel className="w-24 h-4" />
               </>
-            ) : alertsUndetermined ? (
-              <>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: T("border-subtle") }}>
-                    <Bell className="w-[18px] h-[18px]" style={{ color: T("text-faint") }} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: T("text") }}>Alerts</p>
-                  </div>
-                </div>
-              </>
             ) : alertsFailed ? (
               <>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: T("error-soft") }}>
-                    <AlertCircle className="w-[18px] h-[18px]" style={{ color: T("error") }} />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: T("text") }}>Nicht verfügbar</p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: T("text-muted") }}>Alert-Daten konnten nicht geladen werden.</p>
-                  </div>
-                </div>
-                <button type="button" onClick={() => alertsReload()} className="btn btn-link text-[13px] gap-1.5 self-end">
-                  <RefreshCw className="w-3.5 h-3.5" /> Erneut versuchen
-                </button>
+                <InlineError
+                  title="Nicht verfügbar"
+                  detail="Alert-Daten konnten nicht geladen werden."
+                  onRetry={() => alertsReload()}
+                />
               </>
             ) : (
               <>
@@ -525,36 +529,41 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Workbench promo panel — secondary content, reduced dominance */}
+      {/* ── Discovery panel ───────────────────────────────────────────── */}
       <div
         className="rounded-2xl border overflow-hidden grid grid-cols-12"
-        style={{ borderColor: T("border-subtle"), background: T("surface") }}
+        style={{ ...CARD }}
       >
-        <div className="col-span-12 lg:col-span-7 px-7 py-6 flex flex-col justify-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.10em] mb-1.5" style={{ color: T("text-muted") }}>
+        <div className="col-span-12 lg:col-span-7 px-7 py-7 flex flex-col justify-center min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: T("brand") }}>
             Mehr entdecken
           </p>
-          <h2 className="text-[17px] font-bold tracking-[-0.01em] leading-[1.3] mb-1.5" style={{ color: T("text") }}>
+          <h2 className="text-[18px] font-bold tracking-[-0.01em] leading-[1.3] mb-1.5" style={{ color: T("text") }}>
             Lebenslauf, KV-Check und mehr
           </h2>
-          <p className="text-[13px] leading-relaxed mb-3.5 max-w-md" style={{ color: T("text-secondary") }}>
+          <p className="text-[13.5px] leading-relaxed mb-4 max-w-md" style={{ color: T("text-secondary") }}>
             Erstelle deinen Lebenslauf, vergleiche Gehälter mit dem Kollektivvertrag und behalte deine Bewerbungen im Blick.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => navigate("/lebenslauf")} className="btn btn-primary btn-md gap-1.5 text-[12.5px]">
+          <div className="flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => navigate("/lebenslauf")} className="btn btn-primary btn-md gap-1.5 text-[12.5px] cursor-pointer">
               <FileText className="w-3.5 h-3.5" /> Lebenslauf
             </button>
-            <button type="button" onClick={() => navigate("/jobs?tab=finden")} className="btn btn-secondary btn-md gap-1.5 text-[12.5px]">
+            <button type="button" onClick={() => navigate("/jobs?tab=finden")} className="btn btn-secondary btn-md gap-1.5 text-[12.5px] cursor-pointer">
               <Search className="w-3.5 h-3.5" /> Jobs finden
             </button>
           </div>
         </div>
-        <div className="col-span-12 lg:col-span-5 min-h-[140px] lg:min-h-0 flex items-center justify-center px-5 py-4"
-          style={{ background: "color-mix(in srgb, var(--app-border-subtle) 60%, var(--app-bg, #FAFAF8))" }}>
+        <div
+          className="col-span-12 lg:col-span-5 min-h-[150px] lg:min-h-0 flex items-center justify-center px-5 py-5"
+          style={{
+            background: "color-mix(in srgb, var(--app-brand) 8%, var(--app-surface))",
+            borderLeft: "1px solid var(--app-border-subtle)",
+          }}
+        >
           <img
             src="/illustrations/person-laptop.png"
             alt=""
-            className="w-full max-w-[170px] h-auto object-contain pointer-events-none"
+            className="w-full max-w-[180px] h-auto object-contain pointer-events-none"
           />
         </div>
       </div>

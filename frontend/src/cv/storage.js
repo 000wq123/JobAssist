@@ -66,7 +66,7 @@ export function loadLibrary() {
 }
 
 /**
- * Append a new snapshot to the library (max 10, newest first).
+ * Append a new snapshot to the library (newest first, unlimited).
  * @param {import("./profileSchema").CVProfile} profile
  * @returns {{ id: string, name: string, templateId: string, createdAt: string, profile: any }}
  */
@@ -80,7 +80,7 @@ export function saveToLibrary(profile) {
     createdAt: new Date().toISOString(),
     profile: { ...profile },
   };
-  writeJson(STORAGE_KEYS.CV_LIBRARY, [entry, ...lib].slice(0, 10));
+  writeJson(STORAGE_KEYS.CV_LIBRARY, [entry, ...lib]);
   pushCvLibrary();
   return entry;
 }
@@ -102,7 +102,7 @@ export function duplicateInLibrary(id) {
     name: `${entry.name} (Kopie)`,
     createdAt: new Date().toISOString(),
   };
-  writeJson(STORAGE_KEYS.CV_LIBRARY, [copy, ...lib].slice(0, 10));
+  writeJson(STORAGE_KEYS.CV_LIBRARY, [copy, ...lib]);
   pushCvLibrary();
   return copy;
 }
@@ -254,49 +254,9 @@ export function computeLibraryReplay(local, remote, syncedIds = new Set()) {
   return { merged, needsPush };
 }
 
-// ─── CV Generation rate-limiting (frontend guard, basic = 1 total lifetime) ─────
-
-export const CV_GEN_LIMITS = {
-  basic:      1,
-  pro:        5,
-  max:       -1,  // unlimited
-  enterprise: -1, // unlimited
-};
-
-/**
- * Returns PDF generation state.
- * Basic plan: 1 total lifetime (never resets).
- * Pro+: daily reset.
- * @param {string} [planKey] - "basic" | "pro" | "max" | "enterprise"
- * @returns {{ count: number, limit: number, atLimit: boolean, unlimited: boolean, remaining: number }}
- */
-export function getCvGenState(planKey = "basic") {
-  const limit = CV_GEN_LIMITS[planKey] ?? CV_GEN_LIMITS.basic;
-  const unlimited = limit === -1;
-  const raw = readJson(STORAGE_KEYS.CV_GEN_COUNT, null);
-  let count;
-  if (planKey === "basic") {
-    count = raw?.total ?? raw?.count ?? 0;
-  } else {
-    const today = new Date().toDateString();
-    count = raw?.date === today ? (raw.count ?? 0) : 0;
-  }
-  const atLimit = !unlimited && count >= limit;
-  return { count, limit, atLimit, unlimited, remaining: unlimited ? -1 : Math.max(0, limit - count) };
-}
-
-/** Increment the PDF generation counter. Basic: lifetime total. Pro+: daily. */
-export function incrementCvGen(planKey = "basic") {
-  const raw = readJson(STORAGE_KEYS.CV_GEN_COUNT, null);
-  if (planKey === "basic") {
-    const total = (raw?.total ?? raw?.count ?? 0) + 1;
-    writeJson(STORAGE_KEYS.CV_GEN_COUNT, { total });
-  } else {
-    const today = new Date().toDateString();
-    const prev = raw?.date === today ? (raw.count ?? 0) : 0;
-    writeJson(STORAGE_KEYS.CV_GEN_COUNT, { count: prev + 1, date: today });
-  }
-}
+// ─── CV generation is unlimited (JobAssist is free) ─────────────────────────
+// The old frontend PDF-generation counter (basic = 1 lifetime) was removed
+// together with the backend plan limits; there is nothing to gate here.
 
 /**
  * Returns a debounced save function. Last call wins; subsequent calls reset

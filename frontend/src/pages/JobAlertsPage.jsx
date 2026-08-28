@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import useFetch from "../hooks/useFetch";
 import { usePageTitle } from "../hooks/usePageChrome";
 import useMutation from "../hooks/useMutation";
-import { useBootstrap } from "../context/BootstrapContext";
 import {
   Bell, Pencil, Plus, Trash2, X, MoreHorizontal,
   AlertCircle, Clock, Mail, MapPin, Briefcase,
@@ -163,7 +162,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
 
   return (
     <div
-      className="relative rounded-xl border p-5 group transition-all flex items-start gap-4"
+      className="relative rounded-xl border p-5 flex items-start gap-4"
       style={{
         borderColor: T("border"),
         background: T("surface"),
@@ -230,7 +229,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
             <button
               type="button"
               onClick={() => onEdit(alert)}
-              className="h-8 w-8 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/[0.04]"
+              className="h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
               style={{ color: T("text-secondary") }}
               title="Bearbeiten"
             >
@@ -251,7 +250,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
                 }
                 setMenuOpen((v) => !v);
               }}
-              className="h-8 w-8 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/[0.04]"
+              className="h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
               style={{ color: T("text-secondary") }}
               title="Mehr"
             >
@@ -305,7 +304,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
 /* ───────────────────────────────────────────────────────────────
    Create/Edit Alert modal
    ─────────────────────────────────────────────────────────────── */
-function AlertModal({ mode, alert, usage, isSaving, onClose, onSave }) {
+function AlertModal({ mode, alert, isSaving, onClose, onSave }) {
   const [keywords, setKeywords] = useState(alert?.keywords || "");
   const [location, setLocation] = useState(alert?.location || "");
   const [jobType, setJobType] = useState(alert?.job_type || "");
@@ -315,8 +314,6 @@ function AlertModal({ mode, alert, usage, isSaving, onClose, onSave }) {
 
   const title = mode === "edit" ? "Alert bearbeiten" : "Neuer Alert";
   const cta = mode === "edit" ? "Speichern" : "Alert erstellen";
-  const remaining = usage ? (usage.limit ?? 0) - (usage.used ?? 0) : 0;
-  const blocked = remaining <= 0 && mode === "create";
 
   useEffect(() => {
     function handleKey(e) { if (e.key === "Escape") onClose(); }
@@ -409,12 +406,6 @@ function AlertModal({ mode, alert, usage, isSaving, onClose, onSave }) {
             </label>
           </div>
 
-          {blocked && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px]" style={{ background: T("warning-soft"), color: T("warning") }}>
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              Keine weiteren Alerts verfügbar. Pausiere oder lösche einen bestehenden Alert.
-            </div>
-          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-1">
@@ -428,7 +419,7 @@ function AlertModal({ mode, alert, usage, isSaving, onClose, onSave }) {
           </button>
           <button
             type="button"
-            disabled={!keywords.trim() || blocked || isSaving}
+            disabled={!keywords.trim() || isSaving}
             onClick={() => onSave({ keywords: keywords.trim(), location: location.trim(), job_type: jobType, frequency })}
             className="h-9 px-4 rounded-md text-[13px] font-semibold transition-all disabled:opacity-40"
             style={{ background: T("brand"), color: "#fff" }}
@@ -453,7 +444,7 @@ export default function JobAlertsPage() {
     loading: alertsFetching,
     error: alertsError,
     reload: alertsReload,
-  } = useFetch(() => jobAlertsApi.list().then((r) => r.data), { cacheKey: "alerts:list" });
+  } = useFetch(() => jobAlertsApi.list().then((r) => r.data), { cacheKey: "alerts:list", maxAge: 30_000 });
 
   const alerts = useMemo(() => alertsData?.alerts ?? alertsData ?? [], [alertsData]);
   const listAlerts = useMemo(() => (Array.isArray(alerts) ? alerts : []), [alerts]);
@@ -522,9 +513,6 @@ export default function JobAlertsPage() {
     }
   };
 
-  const { init } = useBootstrap();
-  const usage = useMemo(() => init?.usage?.find((u) => u.feature === "job_alerts"), [init]);
-
   /* ── Error state ── */
   const hasFailed = alertsError && listAlerts.length === 0;
 
@@ -532,7 +520,7 @@ export default function JobAlertsPage() {
      Render
      ─────────────────────────────────────────────────────────── */
   return (
-    <div className="max-w-[1200px] mx-auto pt-6 pb-16 px-0">
+    <div className="animate-slide-up max-w-[1200px] mx-auto pt-6 pb-16 px-0">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
@@ -762,7 +750,6 @@ export default function JobAlertsPage() {
       {showCreate && (
         <AlertModal
           mode="create"
-          usage={usage}
           isSaving={saveMut.loading}
           onClose={() => setShowCreate(false)}
           onSave={(data) => handleSave(data)}

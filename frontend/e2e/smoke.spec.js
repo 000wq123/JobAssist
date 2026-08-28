@@ -78,6 +78,12 @@ test("dashboard counts a local CV library entry when the builder profile is not 
     });
   });
 
+  // The boot pulls the CV-library mirror; without this mock it hits the real
+  // backend, 401s with the seeded token and logs the session out.
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
+  });
+
   // Bootstrap says: no uploaded files, no synced builder profile.
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
@@ -142,6 +148,12 @@ test("dashboard counts a non-empty builder draft as a CV", async ({ page }) => {
     });
   });
 
+  // The boot pulls the CV-library mirror; without this mock it hits the real
+  // backend, 401s with the seeded token and logs the session out.
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
+  });
+
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
       status: 200,
@@ -191,6 +203,12 @@ test("dashboard ignores an email-only builder draft", async ({ page }) => {
       contentType: "application/json",
       body: JSON.stringify({ access_token: "test-access-token" }),
     });
+  });
+
+  // The boot pulls the CV-library mirror; without this mock it hits the real
+  // backend, 401s with the seeded token and logs the session out.
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
   });
 
   await page.route("**/api/init", async (route) => {

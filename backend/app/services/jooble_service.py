@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import time
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import httpx
@@ -117,10 +117,17 @@ async def search_jooble(
             return cached
         metrics.inc("jobassist_jooble_cache_total", labels={"outcome": "miss"})
 
+    # Jooble's location field expects country-level names and returns global
+    # results when empty — scope to Austria by default (this is an Austrian app).
+    # City names ("Wien") return 0 hits; the country scope is more useful.
+    jooble_location = (location or "").strip()
+    if not jooble_location or jooble_location.lower() in ("wien", "vienna", "österreich", "austria"):
+        jooble_location = "Austria"
+
     # Jooble uses 1-based page numbers and 20 results per page by default
     body = {
         "keywords": keywords or "",
-        "location": location or "",
+        "location": jooble_location,
         "page": str(page),
     }
 

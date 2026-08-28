@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
  * - Dark+light theme aware via `style` passthrough
  * - Click-outside dismissal
  */
-export default function Popover({ open, onClose, anchorRef, align = "right", offset = 6, children, className = "", style = {} }) {
+export default function Popover({ open, onClose, anchorRef, align = "right", offset = 6, children, className = "", style = {}, popupRef }) {
   const [pos, setPos] = useState({ top: 0, left: undefined, right: undefined });
   const popoverRef = useRef(null);
 
@@ -85,7 +85,10 @@ export default function Popover({ open, onClose, anchorRef, align = "right", off
       aria-hidden={!open}
     >
       <div
-        ref={popoverRef}
+        ref={(node) => {
+          popoverRef.current = node;
+          if (popupRef) popupRef.current = node;
+        }}
         className={`fixed ${className}`}
         style={{
           top: pos.top,

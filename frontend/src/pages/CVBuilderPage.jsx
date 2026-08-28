@@ -20,16 +20,10 @@ import { profileApi, resumeApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
 import PageHeader from "../components/ui/PageHeader";
 import { CVTemplatePicker, TemplatePreviewPanel, TemplateLightbox } from "../cv/CVTemplatePicker";
+import { getTemplateMeta } from "../cv/templateRegistry";
 import { useBootstrap } from "../context/BootstrapContext";
 
 function T(n) { return `var(--app-${n})`; }
-
-const TMPL_META = {
-  "gray-header":  { label: "Grau-Header",    color: "#9ca3af" },
-  "slim-sidebar": { label: "Schlanke Leiste", color: "#d1d5db" },
-  "tabellarisch": { label: "Tabellarisch",    color: "#1C3557" },
-  "dark-bands":   { label: "Dunkle Bänder",   color: "#1a1a1a" },
-};
 
 function hasDraftData(draft) {
   return !!(draft?.vorname || draft?.nachname || draft?.schultyp);
@@ -101,7 +95,7 @@ function mapParsedResumeToProfile(parsed) {
 
 /* ── CVLibraryCard ── */
 function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRename, busy }) {
-  const meta = TMPL_META[entry.templateId] || TMPL_META["tabellarisch"];
+  const meta = getTemplateMeta(entry.templateId);
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 rounded-lg border"
       style={{ borderColor: T("border"), background: T("surface") }}>
@@ -109,7 +103,7 @@ function CVLibraryCard({ entry, onDownload, onEdit, onDelete, onDuplicate, onRen
         <div style={{ width: 6, height: 28, borderRadius: 2, background: meta.color, flexShrink: 0 }} />
         <div className="min-w-0">
           <p className="text-[14px] font-semibold truncate" style={{ color: T("text") }}>{entry.name}</p>
-          <p className="text-[12px] mt-0.5" style={{ color: T("text-muted") }}>{meta.label} · {formatDate(entry.createdAt)}</p>
+          <p className="text-[12px] mt-0.5" style={{ color: T("text-muted") }}>{meta.name} · {formatDate(entry.createdAt)}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -163,17 +157,17 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
   });
 
   return (
-    <div className="max-w-[1100px] mx-auto px-5 pt-6 pb-24 sm:px-8 sm:pt-10 lg:px-10 lg:pt-12 flex flex-col gap-10">
+    <div className="animate-slide-up max-w-[1100px] mx-auto px-5 pt-6 pb-24 sm:px-8 sm:pt-10 lg:px-10 lg:pt-12 flex flex-col gap-8">
       <PageHeader title="Lebenslauf" description="Erstelle einen professionellen österreichischen Lebenslauf." />
 
-      {/* Draft card */}
-      {hasDraft && (
+      {/* One authoritative current-CV state: the draft (or the empty state). */}
+      {hasDraft ? (
         <div className="rounded-xl border p-6 flex flex-col sm:flex-row sm:items-center gap-5"
-          style={{ borderColor: T("border"), background: T("surface") }}>
+          style={{ borderColor: "var(--status-offered-soft)", background: T("surface") }}>
           <div className="flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: T("brand") }}>Entwurf vorhanden</p>
-            <h2 className="text-[20px] font-bold mb-1" style={{ color: T("text") }}>Dein angefangener Lebenslauf</h2>
-            <p className="text-[13px]" style={{ color: T("text-secondary") }}>Mach dort weiter, wo du aufgehört hast.</p>
+            <h2 className="text-[20px] font-bold mb-1" style={{ color: T("text") }}>Dein Lebenslauf</h2>
+            <p className="text-[13px]" style={{ color: T("text-secondary") }}>Mach dort weiter, wo du aufgehört hast — dein Fortschritt wird automatisch gespeichert.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
             <button type="button" onClick={onStart}
@@ -188,6 +182,34 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
                 Verwerfen
               </button>
             )}
+          </div>
+        </div>
+      ) : (
+        /* Empty state — framed, not a lonely illustration in a void */
+        <div className="rounded-xl border overflow-hidden grid grid-cols-12" style={{ borderColor: T("border"), background: T("surface") }}>
+          <div className="col-span-12 md:col-span-7 px-7 py-9 flex flex-col justify-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: T("brand") }}>Lebenslauf erstellen</p>
+            <h2 className="text-[24px] font-bold tracking-[-0.02em] mb-2" style={{ color: T("text") }}>Erstelle deinen ersten Lebenslauf</h2>
+            <p className="text-[14px] leading-relaxed max-w-md mb-6" style={{ color: T("text-secondary") }}>
+              Beantworte ein paar Fragen und erhalte sofort ein professionelles PDF im österreichischen Format. Professionell, österreichisch und direkt als PDF.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              <button type="button" onClick={onStart}
+                className="btn btn-primary btn-lg gap-2">
+                <Wand2 className="w-4 h-4" />Lebenslauf erstellen
+              </button>
+              <button type="button" onClick={() => document.getElementById("cv-upload-zone")?.click()}
+                className="btn btn-secondary btn-lg gap-2">
+                <Upload className="w-4 h-4" />PDF hochladen
+              </button>
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-5 min-h-[160px] flex items-center justify-center px-5 py-6"
+            style={{
+              background: "linear-gradient(135deg, color-mix(in srgb, var(--app-brand) 6%, var(--app-surface)) 0%, color-mix(in srgb, var(--app-border-subtle) 75%, var(--app-surface)) 100%)",
+              borderLeft: "1px solid var(--app-border-subtle)",
+            }}>
+            <img src="/illustrations/cv-document.png" alt="" className="w-[150px] h-[150px] object-contain pointer-events-none" />
           </div>
         </div>
       )}
@@ -209,49 +231,43 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
         </div>
       )}
 
-      {/* Two-up: Create + Upload */}
-      <div className="grid grid-cols-12 gap-5">
-        <div className="col-span-12 md:col-span-7 rounded-xl border p-6 flex flex-col gap-5"
-          style={{ borderColor: T("border"), background: T("surface") }}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: T("brand") }}>Lebenslauf erstellen</p>
-          <h2 className="text-[22px] font-bold tracking-[-0.02em]" style={{ color: T("text") }}>
-            {hasDraft ? "Entwurf fortsetzen" : "Neuen Lebenslauf erstellen"}
-          </h2>
-          <p className="text-[14px] leading-relaxed" style={{ color: T("text-secondary") }}>
-            Beantworte ein paar Fragen und erhalte sofort ein professionelles PDF im österreichischen Format.
-          </p>
-          <ul className="flex flex-col gap-1.5">
-            {["Tabellarischer Lebenslauf (österreichischer Standard)", "Persönliche Daten, Ausbildung, Erfahrung, Sprachen", "Sofort als PDF herunterladen"].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-[13px]" style={{ color: T("text-secondary") }}>
-                <span className="mt-0.5 text-[10px] font-bold flex-shrink-0" style={{ color: T("brand") }}>✓</span>{t}
-              </li>
-            ))}
-          </ul>
-          <button type="button" onClick={onStart}
-            className="self-start inline-flex items-center gap-2 h-11 px-6 rounded-lg text-[14px] font-semibold transition-colors"
-            style={{ background: T("brand"), color: "#fff" }}>
-            <Wand2 className="w-4 h-4" />Starten <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="col-span-12 md:col-span-5 rounded-xl border p-6 flex flex-col gap-5 items-center justify-center text-center"
-          style={{ borderColor: T("border"), background: T("surface") }}>
-          <img src="/illustrations/cv-document.png" alt="" className="w-[140px] h-[140px] object-contain pointer-events-none mb-2" />
-          <h2 className="text-[18px] font-bold" style={{ color: T("text") }}>Lebenslauf hochladen</h2>
-          <p className="text-[13px] leading-relaxed" style={{ color: T("text-secondary") }}>
-            Lade einen bestehenden Lebenslauf als PDF oder Textdatei hoch. Wir lesen deine Daten aus und füllen das Formular vor.
-          </p>
-          <div {...getRootProps()} className={`w-full rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors text-center ${isDragActive ? "border-[var(--app-brand)]" : ""} ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
-            style={{ borderColor: isDragActive ? T("brand") : T("border") }}>
-            <input {...getInputProps()} aria-label="Lebenslauf-Datei hochladen" />
-            <Upload className="w-5 h-5 mx-auto mb-2" style={{ color: T("text-muted") }} />
-            <p className="text-[13px] font-medium" style={{ color: T("text") }}>
-              {uploadBusy ? "Wird gelesen…" : "Datei auswählen"}
+      {/* Secondary actions — never duplicate the draft's "Fortsetzen" */}
+      {hasDraft && (
+        <div className="grid grid-cols-12 gap-5">
+          <div className="col-span-12 md:col-span-7 rounded-xl border p-6"
+            style={{ borderColor: T("border"), background: T("surface") }}>
+            <h2 className="text-[17px] font-bold tracking-[-0.02em] mb-1.5" style={{ color: T("text") }}>
+              Neuen Lebenslauf erstellen
+            </h2>
+            <p className="text-[13px] leading-relaxed mb-4" style={{ color: T("text-secondary") }}>
+              Starte mit einer leeren Vorlage und wähle aus professionellen Designs — dein Entwurf bleibt dabei unangetastet.
             </p>
-            <p className="text-[11px] mt-1" style={{ color: T("text-faint") }}>PDF oder TXT, max. 5 MB</p>
+            <button type="button" onClick={onStart}
+              className="btn btn-secondary btn-md gap-2">
+              <Plus className="w-4 h-4" />Neue Vorlage wählen
+            </button>
+          </div>
+
+          <div className="col-span-12 md:col-span-5 rounded-xl border p-6"
+            style={{ borderColor: T("border"), background: T("surface") }}>
+            <h2 className="text-[17px] font-bold tracking-[-0.02em] mb-1.5" style={{ color: T("text") }}>
+              Lebenslauf hochladen
+            </h2>
+            <p className="text-[13px] leading-relaxed mb-4" style={{ color: T("text-secondary") }}>
+              Lade ein bestehendes PDF oder eine Textdatei hoch — wir lesen die Daten aus und füllen das Formular vor.
+            </p>
+            <div id="cv-upload-zone" {...getRootProps()} className={`w-full rounded-lg border-2 border-dashed p-4 cursor-pointer transition-colors text-center ${isDragActive ? "border-[var(--app-brand)]" : ""} ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
+              style={{ borderColor: isDragActive ? T("brand") : T("border") }}>
+              <input {...getInputProps()} aria-label="Lebenslauf-Datei hochladen" />
+              <Upload className="w-4 h-4 mx-auto mb-1.5" style={{ color: T("text-muted") }} />
+              <p className="text-[12.5px] font-medium" style={{ color: T("text") }}>
+                {uploadBusy ? "Wird gelesen…" : "Datei auswählen oder hierher ziehen"}
+              </p>
+              <p className="text-[11px] mt-1" style={{ color: T("text-faint") }}>PDF oder TXT, max. 5 MB</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -388,20 +404,11 @@ export default function CVBuilderPage() {
   if (mode === "templatePicker") {
     return (
       <div style={{ minHeight: "100dvh", background: T("bg") }}>
-        <div className="px-4 pt-3">
-          <button type="button" onClick={() => setMode("landing")} className="inline-flex items-center gap-1.5 text-[12px]" style={{ color: T("text-muted") }}>
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-10 pt-5">
+          <button type="button" onClick={() => setMode("landing")} className="inline-flex items-center gap-1.5 text-[12px] cursor-pointer transition-opacity duration-150 hover:opacity-80" style={{ color: T("text-muted") }}>
             <ArrowLeft className="w-3.5 h-3.5" />Zurück
           </button>
-        </div>
-        <div className="max-w-[720px] lg:max-w-[1400px] mx-auto px-4 lg:px-10 pt-8 pb-24">
-          <CVTemplatePicker profile={profile} onChange={patch} />
-          <div className="mt-6">
-            <button type="button" onClick={() => setMode("wizard")}
-              className="w-full lg:max-w-[480px] lg:mx-auto h-[48px] rounded-lg inline-flex items-center justify-center gap-2 font-semibold text-[14px] transition-colors"
-              style={{ background: T("accent"), color: "#fff" }}>
-              Weiter zum Formular <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <CVTemplatePicker profile={profile} onChange={patch} onContinue={() => setMode("wizard")} />
         </div>
       </div>
     );

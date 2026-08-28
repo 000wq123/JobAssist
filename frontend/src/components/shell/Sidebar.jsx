@@ -10,6 +10,7 @@ import useAuthStore from "../../hooks/useAuthStore";
 import { authApi } from "../../services/api";
 import { useTheme } from "../../context/ThemeContext";
 import { getInitials } from "../../utils/initials";
+import Popover from "../../components/ui/Popover";
 
 const PRIMARY = [
   { to: "/dashboard",  label: "Übersicht",   icon: LayoutDashboard, preload: () => import("../../pages/DashboardPage") },
@@ -85,6 +86,7 @@ function NavRow({ to, label, icon: Icon, preload }) {
 export default function Sidebar({ me, profile, onCommandClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const popupRef = useRef(null);
   const navigate = useNavigate();
   const { preference, setTheme } = useTheme();
   const mac = isMac();
@@ -92,7 +94,13 @@ export default function Sidebar({ me, profile, onCommandClick }) {
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      // The Popover content is portaled to <body>, so clicks on it land
+      // outside menuRef; treat those as inside (e.g. theme toggle buttons).
+      if (
+        menuRef.current
+        && !menuRef.current.contains(e.target)
+        && !(popupRef.current && popupRef.current.contains(e.target))
+      ) setMenuOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -148,7 +156,7 @@ export default function Sidebar({ me, profile, onCommandClick }) {
             className="inline-flex items-center justify-center h-[17px] px-1 rounded font-mono text-[9px] flex-shrink-0"
             style={{ color: "var(--app-text-faint, #B0B0AD)", background: "var(--app-surface, #FFF)" }}
           >
-            {mac ? "⌘K" : "^K"}
+            {mac ? "⌘K" : "Strg K"}
           </kbd>
         </button>
       </div>
@@ -166,7 +174,7 @@ export default function Sidebar({ me, profile, onCommandClick }) {
         <NavRow to="/settings" label="Einstellungen" icon={Settings} />
       </nav>
 
-      {/* Premium account card */}
+      {/* User profile card */}
       <div className="px-2 pt-0 pb-3" ref={menuRef}>
         <div
           className="rounded-lg border p-2"
@@ -204,63 +212,53 @@ export default function Sidebar({ me, profile, onCommandClick }) {
           </button>
         </div>
 
-        {menuOpen && (
-          <div
-            role="menu"
-            className="absolute left-2 right-2 rounded-lg border z-50 p-1.5 shadow-lg"
-            style={{
-              bottom: "80px",
-              background: "var(--app-surface, #FFF)",
-              borderColor: "var(--app-border, #E7E7E4)",
-            }}
-          >
-            <div className="px-2.5 py-2 mb-1 border-b" style={{ borderColor: "var(--app-border, #E7E7E4)" }}>
-              <p className="text-[12px] font-semibold truncate" style={{ color: "var(--app-text, #171717)" }}>{userName}</p>
-              <p className="text-[10.5px] truncate mt-0.5" style={{ color: "var(--app-text-muted, #888)" }}>{me?.email}</p>
-            </div>
-
-            <div className="px-2 py-1.5 border-b" style={{ borderColor: "var(--app-border, #E7E7E4)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] mb-2" style={{ color: "var(--app-text-faint, #B0B0AD)" }}>
-                Darstellung
-              </p>
-              <div className="flex items-center gap-1">
-                {(["system", "light", "dark"]).map((t) => {
-                  const isActive = preference === t;
-                  const Icon = t === "system" ? Monitor : t === "light" ? Sun : Moon;
-                  const label = t === "system" ? "System" : t === "light" ? "Hell" : "Dunkel";
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTheme(t)}
-                      className="grid place-items-center w-8 h-8 rounded-md transition-colors duration-100"
-                      style={{
-                        background: isActive ? "var(--app-surface-hover, rgba(0,0,0,0.04))" : "transparent",
-                        color: isActive ? "var(--app-text, #171717)" : "var(--app-text-muted, #888)",
-                      }}
-                      title={label}
-                      aria-label={label}
-                      aria-pressed={isActive}
-                    >
-                      <Icon className="w-[15px] h-[15px]" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { setMenuOpen(false); handleLogout(); }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md mt-0.5 text-[12.5px] font-medium transition-colors duration-100 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-              style={{ color: "var(--app-error, #E05050)" }}
-            >
-              <LogOut className="w-[15px] h-[15px]" />
-              <span>Abmelden</span>
-            </button>
+        <Popover open={menuOpen} onClose={() => setMenuOpen(false)} anchorRef={menuRef} popupRef={popupRef} align="left" className="rounded-lg border p-1.5 min-w-[220px] animate-slide-up">
+          <div className="px-2.5 py-2 mb-1 border-b" style={{ borderColor: "var(--app-border, #E7E7E4)" }}>
+            <p className="text-[12px] font-semibold truncate" style={{ color: "var(--app-text, #171717)" }}>{userName}</p>
+            <p className="text-[10.5px] truncate mt-0.5" style={{ color: "var(--app-text-muted, #888)" }}>{me?.email}</p>
           </div>
-        )}
+
+          <div className="px-2 py-1.5 border-b" style={{ borderColor: "var(--app-border, #E7E7E4)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] mb-2" style={{ color: "var(--app-text-faint, #B0B0AD)" }}>
+              Darstellung
+            </p>
+            <div className="flex items-center gap-1">
+              {(["system", "light", "dark"]).map((t) => {
+                const isActive = preference === t;
+                const Icon = t === "system" ? Monitor : t === "light" ? Sun : Moon;
+                const label = t === "system" ? "System" : t === "light" ? "Hell" : "Dunkel";
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTheme(t)}
+                    className="grid place-items-center w-8 h-8 rounded-md transition-colors duration-100 cursor-pointer"
+                    style={{
+                      background: isActive ? "var(--app-surface-hover, rgba(0,0,0,0.04))" : "transparent",
+                      color: isActive ? "var(--app-text, #171717)" : "var(--app-text-muted, #888)",
+                    }}
+                    title={label}
+                    aria-label={label}
+                    aria-pressed={isActive}
+                  >
+                    <Icon className="w-[15px] h-[15px]" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setMenuOpen(false); handleLogout(); }}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md mt-0.5 text-[12.5px] font-medium transition-colors duration-100 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] cursor-pointer"
+            style={{ color: "var(--app-error, #E05050)" }}
+          >
+            <LogOut className="w-[15px] h-[15px]" />
+            <span>Abmelden</span>
+          </button>
+        </Popover>
       </div>
     </aside>
   );

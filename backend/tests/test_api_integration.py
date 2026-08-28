@@ -282,7 +282,7 @@ async def test_job_alert_lifecycle_and_refresh_tracking_integration(integration_
     assert run_response.status_code == 200, run_response.text
     run_payload = run_response.json()
     assert run_payload["runs_used"] == 1
-    assert run_payload["runs_remaining"] == 2
+    assert run_payload["runs_remaining"] == -1  # JobAssist is free — unlimited manual runs
 
     list_response = await client.get("/api/job-alerts/", headers=headers)
     assert list_response.status_code == 200
@@ -326,11 +326,10 @@ async def test_job_alert_rewrite_cooldown_and_manual_limit_integration(integrati
     assert cooldown_response.status_code == 429
     assert "bearbeiten" in cooldown_response.json()["detail"]
 
-    for expected_used in (1, 2, 3):
+    # Manual runs are unlimited now (JobAssist is free): the 4th run must
+    # succeed instead of hitting the old daily cap.
+    for expected_used in (1, 2, 3, 4):
         run_response = await client.post(f"/api/job-alerts/{alert_id}/run", headers=headers)
         assert run_response.status_code == 200, run_response.text
         assert run_response.json()["runs_used"] == expected_used
-
-    limit_response = await client.post(f"/api/job-alerts/{alert_id}/run", headers=headers)
-    assert limit_response.status_code == 403
-    assert "Tages-Limit" in limit_response.json()["detail"]["message"]
+        assert run_response.json()["runs_remaining"] == -1

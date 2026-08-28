@@ -46,6 +46,12 @@ test("finden page can search and see results", async ({ page }) => {
     });
   });
 
+  // The boot pulls the CV-library mirror; without this mock it hits the real
+  // backend, 401s with the seeded token and logs the session out.
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
+  });
+
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
       status: 200,
@@ -68,17 +74,20 @@ test("finden page can search and see results", async ({ page }) => {
     });
   });
 
-  // Mock saved jobs (empty)
-  await page.route("**/api/jobs/", async (route) => {
+  // Mock saved jobs (empty) — matches the list fetch (has a query string)
+  await page.route("**/api/jobs/**", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([]),
+        body: JSON.stringify({ items: [] }),
       });
       return;
     }
     await route.fallback();
+  });
+  await page.route("**/api/resume/**", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
   });
 
   let searchCalled = false;

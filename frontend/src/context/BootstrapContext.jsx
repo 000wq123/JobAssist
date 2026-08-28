@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { initApi, profileApi } from "../services/api";
 import {
   loadLibrary,
@@ -121,10 +121,27 @@ export function BootstrapProvider({ children }) {
 
   // Reconnect: the pull effect above re-runs, which replays any CVs saved
   // while offline (the PUT that failed during the save is re-attempted here).
+  //
+  // Guarded: browsers occasionally re-emit `online` without a real offline→
+  // online transition (e.g. on network changes). Refetching /init + the CV
+  // library for those spurious events is what made widgets "reload for no
+  // reason". We only refetch when an `offline` event (or a boot while the
+  // browser reports offline) was seen first. The guard is event-driven, so
+  // the offline-replay contract holds: an `offline` + `online` pair replays.
+  const wasOfflineRef = useRef(navigator.onLine === false);
   useEffect(() => {
-    const onOnline = () => setTick((t) => t + 1);
+    const onOffline = () => { wasOfflineRef.current = true; };
+    const onOnline = () => {
+      if (!wasOfflineRef.current) return;
+      wasOfflineRef.current = false;
+      setTick((t) => t + 1);
+    };
+    window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+    };
   }, []);
 
   const reload = useCallback(() => setTick((t) => t + 1), []);

@@ -1,991 +1,405 @@
+/**
+ * PDF renderer — reads the SHARED cvModel (normalizeProfile) and renders 8
+ * distinct professional archetypes. This file mirrors the DOM renderer in
+ * CVTemplatePicker.jsx: both consume the same `model` produced by
+ * normalizeProfile, so the browser preview and the exported PDF stay in
+ * parity for the SAME templateId.
+ *
+ * Layout conventions per archetype are ORIGINAL implementations of established
+ * professional-CV layout patterns (no copied third-party designs).
+ */
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
+import { normalizeProfile, A4, TYPE, COLORS } from "./cvModel.js";
+
+const SANS = "Helvetica";
+const SERIF = "Times-Roman";
+const FONTS = {
+  default: SANS,
+  serif: SERIF,
+};
+
+/** JobAssist brand red used as the subtle accent in modern templates. */
+const BRAND = "#C8102E";
 
 /**
- * Austrian "tabellarischer Lebenslauf" — two-column professional template.
- *
- * Layout:
- *   LEFT SIDEBAR  (navy, 185 pt): photo · contact · languages · EDV · licence
- *   RIGHT MAIN   (white, 410 pt): name header · Ausbildung · Berufserfahrung ·
- *                                 Stärken · Interessen · signature
- *
- * Norms: DIN A4, reverse-chronological, DD.MM.YYYY dates, +43 phone prefix,
- *        CEFR language levels, optional photo in top-left of sidebar.
+ * Section header primitive — one shared typographic treatment per archetype so
+ * hierarchy stays consistent and printable.
  */
-
-const NAVY   = "#1C3557";
-const NAVY2  = "#244069";
-const WHITE  = "#FFFFFF";
-const OFFWHITE = "#F8F9FA";
-const INK    = "#1A1A2E";
-const MUTED  = "#4A5568";
-const DIM    = "#718096";
-const LINE   = "#E2E8F0";
-const ACCENT = "#2B6CB0";
-
-const SIDEBAR_W = 185;
-const MAIN_W    = 410;
-
-const COUNTRY_LABEL = {
-  AT: "Österreich", DE: "Deutschland", IT: "Italien", HU: "Ungarn",
-  SK: "Slowakei",   SI: "Slowenien",   CZ: "Tschechien", CH: "Schweiz",
-  TR: "Türkei", BA: "Bosnien und Herzegowina", RS: "Serbien", HR: "Kroatien",
-  UA: "Ukraine", SYRIA: "Syrien",
-};
-
-const SCHULTYP_LABEL = {
-  AHS: "AHS", HTL: "HTL", HAK: "HAK", BHS: "BHS",
-  NMS: "NMS / MS", PTS: "PTS", Sonstige: "",
-};
-
-const SOFT_SKILLS = new Set([
-  "Teamfähigkeit", "Zuverlässigkeit", "Kommunikation", "Pünktlichkeit",
-  "Lernbereitschaft", "Selbstständigkeit", "Organisationstalent",
-  "Belastbarkeit", "Kreativität", "Genauigkeit",
-]);
-
-function fmtIsoDate(iso) {
-  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return "";
-  const [y, m, d] = iso.slice(0, 10).split("-");
-  return `${d}.${m}.${y}`;
-}
-
-function fmtMonth(s) {
-  if (!s || !/^\d{4}-\d{2}/.test(s)) return s || "";
-  const [y, m] = s.split("-");
-  return `${m}.${y}`;
-}
-
-function rangeLabel(von, bis) {
-  if (!von && !bis) return "";
-  if (von && !bis) return `${fmtMonth(von)} – laufend`;
-  if (!von && bis) return `bis ${fmtMonth(bis)}`;
-  return `${fmtMonth(von)} – ${fmtMonth(bis)}`;
-}
-
-function formatTelefon(tel) {
-  if (!tel) return "";
-  return tel.startsWith("+") ? tel : `+43 ${tel}`;
-}
-
-const s = StyleSheet.create({
-  page: {
-    flexDirection: "row",
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    color: INK,
-    backgroundColor: WHITE,
-  },
-
-  /* ── Sidebar ─────────────────────────────────────────────────── */
-  sidebar: {
-    width: SIDEBAR_W,
-    minHeight: "100%",
-    backgroundColor: NAVY,
-    paddingTop: 32,
-    paddingBottom: 32,
-    paddingHorizontal: 18,
-  },
-  photo: {
-    width: 90,
-    height: 112,
-    borderRadius: 4,
-    marginBottom: 20,
-    alignSelf: "center",
-  },
-  photoPlaceholder: {
-    width: 90,
-    height: 112,
-    borderRadius: 4,
-    backgroundColor: NAVY2,
-    marginBottom: 20,
-    alignSelf: "center",
-  },
-  sideSection: {
-    marginBottom: 18,
-  },
-  sideSectionTitle: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
-    letterSpacing: 1.5,
-    color: "rgba(255,255,255,0.5)",
+const secStyle = StyleSheet.create({
+  classic: {
+    fontFamily: SANS,
+    fontSize: TYPE.section,
+    letterSpacing: 1.2,
+    fontWeight: "bold",
+    color: COLORS.ink,
     textTransform: "uppercase",
-    marginBottom: 7,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "rgba(255,255,255,0.15)",
+    borderBottomWidth: 0.8,
+    borderBottomColor: COLORS.line,
+    paddingBottom: 3,
+    marginBottom: 8,
+  },
+  serif: {
+    fontFamily: SERIF,
+    fontSize: TYPE.section + 1,
+    fontWeight: "bold",
+    color: COLORS.ink,
+    marginBottom: 8,
+    borderBottomWidth: 0.6,
+    borderBottomColor: COLORS.hair,
     paddingBottom: 4,
   },
-  sideRow: {
-    flexDirection: "row",
-    marginBottom: 5,
-    alignItems: "flex-start",
+  modern: {
+    fontFamily: SANS,
+    fontSize: TYPE.section,
+    fontWeight: "bold",
+    letterSpacing: 0.6,
+    color: BRAND,
+    marginBottom: 8,
   },
-  sideLabel: {
-    fontSize: 7.5,
-    color: "rgba(255,255,255,0.5)",
-    width: 14,
-    marginTop: 1,
-  },
-  sideValue: {
-    fontSize: 8.5,
-    color: "rgba(255,255,255,0.9)",
-    flex: 1,
-    lineHeight: 1.4,
-  },
-  langRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  langName: {
-    fontSize: 8.5,
-    color: "rgba(255,255,255,0.9)",
-  },
-  langLevel: {
-    fontSize: 7.5,
-    color: "rgba(255,255,255,0.55)",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    paddingHorizontal: 4,
-    paddingVertical: 1.5,
-    borderRadius: 3,
-  },
-  skillChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-  },
-  skillChip: {
-    fontSize: 7.5,
-    color: "rgba(255,255,255,0.8)",
-    backgroundColor: "rgba(255,255,255,0.10)",
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 3,
-    marginBottom: 4,
-    marginRight: 4,
-  },
-
-  /* ── Main column ─────────────────────────────────────────────── */
-  main: {
-    width: MAIN_W,
-    paddingTop: 32,
-    paddingBottom: 32,
-    paddingHorizontal: 26,
-    flex: 1,
-  },
-  nameBlock: {
-    marginBottom: 18,
-    paddingBottom: 14,
-    borderBottomWidth: 1.5,
-    borderBottomColor: NAVY,
-  },
-  firstName: {
-    fontFamily: "Helvetica",
-    fontSize: 22,
-    color: INK,
-    letterSpacing: 0.5,
-  },
-  lastName: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 22,
-    color: NAVY,
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  nameSubtitle: {
-    fontSize: 10,
-    color: MUTED,
-    letterSpacing: 0.2,
-  },
-
-  /* Main sections */
-  mainSection: {
-    marginBottom: 14,
-  },
-  mainSectionTitle: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 8,
-    letterSpacing: 1.8,
-    textTransform: "uppercase",
-    color: NAVY,
-    borderBottomWidth: 1,
-    borderBottomColor: NAVY,
-    paddingBottom: 3,
-    marginBottom: 9,
-  },
-
-  /* Education / experience entry */
-  entry: {
-    marginBottom: 9,
-  },
-  entryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 2,
-  },
-  entryTitle: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 10,
-    color: INK,
-    flex: 1,
-    paddingRight: 8,
-  },
-  entryDate: {
-    fontSize: 8.5,
-    color: ACCENT,
-    fontFamily: "Helvetica-Bold",
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  entryOrg: {
-    fontSize: 9,
-    color: MUTED,
-    marginBottom: 3,
-  },
-  entryArt: {
-    fontSize: 8.5,
-    color: DIM,
-    marginBottom: 3,
-  },
-  bullet: {
-    flexDirection: "row",
-    marginLeft: 6,
-    marginTop: 2,
-  },
-  bulletDot: {
-    width: 8,
-    color: ACCENT,
-    fontSize: 9,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 9,
-    color: MUTED,
-    lineHeight: 1.4,
-  },
-
-  /* Inline tag chips (soft skills, hobbies) */
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  tag: {
-    fontSize: 8.5,
-    color: NAVY,
-    backgroundColor: OFFWHITE,
-    borderWidth: 0.5,
-    borderColor: LINE,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-    marginRight: 4,
-    marginBottom: 4,
-  },
-
-  /* Signature */
-  signatureRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: "auto",
-    paddingTop: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: LINE,
-    fontSize: 8.5,
-    color: DIM,
+  sidebar: {
+    fontFamily: SANS,
+    fontSize: TYPE.section - 0.5,
+    fontWeight: "bold",
+    letterSpacing: 0.6,
+    color: "#ffffff",
+    marginBottom: 6,
   },
 });
 
-// ─── Shared data extractor ──────────────────────────────────────────────────
-function extractData(profile) {
-  const p = profile || {};
-  const fullName = [p.vorname, p.nachname].filter(Boolean).join(" ").trim() || "Lebenslauf";
-  const adresse = [p.strasse, [p.plz, p.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-  const tel = formatTelefon(p.telefon);
-  const staat = COUNTRY_LABEL[p.staatsbuergerschaft] || p.staatsbuergerschaft || "";
-  const schulLabel = [SCHULTYP_LABEL[p.schultyp] ?? p.schultyp, p.schulname].filter(Boolean).join(" – ") || "";
-  const klasseLabel = p.klasse ? `Klasse ${p.klasse}` : "";
-  const abschlussLabel = p.abschlussjahr ? `Abschluss geplant ${p.abschlussjahr}` : "";
-  const hasSchule = !!(schulLabel || klasseLabel);
-  const nameSubtitle = [schulLabel, klasseLabel].filter(Boolean).join(" · ");
-  const erfahrungen = Array.isArray(p.erfahrungen) ? [...p.erfahrungen].sort((a, b) => (b.von || "").localeCompare(a.von || "")) : [];
-  const langs = Array.isArray(p.sprachkenntnisse) ? p.sprachkenntnisse.filter((l) => l.sprache?.trim()) : [];
-  const skills = Array.isArray(p.faehigkeiten) ? p.faehigkeiten : [];
-  const softSkills = skills.filter((sk) => SOFT_SKILLS.has(sk));
-  const techSkills = skills.filter((sk) => !SOFT_SKILLS.has(sk));
-  const hobbyRaw = (p.hobbies || "").trim();
-  const hobbyTags = hobbyRaw.includes(",")
-    ? hobbyRaw.split(",").map((t) => t.trim()).filter(Boolean)
-    : hobbyRaw ? [hobbyRaw] : [];
-  const today = new Date();
-  const todayStr = [String(today.getDate()).padStart(2, "0"), String(today.getMonth() + 1).padStart(2, "0"), today.getFullYear()].join(".");
-  const ortToday = p.ort ? `${p.ort}, ${todayStr}` : todayStr;
-  const hasFoto = typeof p.foto === "string" && p.foto.length > 10;
-  const profil = (p.profil || "").trim();
-  const weiterbildungen = Array.isArray(p.weiterbildungen) ? p.weiterbildungen : [];
-  const aktivitaeten = Array.isArray(p.aktivitaeten) ? p.aktivitaeten : [];
-  return { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, hasFoto, profil, weiterbildungen, aktivitaeten };
+/** Shared sections used by most archetypes. */
+function ContactRow({ model }) {
+  const c = model.contact;
+  const parts = [c.city, c.email, c.phone].filter(Boolean).join("  ·  ");
+  return parts ? (
+    <Text style={{ fontSize: TYPE.small, color: COLORS.muted, marginTop: 4 }}>{parts}</Text>
+  ) : null;
 }
 
-// ─── Gray Header Template ─────────────────────────────────────────────────────
-const BLUE = "#4a6fa5";
-
-function GHSection({ title, children }) {
-  return (
-    <View style={{ marginBottom: 14 }}>
-      <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 7.5, letterSpacing: 1.5, color: BLUE, borderBottomWidth: 1, borderBottomColor: BLUE, paddingBottom: 3, marginBottom: 8 }}>
-        {title.toUpperCase()}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
-function GrayHeaderTemplate({ profile }) {
-  const d = extractData(profile);
-  const { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, profil, weiterbildungen, aktivitaeten } = d;
-  return (
-    <Document title={`Lebenslauf – ${fullName}`} author={fullName}>
-      <Page size="A4" style={{ fontFamily: "Helvetica", fontSize: 10, color: INK, backgroundColor: WHITE }}>
-        <View style={{ backgroundColor: "#f2f2f2", padding: "28 36 20 36", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", borderBottomWidth: 2, borderBottomColor: BLUE }}>
-          <View>
-            <View style={{ flexDirection: "row" }}>
-              {p.vorname ? <Text style={{ fontSize: 23, color: INK, marginRight: 5 }}>{p.vorname}</Text> : null}
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 23, color: INK }}>{p.nachname || fullName}</Text>
-            </View>
-            {nameSubtitle ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>{nameSubtitle}</Text> : null}
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            {adresse ? <Text style={{ fontSize: 8, color: MUTED, marginBottom: 2 }}>{adresse}</Text> : null}
-            {tel ? <Text style={{ fontSize: 8, color: MUTED, marginBottom: 2 }}>{tel}</Text> : null}
-            {p.email ? <Text style={{ fontSize: 8, color: MUTED, marginBottom: 2 }}>{p.email}</Text> : null}
-            {staat ? <Text style={{ fontSize: 8, color: DIM }}>{staat}</Text> : null}
-          </View>
+function ExperienceList({ jobs, style }) {
+  if (!jobs.length) return <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>—</Text>;
+  return jobs.map((j, i) => {
+    const range = [j.from, j.to].filter(Boolean).join(" – ");
+    return (
+      <View key={i} style={{ marginBottom: 8 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+          <Text style={{ ...style.jobTitle, flex: 1 }}>{j.title}</Text>
+          {range && <Text style={{ fontSize: TYPE.small, color: COLORS.dim }}>{range}</Text>}
         </View>
-        <View style={{ padding: "22 36 20 36", flex: 1 }}>
-          {profil && (
-            <GHSection title="Profil">
-              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
-            </GHSection>
-          )}
-          {hasSchule && (
-            <GHSection title="Ausbildung">
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>{schulLabel || "Schule"}</Text>
-              {klasseLabel ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{klasseLabel}</Text> : null}
-              {abschlussLabel ? <Text style={{ fontSize: 8.5, color: BLUE, marginTop: 1 }}>{abschlussLabel}</Text> : null}
-            </GHSection>
-          )}
-          {weiterbildungen.length > 0 && (
-            <GHSection title="Weiterbildung">
-              {weiterbildungen.map((w, i) => (
-                <View key={i} style={{ marginBottom: 5, flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5, flex: 1 }}>{w.name}</Text>
-                  <Text style={{ fontSize: 8, color: MUTED }}>{[w.institution, w.jahr].filter(Boolean).join(" – ")}</Text>
-                </View>
-              ))}
-            </GHSection>
-          )}
-          {erfahrungen.length > 0 && (
-            <GHSection title="Berufserfahrung">
-              {erfahrungen.map((e) => (
-                <View key={e.id} style={{ marginBottom: 9 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, flex: 1, paddingRight: 8 }}>{e.titel || e.art || "Tätigkeit"}</Text>
-                    <Text style={{ fontSize: 8.5, color: BLUE }}>{rangeLabel(e.von, e.bis)}</Text>
-                  </View>
-                  {e.organisation ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.organisation}</Text> : null}
-                  {(e.bullets || []).filter((b) => b?.trim()).map((b, i) => (
-                    <View key={i} style={{ flexDirection: "row", marginTop: 2, marginLeft: 6 }}>
-                      <Text style={{ width: 8, color: BLUE, fontSize: 9 }}>{'›'}</Text>
-                      <Text style={{ flex: 1, fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{b}</Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </GHSection>
-          )}
-          {langs.length > 0 && (
-            <GHSection title="Sprachen">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {langs.map((l, i) => <Text key={i} style={{ fontSize: 9, color: INK, marginRight: 14, marginBottom: 3 }}>{l.sprache}{l.niveau ? ` — ${l.niveau}` : ""}</Text>)}
-              </View>
-            </GHSection>
-          )}
-          {techSkills.length > 0 && (
-            <GHSection title="EDV / Tools">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {techSkills.map((sk, i) => (
-                  <View key={i} style={{ backgroundColor: "#f0f0f0", borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2, marginRight: 4, marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8.5, color: INK }}>{sk}</Text>
-                  </View>
-                ))}
-              </View>
-            </GHSection>
-          )}
-          {softSkills.length > 0 && (
-            <GHSection title="Stärken">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {softSkills.map((sk, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 12, marginBottom: 3 }}>{sk}</Text>)}
-              </View>
-            </GHSection>
-          )}
-          {hobbyTags.length > 0 && (
-            <GHSection title="Interessen">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {hobbyTags.map((h, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 12, marginBottom: 3 }}>{h}</Text>)}
-              </View>
-            </GHSection>
-          )}
-          {aktivitaeten.length > 0 && (
-            <GHSection title="Aktivitäten">
-              {aktivitaeten.map((a, i) => (
-                <View key={i} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{a.name}{a.organisation ? ` — ${a.organisation}` : ""}</Text>
-                  {a.beschreibung ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{a.beschreibung}</Text> : null}
-                </View>
-              ))}
-            </GHSection>
-          )}
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", padding: "8 36", borderTopWidth: 0.5, borderTopColor: LINE, fontSize: 8.5, color: DIM }}>
-          <Text>{ortToday}</Text>
-          <Text>{fullName}</Text>
-        </View>
-      </Page>
-    </Document>
-  );
-}
-
-// ─── Slim Sidebar Template (light gray sidebar) ───────────────────────────────
-function SlimSidebarTemplate({ profile }) {
-  const d = extractData(profile);
-  const { p, fullName, adresse, tel, staat, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, hasFoto, profil, weiterbildungen, aktivitaeten } = d;
-  const sideTitle = { fontSize: 7, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#d0d0d0", paddingBottom: 4, marginBottom: 8, fontFamily: "Helvetica-Bold" };
-  return (
-    <Document title={`Lebenslauf – ${fullName}`} author={fullName}>
-      <Page size="A4" style={{ flexDirection: "row", fontFamily: "Helvetica", fontSize: 10, color: INK, backgroundColor: WHITE }}>
-        <View style={{ width: 170, minHeight: "100%", backgroundColor: "#f0f0f0", paddingTop: 28, paddingBottom: 28, paddingHorizontal: 16 }}>
-          {hasFoto && <Image style={{ width: 80, height: 96, borderRadius: 3, marginBottom: 18, alignSelf: "center" }} src={p.foto} />}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={sideTitle}>{"KONTAKT"}</Text>
-            {p.geburtsdatum ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{fmtIsoDate(p.geburtsdatum)}{p.geburtsort ? `, ${p.geburtsort}` : ""}</Text> : null}
-            {adresse ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{adresse}</Text> : null}
-            {tel ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{tel}</Text> : null}
-            {p.email ? <Text style={{ fontSize: 8, color: "#444", marginBottom: 3, lineHeight: 1.4 }}>{p.email}</Text> : null}
-            {staat ? <Text style={{ fontSize: 8, color: "#444", lineHeight: 1.4 }}>{staat}</Text> : null}
+        {j.org ? <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>{j.org}</Text> : null}
+        {j.bullets.map((b, bi) => (
+          <View key={bi} style={{ flexDirection: "row", marginTop: 2 }}>
+            <Text style={{ width: 9, fontSize: TYPE.small, color: COLORS.dim }}>•</Text>
+            <Text style={{ flex: 1, fontSize: TYPE.small, lineHeight: 1.4, color: COLORS.muted }}>{b}</Text>
           </View>
-          {langs.length > 0 && (
-            <View style={{ marginBottom: 16 }}>
-              <Text style={sideTitle}>{"SPRACHEN"}</Text>
-              {langs.map((l, i) => (
-                <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Text style={{ fontSize: 8, color: "#333" }}>{l.sprache}</Text>
-                  {l.niveau ? <Text style={{ fontSize: 7, color: "#999" }}>{l.niveau}</Text> : null}
-                </View>
-              ))}
-            </View>
-          )}
-          {techSkills.length > 0 && (
-            <View style={{ marginBottom: 16 }}>
-              <Text style={sideTitle}>{"EDV"}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3 }}>
-                {techSkills.map((sk, i) => (
-                  <Text key={i} style={{ fontSize: 7.5, color: "#333", backgroundColor: "#e0e0e0", paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3, marginBottom: 3 }}>{sk}</Text>
-                ))}
-              </View>
-            </View>
-          )}
-          {p.fuehrerschein && p.fuehrerschein !== "Keiner" && (
-            <View style={{ marginBottom: 16 }}>
-              <Text style={sideTitle}>{"FÜHRERSCHEIN"}</Text>
-              <Text style={{ fontSize: 8, color: "#333" }}>{p.fuehrerschein}</Text>
-            </View>
-          )}
-        </View>
-        <View style={{ flex: 1, paddingTop: 28, paddingBottom: 28, paddingHorizontal: 22 }}>
-          <View style={{ marginBottom: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#e0e0e0" }}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {p.vorname ? <Text style={{ fontSize: 20, color: INK, marginRight: 5 }}>{p.vorname}</Text> : null}
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 20, color: INK }}>{p.nachname || fullName}</Text>
-            </View>
-            {nameSubtitle ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 3 }}>{nameSubtitle}</Text> : null}
-          </View>
-          {profil && (
-            <View style={{ marginBottom: 14, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: "#ddd" }}>
-              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
-            </View>
-          )}
-          {hasSchule && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"AUSBILDUNG"}</Text>
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>{schulLabel || "Schule"}</Text>
-              {klasseLabel ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{klasseLabel}</Text> : null}
-              {abschlussLabel ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{abschlussLabel}</Text> : null}
-            </View>
-          )}
-          {weiterbildungen.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"WEITERBILDUNG"}</Text>
-              {weiterbildungen.map((w, i) => (
-                <View key={i} style={{ marginBottom: 5 }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{w.name}</Text>
-                  <Text style={{ fontSize: 8, color: MUTED }}>{[w.institution, w.jahr].filter(Boolean).join(" – ")}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-          {erfahrungen.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"BERUFSERFAHRUNG"}</Text>
-              {erfahrungen.map((e) => (
-                <View key={e.id} style={{ marginBottom: 9 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, flex: 1, paddingRight: 8 }}>{e.titel || e.art || "Tätigkeit"}</Text>
-                    <Text style={{ fontSize: 8.5, color: MUTED }}>{rangeLabel(e.von, e.bis)}</Text>
-                  </View>
-                  {e.organisation ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.organisation}</Text> : null}
-                  {(e.bullets || []).filter((b) => b?.trim()).map((b, i) => (
-                    <View key={i} style={{ flexDirection: "row", marginTop: 2, marginLeft: 6 }}>
-                      <Text style={{ width: 8, color: MUTED, fontSize: 9 }}>{'›'}</Text>
-                      <Text style={{ flex: 1, fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{b}</Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </View>
-          )}
-          {softSkills.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"ST\u00c4RKEN"}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {softSkills.map((sk, i) => (
-                  <View key={i} style={{ backgroundColor: "#e8e8e8", borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2, marginRight: 4, marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8.5, color: INK }}>{sk}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-          {hobbyTags.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"INTERESSEN"}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {hobbyTags.map((h, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 10, marginBottom: 3 }}>{h}</Text>)}
-              </View>
-            </View>
-          )}
-          {aktivitaeten.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 7.5, letterSpacing: 1.4, color: "#999", borderBottomWidth: 0.5, borderBottomColor: "#ddd", paddingBottom: 3, marginBottom: 8, fontFamily: "Helvetica-Bold" }}>{"AKTIVIT\u00c4TEN"}</Text>
-              {aktivitaeten.map((a, i) => (
-                <View key={i} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{a.name}{a.organisation ? ` — ${a.organisation}` : ""}</Text>
-                  {a.beschreibung ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{a.beschreibung}</Text> : null}
-                </View>
-              ))}
-            </View>
-          )}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: "auto", paddingTop: 10, borderTopWidth: 0.5, borderTopColor: LINE, fontSize: 8.5, color: DIM }}>
-            <Text>{ortToday}</Text>
-            <Text>{fullName}</Text>
-          </View>
-        </View>
-      </Page>
-    </Document>
-  );
-}
-
-// ─── Dark Bands Template ──────────────────────────────────────────────────────
-const DB_PAD = 32;
-
-function DBSection({ title, children }) {
-  return (
-    <View style={{ marginBottom: 4 }}>
-      <View style={{ backgroundColor: "#f5f5f5", paddingVertical: 5, paddingLeft: DB_PAD, marginLeft: -DB_PAD, marginRight: -DB_PAD, marginBottom: 10, marginTop: 12 }}>
-        <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 7.5, letterSpacing: 1.4, color: "#888" }}>{title.toUpperCase()}</Text>
+        ))}
       </View>
-      {children}
-    </View>
-  );
+    );
+  });
 }
 
-function DarkBandsTemplate({ profile }) {
-  const d = extractData(profile);
-  const { p, fullName, adresse, tel, schulLabel, klasseLabel, abschlussLabel, hasSchule, nameSubtitle, erfahrungen, langs, softSkills, techSkills, hobbyTags, ortToday, profil, weiterbildungen, aktivitaeten } = d;
-  return (
-    <Document title={`Lebenslauf – ${fullName}`} author={fullName}>
-      <Page size="A4" style={{ fontFamily: "Helvetica", fontSize: 10, color: INK, backgroundColor: WHITE }}>
-        <View style={{ backgroundColor: "#1a1a1a", padding: "26 32 22 32" }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {p.vorname ? <Text style={{ fontSize: 22, color: WHITE, marginRight: 6 }}>{p.vorname}</Text> : null}
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 22, color: WHITE }}>{p.nachname || fullName}</Text>
-          </View>
-          {nameSubtitle ? <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{nameSubtitle}</Text> : null}
-          <View style={{ flexDirection: "row", marginTop: 10 }}>
-            {[adresse, tel, p.email].filter(Boolean).map((v, i) => (
-              <Text key={i} style={{ fontSize: 8, color: "rgba(255,255,255,0.45)", marginRight: 16 }}>{v}</Text>
-            ))}
-          </View>
-        </View>
-        <View style={{ flex: 1, paddingHorizontal: DB_PAD, paddingBottom: 24 }}>
-          {profil && (
-            <DBSection title="Profil">
-              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
-            </DBSection>
-          )}
-          {hasSchule && (
-            <DBSection title="Ausbildung">
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>{schulLabel || "Schule"}</Text>
-              {klasseLabel ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{klasseLabel}</Text> : null}
-              {abschlussLabel ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{abschlussLabel}</Text> : null}
-            </DBSection>
-          )}
-          {weiterbildungen.length > 0 && (
-            <DBSection title="Weiterbildung">
-              {weiterbildungen.map((w, i) => (
-                <View key={i} style={{ marginBottom: 6, flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5, flex: 1 }}>{w.name}</Text>
-                  <Text style={{ fontSize: 8, color: MUTED }}>{[w.institution, w.jahr].filter(Boolean).join(" – ")}</Text>
-                </View>
-              ))}
-            </DBSection>
-          )}
-          {erfahrungen.length > 0 && (
-            <DBSection title="Berufserfahrung">
-              {erfahrungen.map((e) => (
-                <View key={e.id} style={{ marginBottom: 9 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, flex: 1, paddingRight: 8 }}>{e.titel || e.art || "Tätigkeit"}</Text>
-                    <Text style={{ fontSize: 8.5, color: MUTED }}>{rangeLabel(e.von, e.bis)}</Text>
-                  </View>
-                  {e.organisation ? <Text style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.organisation}</Text> : null}
-                  {(e.bullets || []).filter((b) => b?.trim()).map((b, i) => (
-                    <View key={i} style={{ flexDirection: "row", marginTop: 2, marginLeft: 6 }}>
-                      <Text style={{ width: 8, color: MUTED, fontSize: 9 }}>{'›'}</Text>
-                      <Text style={{ flex: 1, fontSize: 9, color: MUTED, lineHeight: 1.4 }}>{b}</Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </DBSection>
-          )}
-          {(langs.length > 0 || techSkills.length > 0) && (
-            <DBSection title="Kenntnisse & Sprachen">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {[...langs.map((l) => l.sprache + (l.niveau ? ` — ${l.niveau}` : "")), ...techSkills].map((v, i) => (
-                  <View key={i} style={{ backgroundColor: "#f0f0f0", borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2, marginRight: 4, marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8.5, color: INK }}>{v}</Text>
-                  </View>
-                ))}
-              </View>
-            </DBSection>
-          )}
-          {softSkills.length > 0 && (
-            <DBSection title="Stärken">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {softSkills.map((sk, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 12, marginBottom: 3 }}>{sk}</Text>)}
-              </View>
-            </DBSection>
-          )}
-          {hobbyTags.length > 0 && (
-            <DBSection title="Interessen">
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {hobbyTags.map((h, i) => <Text key={i} style={{ fontSize: 9, color: MUTED, marginRight: 12, marginBottom: 3 }}>{h}</Text>)}
-              </View>
-            </DBSection>
-          )}
-          {aktivitaeten.length > 0 && (
-            <DBSection title="Aktivitäten">
-              {aktivitaeten.map((a, i) => (
-                <View key={i} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5 }}>{a.name}{a.organisation ? ` — ${a.organisation}` : ""}</Text>
-                  {a.beschreibung ? <Text style={{ fontSize: 8.5, color: MUTED, marginTop: 1 }}>{a.beschreibung}</Text> : null}
-                </View>
-              ))}
-            </DBSection>
-          )}
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", padding: "8 32", borderTopWidth: 0.5, borderTopColor: LINE, fontSize: 8.5, color: DIM }}>
-          <Text>{ortToday}</Text>
-          <Text>{fullName}</Text>
-        </View>
-      </Page>
-    </Document>
-  );
-}
-
-/* ── Sidebar sub-components ─────────────────────────────────────── */
-
-function SideSection({ title, children }) {
-  return (
-    <View style={s.sideSection}>
-      <Text style={s.sideSectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function SideRow({ value }) {
-  if (!value) return null;
-  return (
-    <View style={s.sideRow}>
-      <Text style={s.sideValue}>{value}</Text>
-    </View>
-  );
-}
-
-/* ── Main sub-components ─────────────────────────────────────────── */
-
-function MainSection({ title, children }) {
-  return (
-    <View style={s.mainSection}>
-      <Text style={s.mainSectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-/**
- * @param {{ profile: import("./profileSchema").CVProfile }} props
- */
-function TabellarischTemplate({ profile }) {
-  const p = profile || {};
-  const fullName = [p.vorname, p.nachname].filter(Boolean).join(" ").trim() || "Lebenslauf";
-
-  const adresse = [p.strasse, [p.plz, p.ort].filter(Boolean).join(" ")]
-    .filter(Boolean).join(", ");
-
-  const tel = formatTelefon(p.telefon);
-  const staat = COUNTRY_LABEL[p.staatsbuergerschaft] || p.staatsbuergerschaft || "";
-
-  const schulLabel = [SCHULTYP_LABEL[p.schultyp] ?? p.schultyp, p.schulname]
-    .filter(Boolean).join(" – ") || "";
-  const klasseLabel = p.klasse ? `Klasse ${p.klasse}` : "";
-  const abschlussLabel = p.abschlussjahr
-    ? `Abschluss geplant ${p.abschlussjahr}` : "";
-  const hasSchule = schulLabel || klasseLabel;
-
-  const nameSubtitle = [schulLabel, klasseLabel].filter(Boolean).join(" · ");
-
-  const erfahrungen = Array.isArray(p.erfahrungen) ? [...p.erfahrungen].sort((a, b) => (b.von || "").localeCompare(a.von || "")) : [];
-  const langs = Array.isArray(p.sprachkenntnisse)
-    ? p.sprachkenntnisse.filter((l) => l.sprache?.trim()) : [];
-  const skills = Array.isArray(p.faehigkeiten) ? p.faehigkeiten : [];
-  const softSkills = skills.filter((sk) => SOFT_SKILLS.has(sk));
-  const techSkills = skills.filter((sk) => !SOFT_SKILLS.has(sk));
-
-  const hobbyRaw = (p.hobbies || "").trim();
-  const hobbyTags = hobbyRaw.includes(",")
-    ? hobbyRaw.split(",").map((t) => t.trim()).filter(Boolean)
-    : hobbyRaw ? [hobbyRaw] : [];
-
-  const today = new Date();
-  const todayStr = [
-    String(today.getDate()).padStart(2, "0"),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    today.getFullYear(),
-  ].join(".");
-  const ortToday = p.ort ? `${p.ort}, ${todayStr}` : todayStr;
-
-  const hasFoto = typeof p.foto === "string" && p.foto.length > 10;
-  const profil = (p.profil || "").trim();
-  const weiterbildungen = Array.isArray(p.weiterbildungen) ? p.weiterbildungen : [];
-  const aktivitaeten = Array.isArray(p.aktivitaeten) ? p.aktivitaeten : [];
-
-  return (
-    <Document title={`Lebenslauf – ${fullName}`} author={fullName}>
-      <Page size="A4" style={s.page}>
-
-        {/* ── LEFT SIDEBAR ──────────────────────────────────────── */}
-        <View style={s.sidebar}>
-
-          {/* Photo */}
-          {hasFoto && <Image style={s.photo} src={p.foto} />}
-
-          {/* Kontakt */}
-          <SideSection title="Kontakt">
-            {p.geburtsdatum ? (
-              <SideRow value={`${fmtIsoDate(p.geburtsdatum)}${p.geburtsort ? `, ${p.geburtsort}` : ""}`} />
-            ) : null}
-            {adresse ? <SideRow value={adresse} /> : null}
-            {tel ? <SideRow value={tel} /> : null}
-            {p.email ? <SideRow value={p.email} /> : null}
-            {staat ? <SideRow value={staat} /> : null}
-            {p.arbeitserlaubnis === true ? (
-              <SideRow value="Arbeitserlaubnis vorhanden" />
-            ) : null}
-          </SideSection>
-
-          {/* Sprachen */}
-          {langs.length > 0 && (
-            <SideSection title="Sprachen">
-              {langs.map((l, i) => (
-                <View style={s.langRow} key={i}>
-                  <Text style={s.langName}>{l.sprache}</Text>
-                  <Text style={s.langLevel}>{l.niveau}</Text>
-                </View>
-              ))}
-            </SideSection>
-          )}
-
-          {/* EDV / Tools */}
-          {techSkills.length > 0 && (
-            <SideSection title="EDV / Tools">
-              <View style={s.skillChips}>
-                {techSkills.map((sk, i) => (
-                  <Text key={i} style={s.skillChip}>{sk}</Text>
-                ))}
-              </View>
-            </SideSection>
-          )}
-
-          {/* Führerschein */}
-          {p.fuehrerschein && p.fuehrerschein !== "Keiner" && (
-            <SideSection title="Führerschein">
-              <Text style={s.sideValue}>{p.fuehrerschein}</Text>
-            </SideSection>
-          )}
-        </View>
-
-        {/* ── MAIN COLUMN ───────────────────────────────────────── */}
-        <View style={s.main}>
-
-          {/* Name header */}
-          <View style={s.nameBlock}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {p.vorname ? (
-                <Text style={s.firstName}>{p.vorname} </Text>
-              ) : null}
-              <Text style={s.lastName}>{p.nachname || fullName}</Text>
-            </View>
-            {nameSubtitle ? (
-              <Text style={s.nameSubtitle}>{nameSubtitle}</Text>
-            ) : null}
-          </View>
-
-          {/* Profil */}
-          {profil && (
-            <MainSection title="Profil">
-              <Text style={{ fontSize: 9.5, color: INK, lineHeight: 1.4 }}>{profil}</Text>
-            </MainSection>
-          )}
-
-          {/* Ausbildung */}
-          {hasSchule && (
-            <MainSection title="Ausbildung">
-              <View style={s.entry}>
-                <View style={s.entryHeader}>
-                  <Text style={s.entryTitle}>{schulLabel || "Schule"}</Text>
-                  {abschlussLabel ? (
-                    <Text style={s.entryDate}>{abschlussLabel}</Text>
-                  ) : null}
-                </View>
-                {klasseLabel ? (
-                  <Text style={s.entryOrg}>{klasseLabel}</Text>
-                ) : null}
-              </View>
-            </MainSection>
-          )}
-
-          {/* Weiterbildung */}
-          {weiterbildungen.length > 0 && (
-            <MainSection title="Weiterbildung">
-              {weiterbildungen.map((w, i) => (
-                <View style={s.entry} key={i}>
-                  <View style={s.entryHeader}>
-                    <Text style={s.entryTitle}>{w.name}</Text>
-                    <Text style={s.entryDate}>{[w.institution, w.jahr].filter(Boolean).join(" – ")}</Text>
-                  </View>
-                </View>
-              ))}
-            </MainSection>
-          )}
-
-          {/* Berufserfahrung */}
-          {erfahrungen.length > 0 && (
-            <MainSection title="Berufserfahrung">
-              {erfahrungen.map((e) => {
-                const bullets = (e.bullets || []).filter((b) => b?.trim());
-                const orgLine = e.organisation || "";
-                const artLine = e.art || "";
-                return (
-                  <View style={s.entry} key={e.id}>
-                    <View style={s.entryHeader}>
-                      <Text style={s.entryTitle}>
-                        {e.titel || e.art || "Tätigkeit"}
-                      </Text>
-                      <Text style={s.entryDate}>{rangeLabel(e.von, e.bis)}</Text>
-                    </View>
-                    {orgLine ? (
-                      <Text style={s.entryOrg}>{orgLine}</Text>
-                    ) : null}
-                    {artLine && artLine !== e.titel ? (
-                      <Text style={s.entryArt}>{artLine}</Text>
-                    ) : null}
-                    {bullets.map((b, i) => (
-                      <View style={s.bullet} key={i}>
-                        <Text style={s.bulletDot}>›</Text>
-                        <Text style={s.bulletText}>{b}</Text>
-                      </View>
-                    ))}
-                  </View>
-                );
-              })}
-            </MainSection>
-          )}
-
-          {/* Stärken */}
-          {softSkills.length > 0 && (
-            <MainSection title="Stärken">
-              <View style={s.tagRow}>
-                {softSkills.map((sk, i) => (
-                  <Text key={i} style={s.tag}>{sk}</Text>
-                ))}
-              </View>
-            </MainSection>
-          )}
-
-          {/* Interessen */}
-          {hobbyTags.length > 0 && (
-            <MainSection title="Interessen">
-              <View style={s.tagRow}>
-                {hobbyTags.map((h, i) => (
-                  <Text key={i} style={s.tag}>{h}</Text>
-                ))}
-              </View>
-            </MainSection>
-          )}
-
-          {/* Aktivitäten */}
-          {aktivitaeten.length > 0 && (
-            <MainSection title="Aktivitäten">
-              {aktivitaeten.map((a, i) => (
-                <View style={s.entry} key={i}>
-                  <View style={s.entryHeader}>
-                    <Text style={s.entryTitle}>{a.name}{a.organisation ? ` — ${a.organisation}` : ""}</Text>
-                  </View>
-                  {a.beschreibung ? <Text style={s.entryOrg}>{a.beschreibung}</Text> : null}
-                </View>
-              ))}
-            </MainSection>
-          )}
-
-          {/* Signature */}
-          <View style={s.signatureRow}>
-            <Text>{ortToday}</Text>
-            <Text>{fullName}</Text>
-          </View>
-        </View>
-
-      </Page>
-    </Document>
-  );
-}
-
-/** Routes to the correct PDF template based on profile.templateId. */
 export default function CVTemplate({ profile }) {
   const id = profile?.templateId || "tabellarisch";
-  if (id === "gray-header")  return <GrayHeaderTemplate  profile={profile} />;
-  if (id === "slim-sidebar") return <SlimSidebarTemplate profile={profile} />;
-  if (id === "dark-bands")   return <DarkBandsTemplate   profile={profile} />;
-  return <TabellarischTemplate profile={profile} />;
+  const model = normalizeProfile(profile);
+  const font = FONTS[model.fontFamily] || SANS;
+
+  switch (id) {
+    case "serif": return <ExecutiveSerif model={model} font={font} />;
+    case "kontrast": return <ModernProfessional model={model} font={font} />;
+    case "slim-sidebar": return <SidebarProfessional model={model} font={font} />;
+    case "spartan": return <MinimalATS model={model} font={font} />;
+    case "gray-header": return <PhotoClassic model={model} font={font} />;
+    case "dark-bands": return <CompactExperience model={model} font={font} />;
+    case "zentriert": return <GraduateStudent model={model} font={font} />;
+    case "tabellarisch": default: return <AustrianClassic model={model} font={font} />;
+  }
+}
+
+/* ── 1. Austrian Classic ────────────────────────────────────────────────── */
+function AustrianClassic({ model, font }) {
+  return cv("Austrian Classic", model, font, secStyle.classic, (m) => (
+    <>
+      <View style={{ marginBottom: 8 }}>
+        <Text style={{ fontFamily: font, fontSize: TYPE.name + 2, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
+        {m.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted }}>{m.role}</Text>}
+        <ContactRow model={m} />
+      </View>
+      {m.profileText ? <SectionT secStyle={secStyle.classic} title="Profil">{m.profileText}</SectionT> : null}
+      <SectionT secStyle={secStyle.classic} title="Berufserfahrung">
+        <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
+      </SectionT>
+      <SectionT secStyle={secStyle.classic} title="Ausbildung">
+        {m.education.school || m.education.degree ? (
+          <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` · ${m.education.year}` : ""}</Text>
+        ) : <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>—</Text>}
+      </SectionT>
+      {m.languages.length ? <SectionT secStyle={secStyle.classic} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+      {m.skills.length ? <SectionT secStyle={secStyle.classic} title="Kenntnisse">{m.skills.join(", ")}</SectionT> : null}
+      {m.interests.length ? <SectionT secStyle={secStyle.classic} title="Interessen">{m.interests.join(", ")}</SectionT> : null}
+    </>
+  ));
+}
+
+/* ── 2. Executive Serif ─────────────────────────────────────────────────── */
+function ExecutiveSerif({ model, font }) {
+  return cv("Executive Serif", model, font, secStyle.serif, (m) => (
+    <>
+      <View style={{ marginBottom: 14 }}>
+        <Text style={{ fontFamily: SERIF, fontSize: TYPE.name + 2, color: COLORS.ink }}>{m.fullName}</Text>
+        {m.role && <Text style={{ fontFamily: SERIF, fontSize: TYPE.role, fontStyle: "italic", color: COLORS.muted }}>{m.role}</Text>}
+        {m.contact.email || m.contact.phone ? (
+          <Text style={{ fontFamily: SERIF, fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>
+            {[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join("   ·   ")}
+          </Text>
+        ) : null}
+      </View>
+      {m.profileText ? <SectionT secStyle={secStyle.serif} title="Profil"><Text style={{ fontFamily: SERIF, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.profileText}</Text></SectionT> : null}
+      <SectionT secStyle={secStyle.serif} title="Berufserfahrung">
+        {m.jobs.map((j, i) => (
+          <View key={i} style={{ marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontFamily: SERIF, fontSize: TYPE.body + 1, fontWeight: "bold", color: COLORS.ink }}>{j.title}</Text>
+              <Text style={{ fontFamily: SERIF, fontSize: TYPE.small, color: COLORS.dim }}>{[j.from, j.to].filter(Boolean).join(" – ")}</Text>
+            </View>
+            {j.org && <Text style={{ fontFamily: SERIF, fontSize: TYPE.body, fontStyle: "italic", color: COLORS.muted }}>{j.org}</Text>}
+            {(j.bullets || []).map((b, bi) => (
+              <View key={bi} style={{ flexDirection: "row", marginTop: 2 }}>
+                <Text style={{ fontFamily: SERIF, width: 10, fontSize: TYPE.body, color: COLORS.dim }}>—</Text>
+                <Text style={{ fontFamily: SERIF, flex: 1, fontSize: TYPE.small, color: COLORS.muted, lineHeight: 1.45 }}>{b}</Text>
+              </View>
+            ))}
+          </View>
+        ))}
+      </SectionT>
+      <SectionT secStyle={secStyle.serif} title="Ausbildung">
+        {m.education.degree || m.education.school ? (
+          <Text style={{ fontFamily: SERIF, fontSize: TYPE.body, color: COLORS.ink }}>
+            {[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` — ${m.education.year}` : ""}
+          </Text>
+        ) : <Text style={{ fontFamily: SERIF, fontSize: TYPE.small, color: COLORS.muted }}>—</Text>}
+      </SectionT>
+      {m.skills.length ? <SectionT secStyle={secStyle.serif} title="Kompetenzen"><Text style={{ fontFamily: SERIF, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.skills.join("   ·   ")}</Text></SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={secStyle.serif} title="Sprachen"><Text style={{ fontFamily: SERIF, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</Text></SectionT> : null}
+    </>
+  ));
+}
+
+/* ── 3. Modern Professional ─────────────────────────────────────────────── */
+function ModernProfessional({ model, font }) {
+  return cv("Modern Professional", model, font, secStyle.modern, (m) => (
+    <>
+      <View style={{ marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1.6, borderBottomColor: BRAND }}>
+        <Text style={{ fontFamily: font, fontSize: TYPE.name, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
+        {m.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted, marginTop: 2 }}>{m.role}</Text>}
+        <Text style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join("  ·  ")}</Text>
+      </View>
+      {m.profileText ? <SectionT secStyle={secStyle.modern} title="Über mich"><Text style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.profileText}</Text></SectionT> : null}
+      <SectionT secStyle={secStyle.modern} title="Erfahrung">
+        <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
+      </SectionT>
+      <SectionT secStyle={secStyle.modern} title="Ausbildung">
+        <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[m.education.degree, m.education.school].filter(Boolean).join(" · ")}{m.education.year ? ` · ${m.education.year}` : ""}</Text>
+      </SectionT>
+      {m.skills.length ? <SectionT secStyle={secStyle.modern} title="Skills">{m.skills.join("  ·  ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={secStyle.modern} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join("  ·  ")}</SectionT> : null}
+    </>
+  ));
+}
+
+/* ── 4. Sidebar Professional ────────────────────────────────────────────── */
+function SidebarProfessional({ model, font }) {
+  const sbw = 150;
+  return (
+    <Document title={`Lebenslauf – ${model.fullName}`} author={model.fullName}>
+      <Page size="A4" style={{ flexDirection: "row", fontFamily: font, fontSize: TYPE.body, color: COLORS.ink, backgroundColor: COLORS.white }}>
+        {/* Sidebar */}
+        <View style={{ width: sbw, backgroundColor: "#242a33", paddingTop: 26, paddingBottom: 26, paddingHorizontal: 14 }}>
+          {model.photo ? (
+            <Image src={model.photo} style={{ width: 72, height: 92, borderRadius: 4, alignSelf: "center", marginBottom: 14 }} />
+          ) : (
+            <View style={{ width: 72, height: 92, backgroundColor: "#3a4350", alignSelf: "center", marginBottom: 14 }} />
+          )}
+          <SidebarBlock title="Kontakt" style={secStyle.sidebar}>
+            {[model.contact.city, model.contact.email, model.contact.phone].filter(Boolean).map((t, i) => (
+              <Text key={i} style={{ fontSize: TYPE.tiny, color: "#cfd6df", marginBottom: 2 }}>{t}</Text>
+            ))}
+          </SidebarBlock>
+          {model.languages.length ? (
+            <SidebarBlock title="Sprachen" style={secStyle.sidebar}>
+              {model.languages.map((l, i) => (
+                <Text key={i} style={{ fontSize: TYPE.tiny, color: "#cfd6df", marginBottom: 3 }}>{l.language}{l.level ? `\n${l.level}` : ""}</Text>
+              ))}
+            </SidebarBlock>
+          ) : null}
+          {model.skills.length ? (
+            <SidebarBlock title="EDV & Skills" style={secStyle.sidebar}>
+              <Text style={{ fontSize: TYPE.tiny, color: "#cfd6df", lineHeight: 1.4 }}>{model.skills.join(", ")}</Text>
+            </SidebarBlock>
+          ) : null}
+          {model.austrian.staatsbuergerschaft ? (
+            <SidebarBlock title="Sonstiges" style={secStyle.sidebar}>
+              <Text style={{ fontSize: TYPE.tiny, color: "#cfd6df" }}>Staatsbürgerschaft: {model.austrian.staatsbuergerschaft}</Text>
+            </SidebarBlock>
+          ) : null}
+        </View>
+        {/* Main */}
+        <View style={{ flex: 1, padding: 26 }}>
+          <Text style={{ fontSize: TYPE.name, fontWeight: "bold", color: COLORS.ink }}>{model.fullName}</Text>
+          {model.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted, marginTop: 2 }}>{model.role}</Text>}
+          {model.profileText ? <SectionT secStyle={secStyle.modern} title="Profil"><Text style={{ fontSize: TYPE.body, color: COLORS.muted }}>{model.profileText}</Text></SectionT> : null}
+          <SectionT secStyle={secStyle.modern} title="Berufserfahrung">
+            <ExperienceList jobs={model.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
+          </SectionT>
+          <SectionT secStyle={secStyle.modern} title="Ausbildung">
+            <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[model.education.degree, model.education.school].filter(Boolean).join(", ")}{model.education.year ? ` (${model.education.year})` : ""}</Text>
+          </SectionT>
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
+/* ── 5. Minimal ATS ─────────────────────────────────────────────────────── */
+function MinimalATS({ model, font }) {
+  return cv("Minimal ATS", model, font, secStyle.classic, (m) => (
+    <>
+      <View style={{ marginBottom: 10 }}>
+        <Text style={{ fontFamily: font, fontSize: TYPE.name, fontWeight: "bold", color: "#111111" }}>{m.fullName}</Text>
+        {m.role && <Text style={{ fontSize: TYPE.role, color: "#333333" }}>{m.role}</Text>}
+        <Text style={{ fontSize: TYPE.small, color: "#555555", marginTop: 4 }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join("  ·  ")}</Text>
+      </View>
+      <SectionT secStyle={{ ...secStyle.classic, borderBottomWidth: 0.5 }} title="Berufserfahrung">
+        <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: "#111111" } }} />
+      </SectionT>
+      <SectionT secStyle={{ ...secStyle.classic, borderBottomWidth: 0.5 }} title="Ausbildung">
+        <Text style={{ fontSize: TYPE.body, color: "#111111" }}>{[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` · ${m.education.year}` : ""}</Text>
+      </SectionT>
+      {m.skills.length ? <SectionT secStyle={{ ...secStyle.classic, borderBottomWidth: 0.5 }} title="Kenntnisse">{m.skills.join(", ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={{ ...secStyle.classic, borderBottomWidth: 0.5 }} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+      {m.courses.length ? <SectionT secStyle={{ ...secStyle.classic, borderBottomWidth: 0.5 }} title="Weiterbildung">{m.courses.map((c) => c.title || c.name || c).join(" · ")}</SectionT> : null}
+    </>
+  ));
+}
+
+/* ── 6. Photo Classic ───────────────────────────────────────────────────── */
+function PhotoClassic({ model, font }) {
+  return cv("Photo Classic", model, font, secStyle.classic, (m) => (
+    <>
+      <View style={{ flexDirection: "row", marginBottom: 10, alignItems: "center" }}>
+        {m.photo ? <Image src={m.photo} style={{ width: 64, height: 82, borderRadius: 3, marginRight: 14 }} /> : null}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: font, fontSize: TYPE.name + 1, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
+          {m.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted }}>{m.role}</Text>}
+          <Text style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 3 }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join("  ·  ")}</Text>
+        </View>
+      </View>
+      {m.profileText ? <SectionT secStyle={secStyle.classic} title="Profil">{m.profileText}</SectionT> : null}
+      <SectionT secStyle={secStyle.classic} title="Berufserfahrung">
+        <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
+      </SectionT>
+      <SectionT secStyle={secStyle.classic} title="Ausbildung">
+        <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` (${m.education.year})` : ""}</Text>
+      </SectionT>
+      {m.languages.length ? <SectionT secStyle={secStyle.classic} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+      {m.skills.length ? <SectionT secStyle={secStyle.classic} title="Kenntnisse">{m.skills.join(", ")}</SectionT> : null}
+    </>
+  ));
+}
+
+/* ── 7. Compact Experience ──────────────────────────────────────────────── */
+function CompactExperience({ model, font }) {
+  return cv("Compact Experience", model, font, secStyle.modern, (m) => (
+    <>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", borderBottomWidth: 1.4, borderBottomColor: COLORS.ink, paddingBottom: 8, marginBottom: 12 }}>
+        <Text style={{ fontFamily: font, fontSize: TYPE.name, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
+        <Text style={{ fontSize: TYPE.small, color: COLORS.dim }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join(" · ")}</Text>
+      </View>
+      <SectionT secStyle={secStyle.modern} title="Berufserfahrung">
+        {m.jobs.map((j, i) => (
+          <View key={i} style={{ flexDirection: "row", marginBottom: 7 }}>
+            <View style={{ width: 78, borderRightWidth: 0.6, borderRightColor: COLORS.line, paddingRight: 8 }}>
+              <Text style={{ fontSize: TYPE.small, color: COLORS.dim }}>{[j.from, j.to].filter(Boolean).join(" – ")}</Text>
+            </View>
+            <View style={{ flex: 1, paddingLeft: 10 }}>
+              <Text style={{ fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink }}>{j.title}</Text>
+              {j.org && <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>{j.org}</Text>}
+            </View>
+          </View>
+        ))}
+      </SectionT>
+      <SectionT secStyle={secStyle.modern} title="Ausbildung">
+        <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` · ${m.education.year}` : ""}</Text>
+      </SectionT>
+      {m.skills.length ? <SectionT secStyle={secStyle.modern} title="Kenntnisse">{m.skills.join(", ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={secStyle.modern} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+    </>
+  ));
+}
+
+/* ── 8. Graduate / Student ──────────────────────────────────────────────── */
+function GraduateStudent({ model, font }) {
+  return cv("Graduate Student", model, font, secStyle.modern, (m) => (
+    <>
+      <View style={{ marginBottom: 12 }}>
+        <Text style={{ fontFamily: font, fontSize: TYPE.name + 1, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
+        {m.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted }}>{m.role}</Text>}
+        <Text style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 4 }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join(" · ")}</Text>
+      </View>
+      <SectionT secStyle={secStyle.modern} title="Ausbildung">
+        <Text style={{ fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink }}>{m.education.degree || m.education.school || "—"}</Text>
+        {(m.education.school && m.education.degree) ? <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>{m.education.school}</Text> : null}
+        {m.education.year ? <Text style={{ fontSize: TYPE.small, color: COLORS.dim }}>Abschluss: {m.education.year}</Text> : null}
+      </SectionT>
+      {m.jobs.length ? (
+        <SectionT secStyle={secStyle.modern} title="Erfahrung">
+          <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
+        </SectionT>
+      ) : null}
+      {m.projects.length ? (
+        <SectionT secStyle={secStyle.modern} title="Projekte">
+          {m.projects.map((p, i) => (
+            <View key={i} style={{ marginBottom: 6 }}>
+              <Text style={{ fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink }}>{p.titel || p.title || p}</Text>
+              {p.beschreibung ? <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>{p.beschreibung}</Text> : null}
+            </View>
+          ))}
+        </SectionT>
+      ) : null}
+      {m.skills.length ? <SectionT secStyle={secStyle.modern} title="Kenntnisse">{m.skills.join(" · ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={secStyle.modern} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+      {m.interests.length ? <SectionT secStyle={secStyle.modern} title="Interessen">{m.interests.join(" · ")}</SectionT> : null}
+      {m.certifications.length ? <SectionT secStyle={secStyle.modern} title="Zertifikate">{m.certifications.map((c) => c.titel || c.title || c).join(" · ")}</SectionT> : null}
+    </>
+  ));
+}
+
+/* ── Shared wrappers ────────────────────────────────────────────────────── */
+function SectionT({ secStyle: sst, title, children }) {
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={sst}>{title.toUpperCase()}</Text>
+      {typeof children === "string" ? (
+        <Text style={{ fontSize: TYPE.body, color: COLORS.muted, lineHeight: 1.45 }}>{children}</Text>
+      ) : children}
+    </View>
+  );
+}
+
+function SidebarBlock({ title, style, children }) {
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={style}>{title.toUpperCase()}</Text>
+      {children}
+    </View>
+  );
+}
+
+/** Wrap every one-column archetype in a consistent A4 page envelope. */
+function cv(docTitle, m, font, section, body) {
+  return (
+    <Document title={`Lebenslauf – ${m.fullName}`} author={m.fullName}>
+      <Page size="A4" style={{ fontFamily: font, fontSize: TYPE.body, color: COLORS.ink, backgroundColor: COLORS.white, padding: `${A4.M} ${A4.M + 6} ${A4.M} ${A4.M + 6}` }}>
+        {body(m)}
+      </Page>
+    </Document>
+  );
 }

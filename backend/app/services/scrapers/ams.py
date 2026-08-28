@@ -1,8 +1,10 @@
 """jobs.ams.at (Arbeitsmarktservice) scraper.
 
-AMS is Austria's public employment service. Its job portal is highly
-structured and exposes server-rendered HTML with clear CSS classes.
-This makes it one of the more stable scraping targets.
+NOTE (2026-08): AMS rebuilt their job portal ("alle jobs", allejobs.at) as a
+SPA whose search API now requires an OIDC login (login.ams.at) — there is no
+public/anonymous search endpoint left. This module is kept for the stable
+public endpoints and returns a clear error until a viable anonymous path
+exists again. If you find one, update _SEARCH_URL and _parse_item.
 """
 from __future__ import annotations
 
@@ -171,5 +173,5 @@ async def search_ams(
             "jobs": [],
             "total_count": 0,
             "page": page,
-            "error": "jobs.ams.at ist vorübergehend nicht erreichbar. Bitte versuche es später erneut.",
+            "error": "jobs.ams.at ist gerade nicht erreichbar (der neue AMS-Jobmarkt erfordert ein Login). Bitte nutze eine andere Quelle.",
         }

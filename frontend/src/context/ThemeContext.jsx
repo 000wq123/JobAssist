@@ -20,9 +20,17 @@ function getStoredTheme() {
   return "system";
 }
 
+let themeAnimTimer = null;
+
 function applyTheme(pref) {
   const resolved = resolveTheme(pref);
-  document.documentElement.setAttribute("data-theme", resolved);
+  const root = document.documentElement;
+  root.setAttribute("data-theme", resolved);
+  // Briefly enable the theme cross-fade so every widget re-colors in sync
+  // (otherwise some surfaces snap while others lag behind the switch).
+  root.classList.add("theme-anim");
+  if (themeAnimTimer) clearTimeout(themeAnimTimer);
+  themeAnimTimer = setTimeout(() => root.classList.remove("theme-anim"), 240);
   // Update meta theme-color
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {

@@ -59,6 +59,21 @@ export class ApiError extends Error {
 let isRefreshing = false;
 let refreshQueue = [];
 
+// In-flight GET dedupe: identical GETs (same method+URL) issued concurrently
+// share ONE network request. This is what makes React StrictMode's dev
+// double-effects harmless (the second mount rides the first request instead of
+// firing a duplicate), and it protects against accidental double-fires in
+// production (e.g. two components mounting the same resource at once).
+// Mutations are never deduped — two identical POSTs are legitimately distinct.
+/** @type {Map<string, Promise<any>>} */
+const inflightGets = new Map();
+
+function getRequestKey(method, fullUrl, body) {
+  if (method !== "GET") return null;
+  const bodyKey = body == null ? "" : JSON.stringify(body);
+  return `${method}:${fullUrl}:${bodyKey}`;
+}
+
 function processQueue(error, token = null) {
   refreshQueue.forEach((cb) => (error ? cb.reject(error) : cb.resolve(token)));
   refreshQueue = [];
@@ -74,6 +89,7 @@ function broadcastUnauthenticated() {
     /* ignore */
   }
   clearSwrCache();
+  inflightGets.clear();
   // Custom event so the navigation handler stays in React-Router land.
   window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
 }
@@ -153,6 +169,29 @@ async function rawRequest(method, url, body, config = {}) {
 }
 
 async function request(method, url, body, config = {}) {
+  // GET dedupe — see `inflightGets`. The raw URL is resolved up front so the
+  // key is stable across callers of the same endpoint.
+  let fullUrlForDedupe = null;
+  if (method === "GET") {
+    fullUrlForDedupe = url.startsWith("http") ? url : `${defaultBaseURL}${url}`;
+    if (config.params) {
+      const qs = new URLSearchParams(config.params).toString();
+      if (qs) fullUrlForDedupe += (fullUrlForDedupe.includes("?") ? "&" : "?") + qs;
+    }
+    const key = getRequestKey(method, fullUrlForDedupe, body);
+    if (key && inflightGets.has(key)) {
+      return inflightGets.get(key);
+    }
+    if (key) {
+      const promise = doRequest(method, url, body, config).finally(() => inflightGets.delete(key));
+      inflightGets.set(key, promise);
+      return promise;
+    }
+  }
+  return doRequest(method, url, body, config);
+}
+
+async function doRequest(method, url, body, config = {}) {
   try {
     return await rawRequest(method, url, body, config);
   } catch (err) {
@@ -179,7 +218,19 @@ async function request(method, url, body, config = {}) {
         if (!access_token) throw new Error("Refresh response missing access_token");
         useAuthStore.getState().setAccessToken(access_token);
         processQueue(null, access_token);
-        return rawRequest(method, url, body, { ...config, _retried: true });
+        try {
+          return await rawRequest(method, url, body, { ...config, _retried: true });
+        } catch (retryErr) {
+          // Refresh succeeded but the retried request still 401s — the user row
+          // no longer exists in the DB (e.g. after a DB swap/restore). The token
+          // is validly signed but get_current_user rejects it, so the app would
+          // otherwise loop on 401 forever while looking logged-in. Log out.
+          if (retryErr?.response?.status === 401) {
+            processQueue(retryErr, null);
+            broadcastUnauthenticated();
+          }
+          throw retryErr;
+        }
       } catch (refreshErr) {
         processQueue(refreshErr, null);
         broadcastUnauthenticated();
@@ -189,10 +240,8 @@ async function request(method, url, body, config = {}) {
       }
     }
 
-    // Usage / cap / rate-limit signals are kept for future re-enablement of billing.
-    if (status === 403 && err?.response?.data?.detail?.error === "usage_limit") {
-      window.dispatchEvent(new CustomEvent("usage-limit", { detail: err.response.data.detail }));
-    }
+    // Rate-limit signals (slowapi 429). JobAssist is free — there is no
+    // usage-limit/upgrade signal anymore; only genuine rate limiting remains.
     if (status === 403 && err?.response?.data?.detail?.error === "job_cap_reached") {
       const detail = err.response.data.detail;
       window.dispatchEvent(new CustomEvent("rate-limited", { detail: { message: detail.message } }));

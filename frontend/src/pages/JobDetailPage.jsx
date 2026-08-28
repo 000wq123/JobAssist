@@ -105,7 +105,12 @@ export default function JobDetailPage() {
   const { init } = useBootstrap();
 
   const { data: baselines } = useFetch(() => jobApi.getResponseBaselines().then((r) => r.data));
-  const { data: jobsListRaw } = useFetch(() => jobApi.list().then((r) => r.data?.items ?? r.data ?? []));
+  // Share the list cache with Stellen/Dashboard — no duplicate full-list fetch
+  // when navigating job-detail → list and back within the freshness window.
+  const { data: jobsListRaw } = useFetch(
+    () => jobApi.list().then((r) => r.data?.items ?? r.data ?? []),
+    { cacheKey: "jobs:list", maxAge: 30_000 }
+  );
 
   // The job itself — refetch + reset whenever the route id changes.
   const [job, setJob] = useState(null);

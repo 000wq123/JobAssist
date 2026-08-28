@@ -3,7 +3,7 @@
  *
  * These are the ONLY things persisted on the client:
  *   - cookie consent (a legal preference)
- *   - CV builder draft, saved CV library, and the daily PDF counter (user content)
+ *   - CV builder draft and saved CV library (user content)
  *
  * API data (jobs, resumes, alerts, profile, init, usage) is NEVER cached —
  * every page fetches its rows fresh on mount. There is no data-caching layer.
@@ -16,7 +16,6 @@ export const STORAGE_KEYS = Object.freeze({
   // Lets the merge on boot distinguish "created offline" (keep) from
   // "deleted on another device" (drop) without resurrecting removals.
   CV_LIBRARY_SYNCED: "cv_library_synced_ids_v1",
-  CV_GEN_COUNT: "ja:cv_gen",
 });
 
 /** Safely read JSON. Returns `fallback` on missing/invalid data. */

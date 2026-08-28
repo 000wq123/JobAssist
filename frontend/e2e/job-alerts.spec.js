@@ -53,6 +53,12 @@ test("job alerts can be created and deleted in the UI", async ({ page }) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access_token: "x", refresh_token: "x" }) });
   });
 
+  // The boot pulls the CV-library mirror; without this mock it hits the real
+  // backend, 401s with the seeded token and logs the session out.
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
+  });
+
   // Init
   await page.route("**/api/init", async (route) => {
     await route.fulfill({

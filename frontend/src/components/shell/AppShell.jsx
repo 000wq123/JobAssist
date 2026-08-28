@@ -131,9 +131,28 @@ function MobileDrawer({ open, onClose, me }) {
   );
 }
 
+/**
+ * VerificationBanner — dashboard system notice for unverified e-mail.
+ *
+ * Polished amber notice: icon block, title + subtitle, resend action and an
+ * optional dismiss (session-scoped, so it stays gone until the tab closes).
+ *
+ * @param {object} props
+ * @param {object|null} [props.me] - Authenticated user from bootstrap/store.
+ * @returns {React.ReactNode|null} Null when the user is verified or absent.
+ */
 function VerificationBanner({ me }) {
   const [sending, setSending] = useState(false);
-  if (!me || me.is_verified !== false) return null;
+  // Dismiss only hides the notice for this browser session — verification is
+  // still pending, so a fresh visit brings the banner back.
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem("ja:verify_banner_dismissed_v1") === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (!me || me.is_verified !== false || dismissed) return null;
 
   const handleResend = async () => {
     setSending(true);
@@ -147,25 +166,53 @@ function VerificationBanner({ me }) {
     }
   };
 
+  const handleDismiss = () => {
+    try {
+      sessionStorage.setItem("ja:verify_banner_dismissed_v1", "1");
+    } catch { /* private mode — session-only dismiss still works in-memory */ }
+    setDismissed(true);
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 mb-6"
-      style={{ background: "var(--app-warning-soft)", borderColor: "rgba(183,150,73,0.25)" }}>
-      <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg"
-        style={{ background: "rgba(183,150,73,0.15)" }}>
-        <Mail className="h-4 w-4" style={{ color: "var(--app-warning, #B79649)" }} />
+    <div
+      role="status"
+      className="animate-slide-up flex flex-wrap items-center gap-3.5 rounded-xl border px-4 py-3.5 mb-8"
+      style={{
+        background: "var(--app-notice-surface)",
+        borderColor: "var(--app-notice-border)",
+        boxShadow: "var(--app-shadow-card)",
+      }}
+    >
+      <div
+        className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-lg"
+        style={{ background: "var(--app-notice-icon)" }}
+      >
+        <Mail className="h-[18px] w-[18px]" style={{ color: "var(--app-warning)" }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold leading-tight" style={{ color: "var(--app-text, #171717)" }}>E-Mail bestätigen</p>
-        <p className="mt-0.5 text-[12px]" style={{ color: "var(--app-text-secondary, #626262)" }}>KI-Funktionen werden nach Bestätigung freigeschaltet.</p>
+        <p className="text-[13.5px] font-semibold leading-tight" style={{ color: "var(--app-text)" }}>
+          E-Mail bestätigen
+        </p>
+        <p className="mt-0.5 text-[12.5px]" style={{ color: "var(--app-text-secondary)" }}>
+          KI-Funktionen werden nach Bestätigung freigeschaltet.
+        </p>
       </div>
       <button
         type="button"
         onClick={handleResend}
         disabled={sending}
-        className="h-8 px-3 rounded-md text-[12px] font-semibold transition-colors disabled:opacity-50 flex-shrink-0"
-        style={{ background: "var(--app-surface, #FFF)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text, #171717)" }}
+        className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0 cursor-pointer"
       >
         {sending ? "Senden…" : "Erneut senden"}
+      </button>
+      <button
+        type="button"
+        onClick={handleDismiss}
+        aria-label="Hinweis schließen"
+        className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-md border-none cursor-pointer transition-colors duration-150 hover:bg-[var(--app-surface-hover)]"
+        style={{ background: "transparent", color: "var(--app-text-muted)" }}
+      >
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
@@ -190,22 +237,6 @@ export default function AppShell() {
   const setUser = useAuthStore((s) => s.setUser);
   const storedUser = useAuthStore((s) => s.user);
   const { init } = useBootstrap();
-
-  // Route chunk prefetch — load all major routes silently so navigation is instant.
-  useEffect(() => {
-    const prefetchRoutes = () => {
-      const routeChunks = [
-        () => import("../../pages/DashboardPage"),
-        () => import("../../pages/JobsLayout"),
-        () => import("../../pages/JobAlertsPage"),
-        () => import("../../pages/SettingsPage"),
-        () => import("../../pages/CVBuilderPage"),
-      ];
-      routeChunks.forEach((loader) => loader().catch(() => {}));
-    };
-    const id = setTimeout(prefetchRoutes, 0);
-    return () => clearTimeout(id);
-  }, []);
 
   // Persist identity from the bootstrap payload so the next hard reload has it.
   useEffect(() => {
@@ -280,7 +311,7 @@ export default function AppShell() {
               : "max-w-[1440px] mx-auto px-5 pt-8 pb-12 sm:px-8 sm:pt-10 sm:pb-10 lg:px-10 lg:pt-12 lg:pb-12",
           )}
         >
-          <VerificationBanner me={me} />
+          {location.pathname.startsWith("/dashboard") && <VerificationBanner me={me} />}
           <Suspense fallback={<div className="px-6 pt-8"><div className="animate-pulse rounded-lg mb-6" style={{height: 32, width: 280, background: "var(--app-border, #E7E7E4)"}} /><div className="grid grid-cols-5 gap-4 mb-8">{Array.from({length:5}).map((_,i)=><div key={i} className="rounded-xl" style={{height:100, background:"var(--app-border, #E7E7E4)",opacity:0.3}} />)}</div></div>}>
             <Outlet />
           </Suspense>
