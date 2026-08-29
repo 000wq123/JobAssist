@@ -90,10 +90,11 @@ test("finden page can search and see results", async ({ page }) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
   });
 
-  let searchCalled = false;
+  let searchUrl = "";
+  let savedPayload = null;
 
   await page.route("**/api/jobs/search/custom**", async (route) => {
-    searchCalled = true;
+    searchUrl = route.request().url();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -106,9 +107,21 @@ test("finden page can search and see results", async ({ page }) => {
             location: "Wien",
             description: "Teste Produktqualität und Nutzerflüsse.",
             full_url: "https://example.com/jobs/qa",
+            source: "Adzuna",
+            job_type: "Praktikum",
           },
         ],
       }),
+    });
+  });
+
+  await page.route("**/api/jobs/", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    savedPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ id: 42, ...savedPayload, status: "bookmarked" }),
     });
   });
 
@@ -119,11 +132,21 @@ test("finden page can search and see results", async ({ page }) => {
   const searchInput = page.getByPlaceholder(/Stichwort/i);
   await expect(searchInput).toBeVisible({ timeout: 10000 });
   await searchInput.fill("QA Engineer");
+  await page.getByLabel("Stadt filtern").fill("Wien");
   
   // Click the Suchen button
   await page.getByRole("button", { name: /^Suchen$/i }).click();
 
   // Wait for results to appear
   await expect(page.getByText("QA Engineer")).toBeVisible({ timeout: 10000 });
-  await expect(searchCalled).toBeTruthy();
+  expect(new URL(searchUrl).searchParams.get("location")).toBe("Wien");
+  await expect(page.getByText("Gefunden auf Adzuna")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Original/i })).toHaveAttribute("href", "https://example.com/jobs/qa");
+  await expect(page.locator("[data-company-logo]")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Bewerbung vorbereiten" }).click();
+  await expect.poll(() => savedPayload?.source).toBe("Adzuna");
+  expect(savedPayload.location).toBe("Wien");
+  expect(savedPayload.source_id).toBe("job-1");
+  await expect(page).toHaveURL(/\/jobs\/42$/);
 });

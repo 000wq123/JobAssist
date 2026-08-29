@@ -354,6 +354,15 @@ export default function JobDetailPage() {
                   </div>
                 </div>
               ) : null}
+              {job.source ? (
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <ExternalLink className="w-4 h-4 mt-0.5 text-[var(--color-fg-dim)] flex-shrink-0" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--color-fg-dim)]">Gefunden auf</p>
+                    <p className="text-[13.5px] text-[var(--color-fg)] truncate">{job.source}</p>
+                  </div>
+                </div>
+              ) : null}
               {job.category ? (
                 <div className="flex items-start gap-2.5 min-w-0">
                   <FileText className="w-4 h-4 mt-0.5 text-[var(--color-fg-dim)] flex-shrink-0" aria-hidden="true" />
@@ -528,7 +537,7 @@ export default function JobDetailPage() {
                   : "border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)]"} ${FOCUS}`}
               >
                 <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                {urlExpired ? "Abgelaufen — Anzeige öffnen" : "Stellenanzeige"}
+                {urlExpired ? "Abgelaufen — Anzeige öffnen" : `Bei ${job.source || "der Jobbörse"} öffnen`}
               </button>
             ) : null}
           </section>

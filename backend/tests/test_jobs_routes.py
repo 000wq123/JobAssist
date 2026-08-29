@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException
+from starlette.responses import JSONResponse, Response
 
 from app.api.routes import jobs as jobs_route
 from app.schemas.job import JobCreate, JobStatusUpdate, JobNotesUpdate, JobResearchUpdate
@@ -138,6 +139,87 @@ async def test_create_job_returns_existing_on_duplicate_url():
     assert body["id"] == 99
     db.add.assert_not_called()
     db.commit.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# list_jobs — ETag revalidation (304 path)
+# ---------------------------------------------------------------------------
+
+def _make_request(if_none_match=None):
+    headers = {}
+    if if_none_match is not None:
+        headers["if-none-match"] = if_none_match
+    return SimpleNamespace(headers=headers)
+
+
+@pytest.mark.asyncio
+async def test_list_jobs_returns_200_with_etag_header():
+    job = _make_job()
+    db = AsyncMock()
+    # Each list_jobs call runs COUNT then SELECT; alternate results forever.
+    db.execute = AsyncMock(
+        side_effect=lambda *a, **k: FakeResult(scalar=1)
+        if db.execute.call_count % 2
+        else FakeResult(scalars=[job])
+    )
+
+    response = await jobs_route.list_jobs(
+        request=_make_request(),
+        page=1,
+        page_size=20,
+        status=None,
+        db=db,
+        current_user=_make_user(),
+    )
+
+    assert isinstance(response, JSONResponse)
+    assert response.status_code == 200
+    etag = response.headers["etag"]
+    assert etag.startswith('W/"')
+    body = json.loads(response.body.decode())
+    assert body["total"] == 1
+    assert body["items"][0]["id"] == 1
+
+
+@pytest.mark.asyncio
+async def test_list_jobs_returns_304_on_matching_etag():
+    """Regression: the 304 branch previously referenced an unimported
+    `Response` symbol and raised NameError whenever a client revalidated
+    with a matching If-None-Match header."""
+    job = _make_job()
+    db = AsyncMock()
+    # Two route calls x (COUNT + SELECT) each — alternate results forever.
+    db.execute = AsyncMock(
+        side_effect=lambda *a, **k: FakeResult(scalar=1)
+        if db.execute.call_count % 2
+        else FakeResult(scalars=[job])
+    )
+
+    # First call: learn the ETag the route computes for this payload.
+    first = await jobs_route.list_jobs(
+        request=_make_request(),
+        page=1,
+        page_size=20,
+        status=None,
+        db=db,
+        current_user=_make_user(),
+    )
+    etag = first.headers["etag"]
+
+    # Second call: same data, client sends the ETag back → must be a 304.
+    second = await jobs_route.list_jobs(
+        request=_make_request(if_none_match=etag),
+        page=1,
+        page_size=20,
+        status=None,
+        db=db,
+        current_user=_make_user(),
+    )
+
+    assert isinstance(second, Response)
+    assert second.status_code == 304
+    assert second.headers["etag"] == etag
+    assert second.body == b""
 
 
 # ---------------------------------------------------------------------------

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Bookmark, Send, MessageCircle, CheckCircle2, Archive,
   Search, Plus, Loader2, AlertCircle, RefreshCw, MapPin,
-  CalendarDays, MoreHorizontal, ChevronDown,
+  CalendarDays, MoreHorizontal, ChevronDown, ExternalLink, FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -13,8 +13,9 @@ import { Skel, useDelayedSkeleton, usePageTitle } from "../hooks/usePageChrome";
 import { useBootstrap } from "../context/BootstrapContext";
 import { jobApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
-import { parseJobSearchResponse } from "../utils/jobSearchResponse";
+import { parseJobSearchResponse, toSavedJobPayload } from "../utils/jobSearchResponse";
 import Popover from "../components/ui/Popover";
+import CompanyLogo from "../components/job-detail/CompanyLogo";
 
 /* ── Tokens ── */
 function T(n) { return `var(--app-${n})`; }
@@ -31,6 +32,11 @@ const JOB_TYPES = [
   { value: "", label: "Alle" }, { value: "Vollzeit", label: "Vollzeit" },
   { value: "Teilzeit", label: "Teilzeit" }, { value: "Praktikum", label: "Praktikum" },
   { value: "Lehre", label: "Lehre" },
+];
+
+const CITY_OPTIONS = [
+  "Wien", "Graz", "Linz", "Salzburg", "Innsbruck", "Klagenfurt",
+  "St. Pölten", "Eisenstadt", "Bregenz",
 ];
 
 /** Search sources exposed in the Stellen-Finder. `alle` = backend default (Adzuna). */
@@ -56,7 +62,6 @@ function PipelineRow({ job, onStatusChange, isLast }) {
   const menuBtnRef = useRef(null);
   const statusKey = normalizeStatus(job.status);
   const bucket = BUCKET_BY_KEY[statusKey] || BUCKETS[0];
-  const StatusIcon = bucket.icon;
   const role = job.role || job.title || "Stelle";
   const company = job.company || "";
   const location = job.location || "";
@@ -79,13 +84,7 @@ function PipelineRow({ job, onStatusChange, isLast }) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/jobs/${job.id}`); }
       }}
     >
-      {/* Semantic icon chip */}
-      <span
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: bucket.soft }}
-      >
-        <StatusIcon className="w-[17px] h-[17px]" style={{ color: bucket.color }} />
-      </span>
+      <CompanyLogo company={company} url={job.url} size="sm" />
 
       {/* Identity */}
       <span className="flex-1 min-w-0">
@@ -175,13 +174,17 @@ function PipelineRowSkeleton({ isLast }) {
 
 /* ── FindenTab ── */
 function FindenTab({ onSaved }) {
+  const navigate = useNavigate();
   const [keywords, setKeywords] = useState("");
   const [jobType, setJobType] = useState("");
+  const [city, setCity] = useState("");
   const [source, setSource] = useState("alle");
   const [submitted, setSubmitted] = useState(null);
   const [searchData, setSearchData] = useState(null);
   const [searchError, setSearchError] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [pendingJobKey, setPendingJobKey] = useState(null);
+  const [savedJobKeys, setSavedJobKeys] = useState(() => new Set());
   const searchIdRef = useRef(0);
 
   const results = useMemo(() => {
@@ -193,12 +196,12 @@ function FindenTab({ onSaved }) {
     setIsFetching(true);
     setSearchError(null);
     try {
-      const call = (fn) => fn(kw, "", 1);
+      const call = (fn) => fn(kw, city, 1);
       const res = await (source === "willhaben" ? call(jobApi.searchWillhaben)
         : source === "karriere" ? call(jobApi.searchKarriere)
         : source === "jooble" ? call(jobApi.searchJooble)
         : source === "ams" ? call(jobApi.searchAms)
-        : jobApi.searchCustom(kw, "", jt, 1));
+        : jobApi.searchCustom(kw, city, jt, 1));
       if (id !== searchIdRef.current) return; // stale — a newer search won
       const parsed = parseJobSearchResponse(res.data);
       setSearchData(res.data);
@@ -215,31 +218,50 @@ function FindenTab({ onSaved }) {
   const handleSearch = (e) => {
     e.preventDefault();
     if (!keywords.trim()) return;
-    setSubmitted({ keywords: keywords.trim(), jobType, source });
+    setSubmitted({ keywords: keywords.trim(), jobType, source, city });
     runSearch(keywords.trim(), jobType);
   };
 
-  const saveMutation = useMutation((job) => jobApi.create({
-    role: job.title || job.role,
-    company: job.company || "",
-    description: job.description || "",
-    url: job.full_url || job.url || "",
-    status: "bookmarked",
-  }));
+  const saveMutation = useMutation((job) => jobApi.create(toSavedJobPayload(job)));
+
+  const jobKey = (job) => `${job.source || "provider"}:${job.source_id || job.full_url || job.url || job.title}`;
+
+  const saveListing = async (job) => {
+    const key = jobKey(job);
+    setPendingJobKey(key);
+    try {
+      const response = await saveMutation.mutate(job);
+      setSavedJobKeys((current) => new Set(current).add(key));
+      onSaved();
+      return response.data;
+    } finally {
+      setPendingJobKey(null);
+    }
+  };
 
   const handleSave = async (job) => {
     try {
-      await saveMutation.mutate(job);
+      await saveListing(job);
       toast.success("Stelle gespeichert");
-      onSaved();
     } catch (err) {
       toast.error(getApiErrorMessage(err, "Speichern fehlgeschlagen"));
     }
   };
 
+  const handleApply = async (job) => {
+    try {
+      const saved = await saveListing(job);
+      if (!saved?.id) throw new Error("Gespeicherte Stelle hat keine ID");
+      toast.success("Stelle gespeichert – jetzt Bewerbung vorbereiten");
+      navigate(`/jobs/${saved.id}`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Bewerbung konnte nicht vorbereitet werden"));
+    }
+  };
+
   return (
     <div>
-      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-4">
+      <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_180px_auto] gap-3 mb-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: T("text-faint") }} />
           <input
@@ -251,6 +273,23 @@ function FindenTab({ onSaved }) {
             style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
           />
         </div>
+        <label className="relative">
+          <span className="sr-only">Stadt filtern</span>
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: T("text-faint") }} />
+          <input
+            type="text"
+            list="job-city-options"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            aria-label="Stadt filtern"
+            placeholder="Alle Städte"
+            className="w-full h-11 pl-9 pr-4 rounded-lg border text-[14px] outline-none transition-colors focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
+            style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
+          />
+          <datalist id="job-city-options">
+            {CITY_OPTIONS.map((option) => <option key={option} value={option} />)}
+          </datalist>
+        </label>
         <button
           type="submit"
           disabled={isFetching || !keywords.trim()}
@@ -326,6 +365,7 @@ function FindenTab({ onSaved }) {
         <div className="flex flex-col">
           <p className="text-[12px] mb-2" style={{ color: T("text-muted") }}>
             Suche nach „{submitted.keywords}“… {submitted.jobType ? `(${JOB_TYPES.find((t) => t.value === submitted.jobType)?.label})` : ""}
+            {submitted.city ? ` · ${submitted.city}` : ""}
             {submitted.source && submitted.source !== "alle" ? ` · ${SEARCH_SOURCES.find((s) => s.value === submitted.source)?.label || ""}` : ""}
           </p>
           <div className="rounded-xl border overflow-hidden" style={{ borderColor: T("border"), background: T("surface") }}>
@@ -345,34 +385,66 @@ function FindenTab({ onSaved }) {
           <div className="rounded-xl border overflow-hidden" style={{ borderColor: T("border"), background: T("surface") }}>
             {results.map((job, i) => {
               const title = job.title || job.role || "Stelle";
-              const company = job.company || "";
+              const company = job.company || "Unbekanntes Unternehmen";
               const type = job.job_type || "";
+              const url = job.full_url || job.url || "";
+              const sourceName = job.source || (submitted.source === "alle"
+                ? "Adzuna"
+                : SEARCH_SOURCES.find((item) => item.value === submitted.source)?.label) || "Jobbörse";
+              const enrichedJob = { ...job, source: sourceName };
+              const key = jobKey(enrichedJob);
+              const isPending = pendingJobKey === key;
+              const isSaved = savedJobKeys.has(key);
               return (
                 <div
                   key={job.source_id || i}
-                  className="flex items-center gap-4 py-3.5 px-4 cursor-pointer transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                  className="grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3.5 py-4 px-4 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   style={{ borderBottom: `1px solid ${T("border-subtle")}` }}
-                  onClick={() => { if (job.full_url || job.url) window.open(job.full_url || job.url, "_blank", "noopener,noreferrer"); }}
                 >
-                  <div className="w-9 h-9 rounded-md flex items-center justify-center text-[12px] font-bold flex-shrink-0"
-                    style={{ color: T("text-muted"), background: T("surface-hover") }}>
-                    {company.slice(0, 2).toUpperCase() || "S"}
-                  </div>
+                  <CompanyLogo company={company} url={url} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium truncate" style={{ color: T("text") }}>{title}</p>
-                    <p className="text-[11.5px] truncate mt-0.5" style={{ color: T("text-muted") }}>
-                      {company}{type ? ` · ${type}` : ""}{job.location ? ` · ${job.location}` : ""}
-                    </p>
+                    <div className="flex items-center gap-x-2 gap-y-1 flex-wrap mt-1 text-[11.5px]" style={{ color: T("text-muted") }}>
+                      <span className="font-medium truncate max-w-[220px]">{company}</span>
+                      {type ? <span>{type}</span> : null}
+                      {job.location ? <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span> : null}
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium" style={{ background: T("surface-hover"), color: T("text-secondary") }}>
+                        Gefunden auf {sourceName}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleSave(job); }}
-                    className="text-[11.5px] font-medium px-3 py-1.5 rounded-md border transition-colors flex-shrink-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                    style={{ borderColor: T("border"), color: T("text-secondary") }}
-                  >
-                    <Plus className="w-3 h-3 inline mr-1" />
-                    Merken
-                  </button>
+                  <div className="col-span-2 sm:col-span-1 flex items-center justify-end gap-2 flex-wrap">
+                    {url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[11.5px] font-medium border transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                        style={{ borderColor: T("border"), color: T("text-secondary") }}
+                      >
+                        Original <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => handleSave(enrichedJob)}
+                      disabled={isPending || isSaved}
+                      className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[11.5px] font-medium border transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04] disabled:opacity-60"
+                      style={{ borderColor: T("border"), color: T("text-secondary") }}
+                    >
+                      {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                      {isSaved ? "Gemerkt" : "Merken"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApply(enrichedJob)}
+                      disabled={isPending}
+                      className="btn btn-primary h-8 px-3 rounded-md text-[11.5px] font-semibold gap-1.5 disabled:opacity-60"
+                    >
+                      {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                      Bewerbung vorbereiten
+                    </button>
+                  </div>
                 </div>
               );
             })}

@@ -18,3 +18,20 @@ export function parseJobSearchResponse(payload) {
         : null,
   };
 }
+
+/** Preserve provider metadata when a search result becomes a saved job. */
+export function toSavedJobPayload(job) {
+  return {
+    role: job?.title || job?.role || "Stelle",
+    company: job?.company || "",
+    description: job?.description || "",
+    url: job?.full_url || job?.url || "",
+    salary_text: job?.salary_text || job?.salary || null,
+    location: job?.location || null,
+    job_type: job?.job_type || job?.jobType || null,
+    source: job?.source || null,
+    source_id: job?.source_id || null,
+    posted_at: job?.posted_at || job?.updated || null,
+    expires_at: job?.expires_at || null,
+  };
+}
