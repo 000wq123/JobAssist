@@ -98,7 +98,7 @@ test("finden page can search and see results", async ({ page }) => {
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        items: [
+        jobs: [
           {
             source_id: "job-1",
             title: "QA Engineer",

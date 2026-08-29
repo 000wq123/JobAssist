@@ -13,6 +13,7 @@ import { Skel, useDelayedSkeleton, usePageTitle } from "../hooks/usePageChrome";
 import { useBootstrap } from "../context/BootstrapContext";
 import { jobApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
+import { parseJobSearchResponse } from "../utils/jobSearchResponse";
 import Popover from "../components/ui/Popover";
 
 /* ── Tokens ── */
@@ -184,8 +185,7 @@ function FindenTab({ onSaved }) {
   const searchIdRef = useRef(0);
 
   const results = useMemo(() => {
-    const d = searchData?.items ?? searchData?.results ?? searchData ?? [];
-    return Array.isArray(d) ? d : [];
+    return parseJobSearchResponse(searchData).jobs;
   }, [searchData]);
 
   const runSearch = async (kw, jt) => {
@@ -200,12 +200,14 @@ function FindenTab({ onSaved }) {
         : source === "ams" ? call(jobApi.searchAms)
         : jobApi.searchCustom(kw, "", jt, 1));
       if (id !== searchIdRef.current) return; // stale — a newer search won
+      const parsed = parseJobSearchResponse(res.data);
       setSearchData(res.data);
+      setSearchError(parsed.error);
       setIsFetching(false);
-    } catch {
+    } catch (err) {
       if (id !== searchIdRef.current) return;
       setSearchData(null);
-      setSearchError("Die Suche ist fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut.");
+      setSearchError(getApiErrorMessage(err, "Die Suche ist fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut."));
       setIsFetching(false);
     }
   };
