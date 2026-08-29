@@ -1,5 +1,5 @@
 export { parseSalary, normaliseNumber, daysUntil, kvMinimumFor, categoryLabel, logoAbbrev, logoColor } from "./domain";
-export { ANNOT, Spinner, ToolBtn, KpiTile, DescriptionBody, truncateAtSentence } from "./ui";
+export { ANNOT, Spinner, DescriptionBody, FactItem, Divider, SectionLabel, FitSection, truncateAtSentence } from "./ui";
 export { default as CompanyLogo } from "./CompanyLogo";
 export { default as KvBar } from "./KvBar";
 export { default as SimilarJobsCard } from "./SimilarJobsCard";
