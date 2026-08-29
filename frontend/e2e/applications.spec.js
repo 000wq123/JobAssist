@@ -38,9 +38,12 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
 });
 
-test("job detail can update status and save notes", async ({ page }) => {
+test("job detail can update status, deadline, link, and notes", async ({ page }) => {
   let currentStatus = "bookmarked";
   let savedNotes = "";
+  let savedDeadline = "2026-09-01T00:00:00Z";
+  let savedUrl = "https://example.com/jobs/qa";
+  let notesAttempts = 0;
 
   // Mock auth refresh so the interceptor doesn't fire unauthenticated
   await page.route("**/api/auth/refresh", async (route) => {
@@ -97,8 +100,8 @@ test("job detail can update status and save notes", async ({ page }) => {
         description: "Teste Produktqualität und Nutzerflüsse.",
         status: currentStatus,
         notes: savedNotes,
-        deadline: null,
-        url: "https://example.com/jobs/qa",
+        deadline: savedDeadline,
+        url: savedUrl,
         match_score: null,
         match_feedback: null,
         cover_letter: null,
@@ -120,13 +123,22 @@ test("job detail can update status and save notes", async ({ page }) => {
         description: "Teste Produktqualität und Nutzerflüsse.",
         status: currentStatus,
         notes: savedNotes,
-        deadline: null,
-        url: "https://example.com/jobs/qa",
+        deadline: savedDeadline,
+        url: savedUrl,
       }),
     });
   });
 
   await page.route(/\/api\/jobs\/55\/notes\/?$/, async (route) => {
+    notesAttempts += 1;
+    if (notesAttempts === 1) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Temporärer Speicherfehler" }),
+      });
+      return;
+    }
     savedNotes = route.request().postDataJSON().notes;
     await route.fulfill({
       status: 200,
@@ -138,9 +150,27 @@ test("job detail can update status and save notes", async ({ page }) => {
         description: "Teste Produktqualität und Nutzerflüsse.",
         status: currentStatus,
         notes: savedNotes,
-        deadline: null,
-        url: "https://example.com/jobs/qa",
+        deadline: savedDeadline,
+        url: savedUrl,
       }),
+    });
+  });
+
+  await page.route(/\/api\/jobs\/55\/deadline\/?$/, async (route) => {
+    savedDeadline = route.request().postDataJSON().deadline;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ id: 55, deadline: savedDeadline }),
+    });
+  });
+
+  await page.route(/\/api\/jobs\/55\/url\/?$/, async (route) => {
+    savedUrl = route.request().postDataJSON().url;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ id: 55, url: savedUrl }),
     });
   });
 
@@ -149,12 +179,27 @@ test("job detail can update status and save notes", async ({ page }) => {
 
   // Change status to "Beworben" via the desktop status dropdown.
   await page.getByRole("button", { name: /status ändern/i }).click();
-  await page.getByRole("button", { name: /beworben/i }).first().click({ force: true });
+  await page.getByRole("menuitem", { name: /beworben/i }).click();
+  await expect.poll(() => currentStatus).toBe("applied");
 
-  // Open the Bearbeiten sheet and save notes.
-  await page.getByRole("button", { name: /notizen/i }).first().click({ force: true });
-  await page.getByPlaceholder(/eigene notizen/i).fill("Sehr interessante QA-Rolle");
+  // Open the combined editor and verify ISO deadlines are date-input safe.
+  await page.getByRole("button", { name: "Mehr Aktionen" }).click();
+  await page.getByRole("menuitem", { name: "Bearbeiten" }).click();
+  await expect(page.getByLabel("Frist")).toHaveValue("2026-09-01");
+  await page.getByLabel("Frist").fill("2026-09-15");
+  await page.getByLabel("Original-Link").fill("https://example.com/jobs/qa-updated");
+  await page.getByLabel("Notizen").fill("Sehr interessante QA-Rolle");
+  await page.getByRole("button", { name: /^Speichern$/i, exact: true }).click();
+
+  // A failed request must keep the editor and the user's input intact.
+  await expect.poll(() => notesAttempts).toBe(1);
+  await expect(page.getByRole("dialog", { name: "Bearbeiten" })).toBeVisible();
+  await expect(page.getByLabel("Notizen")).toHaveValue("Sehr interessante QA-Rolle");
   await page.getByRole("button", { name: /^Speichern$/i, exact: true }).click();
 
   await expect.poll(() => savedNotes).toBe("Sehr interessante QA-Rolle");
+  await expect.poll(() => savedDeadline).toBe("2026-09-15");
+  await expect.poll(() => savedUrl).toBe("https://example.com/jobs/qa-updated");
+  await expect(page.getByRole("dialog", { name: "Bearbeiten" })).not.toBeVisible();
+  await expect(page.getByText("Sehr interessante QA-Rolle")).toBeVisible();
 });

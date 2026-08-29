@@ -59,6 +59,27 @@ export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey,
 
   const reload = useCallback(() => setTick((t) => t + 1), []);
 
+  // A keyed resource may remain mounted in a master/detail layout while a
+  // sibling route mutates it. Subscribe so invalidation refreshes both cache
+  // and already-mounted consumers.
+  useEffect(() => {
+    if (!cacheKey) return undefined;
+    const refresh = () => {
+      setDataState(undefined);
+      setTick((t) => t + 1);
+    };
+    let subscribers = swrSubscribers.get(cacheKey);
+    if (!subscribers) {
+      subscribers = new Set();
+      swrSubscribers.set(cacheKey, subscribers);
+    }
+    subscribers.add(refresh);
+    return () => {
+      subscribers.delete(refresh);
+      if (subscribers.size === 0) swrSubscribers.delete(cacheKey);
+    };
+  }, [cacheKey]);
+
   useEffect(() => {
     if (!enabled) return;
     // Fresh cache on an initial mount: render it as-is, no background refetch.
@@ -141,5 +162,20 @@ export function clearSwrCache() {
   try { sessionStorage.removeItem(CACHE_STORAGE_KEY); } catch { /* ignore */ }
 }
 
+/**
+ * Drop one cached resource after a mutation changes or removes it. This keeps
+ * a quick return to a list page from rendering data that no longer exists.
+ */
+export function invalidateSwrCache(cacheKey) {
+  if (!cacheKey) return;
+  swrCache.delete(cacheKey);
+  swrInflight.delete(cacheKey);
+  persistSwrCache();
+  swrSubscribers.get(cacheKey)?.forEach((refresh) => refresh());
+}
+
 /** @type {Map<string, Promise<any>>} */
 const swrInflight = new Map();
+
+/** @type {Map<string, Set<() => void>>} */
+const swrSubscribers = new Map();

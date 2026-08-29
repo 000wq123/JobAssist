@@ -3,6 +3,7 @@
 DB is mocked — no real database required.
 """
 import json
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -11,7 +12,14 @@ from fastapi import HTTPException
 from starlette.responses import JSONResponse, Response
 
 from app.api.routes import jobs as jobs_route
-from app.schemas.job import JobCreate, JobStatusUpdate, JobNotesUpdate, JobResearchUpdate
+from app.schemas.job import (
+    JobCreate,
+    JobDeadlineUpdate,
+    JobNotesUpdate,
+    JobResearchUpdate,
+    JobStatusUpdate,
+    JobUrlUpdate,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +73,6 @@ async def test_create_job_saves_new_job():
     # No existing job for URL dedup check
     db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=None))
 
-    job = _make_job()
     db.refresh = AsyncMock(side_effect=lambda obj: None)
 
     # Capture the Job instance added to session
@@ -97,7 +104,7 @@ async def test_create_job_saves_new_job():
 
     db.refresh = AsyncMock(side_effect=fake_refresh)
 
-    result = await jobs_route.create_job(
+    await jobs_route.create_job(
         request=SimpleNamespace(),
         payload=payload,
         db=db,
@@ -233,7 +240,7 @@ async def test_update_status_to_applied():
     db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=job))
     db.refresh = AsyncMock(side_effect=lambda obj: None)
 
-    result = await jobs_route.update_job_status(
+    await jobs_route.update_job_status(
         request=SimpleNamespace(),
         job_id=1,
         payload=JobStatusUpdate(status="applied"),
@@ -291,6 +298,49 @@ async def test_update_notes_saves_text():
     )
 
     assert job.notes == "Call HR on Monday"
+    db.commit.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# update_job_deadline / update_job_url
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_update_deadline_saves_timestamp():
+    job = _make_job(deadline=None)
+    db = AsyncMock()
+    db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=job))
+    db.refresh = AsyncMock(side_effect=lambda obj: None)
+    deadline = datetime(2026, 9, 15, tzinfo=timezone.utc)
+
+    await jobs_route.update_job_deadline(
+        request=SimpleNamespace(),
+        job_id=1,
+        payload=JobDeadlineUpdate(deadline=deadline),
+        db=db,
+        current_user=_make_user(),
+    )
+
+    assert job.deadline == deadline
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_update_url_saves_original_link():
+    job = _make_job(url="https://example.com/old")
+    db = AsyncMock()
+    db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=job))
+    db.refresh = AsyncMock(side_effect=lambda obj: None)
+
+    await jobs_route.update_job_url(
+        request=SimpleNamespace(),
+        job_id=1,
+        payload=JobUrlUpdate(url="https://example.com/new"),
+        db=db,
+        current_user=_make_user(),
+    )
+
+    assert job.url == "https://example.com/new"
     db.commit.assert_awaited_once()
 
 

@@ -510,13 +510,17 @@ async def get_job(
     if job.description:
         regex_out = extract_metadata(job.description, role=job.role)
         if not job.salary_text and regex_out["salary_text"]:
-            job.salary_text = regex_out["salary_text"]; dirty = True
+            job.salary_text = regex_out["salary_text"]
+            dirty = True
         if not job.location and regex_out["location"]:
-            job.location = regex_out["location"]; dirty = True
+            job.location = regex_out["location"]
+            dirty = True
         if not job.expires_at and regex_out["expires_at"]:
-            job.expires_at = regex_out["expires_at"]; dirty = True
+            job.expires_at = regex_out["expires_at"]
+            dirty = True
         if category_unset and regex_out.get("category"):
-            job.category = regex_out["category"]; dirty = True
+            job.category = regex_out["category"]
+            dirty = True
 
     if dirty:
         await db.commit()

@@ -53,6 +53,11 @@ function normalizeStatus(status) {
   return status === "rejected" ? "archived" : status || "bookmarked";
 }
 
+/** Translate the presentation-only bucket key back to the API enum. */
+function toApiStatus(status) {
+  return status === "archived" ? "rejected" : status;
+}
+
 const BUCKET_BY_KEY = Object.fromEntries(BUCKETS.map((b) => [b.key, b]));
 
 /* ── PipelineRow — one compact, useful job row ── */
@@ -524,7 +529,7 @@ export default function StellenPage() {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await statusMutation.mutate({ id, status });
+      await statusMutation.mutate({ id, status: toApiStatus(status) });
       reload();
     } catch {
       toast.error("Status-Änderung fehlgeschlagen");

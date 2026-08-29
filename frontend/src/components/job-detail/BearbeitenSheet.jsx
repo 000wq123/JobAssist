@@ -9,23 +9,38 @@ import { X, ChevronDown, FileText } from "lucide-react";
 import { ANNOT } from "./ui";
 import useFocusTrap from "../../hooks/useFocusTrap";
 
+function toDateInputValue(value) {
+  return value ? String(value).slice(0, 10) : "";
+}
+
 export default function BearbeitenSheet({ open, onClose, job, resumes, selectedResume, onChangeResume, onSaveMeta, savingMeta }) {
-  const [deadline, setDeadline] = useState(job.deadline || "");
+  const [deadline, setDeadline] = useState(toDateInputValue(job.deadline));
   const [notes, setNotes] = useState(job.notes || "");
+  const [url, setUrl] = useState(job.url || "");
   const dialogRef = useRef(null);
   useFocusTrap(open, dialogRef);
 
-  useEffect(() => { if (open) { setDeadline(job.deadline || ""); setNotes(job.notes || ""); } }, [open, job.deadline, job.notes]);
+  useEffect(() => {
+    if (open) {
+      setDeadline(toDateInputValue(job.deadline));
+      setNotes(job.notes || "");
+      setUrl(job.url || "");
+    }
+  }, [open, job.deadline, job.notes, job.url]);
 
   if (!open) return null;
 
-  const dirty = (deadline || "") !== (job.deadline || "") || (notes || "") !== (job.notes || "");
-  const handleSave = () => {
+  const dirty = deadline !== toDateInputValue(job.deadline)
+    || (notes || "") !== (job.notes || "")
+    || (url || "") !== (job.url || "");
+  const handleSave = async () => {
     const payload = {};
-    if ((deadline || "") !== (job.deadline || "")) payload.deadline = deadline || null;
+    if (deadline !== toDateInputValue(job.deadline)) payload.deadline = deadline || null;
     if ((notes    || "") !== (job.notes    || "")) payload.notes    = notes    || null;
-    if (Object.keys(payload).length) onSaveMeta(payload);
-    onClose();
+    if ((url      || "") !== (job.url      || "")) payload.url      = url      || null;
+    if (!Object.keys(payload).length) return;
+    const saved = await onSaveMeta(payload);
+    if (saved !== false) onClose();
   };
 
   return createPortal(
@@ -34,12 +49,12 @@ export default function BearbeitenSheet({ open, onClose, job, resumes, selectedR
       role="dialog"
       aria-modal="true"
       aria-labelledby="bearbeiten-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !savingMeta) onClose(); }}
     >
       <div ref={dialogRef} className="w-full sm:max-w-md grid grid-cols-12 gap-0 rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
         <div className="col-span-12 grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
           <h2 id="bearbeiten-title" className="col-span-10 text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Bearbeiten</h2>
-          <button onClick={onClose} className="col-span-2 justify-self-end grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
+          <button onClick={onClose} disabled={savingMeta} className="col-span-2 justify-self-end grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-50" aria-label="Schließen">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -68,8 +83,9 @@ export default function BearbeitenSheet({ open, onClose, job, resumes, selectedR
 
           {/* Frist */}
           <div>
-            <label className={`block mb-1.5 ${ANNOT}`}>Frist</label>
+            <label htmlFor="job-deadline" className={`block mb-1.5 ${ANNOT}`}>Frist</label>
             <input
+              id="job-deadline"
               type="date"
               value={deadline || ""}
               onChange={(e) => setDeadline(e.target.value)}
@@ -77,10 +93,24 @@ export default function BearbeitenSheet({ open, onClose, job, resumes, selectedR
             />
           </div>
 
+          {/* Original-Link */}
+          <div>
+            <label htmlFor="job-url" className={`block mb-1.5 ${ANNOT}`}>Original-Link</label>
+            <input
+              id="job-url"
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://…"
+              className="grid w-full h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-[13px] text-[var(--color-fg)] focus:outline-none focus:border-[var(--color-accent-500)]/40"
+            />
+          </div>
+
           {/* Notizen */}
           <div>
-            <label className={`block mb-1.5 ${ANNOT}`}>Notizen</label>
+            <label htmlFor="job-notes" className={`block mb-1.5 ${ANNOT}`}>Notizen</label>
             <textarea
+              id="job-notes"
               rows={4}
               value={notes || ""}
               onChange={(e) => setNotes(e.target.value)}
@@ -91,7 +121,7 @@ export default function BearbeitenSheet({ open, onClose, job, resumes, selectedR
         </div>
 
         <div className="col-span-12 grid grid-cols-12 gap-2 px-5 py-3.5 border-t border-[var(--color-border-subtle)]">
-          <button onClick={onClose} className="col-span-6 sm:col-span-8 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)]">
+          <button onClick={onClose} disabled={savingMeta} className="col-span-6 sm:col-span-8 h-10 rounded-lg border border-[var(--color-border-subtle)] text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-50">
             Abbrechen
           </button>
           <button

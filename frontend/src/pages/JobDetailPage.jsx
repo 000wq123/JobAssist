@@ -18,7 +18,7 @@ import {
 import {
   coverLetterApi, jobApi, kvWageApi,
 } from "../services/api";
-import useFetch from "../hooks/useFetch";
+import useFetch, { invalidateSwrCache } from "../hooks/useFetch";
 import useMutation from "../hooks/useMutation";
 import useConfirmDialog from "../components/ui/ConfirmDialog";
 import { useBootstrap } from "../context/BootstrapContext";
@@ -147,6 +147,7 @@ export default function JobDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutate();
+      invalidateSwrCache("jobs:list");
       toast.success("Stelle gelöscht");
       navigate("/jobs");
     } catch (err) {
@@ -155,19 +156,24 @@ export default function JobDetailPage() {
   };
 
   const updateMetaMutation = useMutation(async (data) => {
-    const calls = [];
-    if ("deadline" in data) calls.push(jobApi.updateDeadline(jobId, data.deadline));
-    if ("notes" in data) calls.push(jobApi.updateNotes(jobId, data.notes));
-    const results = await Promise.all(calls);
-    return results[results.length - 1];
+    // Apply partial updates in a deterministic order, then fetch the canonical
+    // record. Returning one of several PATCH responses can otherwise overwrite
+    // a sibling field with stale data.
+    if ("deadline" in data) await jobApi.updateDeadline(jobId, data.deadline);
+    if ("notes" in data) await jobApi.updateNotes(jobId, data.notes);
+    if ("url" in data) await jobApi.updateUrl(jobId, data.url);
+    return jobApi.get(jobId);
   });
   const handleSaveMeta = async (payload) => {
     try {
       const res = await updateMetaMutation.mutate(payload);
       if (res?.data) setJob(res.data);
+      invalidateSwrCache("jobs:list");
       toast.success("Aktualisiert");
+      return true;
     } catch (err) {
       toast.error(err.response?.data?.detail || "Aktualisierung fehlgeschlagen");
+      return false;
     }
   };
 
@@ -176,6 +182,7 @@ export default function JobDetailPage() {
     try {
       const res = await statusMutation.mutate(status);
       if (res?.data) setJob(res.data);
+      invalidateSwrCache("jobs:list");
     } catch (err) {
       toast.error(err.response?.data?.detail || "Status konnte nicht aktualisiert werden");
     }
