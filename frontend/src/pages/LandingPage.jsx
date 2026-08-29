@@ -134,7 +134,7 @@ function DashboardMockup() {
           <div className="mt-auto border-t pt-3 border-[#f0f0ed]">
             <div className="text-[11px] px-2 py-1.5 rounded-sm text-[#5f5f5f]">⚙ Einstellungen</div>
             <div className="flex items-center gap-2 px-2 py-1.5 mt-1 text-[#5f5f5f] text-[11px]">
-              <div className="w-5 h-5 rounded-full bg-[#6152F3] grid place-items-center text-[9px] text-white font-bold">L</div>
+              <div className="w-5 h-5 rounded-full bg-[#E30613] grid place-items-center text-[9px] text-white font-bold">L</div>
               <span>Lisa M.</span>
             </div>
           </div>
@@ -648,7 +648,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Kontakt</h4>
-              <a href="mailto:info@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">info@jobassist.tech</a>
+              <a href="mailto:hallo@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
             </div>
           </div>
         </div>

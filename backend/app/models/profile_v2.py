@@ -57,6 +57,9 @@ class ProfileV2(Base):
 
     # ── Vorlage / Meta ───────────────────────────────────────────────────────
     templateId: Mapped[Optional[str]] = mapped_column("template_id", String(50), nullable=True)
+    accentColor: Mapped[str] = mapped_column("accent_color", String(7), nullable=False, default="#C8102E")
+    fontFamily: Mapped[str] = mapped_column("font_family", String(10), nullable=False, default="sans")
+    showPhoto: Mapped[bool] = mapped_column("show_photo", Boolean, nullable=False, default=True)
     completion_pct: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

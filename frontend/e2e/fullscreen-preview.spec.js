@@ -15,7 +15,7 @@ async function installFixture(page) {
 /** Open the picker and the first template's fullscreen preview. */
 async function openPreview(page) {
   await openPicker(page);
-  await page.locator("article").first().getByRole("button", { name: /Große Vorschau/u }).click();
+  await page.locator("article").first().getByRole("button", { name: "Vorschau", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: /Vollbildvorschau/u });
   await expect(dialog).toBeVisible();
   return dialog;
@@ -38,12 +38,11 @@ test.describe("fullscreen CV preview viewer", () => {
     expect(box.height).toBeLessThan(viewport.height * 0.97);
 
     // Toolbar: document header + all controls with tooltips/aria-labels.
-    await expect(dialog).toContainText("Vollbildvorschau");
+    await expect(dialog).toContainText("Beispielvorschau");
     for (const label of [
       "Verkleinern (Minus)",
       "Vergrößern (Plus)",
       "Breite ausfüllen",
-      "Als PDF herunterladen",
       "Schließen (Esc)",
     ]) {
       await expect(dialog.getByRole("button", { name: label })).toBeVisible();
@@ -78,6 +77,38 @@ test.describe("fullscreen CV preview viewer", () => {
     ).toBe(true);
 
     await dialog.screenshot({ path: "test-results/screenshots/fullscreen-desktop-1920.png" });
+  });
+
+  test("builder fullscreen uses the real profile and downloads that profile", async ({ page }) => {
+    await installFixture(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openPicker(page);
+    await page.locator("article[data-template-id='tabellarisch']").getByRole("button", { name: "Ausgewählt", exact: true }).click();
+    await page.getByLabel("Ausgewählte Vorlage").getByRole("button", { name: "Weiter →" }).click();
+    await page.getByRole("button", { name: "Vollbild öffnen" }).click();
+
+    const dialog = page.getByRole("dialog", { name: /Vollbildvorschau/u });
+    await expect(dialog).toContainText("Anna Muster");
+    await expect(dialog).not.toContainText("Anna Berger");
+
+    const downloadPromise = page.waitForEvent("download");
+    await dialog.getByRole("button", { name: "Als PDF herunterladen" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("Anna_Muster_Lebenslauf.pdf");
+  });
+
+  test("builder design controls update the live document", async ({ page }) => {
+    await installFixture(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openPicker(page);
+    await page.locator("article[data-template-id='kontrast']").getByRole("button", { name: "Auswählen", exact: true }).click();
+    await page.getByLabel("Ausgewählte Vorlage").getByRole("button", { name: "Weiter →" }).click();
+
+    const preview = page.locator("[data-live-preview] .cva4");
+    await page.getByTitle("Blau").click();
+    await expect.poll(() => preview.evaluate((node) => getComputedStyle(node).getPropertyValue("--cv-accent").trim())).toBe("#1C3557");
+    await page.getByRole("button", { name: "Serif", exact: true }).click();
+    await expect.poll(() => preview.evaluate((node) => getComputedStyle(node).fontFamily)).toContain("Georgia");
   });
 
   test("zoom in/out and fill toggle change the rendered page scale", async ({ page }) => {
@@ -130,7 +161,7 @@ test.describe("fullscreen CV preview viewer", () => {
     await dialog.press("Escape");
 
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /Große Vorschau/u }).first()).toBeFocused();
+    await expect(page.getByRole("button", { name: "Vorschau", exact: true }).first()).toBeFocused();
   });
 
   test("mobile: near-fullscreen modal, page fits width, no horizontal scroll", async ({ page }) => {

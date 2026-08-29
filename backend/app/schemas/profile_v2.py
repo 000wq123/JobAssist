@@ -1,9 +1,9 @@
 """Pydantic schemas for ProfileV2 (Austrian CV builder)."""
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CVExperience(BaseModel):
@@ -75,6 +75,9 @@ class ProfileV2Update(BaseModel):
     weiterbildungen: Optional[list] = None
     aktivitaeten: Optional[list] = None
     templateId: Optional[str] = None
+    accentColor: Optional[str] = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    fontFamily: Optional[Literal["sans", "serif"]] = None
+    showPhoto: Optional[bool] = None
 
 
 class ProfileV2Out(BaseModel):
@@ -111,6 +114,9 @@ class ProfileV2Out(BaseModel):
     weiterbildungen: list
     aktivitaeten: list
     templateId: Optional[str]
+    accentColor: str
+    fontFamily: str
+    showPhoto: bool
     completion_pct: int
     created_at: datetime
     updated_at: datetime

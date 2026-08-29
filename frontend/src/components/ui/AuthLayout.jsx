@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-
 /**
  * Auth shell — split-screen desktop, stacked mobile.
  *
@@ -20,7 +19,9 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
 
   // The auth scene (like the landing) is designed light — force light mode
   // while it's mounted so a dark OS theme doesn't render a dark login page,
-  // and restore the user's theme when they leave.
+  // and restore the user's theme when they leave. Also pins the preference
+  // to light so the ThemeProvider's own effects can't flip it back to dark
+  // mid-visit (annotation: "ensure light mode is on during log in").
   useEffect(() => {
     const root = document.documentElement;
     const previous = root.getAttribute("data-theme");

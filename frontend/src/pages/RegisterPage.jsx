@@ -212,7 +212,7 @@ export default function RegisterPage() {
           disabled={isSubmitting}
           className="w-full h-[48px] rounded-[8px] inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-colors duration-[110ms] disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
-            background: isSubmitting ? "var(--ja-auth-cta-hover, #4D40D6)" : "var(--ja-auth-cta, #6152F3)",
+            background: isSubmitting ? "var(--ja-auth-cta-hover, #c9000b)" : "var(--ja-auth-cta, #e30613)",
             color: "var(--ja-auth-cta-text, #fff)",
           }}
         >
@@ -233,7 +233,7 @@ export default function RegisterPage() {
         <Link
           to="/login"
           className="font-semibold hover:underline transition-colors"
-          style={{ color: "var(--ja-auth-link, #6152F3)" }}
+          style={{ color: "var(--ja-auth-link, #e30613)" }}
         >
           Anmelden
         </Link>

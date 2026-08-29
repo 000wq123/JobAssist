@@ -1,4 +1,6 @@
 import Field from "./Field";
+import { ImagePlus, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const EU_EFTA = new Set([
   "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU",
@@ -33,6 +35,25 @@ const COUNTRIES = [
  */
 export default function StepPersonal({ profile, onChange, errors = {} }) {
   const set = (k) => (v) => onChange({ [k]: v });
+  const photo = profile.foto || profile.foto_url || "";
+
+  const handlePhoto = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      toast.error("Bitte JPG, PNG oder WebP verwenden.");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      toast.error("Das Foto darf maximal 1 MB groß sein.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => onChange({ foto: typeof reader.result === "string" ? reader.result : "", showPhoto: true });
+    reader.onerror = () => toast.error("Foto konnte nicht gelesen werden.");
+    reader.readAsDataURL(file);
+  };
 
   const needsArbeitserlaubnis = !EU_EFTA.has(profile.staatsbuergerschaft);
 
@@ -57,6 +78,25 @@ export default function StepPersonal({ profile, onChange, errors = {} }) {
           autoComplete="family-name"
           error={errors.nachname}
         />
+      </div>
+
+      <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border)", background: "var(--color-bg-elev-1)" }}>
+        <div className="flex items-center gap-3">
+          <div className="grid h-16 w-12 shrink-0 place-items-center overflow-hidden rounded-md" style={{ background: "var(--color-bg-elev-3)" }}>
+            {photo ? <img src={photo} alt="Bewerbungsfoto" className="h-full w-full object-cover" /> : <ImagePlus className="h-4 w-4" style={{ color: "var(--color-fg-faint)" }} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="m-0 text-[12px] font-medium" style={{ color: "var(--color-fg-muted)" }}>Bewerbungsfoto (optional)</p>
+            <p className="m-0 mt-0.5 text-[11px] leading-relaxed" style={{ color: "var(--color-fg-faint)" }}>JPG, PNG oder WebP, maximal 1 MB.</p>
+            <div className="mt-2 flex items-center gap-2">
+              <label className="inline-flex h-8 cursor-pointer items-center rounded-md border px-3 text-[11.5px] font-medium" style={{ borderColor: "var(--color-border)", color: "var(--color-fg-muted)" }}>
+                {photo ? "Foto ändern" : "Foto hinzufügen"}
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handlePhoto} />
+              </label>
+              {photo && <button type="button" onClick={() => onChange({ foto: "", foto_url: "" })} className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[11.5px]" style={{ color: "var(--color-error)" }}><Trash2 className="h-3.5 w-3.5" />Entfernen</button>}
+            </div>
+          </div>
+        </div>
       </div>
 
       <Field

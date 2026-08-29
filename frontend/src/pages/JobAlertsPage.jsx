@@ -617,7 +617,7 @@ export default function JobAlertsPage() {
               icon={BarChart3}
               label="Alerts gesamt"
               value={listAlerts.length}
-              color="#8B5CF6"
+              color="#E30613"
             />
           </div>
 

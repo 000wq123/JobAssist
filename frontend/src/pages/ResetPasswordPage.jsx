@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
             to="/forgot-password"
             className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
             style={{
-              background: "var(--ja-auth-cta, #6152F3)",
+              background: "var(--ja-auth-cta, #e30613)",
               color: "var(--ja-auth-cta-text, #fff)",
             }}
           >
@@ -84,7 +84,7 @@ export default function ResetPasswordPage() {
             to="/login"
             className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
             style={{
-              background: "var(--ja-auth-cta, #6152F3)",
+              background: "var(--ja-auth-cta, #e30613)",
               color: "var(--ja-auth-cta-text, #fff)",
             }}
           >
@@ -199,7 +199,7 @@ export default function ResetPasswordPage() {
           disabled={isSubmitting}
           className="w-full h-[48px] rounded-[8px] inline-flex items-center justify-center gap-2 text-[14px] font-semibold transition-colors duration-[110ms] disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
-            background: isSubmitting ? "var(--ja-auth-cta-hover, #4D40D6)" : "var(--ja-auth-cta, #6152F3)",
+            background: isSubmitting ? "var(--ja-auth-cta-hover, #c9000b)" : "var(--ja-auth-cta, #e30613)",
             color: "var(--ja-auth-cta-text, #fff)",
           }}
         >

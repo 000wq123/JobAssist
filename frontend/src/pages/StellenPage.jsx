@@ -21,7 +21,7 @@ function T(n) { return `var(--app-${n})`; }
 const BUCKETS = [
   { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,      color: "var(--status-saved-icon)",     soft: "var(--status-saved-soft)",     chip: "#B45309" },
   { key: "applied",      label: "Beworben",    icon: Send,          color: "var(--status-applied)",        soft: "var(--status-applied-soft)",   chip: "#2563EB" },
-  { key: "interviewing", label: "Im Gespräch", icon: MessageCircle, color: "var(--status-interview)",      soft: "var(--status-interview-soft)", chip: "#7C3AED" },
+  { key: "interviewing", label: "Im Gespräch", icon: MessageCircle, color: "var(--status-interview)",      soft: "var(--status-interview-soft)", chip: "#DB2777" },
   { key: "offered",      label: "Angebot",     icon: CheckCircle2,  color: "var(--status-offered)",        soft: "var(--status-offered-soft)",   chip: "#16A34A" },
   { key: "archived",     label: "Erledigt",    icon: Archive,       color: "var(--status-archived)",       soft: "var(--status-archived-soft)",  chip: "#64748B" },
 ];

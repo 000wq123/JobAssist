@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           <p>
             Verantwortlich für die Datenverarbeitung ist der Betreiber von JobAssist (Davor Radeski, Österreich,
             siehe <Link to="/impressum" className={linkClass}>Impressum</Link>). Bei Fragen zum Datenschutz erreichst
-            du uns unter <strong className="text-[var(--color-fg)]">info@jobassist.tech</strong>.
+            du uns unter <strong className="text-[var(--color-fg)]">hallo@jobassist.tech</strong>.
           </p>
         </section>
 
@@ -215,7 +215,7 @@ export default function PrivacyPage() {
             <li><strong className="text-[var(--color-fg)]">Widerspruch</strong> — Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)</li>
           </ul>
           <p className="mt-2">
-            Zur Ausübung deiner Rechte schreibe an <strong className="text-[var(--color-fg)]">info@jobassist.tech</strong>.
+            Zur Ausübung deiner Rechte schreibe an <strong className="text-[var(--color-fg)]">hallo@jobassist.tech</strong>.
             Wir antworten innerhalb von 30 Tagen.
           </p>
         </section>
@@ -273,7 +273,7 @@ export default function PrivacyPage() {
           </p>
           <p className="mt-3 text-[13px]">
             Du kannst der Verarbeitung widersprechen, indem du uns unter{" "}
-            <strong className="text-[var(--color-fg)]">info@jobassist.tech</strong> kontaktierst. In diesem Fall
+            <strong className="text-[var(--color-fg)]">hallo@jobassist.tech</strong> kontaktierst. In diesem Fall
             kann die Nutzung des Dienstes eingeschränkt sein.
           </p>
         </section>

@@ -84,7 +84,7 @@ export default function SalaryCompareModal({ open, onClose, currentJob, allJobs 
         <div className="p-5 flex flex-col gap-5">
           {/* Current job vs KV */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl px-4 py-3 flex flex-col gap-0.5" style={{ background: "rgba(124,125,240,0.08)", border: "1px solid rgba(124,125,240,0.20)" }}>
+            <div className="rounded-xl px-4 py-3 flex flex-col gap-0.5" style={{ background: "rgba(227,6,19,0.08)", border: "1px solid rgba(227,6,19,0.20)" }}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-accent-300)]">Dieser Job</p>
               {currentHourly !== null ? (
                 <p className="text-[20px] font-semibold text-[var(--color-fg)] tabular-nums">{formatEuro(currentHourly)}<span className="text-[12px] font-normal text-[var(--color-fg-muted)]">/h</span></p>

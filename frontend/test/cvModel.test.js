@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeProfile, DESIGN_PREVIEW, A4 } from "../src/cv/cvModel.js";
+import { normalizeProfile, normalizeAccentColor, normalizeFontFamily, DESIGN_PREVIEW, A4 } from "../src/cv/cvModel.js";
 
 describe("cvModel normalizeProfile", () => {
   it("collapses empty/partial profiles to safe defaults without throwing", () => {
@@ -35,6 +35,20 @@ describe("cvModel normalizeProfile", () => {
     expect(m.austrian.staatsbuergerschaft).toBe("Österreich");
     expect(m.austrian.fuehrerschein).toBe("B");
     expect(m.austrian.arbeitserlaubnis).toBe("ja");
+  });
+
+  it("migrates legacy design values and hides photos consistently", () => {
+    expect(normalizeFontFamily("Arial,Helvetica,sans-serif")).toBe("sans");
+    expect(normalizeFontFamily("'Instrument Serif',Georgia,serif")).toBe("serif");
+    expect(normalizeAccentColor("#1c3557")).toBe("#1C3557");
+    expect(normalizeAccentColor("red; background: black")).toBe("#C8102E");
+    expect(normalizeProfile({ foto: "data:image/png;base64,abc", showPhoto: false }).photo).toBe("");
+    expect(normalizeProfile({ foto_url: "data:image/png;base64,abc", showPhoto: true }).photo).toContain("base64");
+  });
+
+  it("parses the builder's string-based hobbies without crashing PDF normalization", () => {
+    const model = normalizeProfile({ hobbys: "Fußball, Programmieren\nTrainiere zweimal pro Woche." });
+    expect(model.interests).toEqual(["Fußball", "Programmieren"]);
   });
 });
 

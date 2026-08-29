@@ -167,10 +167,10 @@ export default function ContactPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-[var(--color-fg)] leading-tight">Direkter Kontakt</p>
                   <a
-                    href="mailto:info@jobassist.tech"
+                    href="mailto:hallo@jobassist.tech"
                     className="mt-0.5 inline-block text-[12px] text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors"
                   >
-                    info@jobassist.tech
+                    hallo@jobassist.tech
                   </a>
                   <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[var(--color-fg-dim)]">
                     <Clock className="h-3 w-3" />

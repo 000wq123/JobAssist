@@ -9,17 +9,20 @@ import StepErfahrungen from "./StepErfahrungen";
 import StepSkills from "./StepSkills";
 import StepInteressen from "./StepInteressen";
 import { TemplatePreviewPanel } from "../../cv/CVTemplatePicker";
+import { getTemplateMeta } from "../../cv/templateRegistry";
+import { normalizeAccentColor, normalizeFontFamily } from "../../cv/cvModel";
 import clsx from "clsx";
+import toast from "react-hot-toast";
 
 const ACCENTS = [
+  { name: "Rot", value: "#C8102E" },
   { name: "Blau", value: "#1C3557" },
-  { name: "Grau", value: "#9ca3af" },
-  { name: "Dunkel", value: "#1a1a1a" },
+  { name: "Dunkel", value: "#1A1A1A" },
 ];
 
 const FONTS = [
-  { name: "Arial", value: "Arial,Helvetica,sans-serif" },
-  { name: "Serif", value: "'Instrument Serif',Georgia,serif" },
+  { name: "Sans", value: "sans" },
+  { name: "Serif", value: "serif" },
 ];
 
 /** Per-section completion predicates — used by the left progress rail. */
@@ -41,6 +44,7 @@ const SECTIONS = [
     label: "Berufserfahrung",
     icon: Briefcase,
     complete: (p) => Boolean(Array.isArray(p?.erfahrungen) && p.erfahrungen.length > 0),
+    optional: true,
   },
   {
     id: "faehigkeiten",
@@ -73,18 +77,30 @@ const SECTIONS = [
  */
 export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload, pdfBusy, pdfError }) {
   const [design, setDesign] = useState({
-    accent: profile.accentColor || "#1C3557",
-    font: profile.fontFamily || "Arial,Helvetica,sans-serif",
+    accent: normalizeAccentColor(profile.accentColor),
+    font: normalizeFontFamily(profile.fontFamily),
     showPhoto: profile.showPhoto !== false,
   });
   const [activeSection, setActiveSection] = useState("persoenliches");
+  const [exportAttempted, setExportAttempted] = useState(false);
   const sectionRefs = useRef({});
+  const template = getTemplateMeta(profile.templateId);
+  const completedSections = SECTIONS.slice(0, 5).filter((section) => section.complete(profile) || section.optional).length;
+  const requiredNamesPresent = Boolean(profile.vorname?.trim() && profile.nachname?.trim());
 
   const patchDesign = (delta) => {
     const next = { ...design, ...delta };
     setDesign(next);
     onChange({ accentColor: next.accent, fontFamily: next.font, showPhoto: next.showPhoto });
   };
+
+  useEffect(() => {
+    setDesign({
+      accent: normalizeAccentColor(profile.accentColor),
+      font: normalizeFontFamily(profile.fontFamily),
+      showPhoto: profile.showPhoto !== false,
+    });
+  }, [profile.accentColor, profile.fontFamily, profile.showPhoto]);
 
   // Scroll-spy: highlight the section currently in view.
   useEffect(() => {
@@ -104,6 +120,16 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
 
   const scrollTo = (id) => {
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const requestDownload = (templateId) => {
+    setExportAttempted(true);
+    if (!requiredNamesPresent) {
+      toast.error("Bitte zuerst Vor- und Nachname ergänzen.");
+      scrollTo("persoenliches");
+      return false;
+    }
+    return onDownload(templateId);
   };
 
   return (
@@ -127,7 +153,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
           </div>
           <button
             type="button"
-            onClick={onDownload}
+              onClick={() => requestDownload()}
             disabled={pdfBusy}
             className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-[13px] font-semibold bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-50 transition-all"
           >
@@ -172,6 +198,10 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
           {/* ── LEFT: section navigation (desktop) ── */}
           <aside className="hidden lg:block lg:col-span-2">
             <nav className="sticky top-[72px] flex flex-col gap-0.5">
+              <div className="mb-3 rounded-lg border px-3 py-2.5" style={{ borderColor: "var(--color-border)", background: "var(--color-bg-elev-1)" }}>
+                <div className="flex items-center justify-between text-[11px] font-medium" style={{ color: "var(--color-fg-muted)" }}><span>Fortschritt</span><span>{completedSections}/5</span></div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: "var(--color-bg-elev-3)" }}><div className="h-full rounded-full transition-[width]" style={{ width: `${completedSections * 20}%`, background: "var(--app-brand)" }} /></div>
+              </div>
               {SECTIONS.map((s, i) => {
                 const Icon = s.icon;
                 const isActive = activeSection === s.id;
@@ -200,7 +230,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                       {isDone && s.id !== "export" ? <Check className="w-3 h-3" /> : <Icon className="w-3 h-3" />}
                     </span>
                     <span className="flex-1 min-w-0 leading-tight">{s.label}</span>
-                    <span className="text-[9px] text-[var(--color-fg-faint)]">{i + 1}</span>
+                    <span className="text-[9px] text-[var(--color-fg-faint)]">{s.optional && !isDone ? "Optional" : i + 1}</span>
                   </button>
                 );
               })}
@@ -225,9 +255,13 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                       <Check className="w-3 h-3" /> Erledigt
                     </span>
                   )}
+                  {s.optional && !s.complete(profile) && <span className="text-[10px] font-normal" style={{ color: "var(--color-fg-faint)" }}>Optional</span>}
                 </h3>
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-4 sm:p-5">
-                  {s.id === "persoenliches" && <StepPersonal profile={profile} onChange={onChange} />}
+                  {s.id === "persoenliches" && <StepPersonal profile={profile} onChange={onChange} errors={exportAttempted ? {
+                    vorname: profile.vorname?.trim() ? undefined : "Vorname fehlt.",
+                    nachname: profile.nachname?.trim() ? undefined : "Nachname fehlt.",
+                  } : {}} />}
                   {s.id === "ausbildung" && <StepSchule profile={profile} onChange={onChange} />}
                   {s.id === "berufserfahrung" && <StepErfahrungen profile={profile} onChange={onChange} />}
                   {s.id === "faehigkeiten" && <StepSkills profile={profile} onChange={onChange} />}
@@ -246,18 +280,18 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                 <ul className="flex flex-col gap-1.5">
                   {SECTIONS.slice(0, 5).map((s) => (
                     <li key={s.id} className="flex items-center gap-2 text-[13px]" style={{ color: s.complete(profile) ? "var(--color-fg-muted)" : "var(--color-fg)" }}>
-                      {s.complete(profile) ? (
+                      {s.complete(profile) || s.optional ? (
                         <Check className="w-3.5 h-3.5" style={{ color: "var(--color-success)" }} />
                       ) : (
                         <span className="w-3.5 h-3.5 rounded-full border-2 flex-shrink-0" style={{ borderColor: "var(--color-border-strong)" }} />
                       )}
-                      {s.label}
+                      {s.label}{s.optional && !s.complete(profile) ? " (optional)" : ""}
                     </li>
                   ))}
                 </ul>
                 <button
                   type="button"
-                  onClick={onDownload}
+                  onClick={() => requestDownload()}
                   disabled={pdfBusy}
                   className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-lg text-[13.5px] font-semibold bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-50 transition-all self-start"
                 >
@@ -265,6 +299,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                   {pdfBusy ? "Wird erstellt…" : "Als PDF herunterladen"}
                 </button>
                 {pdfError && <p className="text-[13px] text-[var(--color-error)]">{pdfError}</p>}
+                {!requiredNamesPresent && <button type="button" onClick={() => scrollTo("persoenliches")} className="self-start text-left text-[12px] font-medium" style={{ color: "var(--color-error)" }}>Vor- und Nachname fehlen — persönliche Daten ergänzen →</button>}
               </div>
             </section>
           </div>
@@ -273,7 +308,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
           <div className="lg:col-span-5 flex flex-col gap-5">
             <div className="sticky top-[72px] flex flex-col gap-5">
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-4 overflow-hidden">
-                <TemplatePreviewPanel profile={profile} templateId={profile.templateId} />
+                <TemplatePreviewPanel profile={profile} templateId={profile.templateId} onDownload={requestDownload} />
               </div>
 
               {/* Design panel */}
@@ -283,7 +318,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                   Design
                 </h3>
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
+                  {template.style === "Modern" && <div className="flex items-center gap-2">
                     <Type className="w-3.5 h-3.5 text-[var(--color-fg-dim)]" />
                     <span className="text-[12px] text-[var(--color-fg-muted)] w-14">Farbe</span>
                     <div className="flex gap-2">
@@ -298,7 +333,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                         />
                       ))}
                     </div>
-                  </div>
+                  </div>}
                   <div className="flex items-center gap-2">
                     <Layout className="w-3.5 h-3.5 text-[var(--color-fg-dim)]" />
                     <span className="text-[12px] text-[var(--color-fg-muted)] w-14">Schrift</span>
@@ -315,7 +350,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                       ))}
                     </div>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  {template.photo !== "no" ? <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={design.showPhoto}
@@ -323,7 +358,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                       className="w-3.5 h-3.5 rounded border-[var(--color-border)] accent-[var(--color-accent-500)]"
                     />
                     <span className="text-[12px] text-[var(--color-fg-muted)]">Foto anzeigen</span>
-                  </label>
+                  </label> : <p className="m-0 text-[11px] leading-relaxed" style={{ color: "var(--color-fg-faint)" }}>Diese Vorlage ist bewusst ohne Foto gestaltet.</p>}
                 </div>
               </div>
             </div>

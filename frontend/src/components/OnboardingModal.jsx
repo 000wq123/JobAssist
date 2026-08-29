@@ -82,7 +82,7 @@ function OnboardingModalInner({ onDone }) {
           "--color-fg-muted": "#c2c2ca",
           "--color-fg-dim": "#a8a8b3",
           "--color-fg-faint": "#8f8f9a",
-          "--color-accent-400": "#A78BFA",
+          "--color-accent-400": "#FF4545",
         }}
         role="dialog"
         aria-modal="true"
@@ -131,7 +131,7 @@ function OnboardingModalInner({ onDone }) {
             style={{
               background: "var(--color-accent-500)",
               color: "#ffffff",
-              boxShadow: "0 0 0 1px rgba(124,125,240,.4), 0 4px 14px rgba(124,125,240,.18)",
+              boxShadow: "0 0 0 1px rgba(227,6,19,.4), 0 4px 14px rgba(227,6,19,.18)",
             }}
           >
             {isLast ? "Loslegen" : "Weiter"}

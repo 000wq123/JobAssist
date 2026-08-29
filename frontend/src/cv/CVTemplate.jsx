@@ -14,12 +14,10 @@ import { normalizeProfile, A4, TYPE, COLORS } from "./cvModel.js";
 const SANS = "Helvetica";
 const SERIF = "Times-Roman";
 const FONTS = {
+  sans: SANS,
   default: SANS,
   serif: SERIF,
 };
-
-/** JobAssist brand red used as the subtle accent in modern templates. */
-const BRAND = "#C8102E";
 
 /**
  * Section header primitive — one shared typographic treatment per archetype so
@@ -53,7 +51,7 @@ const secStyle = StyleSheet.create({
     fontSize: TYPE.section,
     fontWeight: "bold",
     letterSpacing: 0.6,
-    color: BRAND,
+    color: "#C8102E",
     marginBottom: 8,
   },
   sidebar: {
@@ -65,6 +63,8 @@ const secStyle = StyleSheet.create({
     marginBottom: 6,
   },
 });
+
+const modernSectionStyle = (model) => ({ ...secStyle.modern, color: model.accentColor });
 
 /** Shared sections used by most archetypes. */
 function ContactRow({ model }) {
@@ -144,27 +144,27 @@ function ExecutiveSerif({ model, font }) {
   return cv("Executive Serif", model, font, secStyle.serif, (m) => (
     <>
       <View style={{ marginBottom: 14 }}>
-        <Text style={{ fontFamily: SERIF, fontSize: TYPE.name + 2, color: COLORS.ink }}>{m.fullName}</Text>
-        {m.role && <Text style={{ fontFamily: SERIF, fontSize: TYPE.role, fontStyle: "italic", color: COLORS.muted }}>{m.role}</Text>}
+        <Text style={{ fontFamily: font, fontSize: TYPE.name + 2, color: COLORS.ink }}>{m.fullName}</Text>
+        {m.role && <Text style={{ fontFamily: font, fontSize: TYPE.role, fontStyle: "italic", color: COLORS.muted }}>{m.role}</Text>}
         {m.contact.email || m.contact.phone ? (
-          <Text style={{ fontFamily: SERIF, fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>
+          <Text style={{ fontFamily: font, fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>
             {[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join("   ·   ")}
           </Text>
         ) : null}
       </View>
-      {m.profileText ? <SectionT secStyle={secStyle.serif} title="Profil"><Text style={{ fontFamily: SERIF, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.profileText}</Text></SectionT> : null}
+      {m.profileText ? <SectionT secStyle={{ ...secStyle.serif, fontFamily: font }} title="Profil"><Text style={{ fontFamily: font, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.profileText}</Text></SectionT> : null}
       <SectionT secStyle={secStyle.serif} title="Berufserfahrung">
         {m.jobs.map((j, i) => (
           <View key={i} style={{ marginBottom: 10 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: SERIF, fontSize: TYPE.body + 1, fontWeight: "bold", color: COLORS.ink }}>{j.title}</Text>
-              <Text style={{ fontFamily: SERIF, fontSize: TYPE.small, color: COLORS.dim }}>{[j.from, j.to].filter(Boolean).join(" – ")}</Text>
+              <Text style={{ fontFamily: font, fontSize: TYPE.body + 1, fontWeight: "bold", color: COLORS.ink }}>{j.title}</Text>
+              <Text style={{ fontFamily: font, fontSize: TYPE.small, color: COLORS.dim }}>{[j.from, j.to].filter(Boolean).join(" – ")}</Text>
             </View>
-            {j.org && <Text style={{ fontFamily: SERIF, fontSize: TYPE.body, fontStyle: "italic", color: COLORS.muted }}>{j.org}</Text>}
+            {j.org && <Text style={{ fontFamily: font, fontSize: TYPE.body, fontStyle: "italic", color: COLORS.muted }}>{j.org}</Text>}
             {(j.bullets || []).map((b, bi) => (
               <View key={bi} style={{ flexDirection: "row", marginTop: 2 }}>
-                <Text style={{ fontFamily: SERIF, width: 10, fontSize: TYPE.body, color: COLORS.dim }}>—</Text>
-                <Text style={{ fontFamily: SERIF, flex: 1, fontSize: TYPE.small, color: COLORS.muted, lineHeight: 1.45 }}>{b}</Text>
+                <Text style={{ fontFamily: font, width: 10, fontSize: TYPE.body, color: COLORS.dim }}>—</Text>
+                <Text style={{ fontFamily: font, flex: 1, fontSize: TYPE.small, color: COLORS.muted, lineHeight: 1.45 }}>{b}</Text>
               </View>
             ))}
           </View>
@@ -172,35 +172,35 @@ function ExecutiveSerif({ model, font }) {
       </SectionT>
       <SectionT secStyle={secStyle.serif} title="Ausbildung">
         {m.education.degree || m.education.school ? (
-          <Text style={{ fontFamily: SERIF, fontSize: TYPE.body, color: COLORS.ink }}>
+          <Text style={{ fontFamily: font, fontSize: TYPE.body, color: COLORS.ink }}>
             {[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` — ${m.education.year}` : ""}
           </Text>
-        ) : <Text style={{ fontFamily: SERIF, fontSize: TYPE.small, color: COLORS.muted }}>—</Text>}
+        ) : <Text style={{ fontFamily: font, fontSize: TYPE.small, color: COLORS.muted }}>—</Text>}
       </SectionT>
-      {m.skills.length ? <SectionT secStyle={secStyle.serif} title="Kompetenzen"><Text style={{ fontFamily: SERIF, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.skills.join("   ·   ")}</Text></SectionT> : null}
-      {m.languages.length ? <SectionT secStyle={secStyle.serif} title="Sprachen"><Text style={{ fontFamily: SERIF, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</Text></SectionT> : null}
+      {m.skills.length ? <SectionT secStyle={{ ...secStyle.serif, fontFamily: font }} title="Kompetenzen"><Text style={{ fontFamily: font, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.skills.join("   ·   ")}</Text></SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={{ ...secStyle.serif, fontFamily: font }} title="Sprachen"><Text style={{ fontFamily: font, fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</Text></SectionT> : null}
     </>
   ));
 }
 
 /* ── 3. Modern Professional ─────────────────────────────────────────────── */
 function ModernProfessional({ model, font }) {
-  return cv("Modern Professional", model, font, secStyle.modern, (m) => (
+  return cv("Modern Professional", model, font, modernSectionStyle(model), (m) => (
     <>
-      <View style={{ marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1.6, borderBottomColor: BRAND }}>
+      <View style={{ marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1.6, borderBottomColor: m.accentColor }}>
         <Text style={{ fontFamily: font, fontSize: TYPE.name, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
         {m.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted, marginTop: 2 }}>{m.role}</Text>}
         <Text style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join("  ·  ")}</Text>
       </View>
-      {m.profileText ? <SectionT secStyle={secStyle.modern} title="Über mich"><Text style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.profileText}</Text></SectionT> : null}
-      <SectionT secStyle={secStyle.modern} title="Erfahrung">
+      {m.profileText ? <SectionT secStyle={modernSectionStyle(m)} title="Über mich"><Text style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{m.profileText}</Text></SectionT> : null}
+      <SectionT secStyle={modernSectionStyle(m)} title="Erfahrung">
         <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
       </SectionT>
-      <SectionT secStyle={secStyle.modern} title="Ausbildung">
+      <SectionT secStyle={modernSectionStyle(m)} title="Ausbildung">
         <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[m.education.degree, m.education.school].filter(Boolean).join(" · ")}{m.education.year ? ` · ${m.education.year}` : ""}</Text>
       </SectionT>
-      {m.skills.length ? <SectionT secStyle={secStyle.modern} title="Skills">{m.skills.join("  ·  ")}</SectionT> : null}
-      {m.languages.length ? <SectionT secStyle={secStyle.modern} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join("  ·  ")}</SectionT> : null}
+      {m.skills.length ? <SectionT secStyle={modernSectionStyle(m)} title="Skills">{m.skills.join("  ·  ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={modernSectionStyle(m)} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join("  ·  ")}</SectionT> : null}
     </>
   ));
 }
@@ -245,11 +245,11 @@ function SidebarProfessional({ model, font }) {
         <View style={{ flex: 1, padding: 26 }}>
           <Text style={{ fontSize: TYPE.name, fontWeight: "bold", color: COLORS.ink }}>{model.fullName}</Text>
           {model.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted, marginTop: 2 }}>{model.role}</Text>}
-          {model.profileText ? <SectionT secStyle={secStyle.modern} title="Profil"><Text style={{ fontSize: TYPE.body, color: COLORS.muted }}>{model.profileText}</Text></SectionT> : null}
-          <SectionT secStyle={secStyle.modern} title="Berufserfahrung">
+          {model.profileText ? <SectionT secStyle={modernSectionStyle(model)} title="Profil"><Text style={{ fontSize: TYPE.body, color: COLORS.muted }}>{model.profileText}</Text></SectionT> : null}
+          <SectionT secStyle={modernSectionStyle(model)} title="Berufserfahrung">
             <ExperienceList jobs={model.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
           </SectionT>
-          <SectionT secStyle={secStyle.modern} title="Ausbildung">
+          <SectionT secStyle={modernSectionStyle(model)} title="Ausbildung">
             <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[model.education.degree, model.education.school].filter(Boolean).join(", ")}{model.education.year ? ` (${model.education.year})` : ""}</Text>
           </SectionT>
         </View>
@@ -307,13 +307,13 @@ function PhotoClassic({ model, font }) {
 
 /* ── 7. Compact Experience ──────────────────────────────────────────────── */
 function CompactExperience({ model, font }) {
-  return cv("Compact Experience", model, font, secStyle.modern, (m) => (
+  return cv("Compact Experience", model, font, modernSectionStyle(model), (m) => (
     <>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", borderBottomWidth: 1.4, borderBottomColor: COLORS.ink, paddingBottom: 8, marginBottom: 12 }}>
         <Text style={{ fontFamily: font, fontSize: TYPE.name, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
         <Text style={{ fontSize: TYPE.small, color: COLORS.dim }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join(" · ")}</Text>
       </View>
-      <SectionT secStyle={secStyle.modern} title="Berufserfahrung">
+      <SectionT secStyle={modernSectionStyle(m)} title="Berufserfahrung">
         {m.jobs.map((j, i) => (
           <View key={i} style={{ flexDirection: "row", marginBottom: 7 }}>
             <View style={{ width: 78, borderRightWidth: 0.6, borderRightColor: COLORS.line, paddingRight: 8 }}>
@@ -326,36 +326,36 @@ function CompactExperience({ model, font }) {
           </View>
         ))}
       </SectionT>
-      <SectionT secStyle={secStyle.modern} title="Ausbildung">
+      <SectionT secStyle={modernSectionStyle(m)} title="Ausbildung">
         <Text style={{ fontSize: TYPE.body, color: COLORS.ink }}>{[m.education.degree, m.education.school].filter(Boolean).join(", ")}{m.education.year ? ` · ${m.education.year}` : ""}</Text>
       </SectionT>
-      {m.skills.length ? <SectionT secStyle={secStyle.modern} title="Kenntnisse">{m.skills.join(", ")}</SectionT> : null}
-      {m.languages.length ? <SectionT secStyle={secStyle.modern} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+      {m.skills.length ? <SectionT secStyle={modernSectionStyle(m)} title="Kenntnisse">{m.skills.join(", ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={modernSectionStyle(m)} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
     </>
   ));
 }
 
 /* ── 8. Graduate / Student ──────────────────────────────────────────────── */
 function GraduateStudent({ model, font }) {
-  return cv("Graduate Student", model, font, secStyle.modern, (m) => (
+  return cv("Graduate Student", model, font, modernSectionStyle(model), (m) => (
     <>
       <View style={{ marginBottom: 12 }}>
         <Text style={{ fontFamily: font, fontSize: TYPE.name + 1, fontWeight: "bold", color: COLORS.ink }}>{m.fullName}</Text>
         {m.role && <Text style={{ fontSize: TYPE.role, color: COLORS.muted }}>{m.role}</Text>}
         <Text style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 4 }}>{[m.contact.city, m.contact.email, m.contact.phone].filter(Boolean).join(" · ")}</Text>
       </View>
-      <SectionT secStyle={secStyle.modern} title="Ausbildung">
+      <SectionT secStyle={modernSectionStyle(m)} title="Ausbildung">
         <Text style={{ fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink }}>{m.education.degree || m.education.school || "—"}</Text>
         {(m.education.school && m.education.degree) ? <Text style={{ fontSize: TYPE.small, color: COLORS.muted }}>{m.education.school}</Text> : null}
         {m.education.year ? <Text style={{ fontSize: TYPE.small, color: COLORS.dim }}>Abschluss: {m.education.year}</Text> : null}
       </SectionT>
       {m.jobs.length ? (
-        <SectionT secStyle={secStyle.modern} title="Erfahrung">
+        <SectionT secStyle={modernSectionStyle(m)} title="Erfahrung">
           <ExperienceList jobs={m.jobs} style={{ jobTitle: { fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink } }} />
         </SectionT>
       ) : null}
       {m.projects.length ? (
-        <SectionT secStyle={secStyle.modern} title="Projekte">
+        <SectionT secStyle={modernSectionStyle(m)} title="Projekte">
           {m.projects.map((p, i) => (
             <View key={i} style={{ marginBottom: 6 }}>
               <Text style={{ fontSize: TYPE.body, fontWeight: "bold", color: COLORS.ink }}>{p.titel || p.title || p}</Text>
@@ -364,10 +364,10 @@ function GraduateStudent({ model, font }) {
           ))}
         </SectionT>
       ) : null}
-      {m.skills.length ? <SectionT secStyle={secStyle.modern} title="Kenntnisse">{m.skills.join(" · ")}</SectionT> : null}
-      {m.languages.length ? <SectionT secStyle={secStyle.modern} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
-      {m.interests.length ? <SectionT secStyle={secStyle.modern} title="Interessen">{m.interests.join(" · ")}</SectionT> : null}
-      {m.certifications.length ? <SectionT secStyle={secStyle.modern} title="Zertifikate">{m.certifications.map((c) => c.titel || c.title || c).join(" · ")}</SectionT> : null}
+      {m.skills.length ? <SectionT secStyle={modernSectionStyle(m)} title="Kenntnisse">{m.skills.join(" · ")}</SectionT> : null}
+      {m.languages.length ? <SectionT secStyle={modernSectionStyle(m)} title="Sprachen">{m.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</SectionT> : null}
+      {m.interests.length ? <SectionT secStyle={modernSectionStyle(m)} title="Interessen">{m.interests.join(" · ")}</SectionT> : null}
+      {m.certifications.length ? <SectionT secStyle={modernSectionStyle(m)} title="Zertifikate">{m.certifications.map((c) => c.titel || c.title || c).join(" · ")}</SectionT> : null}
     </>
   ));
 }

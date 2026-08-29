@@ -8,7 +8,7 @@
  * intentionally kept close between the two files; the model is the contract
  * that keeps them from drifting.
  */
-import { TYPE, COLORS, BRAND, FONT, fmtRange } from "./cvModel.js";
+import { TYPE, COLORS, CV_FONTS, FONT, fmtRange } from "./cvModel.js";
 import { A4 } from "./cvModel.js";
 
 /** @returns {object} scaled transform props for an A4 preview body. */
@@ -39,10 +39,10 @@ const secClass = {
   sidebar: { marginBottom: 6, letterSpacing: 0.6 },
 };
 const secFont = {
-  classic: { fontFamily: FONT, fontSize: TYPE.section, fontWeight: 700, textTransform: "uppercase", color: COLORS.ink },
-  serif: { fontFamily: "Georgia, serif", fontSize: TYPE.section + 1, fontWeight: 700, color: COLORS.ink },
-  modern: { fontFamily: FONT, fontSize: TYPE.section, fontWeight: 700, color: BRAND },
-  sidebar: { fontFamily: FONT, fontSize: TYPE.section - 0.5, fontWeight: 700, color: "#fff" },
+  classic: { fontFamily: "var(--cv-font)", fontSize: TYPE.section, fontWeight: 700, textTransform: "uppercase", color: COLORS.ink },
+  serif: { fontFamily: "var(--cv-font)", fontSize: TYPE.section + 1, fontWeight: 700, color: COLORS.ink },
+  modern: { fontFamily: "var(--cv-font)", fontSize: TYPE.section, fontWeight: 700, color: "var(--cv-accent)" },
+  sidebar: { fontFamily: "var(--cv-font)", fontSize: TYPE.section - 0.5, fontWeight: 700, color: "#fff" },
 };
 
 function Section({ variant, title, children }) {
@@ -50,7 +50,7 @@ function Section({ variant, title, children }) {
     <div style={{ marginBottom: 12 }}>
       <div style={{ ...secClass[variant], ...secFont[variant] }}>{title}</div>
       {typeof children === "string" ? (
-        <div style={{ fontFamily: FONT, fontSize: TYPE.body, color: COLORS.muted, lineHeight: 1.45 }}>{children}</div>
+        <div style={{ fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.muted, lineHeight: 1.45 }}>{children}</div>
       ) : children}
     </div>
   );
@@ -80,8 +80,15 @@ function Experience({ jobs, titleStyle = { fontWeight: 700, color: COLORS.ink } 
   ));
 }
 
+function designStyle(model) {
+  return {
+    "--cv-accent": model.accentColor,
+    "--cv-font": CV_FONTS[model.fontFamily] || FONT,
+  };
+}
+
 function AustrianClassic({ model }) {
-  const P = { fontFamily: FONT, fontSize: TYPE.body, color: COLORS.ink, padding: "42 48", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, padding: "42 48", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
       <div style={{ marginBottom: 8 }}>
@@ -103,20 +110,18 @@ function AustrianClassic({ model }) {
   );
 }
 
-const serifFont = "Georgia, 'Times New Roman', serif";
-
 function ExecutiveSerif({ model }) {
-  const P = { fontFamily: serifFont, fontSize: TYPE.body, color: COLORS.ink, padding: "44 50", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, padding: "44 50", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: TYPE.name + 2, fontFamily: serifFont }}>{model.fullName}</div>
-        {model.role && <div style={{ fontSize: TYPE.role, fontStyle: "italic", color: COLORS.muted, fontFamily: serifFont }}>{model.role}</div>}
+        <div style={{ fontSize: TYPE.name + 2 }}>{model.fullName}</div>
+        {model.role && <div style={{ fontSize: TYPE.role, fontStyle: "italic", color: COLORS.muted }}>{model.role}</div>}
         {model.contact.email || model.contact.phone ? (
-          <div style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 6, fontFamily: serifFont }}>{[model.contact.city, model.contact.email, model.contact.phone].filter(Boolean).join("   ·   ")}</div>
+          <div style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>{[model.contact.city, model.contact.email, model.contact.phone].filter(Boolean).join("   ·   ")}</div>
         ) : null}
       </div>
-      {model.profileText ? <Section variant="serif" title="Profil"><div style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted, fontFamily: serifFont }}>{model.profileText}</div></Section> : null}
+      {model.profileText ? <Section variant="serif" title="Profil"><div style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{model.profileText}</div></Section> : null}
       <Section variant="serif" title="Berufserfahrung">
         {model.jobs.map((j, i) => (
           <div key={i} style={{ marginBottom: 10 }}>
@@ -136,20 +141,20 @@ function ExecutiveSerif({ model }) {
       </Section>
       <Section variant="serif" title="Ausbildung">
         {model.education.degree || model.education.school ? (
-          <div style={{ fontFamily: serifFont }}>{[model.education.degree, model.education.school].filter(Boolean).join(", ")}{model.education.year ? ` — ${model.education.year}` : ""}</div>
+          <div>{[model.education.degree, model.education.school].filter(Boolean).join(", ")}{model.education.year ? ` — ${model.education.year}` : ""}</div>
         ) : <div style={{ color: COLORS.muted }}>—</div>}
       </Section>
-      {model.skills.length ? <Section variant="serif" title="Kompetenzen"><div style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted, fontFamily: serifFont }}>{model.skills.join("   ·   ")}</div></Section> : null}
-      {model.languages.length ? <Section variant="serif" title="Sprachen"><div style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted, fontFamily: serifFont }}>{model.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</div></Section> : null}
+      {model.skills.length ? <Section variant="serif" title="Kompetenzen"><div style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{model.skills.join("   ·   ")}</div></Section> : null}
+      {model.languages.length ? <Section variant="serif" title="Sprachen"><div style={{ fontSize: TYPE.body, lineHeight: 1.5, color: COLORS.muted }}>{model.languages.map((l) => l.language + (l.level ? ` (${l.level})` : "")).join(" · ")}</div></Section> : null}
     </div>
   );
 }
 
 function ModernProfessional({ model }) {
-  const P = { fontFamily: FONT, fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
-      <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1.6px solid ${BRAND}` }}>
+      <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: "1.6px solid var(--cv-accent)" }}>
         <div style={{ fontSize: TYPE.name, fontWeight: 700 }}>{model.fullName}</div>
         {model.role && <div style={{ fontSize: TYPE.role, color: COLORS.muted, marginTop: 2 }}>{model.role}</div>}
         <div style={{ fontSize: TYPE.small, color: COLORS.dim, marginTop: 6 }}>{[model.contact.city, model.contact.email, model.contact.phone].filter(Boolean).join("  ·  ")}</div>
@@ -169,7 +174,7 @@ function SidebarProfessional({ model }) {
   const sidebar = { width: 150, background: "#242a33", padding: "26 14", color: "#cfd6df" };
   const main = { flex: 1, padding: 26 };
   return (
-    <div style={{ fontFamily: FONT, fontSize: TYPE.body, color: COLORS.ink, width: A4.W, minHeight: A4.H, background: "#fff", display: "flex" }} className="cva4">
+    <div style={{ ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, width: A4.W, minHeight: A4.H, background: "#fff", display: "flex" }} className="cva4">
       <div style={sidebar}>
         {model.photo ? <img src={model.photo} alt="" style={{ width: 72, height: 92, objectFit: "cover", borderRadius: 4, alignSelf: "center", marginBottom: 14, display: "block" }} /> : null}
         <div style={{ marginBottom: 14 }}>
@@ -205,7 +210,7 @@ function SidebarProfessional({ model }) {
 }
 
 function MinimalATS({ model }) {
-  const P = { fontFamily: FONT, fontSize: TYPE.body, color: "#111", padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: "#111", padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
       <div style={{ marginBottom: 10 }}>
@@ -223,7 +228,7 @@ function MinimalATS({ model }) {
 }
 
 function PhotoClassic({ model }) {
-  const P = { fontFamily: FONT, fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
       <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
@@ -244,7 +249,7 @@ function PhotoClassic({ model }) {
 }
 
 function CompactExperience({ model }) {
-  const P = { fontFamily: FONT, fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: `1.4px solid ${COLORS.ink}`, paddingBottom: 8, marginBottom: 12 }}>
@@ -272,7 +277,7 @@ function CompactExperience({ model }) {
 }
 
 function GraduateStudent({ model }) {
-  const P = { fontFamily: FONT, fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
+  const P = { ...designStyle(model), fontFamily: "var(--cv-font)", fontSize: TYPE.body, color: COLORS.ink, padding: "40 46", width: A4.W, minHeight: A4.H, background: "#fff" };
   return (
     <div style={P} className="cva4">
       <div style={{ marginBottom: 12 }}>

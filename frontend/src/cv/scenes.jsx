@@ -54,7 +54,7 @@ function AiPolishButton({ value, context, onResult, square = false }) {
         onClick={handlePolish}
         disabled={busy || !value?.trim()}
         title="Mit KI verbessern"
-        className="h-[54px] w-[44px] flex-shrink-0 rounded-[14px] border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-accent-300)] hover:border-[rgba(124,125,240,0.35)] disabled:opacity-40 inline-flex items-center justify-center transition-colors"
+        className="h-[54px] w-[44px] flex-shrink-0 rounded-[14px] border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-accent-300)] hover:border-[rgba(227,6,19,0.35)] disabled:opacity-40 inline-flex items-center justify-center transition-colors"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
       </button>
@@ -69,8 +69,8 @@ function AiPolishButton({ value, context, onResult, square = false }) {
       title="Mit KI verbessern"
       className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium transition-all disabled:opacity-40"
       style={busy
-        ? { background: "rgba(124,125,240,0.12)", color: "#a5b4fc", border: "1px solid rgba(124,125,240,0.25)" }
-        : { background: "rgba(124,125,240,0.07)", color: "var(--color-fg-muted)", border: "1px solid var(--color-border-subtle)" }}
+        ? { background: "rgba(227,6,19,0.12)", color: "#f25a62", border: "1px solid rgba(227,6,19,0.25)" }
+        : { background: "rgba(227,6,19,0.07)", color: "var(--color-fg-muted)", border: "1px solid var(--color-border-subtle)" }}
     >
       {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
       {busy ? "Wird verbessert…" : "KI"}

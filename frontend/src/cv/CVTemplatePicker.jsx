@@ -92,16 +92,23 @@ function TemplateCard({ template, selected, scale, onSelect, onPreview }) {
           </div>
           {/* eslint-disable-next-line no-restricted-syntax -- hover scrim overlay, not layout */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-          <button type="button" onClick={(event) => { event.stopPropagation(); onPreview(template.id); }} className="absolute left-1/2 top-1/2 z-10 flex h-9 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[12px] font-medium text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100" style={{ background: "rgba(22, 22, 27, 0.82)" }} aria-label={`Große Vorschau für ${template.name} öffnen`}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-            Vorschau
-          </button>
           {selected && <span className="absolute left-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "var(--app-brand)", boxShadow: "0 2px 8px rgba(0,0,0,0.28)" }} aria-hidden="true"><svg width="11" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>}
           <PhotoBadge template={template} />
         </div>
       </div>
-      <div className="flex items-start justify-between gap-3 px-4 pb-4 sm:px-5">
-        <div className="min-w-0"><h2 className="m-0 text-[16px] font-semibold leading-tight" style={{ color: "var(--color-fg)" }}>{template.name}</h2><p className="m-0 mt-1 line-clamp-2 text-[12.5px] leading-snug" style={{ color: "var(--color-fg-dim)" }}>{template.description}</p></div>
+      <div className="flex flex-1 items-start justify-between gap-3 px-4 pb-4 sm:px-5">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="m-0 text-[16px] font-semibold leading-tight" style={{ color: "var(--color-fg)" }}>{template.name}</h2>
+            {template.recommended && <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]" style={{ background: "color-mix(in srgb, var(--app-brand) 10%, transparent)", color: "var(--app-brand)" }}>Empfohlen</span>}
+          </div>
+          <p className="m-0 mt-1 text-[12.5px] leading-snug" style={{ color: "var(--color-fg-dim)" }}>{template.description}</p>
+          <p className="m-0 mt-2 line-clamp-1 text-[11px]" style={{ color: "var(--color-fg-faint)" }}>{template.bestFor}</p>
+          <div className="mt-3 flex items-center gap-2">
+            <button type="button" onClick={(event) => { event.stopPropagation(); onPreview(template.id); }} className="h-8 rounded-lg border px-3 text-[11.5px] font-medium" style={{ borderColor: "var(--color-border)", color: "var(--color-fg-muted)" }}>Vorschau</button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); onSelect(template.id); }} className="h-8 rounded-lg px-3 text-[11.5px] font-semibold text-white" style={{ background: "var(--app-brand)" }}>{selected ? "Ausgewählt" : "Auswählen"}</button>
+          </div>
+        </div>
       </div>
     </article>
   );
@@ -122,13 +129,13 @@ function SelectionDock({ template, onPreview, onContinue }) {
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--app-brand)" }} aria-hidden="true"><svg width="11" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
             <div className="min-w-0 leading-tight">
-              <p className="m-0 text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-muted)" }}>Ausgewählt</p>
+              <p className="m-0 text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg)" }}>Ausgewählt</p>
               <p className="m-0 truncate text-[13px] font-semibold" style={{ color: "var(--color-fg)" }}>{template.name}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button type="button" onClick={() => onPreview(template.id)} className="h-9 cursor-pointer rounded-lg border px-3 text-[12.5px] font-medium transition-colors hover:bg-[var(--color-bg-elev-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ borderColor: "var(--color-border)", color: "var(--color-fg)", outlineColor: "var(--app-focus-ring)" }}>Vorschau</button>
-            <button type="button" onClick={onContinue} className="h-9 cursor-pointer rounded-lg px-3.5 text-[12.5px] font-semibold transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ background: "var(--app-brand)", color: "#fff", outlineColor: "var(--app-focus-ring)" }}>Weiter →</button>
+            <button type="button" onClick={onContinue} className="h-9 cursor-pointer rounded-lg px-3.5 text-[12.5px] font-semibold transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ background: "#8E0C15", color: "#fff", outlineColor: "var(--app-focus-ring)" }}>Weiter →</button>
           </div>
         </div>
       </div>
@@ -145,9 +152,9 @@ function SelectionDock({ template, onPreview, onContinue }) {
  * position pill, PDF export and a CTA anchored to the modal. Reuses the
  * shared renderCVBody renderer and the lazy downloadCVPdf export flow.
  *
- * @param {{ startId: string, profile?: object, onClose: function, onSelect: function }} props
+ * @param {{ startId: string, profile?: object, onClose: function, onSelect: function, onDownload?: function }} props
  */
-function PreviewOverlay({ startId, profile, onClose, onSelect }) {
+function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
   const [index, setIndex] = useState(Math.max(0, CV_TEMPLATES.findIndex((item) => item.id === startId)));
   const [mode, setMode] = useState("fit"); // "fit" | "fill" | "manual"
   const [scale, setScale] = useState(0.5);
@@ -228,13 +235,13 @@ function PreviewOverlay({ startId, profile, onClose, onSelect }) {
   const toggleFill = () => setMode((value) => (value === "fill" ? "fit" : "fill"));
 
   const handleDownload = async () => {
+    if (!onDownload) return;
     if (pdfBusy) return;
     setPdfBusy(true);
     try {
-      const { downloadCVPdf } = await import("./exportPdf.jsx");
-      await downloadCVPdf(model);
+      await onDownload(active.id);
     } catch {
-      toast.error("PDF konnte nicht erstellt werden");
+      toast.error("PDF konnte nicht erstellt werden.");
     } finally {
       setPdfBusy(false);
     }
@@ -264,7 +271,7 @@ function PreviewOverlay({ startId, profile, onClose, onSelect }) {
             </span>
             <div className="min-w-0 leading-tight">
               <p className="m-0 truncate text-[13px] font-semibold text-white">{active.name}</p>
-              <p className="m-0 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">Vollbildvorschau</p>
+              <p className="m-0 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">{profile ? "Vollbildvorschau" : "Beispielvorschau"}</p>
             </div>
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -273,9 +280,9 @@ function PreviewOverlay({ startId, profile, onClose, onSelect }) {
             <ToolbarButton onClick={toggleFill} label={mode === "fill" ? "Auf Seite einpassen" : "Breite ausfüllen"}>
               {mode === "fill" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </ToolbarButton>
-            <ToolbarButton onClick={handleDownload} disabled={pdfBusy} label="Als PDF herunterladen">
+            {onDownload && profile && <ToolbarButton onClick={handleDownload} disabled={pdfBusy} label="Als PDF herunterladen">
               {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            </ToolbarButton>
+            </ToolbarButton>}
             <span className="mx-0.5 h-5 w-px shrink-0" style={{ background: "rgba(255,255,255,0.12)" }} aria-hidden="true" />
             <ToolbarButton onClick={onClose} label="Schließen (Esc)"><X className="h-4 w-4" /></ToolbarButton>
           </div>
@@ -374,14 +381,14 @@ export function CVTemplatePicker({ profile, onChange, onContinue }) {
   </div>;
 }
 
-export function TemplateLightbox({ templateId, profile, onClose, onSelect }) { return <PreviewOverlay startId={templateId} profile={profile} onClose={onClose} onSelect={onSelect} />; }
+export function TemplateLightbox({ templateId, profile, onClose, onSelect, onDownload }) { return <PreviewOverlay startId={templateId} profile={profile} onClose={onClose} onSelect={onSelect} onDownload={onDownload} />; }
 
 /** Live builder preview retaining the shared model and renderer. */
-export function TemplatePreviewPanel({ profile, templateId }) {
+export function TemplatePreviewPanel({ profile, templateId, onDownload }) {
   const id = templateId || profile?.templateId || "tabellarisch";
   const model = normalizeProfile(profile);
   const [scale, setScale] = useState(0.5);
   const [open, setOpen] = useState(false);
   const ref = useCallback((node) => { if (!node) return undefined; const measure = () => setScale(node.offsetWidth / A4.W); requestAnimationFrame(measure); const observer = new ResizeObserver(measure); observer.observe(node); return () => observer.disconnect(); }, []);
-  return <div className="flex h-full flex-col gap-3" data-live-preview><div className="flex items-center justify-between"><p className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-faint)" }}>Vorlage — {CV_TEMPLATES.find((item) => item.id === id)?.name || id}</p><button type="button" onClick={() => setOpen(true)} className="cursor-pointer text-[11px]" style={{ color: "var(--color-fg-dim)" }}>Vollbild</button></div><div ref={ref} className="relative overflow-hidden rounded-md" style={{ height: A4.H * scale, border: "1px solid var(--color-border)", background: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.22)" }}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(id, model)}</div></div>{open && <TemplateLightbox templateId={id} onClose={() => setOpen(false)} onSelect={() => setOpen(false)} />}</div>;
+  return <div className="flex h-full flex-col gap-3" data-live-preview><div className="flex items-center justify-between"><p className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-faint)" }}>Vorlage — {CV_TEMPLATES.find((item) => item.id === id)?.name || id}</p><button type="button" onClick={() => setOpen(true)} className="cursor-pointer text-[11px] font-medium" style={{ color: "var(--app-brand)" }}>Vollbild öffnen</button></div><div ref={ref} className="relative overflow-hidden rounded-md" style={{ height: A4.H * scale, border: "1px solid var(--color-border)", background: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(id, model)}</div></div>{open && <TemplateLightbox templateId={id} profile={profile} onClose={() => setOpen(false)} onSelect={() => setOpen(false)} onDownload={onDownload} />}</div>;
 }

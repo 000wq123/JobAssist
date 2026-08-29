@@ -60,7 +60,7 @@ test.describe("CV template gallery", () => {
     await installFixture(page);
     await openPicker(page);
     const firstCard = page.locator("article").first();
-    const previewButton = firstCard.getByRole("button", { name: /Große Vorschau/u });
+    const previewButton = firstCard.getByRole("button", { name: "Vorschau", exact: true });
     await previewButton.click();
     const dialog = page.getByRole("dialog", { name: /— Vollbildvorschau/u });
     await expect(dialog).toBeVisible();

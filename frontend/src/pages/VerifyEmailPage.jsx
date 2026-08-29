@@ -59,8 +59,8 @@ export default function VerifyEmailPage() {
         {status === "loading" && (
           <>
             <div className="grid h-12 w-12 place-items-center rounded-xl mx-auto mb-5"
-              style={{ background: "rgba(97, 82, 243, 0.10)" }}>
-              <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--ja-auth-focus, #6152F3)" }} />
+              style={{ background: "rgba(227, 6, 19, 0.10)" }}>
+              <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--ja-auth-focus, #e30613)" }} />
             </div>
             <h2 className="text-[24px] font-bold tracking-[-0.03em] leading-[1.15]"
               style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>
@@ -89,7 +89,7 @@ export default function VerifyEmailPage() {
               to={hasSession ? "/dashboard" : "/login"}
               className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
               style={{
-                background: "var(--ja-auth-cta, #6152F3)",
+                background: "var(--ja-auth-cta, #e30613)",
                 color: "var(--ja-auth-cta-text, #fff)",
               }}
             >
@@ -116,7 +116,7 @@ export default function VerifyEmailPage() {
               to="/login"
               className="mt-6 inline-flex items-center h-[44px] px-6 rounded-[8px] text-[13px] font-semibold transition-colors duration-[110ms]"
               style={{
-                background: "var(--ja-auth-cta, #6152F3)",
+                background: "var(--ja-auth-cta, #e30613)",
                 color: "var(--ja-auth-cta-text, #fff)",
               }}
             >

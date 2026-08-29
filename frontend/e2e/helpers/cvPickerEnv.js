@@ -107,6 +107,9 @@ export function mockApi(page) {
       body: JSON.stringify({ id: 1, user_id: 1, email: "qa@jobassist.tech", full_name: "Anna Muster" }),
     });
   });
+  page.route("**/api/profile/cv/generate", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, remaining: -1 }) });
+  });
 }
 
 /** Navigate into the picker scene and wait for the marketplace heading. */

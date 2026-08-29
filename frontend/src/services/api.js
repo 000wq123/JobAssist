@@ -398,7 +398,11 @@ export const billingApi = {
 // --- Profile / CV Builder ---
 export const profileApi = {
   get: () => api.get("/profile/me"),
-  patch: (data) => api.patch("/profile/me", data),
+  patch: (data) => {
+    const payload = { ...data, foto_url: data?.foto ?? data?.foto_url ?? null };
+    delete payload.foto;
+    return api.patch("/profile/me", payload);
+  },
   generateCv: () => api.post("/profile/cv/generate"),
   // Saved-CV library sync — server-side mirror of `cv_library_v1` so saved
   // CVs follow the user across devices (pull on boot, push on every edit).

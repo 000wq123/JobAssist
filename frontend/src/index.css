@@ -10,7 +10,7 @@
    System default follows prefers-color-scheme when unset.
 
    Brand accent: red (#e30613) — primary CTAs, logo, active nav, page eyebrows
-   Product accent: violet (#6152F3) — links, focus rings
+   Links & focus rings also use brand red (single-accent system).
    ═══════════════════════════════════════════════════════════════════════ */
 
 @theme {
@@ -79,7 +79,7 @@
   --color-ink-meta:         var(--color-fg-faint);
 
   /* Skill category colors (theme-independent) */
-  --color-skill-tech: #A78BFA;
+  --color-skill-tech: #38BDF8;
   --color-skill-exp:  #38BDF8;
   --color-skill-edu:  #34D399;
   --color-skill-soft: #FBBF24;
@@ -139,9 +139,9 @@
 :root {
   /* ── Accent (violet — product workspace) ──────────────────────── */
   --ja-accent-50:  #F5F3FF;
-  --ja-accent-100: #EDE9FE;
-  --ja-accent-200: #DDD6FE;
-  --ja-accent-300: #C4B5FD;
+  --ja-accent-100: #FFD4D6;
+  --ja-accent-200: #FFB3B6;
+  --ja-accent-300: #FF8A8E;
   --ja-accent-400: #6D4FD0;
   --ja-accent-500: #7C5CF0;
   --ja-accent-600: #6541D9;
@@ -243,7 +243,7 @@
   --app-accent: #E30613;
   --app-accent-hover: #C9000B;
   --app-accent-soft: rgba(227, 6, 19, 0.08);
-  --app-focus-ring: #6152F3;
+  --app-focus-ring: #E30613;
   --app-success: #5D9F68;
   --app-success-soft: rgba(93, 159, 104, 0.10);
   --app-warning: #B79649;
@@ -263,8 +263,8 @@
   --status-saved-soft:   rgba(245, 158, 11, 0.12);
   --status-applied:      #2563EB;   /* blue-600 */
   --status-applied-soft: rgba(59, 130, 246, 0.10);
-  --status-interview:    #7C3AED;   /* violet-600 */
-  --status-interview-soft: rgba(139, 92, 246, 0.10);
+  --status-interview:    #DB2777;   /* pink-600 */
+  --status-interview-soft: rgba(236, 72, 153, 0.10);
   --status-offered:      #16A34A;   /* green-600 */
   --status-offered-soft: rgba(34, 197, 94, 0.10);
   --status-archived:     #64748B;   /* slate-500 */
@@ -293,17 +293,17 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] {
-  /* ── Accent (violet — same hue, adjusted for dark canvas) ─────── */
-  --ja-accent-50:  #1E1A3A;
-  --ja-accent-100: #282152;
-  --ja-accent-200: #3A2E7A;
-  --ja-accent-300: #9D8FFF;
-  --ja-accent-400: #7C6BFF;
-  --ja-accent-500: #6152F3;
-  --ja-accent-600: #4D40D6;
-  --ja-accent-700: #3A30A8;
-  --ja-accent-800: #28217A;
-  --ja-accent-900: #17134D;
+  /* ── Accent (brand red — same hue, adjusted for dark canvas) ───── */
+  --ja-accent-50:  #3A0A0E;
+  --ja-accent-100: #4A0D12;
+  --ja-accent-200: #5E1117;
+  --ja-accent-300: #FF8A8E;
+  --ja-accent-400: #FF4545;
+  --ja-accent-500: #E30613;
+  --ja-accent-600: #C9000B;
+  --ja-accent-700: #A30009;
+  --ja-accent-800: #7A0007;
+  --ja-accent-900: #4A0004;
 
   /* ── Brand (red — same hex, adapt soft bg for dark) ───────────── */
   --ja-brand-50:  rgba(227, 6, 19, 0.10);
@@ -348,7 +348,7 @@
   /* ── Shadows ───────────────────────────────────────────────────── */
   --ja-shadow-card:  0 8px 40px rgba(0, 0, 0, 0.70), 0 2px 8px rgba(0, 0, 0, 0.50);
   --ja-shadow-tile:  0 4px 16px rgba(0, 0, 0, 0.40);
-  --ja-shadow-brand: 0 4px 22px rgba(97, 82, 243, 0.35);
+  --ja-shadow-brand: 0 4px 22px rgba(227, 6, 19, 0.30);
 
   /* ── Auth page tokens ────────────────────────────────────────── */
   --ja-auth-transition: background-color 110ms ease-out, border-color 110ms ease-out, color 110ms ease-out, box-shadow 110ms ease-out;
@@ -398,7 +398,7 @@
   --app-accent: #FF2020;
   --app-accent-hover: #FF4545;
   --app-accent-soft: rgba(255, 32, 32, 0.10);
-  --app-focus-ring: #9D8FFF;
+  --app-focus-ring: #FF4545;
   --app-success: #4ADE80;
   --app-success-soft: rgba(74, 222, 128, 0.10);
   --app-warning: #FBBF24;
@@ -415,8 +415,8 @@
   --status-saved-soft:   rgba(251, 191, 36, 0.14);
   --status-applied:      #60A5FA;
   --status-applied-soft: rgba(96, 165, 250, 0.14);
-  --status-interview:    #A78BFA;
-  --status-interview-soft: rgba(167, 139, 250, 0.14);
+  --status-interview:    #F472B6;
+  --status-interview-soft: rgba(244, 114, 182, 0.14);
   --status-offered:      #4ADE80;
   --status-offered-soft: rgba(74, 222, 128, 0.14);
   --status-archived:     #94A3B8;
@@ -534,7 +534,7 @@
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
   }
   .interactive-row:focus-visible {
-    outline: 2px solid var(--app-focus-ring, #6152F3);
+    outline: 2px solid var(--app-focus-ring, #E30613);
     outline-offset: -2px;
   }
 
@@ -561,7 +561,7 @@
   select:focus-visible,
   input:focus-visible,
   textarea:focus-visible {
-    outline: 2px solid var(--app-focus-ring, #6152F3);
+    outline: 2px solid var(--app-focus-ring, #E30613);
     outline-offset: 2px;
   }
 
@@ -665,7 +665,7 @@
     user-select: none;
   }
   .btn:focus-visible {
-    outline: 2px solid var(--app-focus-ring, #6152F3);
+    outline: 2px solid var(--app-focus-ring, #E30613);
     outline-offset: 2px;
   }
   .btn:disabled { cursor: not-allowed; opacity: 0.45; }

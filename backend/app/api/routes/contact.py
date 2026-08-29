@@ -9,7 +9,7 @@ from app.services.email_service import send_transactional_email
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-SUPPORT_EMAIL = "support@jobassist.tech"
+SUPPORT_EMAIL = "hallo@jobassist.tech"
 
 
 class ContactRequest(BaseModel):
@@ -40,7 +40,7 @@ async def send_contact(request: Request, payload: ContactRequest) -> dict[str, s
         <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:600;">E-Mail</td><td style="padding:8px 12px;"><a href="mailto:{safe_email}">{safe_email}</a></td></tr>
         <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:600;">Thema</td><td style="padding:8px 12px;">{safe_topic}</td></tr>
       </table>
-      <div style="background:#f8fafc;border-left:3px solid #6366f1;padding:16px;border-radius:4px;max-width:600px;">
+      <div style="background:#f8fafc;border-left:3px solid #e30613;padding:16px;border-radius:4px;max-width:600px;">
         <p style="margin:0;white-space:pre-wrap;">{safe_message}</p>
       </div>
     </body></html>

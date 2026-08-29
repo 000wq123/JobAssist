@@ -138,7 +138,7 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
 
   const handleLibraryDownload = async (entry) => {
     setDownloadingId(entry.id);
-    try { const { downloadCVPdf } = await import("../cv/exportPdf.jsx"); await downloadCVPdf(entry.profile); }
+    try { const { downloadAuthorizedCV } = await import("../cv/downloadFlow.js"); await downloadAuthorizedCV(entry.profile); }
     catch { toast.error("PDF konnte nicht erstellt werden."); }
     finally { setDownloadingId(null); }
   };
@@ -314,7 +314,12 @@ export default function CVBuilderPage() {
     if (localFilled > 0) return;
     const srvFilled = [srv.vorname, srv.nachname, srv.schulname].filter(Boolean).length;
     if (srvFilled > 0) {
-      const merged = { ...emptyProfile(), ...srv, templateId: srv.templateId || profile.templateId || "tabellarisch" };
+      const merged = {
+        ...emptyProfile(),
+        ...srv,
+        foto: srv.foto || srv.foto_url || "",
+        templateId: srv.templateId || profile.templateId || "tabellarisch",
+      };
       setProfile(merged); saveDraftNow(merged);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,22 +344,26 @@ export default function CVBuilderPage() {
 
   const patch = useCallback((delta) => { setProfile((p) => ({ ...p, ...delta })); }, []);
 
-  const handleDownload = useCallback(async () => {
+  const handleDownload = useCallback(async (templateId = profile.templateId) => {
+    const exportProfile = { ...profile, templateId: templateId || profile.templateId || "tabellarisch" };
     setPdfError(""); setPdfBusy(true);
-    saveDraftNow(profile); saveToLibrary(profile);
-    // Reflect the new library snapshot in shared state (storage already pushed it).
-    setCvLibrary(loadLibrary());
-    try { await profileApi.generateCv(); }
-    catch (err) { setPdfError(getApiErrorMessage(err, "PDF-Limit erreicht.")); setPdfBusy(false); return; }
     try {
-      const { downloadCVPdf } = await import("../cv/exportPdf.jsx");
-      await downloadCVPdf(profile);
-      profileApi.patch(profile).catch(() => {});
+      const { downloadAuthorizedCV } = await import("../cv/downloadFlow.js");
+      await downloadAuthorizedCV(exportProfile);
+      saveDraftNow(exportProfile);
+      saveToLibrary(exportProfile);
+      setCvLibrary(loadLibrary());
+      profileApi.patch(exportProfile).catch(() => {});
       toast.success("PDF heruntergeladen — dein Lebenslauf wurde gespeichert.");
-      setMode("landing");
-    } catch { setPdfError("PDF konnte nicht erstellt werden."); }
+      return true;
+    } catch (err) {
+      const message = getApiErrorMessage(err, "PDF konnte nicht erstellt werden.");
+      setPdfError(message);
+      toast.error(message);
+      return false;
+    }
     finally { setPdfBusy(false); }
-  }, [profile, setCvLibrary, setMode]);
+  }, [profile, setCvLibrary]);
 
   const handleUploadResume = useCallback(async (file) => {
     setUploadBusy(true);
@@ -430,10 +439,10 @@ export default function CVBuilderPage() {
             </div>
             <h2 className="text-[24px] font-bold" style={{ color: T("text") }}>Dein Lebenslauf ist fertig.</h2>
           </div>
-          <TemplatePreviewPanel profile={profile} templateId={profile.templateId} />
+          <TemplatePreviewPanel profile={profile} templateId={profile.templateId} onDownload={handleDownload} />
           {pdfError && <p className="text-[12px] mt-4" style={{ color: T("error") }}>{pdfError}</p>}
           <div className="mt-8 flex flex-col gap-3">
-            <button type="button" onClick={handleDownload} disabled={pdfBusy}
+            <button type="button" onClick={() => handleDownload()} disabled={pdfBusy}
               className="w-full h-[52px] rounded-lg inline-flex items-center justify-center gap-2 font-semibold text-[15px] disabled:opacity-60 transition-colors"
               style={{ background: T("accent"), color: "#fff" }}>
               {pdfBusy ? "Wird erstellt…" : "PDF herunterladen"} <Download className="w-4 h-4" />
@@ -442,7 +451,7 @@ export default function CVBuilderPage() {
               className="w-full h-[44px] rounded-lg border text-[14px] transition-colors"
               style={{ borderColor: T("border"), color: T("text-secondary") }}>Vorlage wechseln</button>
           </div>
-          {finishLightboxOpen && <TemplateLightbox templateId={profile.templateId} profile={profile}
+          {finishLightboxOpen && <TemplateLightbox templateId={profile.templateId} profile={profile} onDownload={handleDownload}
             onClose={() => setFinishLightboxOpen(false)} onSelect={(id) => { patch({ templateId: id }); setFinishLightboxOpen(false); }} />}
         </div>
       </div>

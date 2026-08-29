@@ -1,18 +1,18 @@
 """ProfileV2 (Austrian CV builder) routes."""
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete as sa_delete, select
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.core.usage import require_usage, increment_usage
+from app.core.usage import require_usage
 from app.models.cv_library_entry import CvLibraryEntry
 from app.models.profile_v2 import ProfileV2
 from app.models.user import User
-from app.schemas.cv_library import CvLibraryEntryIn, CvLibraryOut, CvLibraryPut
+from app.schemas.cv_library import CvLibraryOut, CvLibraryPut
 from app.schemas.profile_v2 import ProfileV2Out, ProfileV2Update
 
 router = APIRouter()
@@ -71,6 +71,9 @@ async def get_my_profile(
         weiterbildungen=[],
         aktivitaeten=[],
         templateId=None,
+        accentColor="#C8102E",
+        fontFamily="sans",
+        showPhoto=True,
         completion_pct=0,
         created_at=now,
         updated_at=now,
@@ -99,7 +102,8 @@ async def patch_my_profile(
             setattr(profile, field, value)
 
     # Completion heuristic — kept in sync with frontend cv/completion.js
-    _arr = lambda v: v if v is not None else []
+    def _arr(value):
+        return value if value is not None else []
     slots = [
         profile.vorname, profile.nachname, profile.geburtsdatum,
         profile.plz and profile.ort,

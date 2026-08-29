@@ -6,7 +6,7 @@ errors must never leak English framework text into the German UI.
 """
 from datetime import date
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
 
@@ -27,6 +27,13 @@ def test_geburtsdatum_missing_is_unset():
 def test_geburtsdatum_parses_iso_date():
     model = ProfileV2Update(geburtsdatum="1998-05-03")
     assert model.geburtsdatum == date(1998, 5, 3)
+
+
+def test_cv_design_preferences_are_validated():
+    model = ProfileV2Update(accentColor="#1C3557", fontFamily="serif", showPhoto=False)
+    assert model.accentColor == "#1C3557"
+    assert model.fontFamily == "serif"
+    assert model.showPhoto is False
 
 
 def test_validation_errors_are_german_and_single_string():

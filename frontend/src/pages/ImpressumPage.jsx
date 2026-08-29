@@ -10,7 +10,7 @@ export default function ImpressumPage() {
     { dt: "Unternehmensgegenstand", dd: "IT-Dienstleistungen / Softwareentwicklung" },
     { dt: "Status",                 dd: "Nicht gewerblich registriert — privates Projekt" },
     { dt: "Anschrift",              dd: "Österreich" },
-    { dt: "E-Mail",                 dd: "info@jobassist.tech" },
+    { dt: "E-Mail",                 dd: "hallo@jobassist.tech" },
   ];
 
   return (

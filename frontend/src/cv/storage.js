@@ -1,5 +1,6 @@
 import { STORAGE_KEYS, readJson, writeJson } from "../storageKeys";
 import { CV_PROFILE_VERSION, emptyProfile } from "./profileSchema";
+import { normalizeAccentColor, normalizeFontFamily } from "./cvModel";
 import { profileApi } from "../services/api";
 
 const DEBOUNCE_MS = 800;
@@ -14,7 +15,15 @@ export function loadDraft() {
   if (!raw || typeof raw !== "object") return emptyProfile();
   // Discard incompatible major versions (none yet — keeps door open).
   if (raw._version && raw._version > CV_PROFILE_VERSION) return emptyProfile();
-  return { ...emptyProfile(), ...raw, _version: CV_PROFILE_VERSION };
+  return {
+    ...emptyProfile(),
+    ...raw,
+    accentColor: normalizeAccentColor(raw.accentColor),
+    fontFamily: normalizeFontFamily(raw.fontFamily),
+    showPhoto: raw.showPhoto !== false,
+    foto: raw.foto || raw.foto_url || "",
+    _version: CV_PROFILE_VERSION,
+  };
 }
 
 /** Synchronously persist a profile draft. */

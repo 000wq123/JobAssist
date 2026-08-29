@@ -81,8 +81,8 @@ export function emptyProfile() {
     weiterbildungen: [],
     aktivitaeten: [],
     templateId: "tabellarisch",
-    accentColor: "#1C3557",
-    fontFamily: "Arial,Helvetica,sans-serif",
+    accentColor: "#C8102E",
+    fontFamily: "sans",
     showPhoto: true,
     _version: CV_PROFILE_VERSION,
   };

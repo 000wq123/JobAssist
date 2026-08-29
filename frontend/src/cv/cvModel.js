@@ -54,6 +54,24 @@ export const BRAND = "#C8102E";
 /** Default (db) font family. DOM uses this stack; PDF maps to Helvetica. */
 export const FONT = "Helvetica, Arial, system-ui, sans-serif";
 
+/** Stable design values persisted by the builder. */
+export const CV_FONTS = {
+  sans: FONT,
+  serif: "Georgia, 'Times New Roman', serif",
+};
+
+/** Normalize legacy CSS font stacks and unknown values to a stable id. */
+export function normalizeFontFamily(value) {
+  if (value === "serif" || /(Georgia|Times|Instrument Serif)/i.test(String(value || ""))) return "serif";
+  return "sans";
+}
+
+/** Only printable six-digit hex colors are accepted by both renderers. */
+export function normalizeAccentColor(value) {
+  const candidate = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(candidate) ? candidate.toUpperCase() : BRAND;
+}
+
 /** Format a date range like “2022”/“2022 – heute” from iso/month year parts. */
 export function fmtRange(from, to) {
   const f = fmtYear(from);
@@ -77,6 +95,7 @@ function fmtYear(v) {
  */
 export function normalizeProfile(profile = {}) {
   const p = profile || {};
+  const list = (value) => (Array.isArray(value) ? value : []);
   const fullName = [p.vorname, p.nachname].filter(Boolean).join(" ") || "Name";
   const role = p.role || p.beruf || p.wunschposition || p.studienfeld || "";
 
@@ -91,10 +110,10 @@ export function normalizeProfile(profile = {}) {
   };
 
   const education = { school: p.schule || p.schulname || "", degree: p.abschluss || p.schultyp || "", year: p.abschlussjahr || "" };
-  const skills = (p.faehigkeiten || p.skills || []).filter(Boolean).slice(0, 10);
-  const languages = (p.sprachkenntnisse || p.sprachen || []).filter(Boolean).slice(0, 6).map((l) =>
+  const skills = list(p.faehigkeiten || p.skills).filter(Boolean).slice(0, 10);
+  const languages = list(p.sprachkenntnisse || p.sprachen).filter(Boolean).slice(0, 6).map((l) =>
     typeof l === "string" ? { language: l } : { language: l.sprache || l.language || "", level: l.niveau || l.level || "" });
-  const jobs = (p.erfahrungen || p.berufserfahrung || [])
+  const jobs = list(p.erfahrungen || p.berufserfahrung)
     .filter((j) => j && (j.organisation || j.titel || j.art))
     .map((j) => ({
       title: j.titel || j.art || "Berufserfahrung",
@@ -104,6 +123,9 @@ export function normalizeProfile(profile = {}) {
       bullets: (j.bullets || j.aufgaben || []).filter((b) => b && b.trim()),
     }))
     .slice(0, 8);
+  const interests = Array.isArray(p.interessen)
+    ? p.interessen.filter(Boolean).slice(0, 5)
+    : String(p.hobbys || "").split("\n", 1)[0].split(",").map((item) => item.trim()).filter(Boolean).slice(0, 5);
 
   return {
     fullName,
@@ -113,15 +135,15 @@ export function normalizeProfile(profile = {}) {
     jobs,
     skills,
     languages,
-    projects: (p.projekte || []).filter(Boolean).slice(0, 4).map((x) => (typeof x === "string" ? { title: x } : x)),
-    certifications: (p.zertifikate || []).filter(Boolean).slice(0, 4).map((x) => (typeof x === "string" ? { title: x } : x)),
-    courses: (p.weiterbildung || p.weiterbildungen || []).filter(Boolean).slice(0, 4).map((x) => (typeof x === "string" ? { title: x } : x)),
-    interests: (p.interessen || p.hobbys || []).filter(Boolean).slice(0, 5),
-    activities: (p.aktivitaeten || []).filter(Boolean).slice(0, 4),
+    projects: list(p.projekte).filter(Boolean).slice(0, 4).map((x) => (typeof x === "string" ? { title: x } : x)),
+    certifications: list(p.zertifikate).filter(Boolean).slice(0, 4).map((x) => (typeof x === "string" ? { title: x } : x)),
+    courses: list(p.weiterbildung || p.weiterbildungen).filter(Boolean).slice(0, 4).map((x) => (typeof x === "string" ? { title: x } : x)),
+    interests,
+    activities: list(p.aktivitaeten).filter(Boolean).slice(0, 4),
     profileText: p.profil || "",
-    photo: p.photo || p.foto || "",
-    accentColor: (p.accentColor || "#C8102E").trim(), // JobAssist red default
-    fontFamily: p.fontFamily || "default",
+    photo: p.showPhoto === false ? "" : (p.photo || p.foto || p.foto_url || ""),
+    accentColor: normalizeAccentColor(p.accentColor),
+    fontFamily: normalizeFontFamily(p.fontFamily),
     austrian: {
       class: p.klasse || "",
       arbeitserlaubnis: p.arbeitserlaubnis || "",
