@@ -1,10 +1,7 @@
 export { parseSalary, normaliseNumber, daysUntil, kvMinimumFor, categoryLabel, logoAbbrev, logoColor } from "./domain";
 export { ANNOT, Spinner, DescriptionBody, FactItem, Divider, SectionLabel, FitSection, truncateAtSentence } from "./ui";
 export { default as CompanyLogo } from "./CompanyLogo";
-export { default as KvBar } from "./KvBar";
-export { default as SimilarJobsCard } from "./SimilarJobsCard";
 export { default as SalaryCompareModal } from "./SalaryCompareModal";
-export { default as MatchCard } from "./MatchCard";
 export { default as BearbeitenSheet } from "./BearbeitenSheet";
 export { default as InterviewSheet } from "./InterviewSheet";
 export { default as CoverLetterModal } from "./CoverLetterModal";

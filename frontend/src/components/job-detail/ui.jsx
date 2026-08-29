@@ -41,7 +41,7 @@ export function DescriptionBody({ text }) {
           aria-expanded={expanded}
           className={`mt-2.5 inline-flex items-center gap-1 text-[12px] text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
         >
-          {expanded ? "Menos" : "Mehr anzeigen"}
+          {expanded ? "Weniger anzeigen" : "Mehr anzeigen"}
           <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
       )}

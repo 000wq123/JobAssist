@@ -38,9 +38,8 @@ function useKvWage(category) {
     : { min: kvMinimumFor(category), max: null, kv: "KV", url: null };
 }
 
-import { Spinner, DescriptionBody } from "../components/job-detail/ui";
+import { Spinner, DescriptionBody, FitSection } from "../components/job-detail/ui";
 import CompanyLogo from "../components/job-detail/CompanyLogo";
-import FitSection from "../components/job-detail/FitSection";
 import BearbeitenSheet from "../components/job-detail/BearbeitenSheet";
 import CoverLetterModal from "../components/job-detail/CoverLetterModal";
 import Popover from "../components/ui/Popover";
@@ -83,12 +82,6 @@ export default function JobDetailPage() {
   const { init } = useBootstrap();
 
   const { data: baselines } = useFetch(() => jobApi.getResponseBaselines().then((r) => r.data));
-  // Share the list cache with Stellen/Dashboard — no duplicate full-list fetch
-  // when navigating job-detail → list and back within the freshness window.
-  const { data: jobsListRaw } = useFetch(
-    () => jobApi.list().then((r) => r.data?.items ?? r.data ?? []),
-    { cacheKey: "jobs:list", maxAge: 30_000 }
-  );
 
   // The job itself — refetch + reset whenever the route id changes.
   const [job, setJob] = useState(null);
@@ -111,8 +104,6 @@ export default function JobDetailPage() {
   // Resumes come from the bootstrap payload (id + filename).
   const resumes = init?.resumes || [];
   const resumeId = selectedResume ?? resumes[0]?.id;
-
-  // Must be called before any early return to keep hook order stable.
   const kvData = useKvWage(job?.category);
 
   useEffect(() => {
@@ -284,12 +275,12 @@ export default function JobDetailPage() {
                 </div>
               </Popover>
 
-              {/* Bookmark — preserved saved-state affordance */}
+              {/* Bookmark — quick way to save the job (status = Gemerkt) */}
               <button
                 type="button"
-                onClick={() => handleStatusChange(job.status === "bookmarked" ? "applied" : "bookmarked")}
+                onClick={() => { if (job.status !== "bookmarked") handleStatusChange("bookmarked"); }}
                 aria-pressed={job.status === "bookmarked"}
-                aria-label={job.status === "bookmarked" ? "Aus Gemerkt entfernen" : "Merken"}
+                aria-label="Stelle merken"
                 className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${job.status === "bookmarked" ? "text-[var(--color-warning)]" : "text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]"} hover:bg-[var(--color-bg-elev-1)] ${FOCUS}`}
               >
                 <Bookmark className={`w-4 h-4 ${job.status === "bookmarked" ? "fill-current" : ""}`} aria-hidden="true" />
