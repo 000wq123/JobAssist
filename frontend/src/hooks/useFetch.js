@@ -64,9 +64,9 @@ export default function useFetch(fetcher, { enabled = true, deps = [], cacheKey,
   // and already-mounted consumers.
   useEffect(() => {
     if (!cacheKey) return undefined;
-    const refresh = () => {
-      setDataState(undefined);
-      setTick((t) => t + 1);
+    const refresh = ({ data: nextData, revalidate = true } = {}) => {
+      setDataState(nextData);
+      if (revalidate) setTick((t) => t + 1);
     };
     let subscribers = swrSubscribers.get(cacheKey);
     if (!subscribers) {
@@ -171,11 +171,27 @@ export function invalidateSwrCache(cacheKey) {
   swrCache.delete(cacheKey);
   swrInflight.delete(cacheKey);
   persistSwrCache();
-  swrSubscribers.get(cacheKey)?.forEach((refresh) => refresh());
+  swrSubscribers.get(cacheKey)?.forEach((refresh) => refresh({ data: undefined, revalidate: true }));
+}
+
+/**
+ * Optimistically replace one cached resource and update mounted consumers
+ * without waiting for a network round-trip. Returns the previous value so a
+ * failed mutation can roll back cleanly.
+ */
+export function mutateSwrCache(cacheKey, updater) {
+  if (!cacheKey) return undefined;
+  const previous = swrCache.get(cacheKey)?.data;
+  const next = typeof updater === "function" ? updater(previous) : updater;
+  if (next === undefined) swrCache.delete(cacheKey);
+  else swrCache.set(cacheKey, { data: next, ts: Date.now() });
+  persistSwrCache();
+  swrSubscribers.get(cacheKey)?.forEach((refresh) => refresh({ data: next, revalidate: false }));
+  return previous;
 }
 
 /** @type {Map<string, Promise<any>>} */
 const swrInflight = new Map();
 
-/** @type {Map<string, Set<() => void>>} */
+/** @type {Map<string, Set<(message?: { data?: any, revalidate?: boolean }) => void>>} */
 const swrSubscribers = new Map();

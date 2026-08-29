@@ -67,9 +67,9 @@ export function Divider() {
   return <hr className="my-7 border-[var(--color-border-subtle)]" />;
 }
 
-/** Section label (eyebrow) — small, muted, uppercase. */
+/** Calm section heading used across the job-detail surface. */
 export function SectionLabel({ children }) {
-  return <p className="text-[11px] tracking-[0.10em] uppercase text-[var(--color-fg-dim)] font-medium">{children}</p>;
+  return <p className="text-[13px] text-[var(--color-fg)] font-semibold">{children}</p>;
 }
 
 /**
@@ -93,7 +93,7 @@ export function FitSection({ feedbackJson, onRecheck, recheckPending, resumeId }
         <SectionLabel>Warum es passen könnte</SectionLabel>
         <p className="mt-2.5 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
           {resumeId
-            ? "Berechne die Passung, um zu sehen, warum diese Stelle zu dir passen könnte."
+            ? "Prüfe die Passung, um eine kurze Einschätzung zu bekommen, warum diese Stelle zu dir passen könnte."
             : "Verknüpfe deinen Lebenslauf, damit eine Passungsanalyse möglich ist."}
         </p>
         {onRecheck && (

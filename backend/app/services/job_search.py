@@ -145,6 +145,15 @@ _CITY_MAP = {
     "remote": "",
 }
 
+# Settings experience_level label → search seniority hint. Adzuna has no
+# structured experience field, so the level becomes a keyword supplement.
+_EXPERIENCE_KEYWORDS = {
+    "noch in der schule": "praktikum",
+    "gerade fertig / studium": "junior",
+    "habe schon etwas gearbeitet": "",
+    "mehrere jahre erfahrung": "senior",
+}
+
 _KEYWORD_DICTIONARY = {
     "software", "engineer", "developer", "entwickler", "marketing", "manager",
     "sales", "verkauf", "assistant", "intern", "internship", "praktikum",
@@ -441,6 +450,15 @@ def _format_salary(job: dict) -> str:
 async def search_jobs_by_preferences(user_profile: dict, page: int = 1) -> dict:
     locations = user_profile.get("desired_locations", []) or ["Wien"]
     job_types = user_profile.get("job_types", [])
+    industries = user_profile.get("industries", [])
+    experience_level = user_profile.get("experience_level")
+
+    # Industry and experience_level refine the keyword query. Adzuna has no
+    # structured fields for them, so map them to search terms: industries
+    # become extra keyword tasks per location, and the experience level adds
+    # a seniority hint to the first task. Empty values change nothing.
+    industry_terms = [term for term in (industries or []) if term][:2]
+    experience_term = _EXPERIENCE_KEYWORDS.get((experience_level or "").strip().lower()) or ""
 
     tasks = []
     for location in locations[:3]:
@@ -449,6 +467,12 @@ async def search_jobs_by_preferences(user_profile: dict, page: int = 1) -> dict:
                 tasks.append(search_jobs(location=location, job_type=job_type, page=page))
         else:
             tasks.append(search_jobs(location=location, page=page))
+        # Industry-refined variants (only when industries are set).
+        for term in industry_terms:
+            tasks.append(search_jobs(keywords=term, location=location, page=page))
+        # Experience-level seniority hint as its own variant (only when set).
+        if experience_term:
+            tasks.append(search_jobs(keywords=experience_term, location=location, page=page))
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 

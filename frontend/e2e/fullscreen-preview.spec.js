@@ -83,7 +83,7 @@ test.describe("fullscreen CV preview viewer", () => {
     await installFixture(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPicker(page);
-    await page.locator("article[data-template-id='tabellarisch']").getByRole("button", { name: "Ausgewählt", exact: true }).click();
+    await page.locator("article[data-template-id='serif']").getByRole("button", { name: "Auswählen", exact: true }).click();
     await page.getByLabel("Ausgewählte Vorlage").getByRole("button", { name: "Weiter →" }).click();
     await page.getByRole("button", { name: "Vollbild öffnen" }).click();
 
@@ -185,13 +185,23 @@ test.describe("fullscreen CV preview viewer", () => {
     await dialog.screenshot({ path: "test-results/screenshots/fullscreen-mobile-390.png" });
   });
 
-  test("dark mode: viewer stays a dark layered surface, not pure black", async ({ page }) => {
+  test("light mode: viewer chrome follows the selected light theme", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("jobassist_theme_v1", "light"));
+    await installFixture(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const dialog = await openPreview(page);
+
+    const stageBg = await dialog.locator("div.flex.min-h-full.min-w-full").evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(stageBg).toBe("rgb(250, 250, 248)");
+  });
+
+  test("dark mode: viewer chrome follows the selected dark theme", async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem("jobassist_theme_v1", "dark"));
     await installFixture(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     const dialog = await openPreview(page);
 
-    const bg = await dialog.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const bg = await dialog.locator("div.flex.min-h-full.min-w-full").evaluate((el) => getComputedStyle(el).backgroundColor);
     const values = bg.match(/\d+/g)?.map(Number) || [];
     const sum = values.slice(0, 3).reduce((total, value) => total + value, 0);
     expect(sum).toBeGreaterThan(10); // not pure black

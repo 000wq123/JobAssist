@@ -36,6 +36,13 @@ function seedAuthenticatedState() {
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
+  await page.route("**/api/proxy/logo/best**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#e30613"/></svg>',
+    });
+  });
 });
 
 test("job detail can update status, deadline, link, and notes", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { usePageTitle } from "../hooks/usePageChrome";
@@ -124,8 +124,6 @@ export default function SettingsPage() {
 
   const formValues = {
     desired_locations: profile?.desired_locations ?? [],
-    salary_min: profile?.salary_min ?? null,
-    salary_max: profile?.salary_max ?? null,
     job_types: profile?.job_types ?? [],
     industries: profile?.industries ?? [],
     experience_level: profile?.experience_level ?? "",
@@ -135,16 +133,11 @@ export default function SettingsPage() {
   useEffect(() => { if (profile?.avatar) setAvatar(profile.avatar); }, [profile?.avatar]);
 
   const { control, handleSubmit, formState: { isSubmitting } } = useForm({ values: formValues });
-  const watchedSalaryMin = useWatch({ control, name: "salary_min" });
-  const watchedSalaryMax = useWatch({ control, name: "salary_max" });
-  const salaryError = watchedSalaryMin != null && watchedSalaryMax != null && watchedSalaryMin > watchedSalaryMax
-    ? "Mindestgehalt darf nicht höher als das Maximalgehalt sein" : null;
 
   const onSubmit = async (data) => {
     if (isSubmitting) return;
-    if (salaryError) { toast.error(salaryError); return; }
     const profilePayload = {
-      desired_locations: data.desired_locations, salary_min: data.salary_min, salary_max: data.salary_max,
+      desired_locations: data.desired_locations,
       job_types: data.job_types, industries: data.industries, experience_level: data.experience_level,
       is_open_to_relocation: data.is_open_to_relocation, avatar: avatar ?? null,
     };
@@ -289,29 +282,6 @@ export default function SettingsPage() {
                     </select>
                   </div>
                 )} />
-                <Controller name="salary_min" control={control} render={({ field }) => (
-                  <div>
-                    <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }} htmlFor="salary_min">Mindestgehalt (€ / Monat)</label>
-                    <input id="salary_min" type="number" className={inputCls}
-                      aria-invalid={!!salaryError}
-                      aria-describedby={salaryError ? "salary-error" : undefined}
-                      style={{ ...inputStyle, borderColor: salaryError ? "var(--app-error, #E05050)" : "var(--app-border, #E7E7E4)" }}
-                      {...field} value={field.value || ""} placeholder="30" />
-                  </div>
-                )} />
-                <Controller name="salary_max" control={control} render={({ field }) => (
-                  <div>
-                    <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }} htmlFor="salary_max">Maximalgehalt (€ / Monat)</label>
-                    <input id="salary_max" type="number" className={inputCls}
-                      aria-invalid={!!salaryError}
-                      aria-describedby={salaryError ? "salary-error" : undefined}
-                      style={{ ...inputStyle, borderColor: salaryError ? "var(--app-error, #E05050)" : "var(--app-border, #E7E7E4)" }}
-                      {...field} value={field.value || ""} placeholder="50" />
-                  </div>
-                )} />
-                {salaryError && (
-                  <p id="salary-error" role="alert" className="text-[12px] text-[var(--app-error, #E05050)] -mt-2">{salaryError}</p>
-                )}
                 <Controller name="job_types" control={control} render={({ field }) => (
                   <div>
                     <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }}>Jobarten</label>
@@ -325,7 +295,6 @@ export default function SettingsPage() {
                   </div>
                 )} />
               </div>
-              {salaryError && <p className="text-[12px] mt-2" style={{ color: "var(--app-error, #E05050)" }}>{salaryError}</p>}
               <Controller name="is_open_to_relocation" control={control} render={({ field }) => (
                 <div className="flex items-center justify-between gap-4 pt-4 mt-4 border-t" style={{ borderColor: "var(--app-border-subtle, #EFEFEC)" }}>
                   <div>

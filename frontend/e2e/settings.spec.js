@@ -61,8 +61,8 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("settings save sends profile updates", async ({ page }) => {
-  let profileSaved = false;
+test("settings save sends profile updates without ambiguous salary bounds", async ({ page }) => {
+  let savedProfile = null;
 
   await page.route("**/api/init", async (route) => {
     await route.fulfill({
@@ -106,7 +106,7 @@ test("settings save sends profile updates", async ({ page }) => {
       return;
     }
 
-    profileSaved = true;
+    savedProfile = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -115,9 +115,13 @@ test("settings save sends profile updates", async ({ page }) => {
   });
 
   await page.goto("/settings");
+  await expect(page.getByLabel(/Mindestgehalt/i)).toHaveCount(0);
+  await expect(page.getByLabel(/Maximalgehalt/i)).toHaveCount(0);
   await page.getByRole("button", { name: /^Speichern$/i }).first().click();
 
-  await expect.poll(() => profileSaved).toBe(true);
+  await expect.poll(() => savedProfile).not.toBeNull();
+  expect(savedProfile).not.toHaveProperty("salary_min");
+  expect(savedProfile).not.toHaveProperty("salary_max");
 });
 
 test("settings delete-account flow redirects to login", async ({ page }) => {

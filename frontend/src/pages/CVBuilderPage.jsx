@@ -149,15 +149,17 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
     if (newName && newName.trim() && newName.trim() !== entry.name) { renameInLibrary(entry.id, newName.trim()); setCvLibrary(loadLibrary()); }
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open: openUploadDialog } = useDropzone({
     accept: { "application/pdf": [".pdf"], "text/plain": [".txt"] },
-    maxFiles: 1, maxSize: 5 * 1024 * 1024, disabled: uploadBusy,
+    maxFiles: 1, multiple: false, maxSize: 5 * 1024 * 1024, disabled: uploadBusy,
+    noClick: true,
     onDrop: (accepted) => { if (accepted[0]) onUploadResume(accepted[0]); },
     onDropRejected: () => toast.error("Nur PDF oder TXT, maximal 5 MB."),
   });
 
   return (
     <div className="animate-slide-up max-w-[1100px] mx-auto px-5 pt-6 pb-24 sm:px-8 sm:pt-10 lg:px-10 lg:pt-12 flex flex-col gap-8">
+      <input {...getInputProps()} aria-label="Lebenslauf-Datei hochladen" />
       <PageHeader title="Lebenslauf" description="Erstelle einen professionellen österreichischen Lebenslauf." />
 
       {/* One authoritative current-CV state: the draft (or the empty state). */}
@@ -198,7 +200,7 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
                 className="btn btn-primary btn-lg gap-2">
                 <Wand2 className="w-4 h-4" />Lebenslauf erstellen
               </button>
-              <button type="button" onClick={() => document.getElementById("cv-upload-zone")?.click()}
+              <button type="button" onClick={openUploadDialog} disabled={uploadBusy}
                 className="btn btn-secondary btn-lg gap-2">
                 <Upload className="w-4 h-4" />PDF hochladen
               </button>
@@ -256,9 +258,18 @@ function CVLandingView({ onStart, hasDraft, onLoadFromLibrary, onUploadResume, u
             <p className="text-[13px] leading-relaxed mb-4" style={{ color: T("text-secondary") }}>
               Lade ein bestehendes PDF oder eine Textdatei hoch — wir lesen die Daten aus und füllen das Formular vor.
             </p>
-            <div id="cv-upload-zone" {...getRootProps()} className={`w-full rounded-lg border-2 border-dashed p-4 cursor-pointer transition-colors text-center ${isDragActive ? "border-[var(--app-brand)]" : ""} ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
+            <div id="cv-upload-zone" {...getRootProps({
+              role: "button",
+              tabIndex: uploadBusy ? -1 : 0,
+              onClick: openUploadDialog,
+              onKeyDown: (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openUploadDialog();
+                }
+              },
+            })} className={`w-full rounded-lg border-2 border-dashed p-4 cursor-pointer transition-colors text-center ${isDragActive ? "border-[var(--app-brand)]" : ""} ${uploadBusy ? "opacity-60 pointer-events-none" : ""}`}
               style={{ borderColor: isDragActive ? T("brand") : T("border") }}>
-              <input {...getInputProps()} aria-label="Lebenslauf-Datei hochladen" />
               <Upload className="w-4 h-4 mx-auto mb-1.5" style={{ color: T("text-muted") }} />
               <p className="text-[12.5px] font-medium" style={{ color: T("text") }}>
                 {uploadBusy ? "Wird gelesen…" : "Datei auswählen oder hierher ziehen"}

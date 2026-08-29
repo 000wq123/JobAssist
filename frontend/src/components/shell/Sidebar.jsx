@@ -117,11 +117,22 @@ export default function Sidebar({ me, profile, onCommandClick }) {
 
   return (
     <aside
-      className="hidden md:flex flex-col sticky top-0 self-start h-screen flex-shrink-0 z-30 border-r"
+      className="hidden md:flex flex-col sticky top-0 self-start h-screen flex-shrink-0 z-30 border-r overflow-hidden"
       style={{
         width: "200px",
         background: "var(--app-bg, #FAFAF8)",
         borderColor: "var(--app-border, #E7E7E4)",
+        // The user card (avatar + chevron) visibly jumped when the page
+        // scrolled: the sticky aside re-resolves its offset every scroll
+        // frame and its in-flow children repaint at the new position.
+        // position: fixed takes the aside out of that flow entirely — it
+        // never moves relative to the viewport, so nothing inside it can
+        // jump. The main column already reserves the sidebar's width.
+        position: "fixed",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        height: "100vh",
       }}
     >
       {/* Brand */}

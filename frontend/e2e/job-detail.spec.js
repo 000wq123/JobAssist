@@ -34,6 +34,13 @@ function seedAuthenticatedState() {
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
+  await page.route("**/api/proxy/logo/best**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#e30613"/></svg>',
+    });
+  });
 });
 
 test("job detail can generate a cover letter", async ({ page }) => {
@@ -92,6 +99,8 @@ test("job detail can generate a cover letter", async ({ page }) => {
         id: 123,
         company: "JobAssist",
         role: "QA Engineer",
+        location: "Wien, Österreich",
+        source: "karriere.at",
         description: "Teste Produktqualität und Nutzerflüsse.",
         status: "bookmarked",
         notes: "",
@@ -121,6 +130,22 @@ test("job detail can generate a cover letter", async ({ page }) => {
   });
 
   await page.goto("/jobs/123");
+
+  await expect(page.getByText(/Geschätzte Anfahrt/i)).toHaveCount(0);
+  await page.getByRole("button", { name: /Route ab aktuellem Standort/i }).click();
+  await expect(page.getByRole("menuitem", { name: /Google Maps/i })).toHaveAttribute(
+    "href",
+    "https://www.google.com/maps/dir/?api=1&destination=Wien%2C%20%C3%96sterreich",
+  );
+  await expect(page.getByRole("menuitem", { name: /Apple Karten/i })).toHaveAttribute(
+    "href",
+    "https://maps.apple.com/?daddr=Wien%2C%20%C3%96sterreich",
+  );
+  await expect(page.getByRole("menuitem", { name: /Waze/i })).toHaveAttribute(
+    "href",
+    "https://www.waze.com/ul?q=Wien%2C%20%C3%96sterreich&navigate=yes",
+  );
+  await page.keyboard.press("Escape");
 
   // Click the cover letter button
   const ctaButton = page.getByRole("button", { name: /bewerbung schreiben/i });

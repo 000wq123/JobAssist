@@ -45,6 +45,20 @@ test.describe("CV template gallery", () => {
     await expect(dock.getByRole("button", { name: "Weiter →" })).toBeVisible();
   });
 
+  test("clicking the selected template again deselects it", async ({ page }) => {
+    await installFixture(page);
+    await openPicker(page);
+    const card = page.locator("article[data-template-id='tabellarisch']");
+    const toggle = card.getByRole("button", { name: "Auswahl aufheben" });
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+    await toggle.click();
+
+    await expect(card.getByRole("button", { name: "Auswählen", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await expect(selectionDock(page)).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("cv_profile_v1") || "{}").templateId)).toBe("");
+  });
+
   test("selection dock CTA advances to the builder", async ({ page }) => {
     await installFixture(page);
     await openPicker(page);
@@ -79,7 +93,7 @@ test.describe("CV template gallery", () => {
     await installFixture(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPicker(page);
-    await page.locator("article[data-template-id='tabellarisch']").click();
+    await page.locator("article[data-template-id='serif']").click();
     await expect(selectionDock(page)).toBeVisible();
     const cards = page.locator("article[data-template-id]");
     const first = await cards.nth(0).boundingBox();

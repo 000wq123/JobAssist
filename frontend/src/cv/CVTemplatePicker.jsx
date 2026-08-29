@@ -14,18 +14,16 @@ import { normalizeProfile, DESIGN_PREVIEW, A4 } from "./cvModel.js";
 const DESIGN_MODEL = normalizeProfile(DESIGN_PREVIEW.profile);
 const THUMBNAIL_HEIGHT = 300;
 
-/* ── Fullscreen viewer design tokens ────────────────────────────────────────
-   The preview is a dark, premium document viewer in BOTH themes (like the
-   approved mockup): layered charcoal tones — overlay → modal shell → toolbar
-   → preview stage → bottom action bar — never a single pure-black block. */
+/* Fullscreen viewer chrome follows the active app theme. The CV page itself
+   stays paper-colored because it is also the printable document. */
 const VIEWER = {
-  overlay: "rgba(8, 8, 12, 0.66)",
-  shell: "#1A1A1F",
-  toolbar: "#202026",
-  stage: "#101013",
-  footer: "#1D1D22",
-  border: "rgba(255, 255, 255, 0.09)",
-  focus: "#F25A62",
+  overlay: "color-mix(in srgb, var(--app-bg) 78%, transparent)",
+  shell: "var(--app-surface)",
+  toolbar: "var(--app-surface-hover)",
+  stage: "var(--app-bg)",
+  footer: "var(--app-surface)",
+  border: "var(--app-border)",
+  focus: "var(--app-focus-ring)",
 };
 
 /* Zoom clamps (absolute A4 scale). Wide enough to inspect detail, never so
@@ -45,7 +43,7 @@ function ToolbarButton({ onClick, disabled, label, children }) {
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-white/75 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-35"
+      className="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-[var(--app-text-muted)] transition-colors duration-150 hover:bg-[var(--app-surface-selected)] hover:text-[var(--app-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-35"
       style={{ outlineColor: VIEWER.focus }}
     >
       {children}
@@ -106,7 +104,7 @@ function TemplateCard({ template, selected, scale, onSelect, onPreview }) {
           <p className="m-0 mt-2 line-clamp-1 text-[11px]" style={{ color: "var(--color-fg-faint)" }}>{template.bestFor}</p>
           <div className="mt-3 flex items-center gap-2">
             <button type="button" onClick={(event) => { event.stopPropagation(); onPreview(template.id); }} className="h-8 rounded-lg border px-3 text-[11.5px] font-medium" style={{ borderColor: "var(--color-border)", color: "var(--color-fg-muted)" }}>Vorschau</button>
-            <button type="button" onClick={(event) => { event.stopPropagation(); onSelect(template.id); }} className="h-8 rounded-lg px-3 text-[11.5px] font-semibold text-white" style={{ background: "var(--app-brand)" }}>{selected ? "Ausgewählt" : "Auswählen"}</button>
+            <button type="button" aria-pressed={selected} onClick={(event) => { event.stopPropagation(); onSelect(template.id); }} className="h-8 rounded-lg px-3 text-[11.5px] font-semibold text-white" style={{ background: "var(--app-brand)" }}>{selected ? "Auswahl aufheben" : "Auswählen"}</button>
           </div>
         </div>
       </div>
@@ -135,7 +133,7 @@ function SelectionDock({ template, onPreview, onContinue }) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button type="button" onClick={() => onPreview(template.id)} className="h-9 cursor-pointer rounded-lg border px-3 text-[12.5px] font-medium transition-colors hover:bg-[var(--color-bg-elev-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ borderColor: "var(--color-border)", color: "var(--color-fg)", outlineColor: "var(--app-focus-ring)" }}>Vorschau</button>
-            <button type="button" onClick={onContinue} className="h-9 cursor-pointer rounded-lg px-3.5 text-[12.5px] font-semibold transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ background: "#8E0C15", color: "#fff", outlineColor: "var(--app-focus-ring)" }}>Weiter →</button>
+            <button type="button" onClick={onContinue} className="h-9 cursor-pointer rounded-lg px-3.5 text-[12.5px] font-semibold transition-[filter] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ background: "var(--app-brand)", color: "#fff", outlineColor: "var(--app-focus-ring)" }}>Weiter →</button>
           </div>
         </div>
       </div>
@@ -260,18 +258,18 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
         aria-modal="true"
         aria-label={`${active.name} — Vollbildvorschau`}
         className="flex h-full w-full flex-col overflow-hidden sm:h-[88vh] sm:w-[min(1280px,82vw)] sm:rounded-2xl sm:border"
-        style={{ background: VIEWER.shell, borderColor: VIEWER.border, boxShadow: "0 40px 120px rgba(0,0,0,0.6), 0 8px 32px rgba(0,0,0,0.35)" }}
+        style={{ background: VIEWER.shell, borderColor: VIEWER.border, boxShadow: "var(--app-shadow-modal)" }}
         onClick={(event) => event.stopPropagation()}
       >
         {/* ── Top toolbar ───────────────────────────────────────── */}
         <header className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5 sm:px-4 sm:py-3" style={{ background: VIEWER.toolbar, borderColor: VIEWER.border }}>
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md" style={{ background: "rgba(227, 6, 19, 0.16)" }} aria-hidden="true">
-              <FileText className="h-4 w-4" style={{ color: "#F25A62" }} />
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md" style={{ background: "var(--app-brand-soft)" }} aria-hidden="true">
+              <FileText className="h-4 w-4" style={{ color: "var(--app-brand)" }} />
             </span>
             <div className="min-w-0 leading-tight">
-              <p className="m-0 truncate text-[13px] font-semibold text-white">{active.name}</p>
-              <p className="m-0 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">{profile ? "Vollbildvorschau" : "Beispielvorschau"}</p>
+              <p className="m-0 truncate text-[13px] font-semibold text-[var(--app-text)]">{active.name}</p>
+              <p className="m-0 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--app-text-faint)]">{profile ? "Vollbildvorschau" : "Beispielvorschau"}</p>
             </div>
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -283,14 +281,14 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
             {onDownload && profile && <ToolbarButton onClick={handleDownload} disabled={pdfBusy} label="Als PDF herunterladen">
               {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             </ToolbarButton>}
-            <span className="mx-0.5 h-5 w-px shrink-0" style={{ background: "rgba(255,255,255,0.12)" }} aria-hidden="true" />
+            <span className="mx-0.5 h-5 w-px shrink-0" style={{ background: "var(--app-border)" }} aria-hidden="true" />
             <ToolbarButton onClick={onClose} label="Schließen (Esc)"><X className="h-4 w-4" /></ToolbarButton>
           </div>
         </header>
 
         {/* ── Preview stage ─────────────────────────────────────── */}
         <div ref={stageRef} className="relative min-h-0 flex-1 overflow-auto" style={{ background: VIEWER.stage }}>
-          <div className="flex min-h-full min-w-full" style={{ padding: "clamp(18px, 3.5vh, 40px) 48px" }}>
+          <div className="flex min-h-full min-w-full" style={{ padding: "clamp(18px, 3.5vh, 40px) 48px", background: VIEWER.stage }}>
             <div className="m-auto shrink-0 rounded-[2px]" style={{ width: A4.W * scale, height: A4.H * scale, boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 3px 10px rgba(0,0,0,0.4)" }}>
               <div className="cv-stage" style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "var(--app-cv-paper, #FDFCF9)" }}>
                 {renderCVBody(active.id, model)}
@@ -304,8 +302,8 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
             onClick={() => setIndex((value) => Math.max(0, value - 1))}
             disabled={index === 0}
             aria-label="Vorherige Vorlage"
-            className="absolute left-1.5 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-30 sm:left-2 sm:h-9 sm:w-9"
-            style={{ background: "rgba(0,0,0,0.38)", outlineColor: VIEWER.focus }}
+            className="absolute left-1.5 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-[var(--app-text-muted)] transition-colors duration-150 hover:bg-[var(--app-surface-selected)] hover:text-[var(--app-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-30 sm:left-2 sm:h-9 sm:w-9"
+            style={{ background: "var(--app-surface)", outlineColor: VIEWER.focus, boxShadow: "var(--app-shadow-card)" }}
           >
             <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
@@ -314,14 +312,14 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
             onClick={() => setIndex((value) => Math.min(CV_TEMPLATES.length - 1, value + 1))}
             disabled={index === CV_TEMPLATES.length - 1}
             aria-label="Nächste Vorlage"
-            className="absolute right-1.5 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-30 sm:right-2 sm:h-9 sm:w-9"
-            style={{ background: "rgba(0,0,0,0.38)", outlineColor: VIEWER.focus }}
+            className="absolute right-1.5 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-[var(--app-text-muted)] transition-colors duration-150 hover:bg-[var(--app-surface-selected)] hover:text-[var(--app-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-30 sm:right-2 sm:h-9 sm:w-9"
+            style={{ background: "var(--app-surface)", outlineColor: VIEWER.focus, boxShadow: "var(--app-shadow-card)" }}
           >
             <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
 
           {/* Position indicator */}
-          <div className="pointer-events-none absolute bottom-3 left-4 z-10 rounded-full px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80" style={{ background: "rgba(0,0,0,0.45)" }}>
+          <div className="pointer-events-none absolute bottom-3 left-4 z-10 rounded-full px-2.5 py-1 text-[11px] font-medium tabular-nums text-[var(--app-text-secondary)]" style={{ background: "var(--app-surface)", boxShadow: "var(--app-shadow-card)" }}>
             {index + 1} / {CV_TEMPLATES.length}
           </div>
         </div>
@@ -331,8 +329,8 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 cursor-pointer rounded-lg border px-4 text-[13px] font-medium text-white/80 transition-colors duration-150 hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
-            style={{ borderColor: "rgba(255,255,255,0.16)", outlineColor: VIEWER.focus }}
+            className="h-10 cursor-pointer rounded-lg border px-4 text-[13px] font-medium text-[var(--app-text-secondary)] transition-colors duration-150 hover:bg-[var(--app-surface-hover)] hover:text-[var(--app-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+            style={{ borderColor: "var(--app-border)", outlineColor: VIEWER.focus }}
           >
             Zurück zur Auswahl
           </button>
@@ -340,7 +338,7 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
             type="button"
             onClick={() => { onSelect(active.id); onClose(); }}
             className="h-10 cursor-pointer rounded-lg px-5 text-[13px] font-semibold text-white transition-[filter] duration-150 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
-            style={{ background: "#E30613", outlineColor: VIEWER.focus }}
+            style={{ background: "var(--app-brand)", outlineColor: VIEWER.focus }}
           >
             Diese Vorlage verwenden →
           </button>
@@ -353,8 +351,8 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
 
 /** @param {{ profile: object, onChange: function, onContinue: function }} props */
 export function CVTemplatePicker({ profile, onChange, onContinue }) {
-  const selectedId = profile.templateId || "tabellarisch";
-  const selectedTemplate = CV_TEMPLATES.find((item) => item.id === selectedId) || CV_TEMPLATES[0];
+  const selectedId = profile.templateId || null;
+  const selectedTemplate = CV_TEMPLATES.find((item) => item.id === selectedId) || null;
   const [filter, setFilter] = useState("all");
   const [previewId, setPreviewId] = useState(null);
   const [picked, setPicked] = useState(false);
@@ -367,7 +365,11 @@ export function CVTemplatePicker({ profile, onChange, onContinue }) {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  const handleSelect = useCallback((id) => { setPicked(true); onChange({ templateId: id }); }, [onChange]);
+  const handleSelect = useCallback((id) => {
+    const deselecting = selectedId === id;
+    setPicked(!deselecting);
+    onChange({ templateId: deselecting ? "" : id });
+  }, [onChange, selectedId]);
   const visible = CV_TEMPLATES.filter((item) => templateMatchesFilter(item, filter));
 
   return <div className={`mx-auto max-w-[1120px] ${picked ? "pb-40 md:pb-32" : "pb-6"}`}>
@@ -376,7 +378,7 @@ export function CVTemplatePicker({ profile, onChange, onContinue }) {
       <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="Vorlagen filtern">{TEMPLATE_FILTERS.map((item) => { const active = filter === item.key; return <button key={item.key} type="button" aria-pressed={active} onClick={() => setFilter(item.key)} className="h-8 cursor-pointer whitespace-nowrap rounded-full border px-3.5 text-[12px] font-medium transition-colors hover:border-[var(--color-border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ outlineColor: "var(--app-focus-ring)", borderColor: active ? "var(--color-border-strong)" : "var(--color-border)", background: active ? "var(--color-bg-elev-3)" : "transparent", color: active ? "var(--color-fg)" : "var(--color-fg-dim)" }}>{item.label}</button>; })}</div>
       <section ref={galleryRef} className="mt-6 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 sm:gap-7" aria-label="Vorlagen-Galerie">{visible.map((item) => <div key={item.id} className="min-w-0"><TemplateCard template={item} selected={selectedId === item.id} scale={scale} onSelect={handleSelect} onPreview={setPreviewId} /></div>)}{visible.length === 0 && <p className="col-span-2 py-12 text-center text-sm" style={{ color: "var(--color-fg-faint)" }}>Keine Vorlagen für diesen Filter.</p>}</section>
     </div>
-    {picked && <SelectionDock template={selectedTemplate} onPreview={setPreviewId} onContinue={onContinue} />}
+    {picked && selectedTemplate && <SelectionDock template={selectedTemplate} onPreview={setPreviewId} onContinue={onContinue} />}
     {previewId && <PreviewOverlay startId={previewId} onClose={() => setPreviewId(null)} onSelect={handleSelect} />}
   </div>;
 }

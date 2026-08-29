@@ -225,10 +225,10 @@ test("a CV saved offline is pushed to the server after reconnect", async ({ brow
   await pageA.getByRole("button", { name: /^PDF$/ }).click();
 
   // The save landed in the LOCAL library (source of truth while offline)…
-  const localCount = await pageA.evaluate(
-    () => JSON.parse(localStorage.getItem("cv_library_v1") || "[]").length
-  );
-  expect(localCount).toBe(1);
+  await expect.poll(
+    () => pageA.evaluate(() => JSON.parse(localStorage.getItem("cv_library_v1") || "[]").length),
+    { timeout: 10_000 },
+  ).toBe(1);
   // …but the server mirror is still empty (the push was swallowed offline).
   expect(serverLibrary).toHaveLength(0);
 

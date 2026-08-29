@@ -123,6 +123,12 @@ test("job alerts can be created and deleted in the UI", async ({ page }) => {
   await expect(input).toBeVisible({ timeout: 5000 });
   await input.fill("QA Alert");
 
+  const frequency = page.getByLabel("Frequenz");
+  await expect(frequency).toHaveCSS("appearance", "none");
+  const frequencyChevron = frequency.locator("xpath=following-sibling::*[name()='svg']");
+  await expect(frequencyChevron).toBeVisible();
+  expect((await frequencyChevron.boundingBox()).x).toBeLessThan((await frequency.boundingBox()).x + (await frequency.boundingBox()).width - 8);
+
   // Submit
   await page.getByRole("button", { name: /^Alert erstellen$/i }).click();
 
@@ -135,6 +141,10 @@ test("job alerts can be created and deleted in the UI", async ({ page }) => {
   await page.waitForTimeout(300);
   await createdRow.hover();
   await createdRow.getByRole("button", { name: /Mehr/i }).click();
+
+  const actionMenu = page.locator(".animate-popover-in").filter({ hasText: "Pausieren" });
+  await expect(actionMenu).toBeVisible();
+  await expect.poll(() => actionMenu.evaluate((node) => getComputedStyle(node).animationName)).toBe("popoverIn");
 
   // Click "Löschen" — post-menu-open the button should be in viewport now
   await page.getByRole("button", { name: /Löschen/i }).click();

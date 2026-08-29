@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,6 +8,7 @@ import {
 
 import useAuthStore from "../hooks/useAuthStore";
 import { jobApi, jobAlertsApi } from "../services/api";
+import CompanyLogo from "../components/job-detail/CompanyLogo";
 import useFetch from "../hooks/useFetch";
 import { Skel, useDelayedSkeleton, usePageTitle } from "../hooks/usePageChrome";
 import useCountUp from "../hooks/useCountUp";
@@ -22,14 +23,26 @@ function T(name) {
 // must reference these CSS variables instead of hardcoding hex values so
 // light/dark themes stay consistent.
 
-/** Animated counter for the status rail (transitions.dev pop-in pattern). */
+/**
+ * Animated counter for the status rail (transitions.dev pop-in pattern).
+ * The CSS pop plays ONCE per target change (keyed by the settled value), not
+ * on every animation frame — keying by the live value remounted the span each
+ * frame and re-triggered the pop, so digits visibly expanded after the count
+ * finished. The pop key only increments when the counter first settles on a
+ * NEW target, so an unchanged count never re-pops.
+ */
 function CountUp({ value }) {
   const display = useCountUp(value);
-  // No key on the span: keying it by the animated value remounts it on every
-  // animation frame, restarting the CSS pop so it only visibly "jumps" in at
-  // the very end. Mount once, pop once, then let the JS counter run smoothly.
+  const settledRef = useRef(value);
+  const [popKey, setPopKey] = useState(0);
+  useEffect(() => {
+    if (display === value && settledRef.current !== value) {
+      settledRef.current = value;
+      setPopKey((k) => k + 1);
+    }
+  }, [display, value]);
   return (
-    <span className="ja-num-pop inline-block">{display}</span>
+    <span key={popKey} className="ja-num-pop inline-block">{display}</span>
   );
 }
 
@@ -139,7 +152,7 @@ export default function DashboardPage() {
   );
   const { data: alertsRaw, loading: alertsLoading, error: alertsErr, reload: alertsReload } = useFetch(
     () => jobAlertsApi.list().then((r) => r.data?.alerts ?? r.data ?? []),
-    { cacheKey: "alerts:list", maxAge: 60_000 }
+    { cacheKey: "alerts:list", maxAge: 120_000 }
   );
 
   const jobs = useMemo(() => (Array.isArray(jobsRaw) ? jobsRaw : []), [jobsRaw]);
@@ -372,7 +385,6 @@ export default function DashboardPage() {
                 <div className="flex flex-col" role="list">
                   {recentJobs.map((job, i) => {
                     const bucket = STATUS_TOKEN[normalizeStatus(job.status)] || BUCKETS[0];
-                    const StatusIcon = bucket.icon;
                     const role = job.role || job.title || "Stelle";
                     const company = job.company || "";
                     const date = job.updated_at || job.created_at;
@@ -398,10 +410,9 @@ export default function DashboardPage() {
                         }}
                       >
                         <span
-                          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity duration-150"
-                          style={{ background: bucket.soft }}
+                          className="w-9 h-9 rounded-lg flex-shrink-0"
                         >
-                          <StatusIcon className="w-[15px] h-[15px]" style={{ color: bucket.color }} />
+                          <CompanyLogo company={company} url={job.url} size="xs" priority={i < 5} />
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className="block text-[14px] font-medium truncate" style={{ color: T("text") }}>{role}</span>
@@ -430,7 +441,7 @@ export default function DashboardPage() {
         <div className="col-span-12 lg:col-span-5 min-w-0 flex flex-col gap-5">
           {/* CV card — restrained green accenting */}
           <div
-            className={`rounded-2xl border p-5 flex flex-col justify-between gap-3 min-h-[132px] ${hasCV ? "interactive-row" : ""}`}
+            className="rounded-2xl border p-5 flex flex-col justify-between gap-3 min-h-[132px]"
             style={{
               ...CARD,
               borderRadius: 16,
@@ -477,7 +488,7 @@ export default function DashboardPage() {
                     </span>
                   </span>
                 </div>
-                <button type="button" onClick={(e) => { e.stopPropagation(); navigate("/lebenslauf"); }} className="btn btn-link text-[13px] gap-1.5 self-end font-medium">
+                <button type="button" onClick={(e) => { e.stopPropagation(); navigate("/lebenslauf"); }} className="btn btn-link text-[13px] gap-1.5 self-end font-medium cursor-pointer">
                   {hasCV ? "Bearbeiten" : "Jetzt erstellen"} <ArrowRight className="arrow-shift w-3.5 h-3.5" />
                 </button>
               </>
@@ -528,7 +539,7 @@ export default function DashboardPage() {
                     </span>
                   </span>
                 </div>
-                <button type="button" onClick={() => navigate("/job-alerts")} className="btn btn-link text-[13px] gap-1.5 self-end font-medium">
+                <button type="button" onClick={() => navigate("/job-alerts")} className="btn btn-link text-[13px] gap-1.5 self-end font-medium cursor-pointer">
                   {activeAlerts > 0 ? "Verwalten" : "Alert anlegen"} <ArrowRight className="arrow-shift w-3.5 h-3.5" />
                 </button>
               </>

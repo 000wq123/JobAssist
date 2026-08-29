@@ -9,7 +9,6 @@ from __future__ import annotations
 import asyncio
 import re
 import logging
-import urllib.parse
 from urllib.parse import urlparse
 
 import httpx
@@ -59,6 +58,17 @@ _GENERIC = {
     "realty", "finance", "immobilien", "handel", "vertrieb",
 }
 
+_JOB_BOARD_DOMAINS = {
+    "adzuna.at", "adzuna.com", "ams.at", "indeed.com", "indeed.at",
+    "jooble.org", "karriere.at", "linkedin.com", "stepstone.at",
+    "willhaben.at", "xing.com", "jobs.at",
+}
+
+
+def _is_job_board(host: str) -> bool:
+    host = host.lower().removeprefix("www.")
+    return any(host == domain or host.endswith(f".{domain}") for domain in _JOB_BOARD_DOMAINS)
+
 
 def _company_domains(company: str, url: str = "") -> list[str]:
     """Return ordered list of domains to probe for a company logo."""
@@ -66,6 +76,9 @@ def _company_domains(company: str, url: str = "") -> list[str]:
         return []
 
     n = company.lower()
+    # Job feeds often append a legal/operator name after a dash. The public
+    # brand before that separator is the useful part for domain matching.
+    n = re.split(r"\s+[\-–—|]\s+", n, maxsplit=1)[0]
     for src, dst in [("ä","ae"),("ö","oe"),("ü","ue"),("ß","ss")]:
         n = n.replace(src, dst)
 
@@ -81,17 +94,45 @@ def _company_domains(company: str, url: str = "") -> list[str]:
     pair   = "".join(tokens[:2])
     pair_h = "-".join(tokens[:2])
 
+    # Company names containing an embedded TLD ("thalia.at GmbH") produce a
+    # corrupted slug ("thaliaat") that resolves nowhere. Strip a trailing
+    # .at/.de/.com from the name before slugifying so "thalia.at" probes the
+    # real domain first.
+    if re.search(r"\.[a-z]{2,3}\s*$", clean) or re.search(r"\s[a-z]{2,3}\.\s", clean):
+        brand_part = re.sub(r"\s*[a-z]{2,3}\.\s*$|\.[a-z]{2,3}\s*$", "", clean).strip()
+        if brand_part and brand_part != clean:
+            brand_slug = re.sub(r"[^a-z0-9]+", "", brand_part)
+            if 2 <= len(brand_slug) <= 63:
+                clean = brand_part
+                slug = brand_slug
+                tokens = [
+                    t for t in re.split(r"[^a-z0-9]+", clean)
+                    if 2 <= len(t) <= 12 and t not in _GENERIC
+                ] or tokens
+                pair = "".join(tokens[:2])
+                pair_h = "-".join(tokens[:2])
+
     seen: set[str] = set()
     candidates: list[str] = []
-    for c in filter(None, [*tokens, slug, slug_h, pair, pair_h]):
-        if c not in seen:
+    # Full company names are much less likely to resolve to an unrelated
+    # business than a generic first token (e.g. anton.at vs
+    # antonprokschinstitut.at), so probe the specific candidates first.
+    # Exception: when the FIRST token is very short (2–3 chars, e.g. "dm"),
+    # the concatenated slug is almost never the real domain — the short brand
+    # token is. Probe the short first token FIRST, before any slug variant.
+    short_first = tokens[0] if tokens and len(tokens[0]) <= 3 else None
+    probe_order = ([short_first, slug, pair, slug_h, pair_h]
+                   if short_first else [slug, pair, slug_h, pair_h])
+    for c in filter(None, [*probe_order, *tokens]):
+        if 2 <= len(c) <= 63 and c not in seen:
             seen.add(c)
             candidates.append(c)
 
-    domains: list[str] = []
-    for tld in (".at", ".net", ".com", ".de", ".org"):
-        for c in candidates:
-            domains.append(f"{c}{tld}")
+    domains: list[str] = [
+        f"{candidate}{tld}"
+        for candidate in candidates
+        for tld in (".at", ".com", ".de", ".net", ".org")
+    ]
 
     if url:
         try:
@@ -99,9 +140,9 @@ def _company_domains(company: str, url: str = "") -> list[str]:
             host = re.sub(r"^www\.", "", host)
             parts = host.split(".")
             root = ".".join(parts[-2:]) if len(parts) > 2 else host
-            for d in [root, host]:
-                if d and d not in domains:
-                    domains.append(d)
+            if not _is_job_board(host):
+                preferred = list(dict.fromkeys(domain for domain in [root, host] if domain))
+                domains = preferred + [domain for domain in domains if domain not in preferred]
         except Exception:
             pass
 
@@ -130,42 +171,65 @@ async def _try_url(client: httpx.AsyncClient, url: str, min_size: int = 64) -> t
 
 
 async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
-    """Try direct paths, DuckDuckGo, and Google favicon for each domain; return first valid image."""
+    """Try high-resolution direct paths and favicon providers in parallel."""
     async with httpx.AsyncClient(follow_redirects=True, timeout=3.5) as client:
-        # Pass 1: direct standard paths (top candidates only for speed)
-        for domain in domains[:6]:
-            for path in ("/apple-touch-icon.png", "/favicon.ico"):
-                result = await _try_url(client, f"https://www.{domain}{path}")
-                if result:
-                    return result
+        async def first_valid(urls: list[str], min_size: int) -> tuple[bytes, str] | None:
+            results = await asyncio.gather(*(
+                _try_url(client, candidate, min_size=min_size) for candidate in urls
+            ))
+            return next((result for result in results if result is not None), None)
 
-        # Pass 2: DuckDuckGo favicon proxy
-        seen_ddg: set[str] = set()
-        for domain in domains:
-            root = ".".join(domain.split(".")[-2:]) if domain.count(".") >= 2 else domain
-            if root in seen_ddg:
-                continue
-            seen_ddg.add(root)
-            if len(seen_ddg) > 3:
-                break
-            ddg_url = f"https://icons.duckduckgo.com/ip3/{root}.ico"
-            result = await _try_url(client, ddg_url, min_size=100)
-            if result:
-                return result
+        # Pass 1: company-owned, high-resolution icon paths. Requests run in
+        # parallel, but results are selected in domain/path priority order.
+        direct_urls = [
+            f"https://{prefix}{domain}{path}"
+            for domain in domains[:4]
+            for path in (
+                "/apple-touch-icon.png",
+                "/android-chrome-192x192.png",
+                "/favicon-192x192.png",
+                "/favicon.ico",
+            )
+            for prefix in ("", "www.")
+        ]
+        result = await first_valid(direct_urls, min_size=128)
+        if result:
+            return result
 
-        # Pass 3: Google favicon service (png, higher quality)
-        seen_google: set[str] = set()
-        for domain in domains:
-            root = ".".join(domain.split(".")[-2:]) if domain.count(".") >= 2 else domain
-            if root in seen_google:
-                continue
-            seen_google.add(root)
-            if len(seen_google) > 3:
-                break
-            google_url = f"https://www.google.com/s2/favicons?domain={root}&sz=128"
-            result = await _try_url(client, google_url, min_size=100)
-            if result:
-                return result
+        # Pass 2: Google returns a consistently sized PNG and is preferable to
+        # tiny ICO files when a direct high-resolution asset is unavailable.
+        provider_domains = list(dict.fromkeys(domains[:6]))
+        google_urls = [
+            f"https://www.google.com/s2/favicons?domain={domain}&sz=256"
+            for domain in provider_domains
+        ]
+        result = await first_valid(google_urls, min_size=128)
+        if result:
+            return result
+
+        # Pass 3: final resilient fallback.
+        ddg_urls = [f"https://icons.duckduckgo.com/ip3/{domain}.ico" for domain in provider_domains]
+        result = await first_valid(ddg_urls, min_size=100)
+        if result:
+            return result
+
+        # Pass 4: icon-provider images with a small floor. Several real
+        # Austrian brands (dm, thalia) only serve a ~1–15 KB icon through the
+        # providers; the 100-byte floor rejected those valid logos and left
+        # the dashboard with letter chips instead of real logos.
+        provider_urls = [
+            *[
+                f"https://www.google.com/s2/favicons?domain={domain}&sz=64"
+                for domain in provider_domains
+            ],
+            *[
+                f"https://icons.duckduckgo.com/ip3/{domain}.ico"
+                for domain in provider_domains
+            ],
+        ]
+        result = await first_valid(provider_urls, min_size=64)
+        if result:
+            return result
 
     return None
 
@@ -181,7 +245,7 @@ async def proxy_logo_best(
     if cache_key in _CACHE:
         content, media_type = _CACHE[cache_key]
         return Response(content=content, media_type=media_type,
-                        headers={"Cache-Control": "public, max-age=86400"})
+                        headers={"Cache-Control": "public, max-age=604800, immutable"})
 
     domains = _company_domains(company, url)
     if not domains:
@@ -199,7 +263,7 @@ async def proxy_logo_best(
         _CACHE[cache_key] = (content, media_type)
 
     return Response(content=content, media_type=media_type,
-                    headers={"Cache-Control": "public, max-age=86400"})
+                    headers={"Cache-Control": "public, max-age=604800, immutable"})
 
 
 @router.get("/proxy/logo")
@@ -214,7 +278,7 @@ async def proxy_logo(
     if url in _CACHE:
         content, media_type = _CACHE[url]
         return Response(content=content, media_type=media_type,
-                        headers={"Cache-Control": "public, max-age=86400"})
+                        headers={"Cache-Control": "public, max-age=604800, immutable"})
 
     async with httpx.AsyncClient(follow_redirects=True, timeout=5) as client:
         try:
@@ -235,4 +299,4 @@ async def proxy_logo(
         _CACHE[url] = (content, media_type)
 
     return Response(content=content, media_type=media_type,
-                    headers={"Cache-Control": "public, max-age=86400"})
+                    headers={"Cache-Control": "public, max-age=604800, immutable"})

@@ -245,8 +245,8 @@ export default function AppShell() {
       {/* Desktop sidebar */}
       <Sidebar me={me} profile={profile} onCommandClick={() => setCmdOpen(true)} />
 
-      {/* Right column */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      {/* Right column — offset by the fixed sidebar's width on desktop */}
+      <div className="flex-1 min-w-0 flex flex-col md:ml-[200px]">
         {/* Skip link — first focusable element; visible only on focus */}
         <a
           href="#main-content"

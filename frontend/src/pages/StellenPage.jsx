@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Bookmark, Send, MessageCircle, CheckCircle2, Archive,
   Search, Plus, Loader2, AlertCircle, RefreshCw, MapPin,
-  CalendarDays, MoreHorizontal, ChevronDown, ExternalLink, FileText,
+  MoreHorizontal, ChevronDown, ExternalLink, FileText,
+  SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import useFetch from "../hooks/useFetch";
+import useFetch, { invalidateSwrCache, mutateSwrCache } from "../hooks/useFetch";
 import useMutation from "../hooks/useMutation";
 import { Skel, useDelayedSkeleton, usePageTitle } from "../hooks/usePageChrome";
 import { useBootstrap } from "../context/BootstrapContext";
@@ -61,7 +62,7 @@ function toApiStatus(status) {
 const BUCKET_BY_KEY = Object.fromEntries(BUCKETS.map((b) => [b.key, b]));
 
 /* ── PipelineRow — one compact, useful job row ── */
-function PipelineRow({ job, onStatusChange, isLast }) {
+function PipelineRow({ job, onStatusChange, isLast, selected, priority }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuBtnRef = useRef(null);
@@ -80,33 +81,33 @@ function PipelineRow({ job, onStatusChange, isLast }) {
       role="listitem"
       tabIndex={0}
       aria-label={`${role} bei ${company || "Unbekannt"}, ${bucket.label}`}
-      className="interactive-row group flex items-center gap-3.5 py-3 px-3 sm:px-4 rounded-lg focus:outline-none cursor-pointer"
+      aria-current={selected ? "true" : undefined}
+      className="interactive-row group flex items-center gap-3 py-3 px-3 rounded-lg focus:outline-none cursor-pointer"
       style={{
         borderBottom: isLast ? "none" : `1px solid ${T("border-subtle")}`,
+        background: selected ? T("surface-hover") : undefined,
+        boxShadow: selected ? "inset 2px 0 0 var(--app-brand)" : undefined,
       }}
       onClick={() => navigate(`/jobs/${job.id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/jobs/${job.id}`); }
       }}
     >
-      <CompanyLogo company={company} url={job.url} size="sm" />
+      <CompanyLogo company={company} url={job.url} size="xs" priority={selected || priority} />
 
       {/* Identity */}
       <span className="flex-1 min-w-0">
         <span className="block text-[14px] font-medium truncate" style={{ color: T("text") }}>{role}</span>
-        <span className="flex items-center gap-x-2 gap-y-0.5 flex-wrap text-[12px] mt-0.5" style={{ color: T("text-muted") }}>
+        <span className="flex items-center gap-x-1.5 text-[11.5px] mt-0.5 min-w-0" style={{ color: T("text-muted") }}>
           {company && <span className="truncate">{company}</span>}
           {location && (
-            <span className="inline-flex items-center gap-0.5 min-w-0">
+            <span className="hidden xl:inline-flex items-center gap-0.5 min-w-0">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{location}</span>
             </span>
           )}
           {dateStr && (
-            <span className="inline-flex items-center gap-0.5 flex-shrink-0">
-              <CalendarDays className="w-3 h-3" />
-              {dateStr}
-            </span>
+            <span className="flex-shrink-0 text-[var(--app-text-faint)]">· {dateStr}</span>
           )}
         </span>
       </span>
@@ -190,6 +191,7 @@ function FindenTab({ onSaved }) {
   const [isFetching, setIsFetching] = useState(false);
   const [pendingJobKey, setPendingJobKey] = useState(null);
   const [savedJobKeys, setSavedJobKeys] = useState(() => new Set());
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const searchIdRef = useRef(0);
 
   const results = useMemo(() => {
@@ -305,43 +307,46 @@ function FindenTab({ onSaved }) {
         </button>
       </form>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        {JOB_TYPES.map(t => (
-          <button
-            key={t.value}
-            type="button"
-            onClick={() => setJobType(t.value)}
-            className="h-8 px-3 rounded-full text-[12px] font-medium border transition-colors cursor-pointer"
-            style={{
-              color: jobType === t.value ? "#b30010" : T("text-muted"),
-              borderColor: jobType === t.value ? "var(--app-brand)" : T("border"),
-              background: jobType === t.value ? "color-mix(in srgb, var(--app-brand) 8%, transparent)" : "transparent",
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="mb-5">
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((value) => !value)}
+          aria-expanded={filtersOpen}
+          className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border text-[12px] font-medium transition-colors"
+          style={{ borderColor: T("border"), color: T("text-muted"), background: filtersOpen ? T("surface-hover") : "transparent" }}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          Weitere Filter
+          {(jobType || source !== "alle") && <span className="w-1.5 h-1.5 rounded-full bg-[var(--app-brand)]" aria-label="Filter aktiv" />}
+          <ChevronDown className={`w-3 h-3 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
+        </button>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-[11px] font-semibold uppercase tracking-wide mr-1" style={{ color: T("text-faint") }}>Quelle</span>
-        {SEARCH_SOURCES.map(s => (
-          <button
-            key={s.value}
-            type="button"
-            onClick={() => setSource(s.value)}
-            title={s.desc}
-            aria-pressed={source === s.value}
-            className="h-7 px-3 rounded-md text-[12px] font-medium border transition-colors cursor-pointer"
-            style={{
-              color: source === s.value ? "#b30010" : T("text-muted"),
-              borderColor: source === s.value ? "var(--app-brand)" : T("border"),
-              background: source === s.value ? "color-mix(in srgb, var(--app-brand) 8%, transparent)" : "transparent",
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
+        {filtersOpen && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl rounded-xl border p-3" style={{ borderColor: T("border-subtle"), background: T("surface") }}>
+            <label className="text-[11px] font-medium" style={{ color: T("text-muted") }}>
+              Jobart
+              <select
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className="mt-1 w-full h-9 px-3 rounded-lg border text-[13px] outline-none"
+                style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
+              >
+                {JOB_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+              </select>
+            </label>
+            <label className="text-[11px] font-medium" style={{ color: T("text-muted") }}>
+              Quelle
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="mt-1 w-full h-9 px-3 rounded-lg border text-[13px] outline-none"
+                style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
+              >
+                {SEARCH_SOURCES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+            </label>
+          </div>
+        )}
       </div>
 
       {!submitted && !isFetching && (
@@ -406,7 +411,7 @@ function FindenTab({ onSaved }) {
                   className="grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3.5 py-4 px-4 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   style={{ borderBottom: `1px solid ${T("border-subtle")}` }}
                 >
-                  <CompanyLogo company={company} url={url} size="sm" />
+                  <CompanyLogo company={company} url={url} size="sm" priority={i < 6} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium truncate" style={{ color: T("text") }}>{title}</p>
                     <div className="flex items-center gap-x-2 gap-y-1 flex-wrap mt-1 text-[11.5px]" style={{ color: T("text-muted") }}>
@@ -496,6 +501,8 @@ function FindenTab({ onSaved }) {
 /* ── StellenPage ── */
 export default function StellenPage() {
   usePageTitle("Stellen");
+  const { jobId } = useParams();
+  const hasDetail = Boolean(jobId);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") === "finden" ? "finden" : "meine";
   const [tab, setTab] = useState(initialTab);
@@ -528,10 +535,29 @@ export default function StellenPage() {
   const statusMutation = useMutation(({ id, status }) => jobApi.updateStatus(id, status));
 
   const handleStatusChange = async (id, status) => {
+    // Optimistic: patch the row in place — no reload, no list blanking. The
+    // row stays visible and its badge flips instantly; the server response
+    // (canonical updated_at) reconciles the cache afterwards.
+    const apiStatus = toApiStatus(status);
+    const previousJobs = mutateSwrCache("jobs:list", (current) => (
+      Array.isArray(current)
+        ? current.map((item) => (String(item.id) === String(id) ? { ...item, status: apiStatus } : item))
+        : current
+    ));
     try {
-      await statusMutation.mutate({ id, status: toApiStatus(status) });
-      reload();
+      await statusMutation.mutate({ id, status: apiStatus });
+      // Reconcile with the canonical server record without a refetch cycle.
+      const fresh = await jobApi.get(id).then((r) => r.data).catch(() => null);
+      if (fresh) {
+        mutateSwrCache("jobs:list", (current) => (
+          Array.isArray(current)
+            ? current.map((item) => (String(item.id) === String(id) ? { ...item, ...fresh } : item))
+            : current
+        ));
+      }
     } catch {
+      if (previousJobs !== undefined) mutateSwrCache("jobs:list", previousJobs);
+      else invalidateSwrCache("jobs:list");
       toast.error("Status-Änderung fehlgeschlagen");
     }
   };
@@ -571,13 +597,13 @@ export default function StellenPage() {
   };
 
   return (
-    <div className="pt-4">
-      <div className="flex items-center justify-between mb-8">
+    <div className={hasDetail ? "pt-2" : "pt-4"}>
+      <div className={`flex items-center justify-between ${hasDetail ? "mb-5" : "mb-8"}`}>
         <div>
-          <h1 className="text-[22px] font-bold tracking-[-0.02em]" style={{ color: T("text") }}>
+          <h1 className={hasDetail ? "text-[18px] font-semibold tracking-[-0.02em]" : "text-[22px] font-bold tracking-[-0.02em]"} style={{ color: T("text") }}>
             {tab === "finden" ? "Jobs finden" : "Meine Stellen"}
           </h1>
-          <p className="text-[13px] mt-1" style={{ color: T("text-muted") }}>
+          <p className={`${hasDetail ? "text-[12px]" : "text-[13px]"} mt-1`} style={{ color: T("text-muted") }}>
             {tab === "finden"
               ? "Durchsuche karriere.at, willhaben.at, AMS und mehr"
               : hasJobs
@@ -590,7 +616,7 @@ export default function StellenPage() {
         </div>
         <div className="flex items-center gap-1 rounded-lg border p-0.5" style={{ borderColor: T("border"), background: T("surface-hover") }}>
           {[
-            { key: "meine", label: "Meine Stellen" },
+            { key: "meine", label: hasDetail ? "Liste" : "Meine Stellen" },
             { key: "finden", label: "Finden" },
           ].map(t => (
             <button
@@ -612,46 +638,36 @@ export default function StellenPage() {
 
       {tab === "finden" ? <FindenTab onSaved={reload} /> : (
         hasJobs ? (
-          <div className="flex flex-col gap-5">
-            {/* Status filter chips — read from ?status=, drive the URL */}
-            <div className="flex flex-wrap items-center gap-2">
-              {[{ key: "all", label: "Alle" }, ...BUCKETS].map((b) => {
-                const active = (statusFilter ?? "all") === b.key;
-                const count = b.key === "all"
-                  ? jobs.length
-                  : jobs.filter((j) => normalizeStatus(j.status) === b.key).length;
-                return (
-                  <button
-                    key={b.key}
-                    type="button"
-                    onClick={() => selectStatus(b.key)}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] font-medium border transition-colors cursor-pointer"
-                    style={{
-                      borderColor: active ? (b.key === "all" ? "var(--app-brand)" : b.chip) : T("border"),
-                      background: active
-                        ? (b.key === "all" ? "var(--app-brand-soft)" : `${b.chip}14`)
-                        : "transparent",
-                      color: active ? (b.key === "all" ? "#b30010" : b.chip) : T("text-muted"),
-                    }}
-                  >
-                    {b.label}
-                    <span className="text-[11px] tabular-nums opacity-70">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* In-list search */}
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: T("text-faint") }} />
-              <input
-                type="text"
-                value={rowSearch}
-                onChange={(e) => setRowSearch(e.target.value)}
-                placeholder="In gespeicherten Stellen suchen…"
-                className="w-full h-9 pl-9 pr-3 rounded-lg text-[13px] border outline-none transition-colors focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
-                style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
-              />
+          <div className={hasDetail ? "flex flex-col gap-3" : "flex flex-col gap-5"}>
+            {/* Search and status are one quiet control row. */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: T("text-faint") }} />
+                <input
+                  type="text"
+                  value={rowSearch}
+                  onChange={(e) => setRowSearch(e.target.value)}
+                  placeholder="Stellen durchsuchen…"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg text-[13px] border outline-none transition-colors focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
+                  style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
+                />
+              </div>
+              <label className="relative flex-shrink-0">
+                <span className="sr-only">Status filtern</span>
+                <select
+                  aria-label="Status filtern"
+                  value={statusFilter || "all"}
+                  onChange={(e) => selectStatus(e.target.value)}
+                  className="h-9 w-[116px] appearance-none rounded-lg border bg-transparent pl-3 pr-7 text-[12px] outline-none focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
+                  style={{ borderColor: T("border"), background: T("surface"), color: T("text-muted") }}
+                >
+                  {[{ key: "all", label: "Alle" }, ...BUCKETS].map((bucket) => {
+                    const count = bucket.key === "all" ? jobs.length : jobs.filter((item) => normalizeStatus(item.status) === bucket.key).length;
+                    return <option key={bucket.key} value={bucket.key}>{bucket.label} ({count})</option>;
+                  })}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 w-3 h-3 -translate-y-1/2" style={{ color: T("text-faint") }} />
+              </label>
             </div>
 
             {/* Pipeline list — one surface */}
@@ -680,6 +696,8 @@ export default function StellenPage() {
                       key={job.id || i}
                       job={job}
                       isLast={i === filteredJobs.length - 1}
+                      selected={String(job.id) === String(jobId || "")}
+                      priority={i < 8}
                       onStatusChange={handleStatusChange}
                     />
                   ))}

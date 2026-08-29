@@ -95,7 +95,7 @@ function broadcastUnauthenticated() {
 }
 
 async function rawRequest(method, url, body, config = {}) {
-  const { params, headers = {}, signal: externalSignal, timeout, _retried } = config;
+  const { params, headers = {}, signal: externalSignal, timeout, _retried, responseType, priority } = config;
 
   let fullUrl = url.startsWith("http") ? url : `${defaultBaseURL}${url}`;
   if (params) {
@@ -137,15 +137,20 @@ async function rawRequest(method, url, body, config = {}) {
       body: fetchBody,
       credentials: "include",
       signal: controller.signal,
+      priority,
     });
 
-    const text = await res.text();
     let data = null;
-    if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
+    if (res.ok && responseType === "blob") {
+      data = await res.blob();
+    } else {
+      const text = await res.text();
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
       }
     }
 
@@ -334,6 +339,19 @@ export const jobApi = {
     const params = new URLSearchParams({ keywords, location, page });
     return api.get(`/jobs/search/ams?${params.toString()}`);
   },
+};
+
+// --- Company logos ---
+// Logo requests need the same bearer token as every other API call. Fetching
+// this URL directly from an <img> cannot attach that header, so callers load
+// the binary response here and render it through a local object URL.
+export const logoApi = {
+  best: (company, url = "", priority = "auto") => api.get("/proxy/logo/best", {
+    params: { company, url },
+    responseType: "blob",
+    timeout: 8_000,
+    priority,
+  }),
 };
 
 // --- Cover Letter ---

@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import useFetch from "../hooks/useFetch";
+import useFetch, { invalidateSwrCache } from "../hooks/useFetch";
 import { usePageTitle } from "../hooks/usePageChrome";
 import useMutation from "../hooks/useMutation";
 import {
   Bell, Pencil, Plus, Trash2, X, MoreHorizontal,
   AlertCircle, Clock, Mail, MapPin, Briefcase,
   RefreshCw, CheckCircle2, Search, SlidersHorizontal,
-  ArrowUpRight, Lightbulb, BarChart3,
+  ArrowUpRight, Lightbulb, BarChart3, ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { jobAlertsApi } from "../services/api";
 import { getApiErrorMessage } from "../utils/apiError";
 import useFocusTrap from "../hooks/useFocusTrap";
+import Popover from "../components/ui/Popover";
 
 /* ───────────────────────────────────────────────────────────────
    Token helper
@@ -153,7 +154,6 @@ function DonutRing({ segments, size = 90, strokeWidth = 8 }) {
    ─────────────────────────────────────────────────────────────── */
 function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const menuBtnRef = useRef(null);
   const typeLabel = JOB_TYPES.find((t) => t.value === alert.job_type)?.label || "Alle Arten";
   const freqLabel = FREQUENCIES.find((f) => f.value === alert.frequency)?.label || alert.frequency;
@@ -203,13 +203,13 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
             </div>
           </div>
 
-          {/* Status badge */}
+          {/* Status badge — light green wash; text/border stay soft */}
           <span
             className="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium border flex-shrink-0"
             style={{
-              color: alert.is_active ? "#2f6b3a" : T("text-muted"),
-              borderColor: alert.is_active ? "color-mix(in srgb, var(--app-success) 25%, transparent)" : T("border-subtle"),
-              background: alert.is_active ? "color-mix(in srgb, var(--app-success) 8%, transparent)" : "transparent",
+              color: alert.is_active ? "#5d9f68" : T("text-muted"),
+              borderColor: alert.is_active ? "color-mix(in srgb, #5d9f68 22%, transparent)" : T("border-subtle"),
+              background: alert.is_active ? "color-mix(in srgb, #5d9f68 10%, transparent)" : "transparent",
             }}
           >
             {alert.is_active ? "Aktiv" : "Pausiert"}
@@ -239,17 +239,9 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
             <button
               type="button"
               ref={menuBtnRef}
-              onClick={() => {
-                const r = menuBtnRef.current?.getBoundingClientRect();
-                if (r) {
-                  // Clamp the menu inside the viewport so it never overflows.
-                  const menuHeight = 120;
-                  const top = Math.min(r.bottom + 4, window.innerHeight - menuHeight);
-                  const left = Math.max(8, Math.min(r.right - 140, window.innerWidth - 148));
-                  setMenuPos({ top, left });
-                }
-                setMenuOpen((v) => !v);
-              }}
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
               className="h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
               style={{ color: T("text-secondary") }}
               title="Mehr"
@@ -257,21 +249,13 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
               <MoreHorizontal className="w-4 h-4" />
             </button>
 
-            {menuOpen && createPortal(
-              <div
-                className="fixed inset-0 z-[9999]"
-                onClick={(e) => { if (e.target === e.currentTarget) setMenuOpen(false); }}
-              >
-                <div
-                  className="absolute rounded-lg border py-1.5 min-w-[140px]"
-                  style={{
-                    top: menuPos.top,
-                    left: menuPos.left,
-                    background: T("surface"),
-                    borderColor: T("border"),
-                    boxShadow: T("shadow-modal"),
-                  }}
-                >
+            <Popover
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              anchorRef={menuBtnRef}
+              align="right"
+              className="rounded-lg py-1.5 min-w-[140px] animate-popover-in origin-top-right"
+            >
                   <button
                     type="button"
                     onClick={() => { onToggleActive(alert); setMenuOpen(false); }}
@@ -290,10 +274,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
                     <Trash2 className="w-3.5 h-3.5" />
                     Löschen
                   </button>
-                </div>
-              </div>,
-              document.body
-            )}
+            </Popover>
           </div>
         </div>
       </div>
@@ -379,30 +360,36 @@ function AlertModal({ mode, alert, isSaving, onClose, onSave }) {
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-medium" style={{ color: T("text") }}>Anstellungsart</span>
-              <select
-                value={jobType}
-                onChange={(e) => setJobType(e.target.value)}
-                className="h-10 px-3 rounded-md text-[14px] border outline-none"
-                style={{ background: T("surface"), borderColor: T("border"), color: T("text") }}
-              >
-                {JOB_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
+              <span className="relative block">
+                <select
+                  value={jobType}
+                  onChange={(e) => setJobType(e.target.value)}
+                  className="h-10 w-full appearance-none rounded-md border pl-3 pr-10 text-[14px] outline-none"
+                  style={{ background: T("surface"), borderColor: T("border"), color: T("text") }}
+                >
+                  {JOB_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T("text-muted") }} />
+              </span>
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-medium" style={{ color: T("text") }}>Frequenz</span>
-              <select
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-                className="h-10 px-3 rounded-md text-[14px] border outline-none"
-                style={{ background: T("surface"), borderColor: T("border"), color: T("text") }}
-              >
-                {FREQUENCIES.map((f) => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
-                ))}
-              </select>
+              <span className="relative block">
+                <select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  className="h-10 w-full appearance-none rounded-md border pl-3 pr-10 text-[14px] outline-none"
+                  style={{ background: T("surface"), borderColor: T("border"), color: T("text") }}
+                >
+                  {FREQUENCIES.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+                <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T("text-muted") }} />
+              </span>
             </label>
           </div>
 
@@ -444,7 +431,7 @@ export default function JobAlertsPage() {
     loading: alertsFetching,
     error: alertsError,
     reload: alertsReload,
-  } = useFetch(() => jobAlertsApi.list().then((r) => r.data), { cacheKey: "alerts:list", maxAge: 30_000 });
+  } = useFetch(() => jobAlertsApi.list().then((r) => r.data), { cacheKey: "alerts:list", maxAge: 120_000 });
 
   const alerts = useMemo(() => alertsData?.alerts ?? alertsData ?? [], [alertsData]);
   const listAlerts = useMemo(() => (Array.isArray(alerts) ? alerts : []), [alerts]);
@@ -479,6 +466,7 @@ export default function JobAlertsPage() {
   const handleDelete = async (id) => {
     try {
       await delMut.mutate(id);
+      invalidateSwrCache("alerts:list");
       alertsReload();
       toast.success("Alert gelöscht.");
     } catch (e) {
@@ -490,6 +478,7 @@ export default function JobAlertsPage() {
   const handleToggle = async (a) => {
     try {
       await toggleMut.mutate({ id: a.id, is_active: !a.is_active });
+      invalidateSwrCache("alerts:list");
       alertsReload();
       toast.success("Status aktualisiert.");
     } catch (e) {
@@ -504,6 +493,7 @@ export default function JobAlertsPage() {
   const handleSave = async (payload) => {
     try {
       await saveMut.mutate(payload);
+      invalidateSwrCache("alerts:list");
       alertsReload();
       toast.success(payload.id ? "Alert gespeichert." : "Alert erstellt.");
       setShowCreate(false);

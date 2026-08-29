@@ -35,6 +35,14 @@ function seedAuthenticatedState() {
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(seedAuthenticatedState);
+  await page.route("**/api/proxy/logo/best**", async (route) => {
+    expect(route.request().headers().authorization).toBe("Bearer test-access-token");
+    await route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#e30613"/><text x="128" y="150" text-anchor="middle" fill="white" font-size="72">JA</text></svg>',
+    });
+  });
 });
 
 test("finden page can search and see results", async ({ page }) => {
@@ -132,6 +140,7 @@ test("finden page can search and see results", async ({ page }) => {
   await page.waitForLoadState("networkidle");
   const searchInput = page.getByPlaceholder(/Stichwort/i);
   await expect(searchInput).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("button", { name: /Weitere Filter/i })).toBeVisible();
   await searchInput.fill("QA Engineer");
   await page.getByLabel("Stadt filtern").fill("Wien");
   
@@ -143,7 +152,7 @@ test("finden page can search and see results", async ({ page }) => {
   expect(new URL(searchUrl).searchParams.get("location")).toBe("Wien");
   await expect(page.getByText("Gefunden auf Adzuna")).toBeVisible();
   await expect(page.getByRole("link", { name: /Original/i })).toHaveAttribute("href", "https://example.com/jobs/qa");
-  await expect(page.locator("[data-company-logo]")).toHaveCount(1);
+  await expect(page.locator("img[data-company-logo]")).toHaveCount(1);
 
   await page.getByRole("button", { name: "Bewerbung vorbereiten" }).click();
   await expect.poll(() => savedPayload?.source).toBe("Adzuna");
@@ -173,6 +182,9 @@ test("pipeline row menu changes status and detail page can delete", async ({ pag
   };
   let currentStatus = testJob.status;
   let deleted = false;
+  let deleteRequested = false;
+  let releaseDelete;
+  const deleteResponse = new Promise((resolve) => { releaseDelete = resolve; });
   const statusUpdates = [];
 
   await page.route("**/api/auth/refresh", async (route) => {
@@ -277,6 +289,8 @@ test("pipeline row menu changes status and detail page can delete", async ({ pag
       return;
     }
     if (route.request().method() === "DELETE") {
+      deleteRequested = true;
+      await deleteResponse;
       deleted = true;
       await route.fulfill({ status: 204, body: "" });
       return;
@@ -285,6 +299,7 @@ test("pipeline row menu changes status and detail page can delete", async ({ pag
   });
 
   await page.goto("/jobs");
+  await expect(page.getByLabel("Status filtern")).toBeVisible();
 
   // Row renders with its current bucket badge
   const row = page.getByRole("listitem").filter({ hasText: "Lagermitarbeiter" });
@@ -308,11 +323,18 @@ test("pipeline row menu changes status and detail page can delete", async ({ pag
   // Detail page delete flow
   await row.click();
   await expect(page).toHaveURL(/\/jobs\/7$/);
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await expect(page.getByText("Gefunden auf Adzuna")).toBeVisible();
+  await expect(page.getByText("Wann kann ich mit einer Antwort rechnen?")).toBeVisible();
   await page.getByRole("button", { name: "Mehr Aktionen" }).click();
   await page.getByRole("menuitem", { name: /Stelle löschen/i }).click();
   await page.getByRole("button", { name: "Löschen", exact: true }).click();
 
-  await expect.poll(() => deleted).toBe(true);
+  // The UI updates before the deliberately delayed backend response arrives.
+  await expect.poll(() => deleteRequested).toBe(true);
+  expect(deleted).toBe(false);
   await expect(page).toHaveURL(/\/jobs$/);
   await expect(page.getByText("Noch keine Stellen gespeichert")).toBeVisible({ timeout: 10000 });
+  releaseDelete();
+  await expect.poll(() => deleted).toBe(true);
 });
