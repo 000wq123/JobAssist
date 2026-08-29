@@ -10,7 +10,7 @@ export default function TermsPage() {
   return (
     <LegalLayout
       title={<>Allgemeine <span className="font-display italic text-[var(--app-brand)]">Geschäfts­bedingungen</span></>}
-      subtitle="Stand: 23. März 2026"
+      subtitle="Stand: 29. August 2026"
     >
       <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
         <section className={sectionClass}>
@@ -109,10 +109,9 @@ export default function TermsPage() {
             Für Verbraucher gelten die zwingenden Bestimmungen des Konsumentenschutzgesetzes (KSchG).
           </p>
           <p className="mt-2">
-            Online-Streitbeilegung gemäß Art. 14 Abs. 1 ODR-VO: Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung bereit:{" "}
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className={linkClass}>
-              https://ec.europa.eu/consumers/odr
-            </a>
+            Für die Beilegung von Streitigkeiten stehen wir nicht für ein Verfahren vor einer
+            Verbraucherschlichtungsstelle zur Verfügung. Hinweis: Die frühere EU-Plattform zur
+            Online-Streitbeilegung (ODR-Plattform) wurde mit 20. Juli 2025 eingestellt.
           </p>
         </section>
       </div>

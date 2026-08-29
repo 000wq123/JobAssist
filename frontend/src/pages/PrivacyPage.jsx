@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import LegalLayout from "../components/ui/LegalLayout";
 
-/** Static GDPR-compliant privacy policy page. */
+/** Static GDPR-compliant privacy policy page (DSGVO / österreichisches DSG). */
 export default function PrivacyPage() {
   const linkClass = "text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors";
   const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
@@ -11,14 +11,14 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title={<><span className="font-display italic text-[var(--app-brand)]">Datenschutz</span>­erklärung</>}
-      subtitle="Stand: 5. April 2026 — gemäß DSGVO (EU-Datenschutz-Grundverordnung)"
+      subtitle="Stand: 29. August 2026 — gemäß DSGVO (EU-Datenschutz-Grundverordnung) und österreichischem Datenschutzgesetz (DSG)"
     >
       <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
         <section className={sectionClass}>
           <h2 className={h2Class}>1. Verantwortliche Stelle</h2>
           <p>
-            Verantwortlich für die Datenverarbeitung ist der Betreiber von JobAssist (siehe{" "}
-            <Link to="/impressum" className={linkClass}>Impressum</Link>). Bei Fragen zum Datenschutz erreichst
+            Verantwortlich für die Datenverarbeitung ist der Betreiber von JobAssist (Davor Radeski, Österreich,
+            siehe <Link to="/impressum" className={linkClass}>Impressum</Link>). Bei Fragen zum Datenschutz erreichst
             du uns unter <strong className="text-[var(--color-fg)]">info@jobassist.tech</strong>.
           </p>
         </section>
@@ -62,10 +62,13 @@ export default function PrivacyPage() {
 
           <h3 className={h3Class}>e) Zahlungsdaten</h3>
           <p>
-            Zahlungsinformationen (Kreditkarte, IBAN) werden{" "}
+            Derzeit ist JobAssist <strong className="text-[var(--color-fg)]">kostenlos</strong>; es werden{" "}
+            <strong className="text-[var(--color-fg)]">keine Zahlungsdaten erhoben</strong>. Sollten in Zukunft
+            kostenpflichtige Pläne angeboten werden, werden Zahlungsinformationen (z.&nbsp;B. Kreditkarte){" "}
             <strong className="text-[var(--color-fg)]">ausschließlich von Stripe</strong> verarbeitet und
-            gespeichert. Wir haben keinen Zugriff auf deine vollständigen Zahlungsdaten. Wir speichern lediglich
-            die Stripe-Kunden-ID und den Abonnementstatus.
+            gespeichert; wir haben keinen Zugriff auf vollständige Zahlungsdaten, sondern speichern lediglich die
+            Stripe-Kunden-ID und den Abonnementstatus. Diese Stelle wird vor Aktivierung von Bezahlfunktionen
+            entsprechend aktualisiert.
           </p>
         </section>
 
@@ -83,8 +86,8 @@ export default function PrivacyPage() {
                 {[
                   ["Bereitstellung des Dienstes", "Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)"],
                   ["KI-Analyse deines Lebenslaufs", "Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)"],
-                  ["Zahlungsabwicklung über Stripe", "Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)"],
                   ["Job-Alert E-Mails", "Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)"],
+                  ["Server- und Zugriffsprotokolle (Sicherheit, Fehlerbehebung)", "Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse)"],
                   ["Missbrauchsprävention", "Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse)"],
                   ["Geräte-Fingerabdruck (Verhinderung von Mehrfachkonten)", "Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse)"],
                 ].map(([zweck, basis]) => (
@@ -96,6 +99,11 @@ export default function PrivacyPage() {
               </tbody>
             </table>
           </div>
+          <p className="mt-3 text-[13px]">
+            Derzeit findet <strong className="text-[var(--color-fg)]">keine Zahlungsabwicklung</strong> statt
+            (kostenlose Nutzung). Erfolgt in Zukunft eine Bezahlung über Stripe, dient dafür Art. 6 Abs. 1 lit. b
+            DSGVO (Vertragserfüllung) als Rechtsgrundlage.
+          </p>
         </section>
 
         <section className={sectionClass}>
@@ -103,23 +111,32 @@ export default function PrivacyPage() {
           <div className="rounded-xl border border-[var(--app-brand)]/25 bg-[var(--app-brand)]/10 p-4">
             <p>
               Wenn du einen Lebenslauf hochlädst oder ein Anschreiben generierst, werden die Inhalte an{" "}
-              <strong className="text-[var(--color-fg)]">Groq, Inc.</strong> (KI-API) übermittelt, um die Analyse
+              <strong className="text-[var(--color-fg)]">Groq, Inc.</strong> (USA) übermittelt, um die Analyse
               oder Textgenerierung durchzuführen. Die Übermittlung erfolgt verschlüsselt (TLS).
             </p>
             <p className="mt-2">
-              Groq betreibt eine <strong className="text-[var(--color-fg)]">Zero Data Retention</strong>-Richtlinie:
-              Anfragedaten werden nicht gespeichert, nicht protokolliert und nicht zum Training von KI-Modellen
-              verwendet. Deine Daten verlassen Groqs Infrastruktur nicht dauerhaft.
+              Nach Angaben von Groq gilt eine <strong className="text-[var(--color-fg)]">Zero Data
+              Retention</strong>-Richtlinie: Anfragedaten werden nicht dauerhaft gespeichert und nicht zum
+              Training von KI-Modellen verwendet. Da Groq seinen Sitz in den USA hat, erfolgt die Übermittlung
+              auf Grundlage der Standardvertragsklauseln (Art. 46 DSGVO) bzw. des EU-US Data Privacy Framework,
+              soweit jeweils anwendbar.
             </p>
           </div>
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>5. Datenspeicherung</h2>
+          <h2 className={h2Class}>5. Datenspeicherung und Hosting</h2>
           <p>
-            Deine Daten werden in einer <strong className="text-[var(--color-fg)]">Neon-Datenbank</strong>{" "}
-            (PostgreSQL) gespeichert. Die Server befinden sich in der EU. Die Verbindung zur Datenbank ist
-            verschlüsselt.
+            Deine Daten werden in einer <strong className="text-[var(--color-fg)]">Neon</strong>-Datenbank
+            (PostgreSQL) gespeichert. Die Datenbankregion befindet sich in der EU (Frankfurt, eu-central-1). Die
+            Verbindung zur Datenbank ist verschlüsselt.
+          </p>
+          <p className="mt-2">
+            Die Web-Applikation wird bei <strong className="text-[var(--color-fg)]">Vercel</strong> (Frontend)
+            und <strong className="text-[var(--color-fg)]">Railway</strong> (Backend) gehostet. Beide sind
+            US-amerikanische Anbieter; eine Übermittlung von Daten in die USA erfolgt auf Grundlage der
+            Standardvertragsklauseln (Art. 46 DSGVO) bzw. des EU-US Data Privacy Framework, soweit jeweils
+            anwendbar.
           </p>
           <p className="mt-2">
             Hochgeladene Dateien (Lebensläufe) werden sicher gespeichert und sind nur für dein Konto zugänglich.
@@ -127,35 +144,67 @@ export default function PrivacyPage() {
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>6. Auftragsverarbeiter (Drittanbieter)</h2>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>
-              <strong className="text-[var(--color-fg)]">Stripe</strong> (Stripe, Inc.) — Zahlungsabwicklung.{" "}
-              <a href="https://stripe.com/at/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>
-                Datenschutz von Stripe
-              </a>
-            </li>
-            <li>
-              <strong className="text-[var(--color-fg)]">Neon</strong> (Neon, Inc.) — Datenbank-Hosting (PostgreSQL, EU-Server)
-            </li>
-            <li>
-              <strong className="text-[var(--color-fg)]">Vercel</strong> — Hosting der Web-Applikation
-            </li>
-            <li>
-              <strong className="text-[var(--color-fg)]">Groq, Inc.</strong> — KI-API zur Analyse und Textgenerierung
-              (Zero Data Retention).{" "}
-              <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className={linkClass}>
-                Datenschutz von Groq
-              </a>
-            </li>
-          </ul>
-          <p className="mt-2">
-            Mit allen Auftragsverarbeitern bestehen entsprechende Vereinbarungen gemäß Art. 28 DSGVO.
+          <h2 className={h2Class}>6. Server- und Zugriffsprotokolle</h2>
+          <p>
+            Beim Aufruf der Website und bei API-Anfragen speichern die Hosting-Anbieter (Vercel, Railway)
+            technische Zugriffsprotokolle (u.&nbsp;a. IP-Adresse, Zeitstempel, aufgerufene Ressource,
+            User-Agent). Diese dienen der Sicherheit, der Fehleranalyse und der Abwehr von Missbrauch und werden
+            nach kurzer Zeit automatisch gelöscht. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO
+            (berechtigtes Interesse).
           </p>
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>7. Deine Rechte (DSGVO)</h2>
+          <h2 className={h2Class}>7. Auftragsverarbeiter (Drittanbieter)</h2>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>
+              <strong className="text-[var(--color-fg)]">Brevo</strong> (Frankreich) — Versand von
+              transaktionalen E-Mails (E-Mail-Bestätigung, Passwort-Reset, Job-Alerts).{" "}
+              <a href="https://www.brevo.com/legal/dataprotectionagreement/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+                Datenschutz von Brevo
+              </a>
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Railway</strong> (USA) — Backend-Hosting
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Vercel</strong> (USA) — Frontend-Hosting
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Neon</strong> (USA; Datenbankregion EU) —
+              PostgreSQL-Datenbank
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Groq, Inc.</strong> (USA) — KI-API zur Analyse und
+              Textgenerierung (Zero Data Retention).{" "}
+              <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+                Datenschutz von Groq
+              </a>
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Google Fonts</strong> (USA) — Schriftarten werden
+              direkt von Google-Servern geladen; dabei wird deine IP-Adresse an Google übermittelt.{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>
+                Datenschutz von Google
+              </a>
+            </li>
+          </ul>
+          <p className="mt-3">
+            <strong className="text-[var(--color-fg)]">Optional bzw. derzeit nicht aktiv:</strong> Sentry
+            (Fehler- und Performance-Monitoring) und Stripe (Zahlungsabwicklung) sind derzeit{" "}
+            <strong className="text-[var(--color-fg)]">nicht aktiviert</strong>. Sie würden bei Aktivierung an
+            dieser Stelle aufgenommen.
+          </p>
+          <p className="mt-2">
+            Soweit gesetzlich erforderlich, bestehen mit den Auftragsverarbeitern Vereinbarungen gemäß
+            Art. 28 DSGVO. Für Übermittlungen in Drittländer (insbesondere USA) gelten die
+            Standardvertragsklauseln (Art. 46 DSGVO) bzw. der EU-US Data Privacy Framework, soweit jeweils
+            anwendbar.
+          </p>
+        </section>
+
+        <section className={sectionClass}>
+          <h2 className={h2Class}>8. Deine Rechte (DSGVO)</h2>
           <p>Du hast jederzeit das Recht auf:</p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
             <li><strong className="text-[var(--color-fg)]">Auskunft</strong> — Welche Daten wir über dich gespeichert haben (Art. 15 DSGVO)</li>
@@ -172,25 +221,32 @@ export default function PrivacyPage() {
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>8. Datenlöschung und Aufbewahrung</h2>
+          <h2 className={h2Class}>9. Datenlöschung und Aufbewahrung</h2>
           <p>
             Bei Löschung deines Kontos werden alle personenbezogenen Daten (Profil, Lebensläufe, Anschreiben,
-            Stellenangebote) innerhalb von 30 Tagen gelöscht. Rechnungsdaten werden gemäß der gesetzlichen
-            Aufbewahrungspflicht (7 Jahre, BAO) aufbewahrt.
+            Stellenangebote) innerhalb von 30 Tagen gelöscht. Da der Dienst derzeit kostenlos ist, fallen keine
+            Rechnungsdaten an; bei einer zukünftigen Zahlungsabwicklung gelten die gesetzlichen
+            Aufbewahrungsfristen (u.&nbsp;a. 7 Jahre gemäß BAO).
           </p>
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>9. Cookies und lokale Speicherung</h2>
+          <h2 className={h2Class}>10. Cookies und lokale Speicherung</h2>
           <p>
-            JobAssist verwendet <strong className="text-[var(--color-fg)]">keine Tracking-Cookies</strong> und keine
-            Werbe-Tracker. Wir verwenden ausschließlich technisch notwendige Speicherung (localStorage) für die
-            Anmeldesitzung und das Zwischenspeichern von UI-Daten zur Beschleunigung der Anwendung.
+            JobAssist verwendet <strong className="text-[var(--color-fg)]">keine Tracking-Cookies</strong> und
+            keine Werbe-Tracker. Wir verwenden ausschließlich technisch notwendige Speicherung (localStorage) für
+            die Anmeldesitzung, das Zwischenspeichern von UI-Daten zur Beschleunigung der Anwendung und die
+            Speicherung deiner Cookie-Einwilligung. Beim ersten Besuch wird ein Hinweis (Cookie-Banner) eingeblendet.
+          </p>
+          <p className="mt-2">
+            Schriftarten werden über Google Fonts von Servern von Google geladen (siehe Abschnitt 7); dabei wird
+            deine IP-Adresse an Google übermittelt. Eine Einwilligung hierfür ist nicht erforderlich, da die
+            Schriftarten technisch notwendig für die Darstellung sind.
           </p>
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>10. Geräte-Fingerabdruck</h2>
+          <h2 className={h2Class}>11. Geräte-Fingerabdruck</h2>
           <p>
             Um Missbrauch (z.&nbsp;B. mehrfache Gratiskonten) zu verhindern, setzen wir bei der Registrierung ein
             clientseitiges Fingerprinting-Verfahren ein (<strong className="text-[var(--color-fg)]">FingerprintJS Open Source</strong>).
@@ -223,7 +279,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>11. Beschwerderecht</h2>
+          <h2 className={h2Class}>12. Beschwerderecht</h2>
           <p>
             Du hast das Recht, eine Beschwerde bei der zuständigen Datenschutzbehörde einzureichen:
           </p>

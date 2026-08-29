@@ -33,8 +33,11 @@ function useReveal(ref) {
    ─────────────────────────────────────────────────────────────── */
 const NAV_LINKS = [
   { label: "Funktionen", href: "#funktionen" },
-  { label: "So funktioniert's", href: "#so-funktionierts" },
-  { label: "KV-Check", href: "#kv-check" },
+  // #so-funktionierts / #kv-check have no matching section ids on the page;
+  // both features are showcased inside the workflow section, so they anchor
+  // there like the footer links do.
+  { label: "So funktioniert's", href: "#funktionen" },
+  { label: "KV-Check", href: "#funktionen" },
   { label: "Open Source", href: "#open-source" },
 ];
 
@@ -645,7 +648,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Kontakt</h4>
-              <a href="mailto:hallo@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
+              <a href="mailto:info@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">info@jobassist.tech</a>
             </div>
           </div>
         </div>

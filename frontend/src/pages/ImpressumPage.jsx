@@ -2,7 +2,6 @@ import LegalLayout from "../components/ui/LegalLayout";
 
 /** Static Austrian Impressum (legal notice) page as required by §5 ECG. */
 export default function ImpressumPage() {
-  const linkClass = "text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors";
   const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
   const h2Class = "text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-4";
 
@@ -17,7 +16,7 @@ export default function ImpressumPage() {
   return (
     <LegalLayout
       title={<><span className="font-display italic text-[var(--app-brand)]">Impressum</span></>}
-      subtitle="Angaben gemäß § 5 E-Commerce-Gesetz (ECG) und § 25 Mediengesetz (MedienG)"
+      subtitle="Angaben gemäß § 5 E-Commerce-Gesetz (ECG)"
     >
       <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
         <section className={sectionClass}>
@@ -56,14 +55,12 @@ export default function ImpressumPage() {
         <section className={sectionClass}>
           <h2 className={h2Class}>Streitbeilegung</h2>
           <p>
-            Online-Streitbeilegung gemäß Art. 14 Abs. 1 ODR-VO:{" "}
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className={linkClass}>
-              https://ec.europa.eu/consumers/odr
-            </a>
-          </p>
-          <p className="mt-2">
             Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer
             Verbraucherschlichtungsstelle teilzunehmen.
+          </p>
+          <p className="mt-2 text-[13px]">
+            Hinweis: Die frühere EU-Plattform zur Online-Streitbeilegung (ODR-Plattform) wurde mit
+            20. Juli 2025 eingestellt.
           </p>
         </section>
       </div>
