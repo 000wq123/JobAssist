@@ -132,6 +132,71 @@ def test_call_groq_raises_502_on_empty_content():
 
 
 # ---------------------------------------------------------------------------
+# Model availability — guards against Groq deprecations
+# ---------------------------------------------------------------------------
+
+def test_configured_models_exist_on_groq():
+    """The configured primary/fallback models must still be offered by Groq.
+
+    This is the regression test for the cover-letter 500 outage: Groq
+    deprecated `llama-3.3-70b-versatile` / `llama-3.1-8b-instant` and every AI
+    route started 500ing with a model_not_found error. If Groq ever deprecates
+    the current models, this test fails fast instead of production.
+
+    Skipped when GROQ_API_KEY is unset (CI without credentials) or when the
+    network is unreachable (offline dev) — an unreachable Groq is an
+    environment problem, not a configuration regression.
+    """
+    import asyncio
+    import os
+
+    from app.core.config import settings
+    from app.services.claude_service import MODEL, MODEL_FALLBACK
+
+    if not settings.GROQ_API_KEY:
+        pytest.skip("GROQ_API_KEY not configured")
+
+    async def _fetch_model_ids() -> set[str] | None:
+        from groq import AsyncGroq
+
+        ac = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        try:
+            models = await asyncio.wait_for(ac.models.list(), timeout=15)
+            return {m.id for m in models.data}
+        except Exception:
+            return None  # network/auth hiccup — treat as inconclusive
+
+    model_ids = asyncio.run(_fetch_model_ids())
+
+    if model_ids is None:
+        pytest.skip("Groq API unreachable — cannot verify model availability")
+
+    assert MODEL in model_ids, (
+        f"Configured primary model '{MODEL}' is no longer offered by Groq. "
+        f"Update MODEL in app/services/claude_service.py. Available: {sorted(model_ids)}"
+    )
+    assert MODEL_FALLBACK in model_ids, (
+        f"Configured fallback model '{MODEL_FALLBACK}' is no longer offered by Groq. "
+        f"Update MODEL_FALLBACK in app/services/claude_service.py. Available: {sorted(model_ids)}"
+    )
+
+
+def test_configured_models_are_distinct():
+    """Primary and fallback must differ, otherwise the retry schedule is a no-op."""
+    from app.services.claude_service import MODEL, MODEL_FALLBACK
+
+    assert MODEL != MODEL_FALLBACK
+
+
+def test_reasoning_models_get_extra_token_budget():
+    """gpt-oss reasoning models need extra max_tokens headroom or they return
+    empty content (all budget consumed by reasoning tokens)."""
+    from app.services.claude_service import MODEL, _reasoning_overhead
+
+    assert _reasoning_overhead(MODEL) > 0
+
+
+# ---------------------------------------------------------------------------
 # parse_resume
 # ---------------------------------------------------------------------------
 
