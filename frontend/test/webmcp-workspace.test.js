@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TOOL_DEFS, getWorkspaceContext, getJobDetails, compareFit } from "../src/webmcp/tools/workspace";
+import { TOOL_DEFS, getWorkspaceContext, getJobDetails } from "../src/webmcp/tools/workspace";
 
 // Mock the api client — handlers must consume { data } responses and map
 // ApiError-shaped throws into structured errors.
@@ -7,7 +7,6 @@ vi.mock("../src/services/api", () => ({
   jobApi: {
     list: vi.fn(),
     get: vi.fn(),
-    match: vi.fn(),
   },
   initApi: {
     fetch: vi.fn(),
@@ -97,43 +96,13 @@ describe("getJobDetails", () => {
     expect(res.ok).toBe(false);
     expect(res.error.code).toBe("not_found");
   });
-});
-
-describe("compareFit", () => {
-  it("rejects invalid ids without hitting the API", async () => {
-    for (const bad of [{}, { job_id: 1 }, { resume_id: 2 }, { job_id: "x", resume_id: 1 }, { job_id: -1, resume_id: 1 }]) {
-      const res = await compareFit(bad);
-      expect(res.ok).toBe(false);
-      expect(res.error.code).toBe("invalid_arguments");
-    }
-    expect(jobApi.match).not.toHaveBeenCalled();
-  });
-
-  it("returns match payload on success", async () => {
-    jobApi.match.mockResolvedValue({ data: { score: 0.82, reasons: ["x"] } });
-    const res = await compareFit({ job_id: 5, resume_id: 7 });
-    expect(res.ok).toBe(true);
-    expect(res.data.match).toMatchObject({ score: 0.82 });
-    expect(jobApi.match).toHaveBeenCalledWith(5, 7);
-  });
-
-  it("maps quota exhaustion (402) to usage_exhausted", async () => {
-    jobApi.match.mockRejectedValue(apiError(402));
-    const res = await compareFit({ job_id: 5, resume_id: 7 });
-    expect(res.error.code).toBe("usage_exhausted");
-  });
-});
-
-describe("TOOL_DEFS manifests", () => {
+});describe("TOOL_DEFS manifests", () => {
   it("are read-only and have unique names with valid schemas", () => {
     const names = TOOL_DEFS.map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);
+
     for (const def of TOOL_DEFS) {
-      if (def.name === "compare_fit") {
-        expect(def.annotations.readOnlyHint).toBe(false);
-      } else {
-        expect(def.annotations.readOnlyHint).toBe(true);
-      }
+      expect(def.annotations.readOnlyHint).toBe(true);
       expect(def.inputSchema.type).toBe("object");
       expect(typeof def.execute).toBe("function");
       expect(def.description.length).toBeGreaterThan(20);

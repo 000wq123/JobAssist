@@ -13,8 +13,6 @@ export interface Job {
   url: string | null;
   status: JobStatus;
   category: JobCategory | null;
-  match_score: number | null;
-  match_feedback: string | null;
   cover_letter: string | null;
   interview_qa: string | null;
   suggested_courses: string | null;

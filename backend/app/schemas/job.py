@@ -46,7 +46,6 @@ class JobListItem(BaseModel):
     url: Optional[str]
     status: str  # bookmarked, applied, interviewing, offered, rejected
     category: Optional[str] = None
-    match_score: Optional[float] = None
     deadline: Optional[datetime]
     location: Optional[str] = None
     job_type: Optional[str] = None
@@ -68,8 +67,6 @@ class JobOut(BaseModel):
     url: Optional[str]
     status: str  # bookmarked, applied, interviewing, offered, rejected
     category: Optional[str] = None  # samstagsjob, praktikum, teilzeit, other
-    match_score: Optional[float] = None
-    match_feedback: Optional[str]
     cover_letter: Optional[str]
     interview_qa: Optional[str]
     suggested_courses: Optional[str] = None
@@ -128,10 +125,6 @@ class InterviewRateFeedback(BaseModel):
     strong: list[str]
     improve: list[str]
     tip: str
-
-
-class MatchRequest(BaseModel):
-    resume_id: int
 
 
 class CoursesRequest(BaseModel):

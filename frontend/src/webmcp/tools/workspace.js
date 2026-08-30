@@ -115,23 +115,6 @@ export const TOOL_DEFS = [
     execute: getWorkspaceContext,
   },
   {
-    name: "compare_fit",
-    description:
-      "Run an AI match analysis between one saved job and one resume. " +
-      "Consumes monthly usage quota. Get ids via get_workspace_context.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        job_id: { type: "integer", minimum: 1 },
-        resume_id: { type: "integer", minimum: 1 },
-      },
-      required: ["job_id", "resume_id"],
-      additionalProperties: false,
-    },
-    annotations: { readOnlyHint: false },
-    execute: compareFit,
-  },
-  {
     name: "get_job_details",
     description:
       "Get full details of one saved job by its numeric id. Ids are listed by " +
@@ -149,28 +132,3 @@ export const TOOL_DEFS = [
   },
 ];
 
-
-/**
- * compare_fit
- * Runs the AI fit-match between a job and a resume. This is NOT read-only:
- * it consumes usage quota (POST /jobs/{id}/match). Quota exhaustion
- * surfaces as `usage_exhausted`.
- */
-export async function compareFit(args) {
-  const jobId = Number(args?.job_id);
-  const resumeId = Number(args?.resume_id);
-  if (!Number.isInteger(jobId) || jobId <= 0 || !Number.isInteger(resumeId) || resumeId <= 0) {
-    return {
-      ok: false,
-      error: {
-        code: "invalid_arguments",
-        status: null,
-        message: "`job_id` and `resume_id` must be positive integers",
-      },
-    };
-  }
-  return guarded(async () => {
-    const res = await jobApi.match(jobId, resumeId);
-    return { match: res.data ?? null };
-  });
-}

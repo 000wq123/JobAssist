@@ -39,7 +39,7 @@ export function DescriptionBody({ text }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className={`mt-2.5 inline-flex items-center gap-1 text-[12px] text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
+          className={`mt-2.5 min-h-8 sm:min-h-0 inline-flex items-center gap-1 text-[12px] text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
         >
           {expanded ? "Weniger anzeigen" : "Mehr anzeigen"}
           <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -73,66 +73,6 @@ export function SectionLabel({ children }) {
 }
 
 /**
- * Why-it-could-fit section — replaces the old percentage match card.
- * Renders concise strengths from the stored AI feedback (no percentage),
- * plus an optional compact missing-experience subsection.
+ * Why-it-could-fit section — REMOVED: students don't need to know why a job
+ * matches them, so the fit-check feature (and its AI cost) is gone.
  */
-export function FitSection({ feedbackJson, onRecheck, recheckPending, resumeId }) {
-  let parsed = null;
-  if (feedbackJson) {
-    try { const obj = JSON.parse(feedbackJson); if (obj && typeof obj === "object") parsed = obj; } catch { /* ignore */ }
-  }
-
-  const strengths = (parsed?.strengths || []).slice(0, 6);
-  const gaps = (parsed?.gaps || []).slice(0, 3);
-  const hasContent = strengths.length > 0 || gaps.length > 0;
-
-  if (!hasContent) {
-    return (
-      <section aria-label="Warum es passen könnte">
-        <SectionLabel>Warum es passen könnte</SectionLabel>
-        <p className="mt-2.5 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
-          {resumeId
-            ? "Prüfe die Passung, um eine kurze Einschätzung zu bekommen, warum diese Stelle zu dir passen könnte."
-            : "Verknüpfe deinen Lebenslauf, damit eine Passungsanalyse möglich ist."}
-        </p>
-        {onRecheck && (
-          <button
-            type="button"
-            onClick={onRecheck}
-            disabled={recheckPending}
-            className={`mt-2.5 inline-flex items-center gap-1.5 text-[12px] text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors disabled:opacity-50 ${FOCUS}`}
-          >
-            {recheckPending ? <><Spinner />Wird geprüft…</> : "Passung prüfen →"}
-          </button>
-        )}
-      </section>
-    );
-  }
-
-  return (
-    <section aria-label="Warum es passen könnte">
-      <SectionLabel>Warum es passen könnte</SectionLabel>
-      <ul className="mt-2.5 space-y-2">
-        {strengths.map((s, i) => (
-          <li key={`s${i}`} className="flex gap-2.5 items-start text-[13.5px] text-[var(--color-fg-muted)] leading-relaxed">
-            <span className="text-[var(--color-success)] flex-shrink-0 font-bold mt-0.5 text-[12px]" aria-hidden="true">✓</span>
-            <span>{s}</span>
-          </li>
-        ))}
-      </ul>
-      {gaps.length > 0 && (
-        <div className="mt-4">
-          <p className="text-[12px] text-[var(--color-fg-dim)]">Noch nicht im Lebenslauf erkennbar</p>
-          <p className="mt-1 text-[13px] text-[var(--color-fg-muted)] leading-relaxed">
-            {gaps.map((g, i) => (
-              <span key={`g${i}`}>
-                {g}{i < gaps.length - 1 ? " · " : ""}
-              </span>
-            ))}
-          </p>
-        </div>
-      )}
-    </section>
-  );
-}

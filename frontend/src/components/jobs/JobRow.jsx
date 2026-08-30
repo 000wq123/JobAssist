@@ -86,7 +86,7 @@ function CompanyLogo({ company, url }) {
  * marketing-page card aesthetic (rounded-xl, accent hover, soft borders).
  *
  * @param {object} props
- * @param {{ id?: string, source_id?: string, title?: string, role?: string, company?: string, location?: string, updated?: string, created_at?: string, match_score?: number, status?: string, jobType?: string, full_url?: string, url?: string }} props.job
+ * @param {{ id?: string, source_id?: string, title?: string, role?: string, company?: string, location?: string, updated?: string, created_at?: string, status?: string, jobType?: string, full_url?: string, url?: string }} props.job
  * @param {() => void} [props.onClick]
  * @param {() => void} [props.onSave]
  * @param {boolean} [props.isSaved]

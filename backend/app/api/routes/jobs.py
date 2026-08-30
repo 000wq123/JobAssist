@@ -18,12 +18,12 @@ from app.models.job import Job
 from app.models.resume import Resume
 from app.models.user import User
 from app.models.user_profile import UserProfile
-from app.schemas.job import JobCreate, JobListResponse, JobOut, JobStatusUpdate, JobNotesUpdate, JobDeadlineUpdate, JobUrlUpdate, JobResearchUpdate, PipelineStats, MatchRequest, CoursesRequest
+from app.schemas.job import JobCreate, JobListResponse, JobOut, JobStatusUpdate, JobNotesUpdate, JobDeadlineUpdate, JobUrlUpdate, JobResearchUpdate, PipelineStats, CoursesRequest
 from app.services.job_enrich import extract_metadata
 from app.services.job_search import search_jobs, search_jobs_by_preferences
 from app.services.jooble_service import search_jooble
 from app.services.scrapers import search_karriere, search_willhaben, search_ams
-from app.services.claude_service import match_resume_to_job_async, suggest_courses_for_job
+from app.services.claude_service import suggest_courses_for_job
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -174,7 +174,6 @@ async def list_jobs(
         select(Job)
         .options(
             defer(Job.description),
-            defer(Job.match_feedback),
             defer(Job.cover_letter),
             defer(Job.interview_qa),
             defer(Job.suggested_courses),
@@ -203,12 +202,6 @@ async def list_jobs(
 
 
 # ── Static routes BEFORE /{job_id} to avoid Starlette path conflicts ──────────
-
-@router.post("/match")
-async def match_job(request: Request):
-    """Removed in v1 — match scoring is no longer supported."""
-    raise HTTPException(status_code=410, detail="Match scoring removed in v1.")
-
 
 @router.get("/pipeline/stats", response_model=PipelineStats)
 async def get_pipeline_stats(
@@ -672,55 +665,6 @@ async def update_job_research(
     return job
 
 
-@router.post("/{job_id}/match", response_model=JobOut)
-@limiter.limit("10/minute")
-async def run_match_score(
-    request: Request,
-    job_id: int,
-    payload: MatchRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    _usage=Depends(require_usage("cv_analysis")),
-) -> Job:
-    """Score how well the user's resume matches the job and persist the result."""
-    result = await db.execute(
-        select(Job).where(Job.id == job_id, Job.user_id == current_user.id)
-    )
-    job = result.scalar_one_or_none()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    res_result = await db.execute(
-        select(Resume).where(Resume.id == payload.resume_id, Resume.user_id == current_user.id)
-    )
-    resume = res_result.scalar_one_or_none()
-    if not resume:
-        raise HTTPException(status_code=404, detail="Resume not found")
-
-    if not job.description:
-        raise HTTPException(status_code=400, detail="Job has no description to match against")
-
-    feedback = await match_resume_to_job_async(
-        resume_text=resume.raw_text or "",
-        job_description=job.description,
-    )
-
-    job.match_score = feedback.get("score")
-    job.match_feedback = __import__("json").dumps({
-        "strengths":       feedback.get("strengths", []),
-        "gaps":            feedback.get("gaps", []),
-        "summary":         feedback.get("summary", ""),
-        "recommendations": feedback.get("recommendations", []),
-        "requirements":    feedback.get("requirements", []),
-        "score_rationale": feedback.get("score_rationale", ""),
-        "verdict":         feedback.get("verdict", ""),
-    }, ensure_ascii=False)
-    await db.commit()
-    await db.refresh(job)
-    logger.info("match", extra={"job_id": job_id, "score": job.match_score, "user_id": current_user.id})
-    return job
-
-
 @router.post("/{job_id}/courses", response_model=JobOut)
 @limiter.limit("10/minute")
 async def generate_courses(
@@ -739,7 +683,12 @@ async def generate_courses(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    if not job.description:
+    # Manual/URL-paste saves can arrive without a description — fall back to
+    # whatever text we have so the AI still has something to work with.
+    job_text = job.description or " ".join(
+        part for part in (job.role, job.company) if part
+    )
+    if not job_text:
         raise HTTPException(status_code=400, detail="Job has no description")
 
     resume_text = ""
@@ -752,7 +701,7 @@ async def generate_courses(
             resume_text = resume.raw_text or ""
 
     courses = await suggest_courses_for_job(
-        description=job.description,
+        description=job_text,
         role=job.role or "",
         resume_text=resume_text,
     )

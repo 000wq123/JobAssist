@@ -189,123 +189,6 @@ Resume:
         return {"raw": result}
 
 
-def match_resume_to_job(resume_text: str, job_description: str) -> dict:
-    """Score how well a resume matches a job description.
-
-    The final score is computed in Python from per-requirement evaluations
-    so the LLM cannot anchor to a fixed number.
-    """
-    system = (
-        "Du bist ein ehrlicher, erfahrener Karriere-Berater für junge Menschen in Österreich (16–20 Jahre). "
-        "Deine Aufgabe ist es, den Jugendlichen ehrlich und direkt zu sagen, wie gut sie zu einer Stelle passen — "
-        "nicht um sie zu entmutigen, sondern damit sie eine fundierte Entscheidung treffen können. "
-        "Antworte AUSSCHLIESSLICH auf Deutsch, du-Form. "
-        "Antworte nur mit gültigem JSON — kein Markdown, keine Code-Blöcke, kein Kommentar."
-    )
-    prompt = f"""Analysiere die Übereinstimmung zwischen Lebenslauf und Stellenbeschreibung.
-Alle Texte im JSON müssen auf Deutsch sein.
-
-ZIELGRUPPE: 16–20-jährige Jugendliche in Österreich, die sich für Praktika, Teilzeit- oder Samstagjobs bewerben.
-ICHTIG: Fehlende Berufserfahrung ist bei dieser Altersgruppe NORMAL — bewerte das nicht als K.O.-Kriterium, außer die Stelle verlangt es explizit.
-
-AUFGABE:
-1. Identifiziere die 6 wichtigsten Anforderungen der Stelle.
-2. Bewerte jede Anforderung gegen den Lebenslauf (0/1/2) UND suche direkte Belege im Lebenslauf.
-3. Schätze Bonus- und Abzugspunkte.
-4. Schreibe ein ehrliches Fazit direkt an den Bewerber.
-
-Bewertungsskala:
-- 2 = vollständig erfüllt (konkreter Nachweis im Lebenslauf)
-- 1 = teilweise erfüllt / verwandtes Potenzial vorhanden
-- 0 = nicht erfüllt / keine Hinweise
-
-Gib genau dieses JSON zurück (kein "score"-Feld — der Score wird extern berechnet):
-{{
-  "requirements": [
-    {{
-      "req": "<Anforderung 1 aus der Stellenbeschreibung (exakte Formulierung)>",
-      "score": <0|1|2>,
-      "note": "<1 Satz: Was hast du im Lebenslauf dafür gefunden oder nicht gefunden?>",
-      "evidence": "<Direktes Zitat oder Paraphrase aus dem Lebenslauf als Beleg, oder \"Kein Nachweis im Lebenslauf\" wenn nichts gefunden>",
-      "dealbreaker": <true wenn diese Anforderung ohne Ausnahme erfüllt sein muss, sonst false>
-    }},
-    {{"req": "<Anforderung 2>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
-    {{"req": "<Anforderung 3>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
-    {{"req": "<Anforderung 4>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
-    {{"req": "<Anforderung 5>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}},
-    {{"req": "<Anforderung 6>", "score": <0|1|2>, "note": "<Begründung>", "evidence": "<Beleg>", "dealbreaker": <true|false>}}
-  ],
-  "bonus": <ganze Zahl 0–20>,
-  "penalty": <ganze Zahl 0–20>,
-  "verdict": "<2–3 Sätze DIREKT AN DEN BEWERBER (du-Form): ehrliche Einschätzung ob Bewerbung sinnvoll ist, welche konkrete Stärke sie mitbringen und was der eine wichtigste fehlende Punkt ist. Kein Konjunktiv, kein Ausweichen. Beispiel: 'Du bringst X mit, was hier gefragt ist. Deine Erfahrung bei Y zeigt Z. Was fehlt ist A — aber das ist bei Samstagjobs oft kein Ausschlussgrund.'>",
-  "strengths": [
-    "<Kompetenz (2-4 Wörter)>: <Zitiere was im Lebenslauf steht und erklär warum das hier passt — max 18 Wörter>",
-    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>",
-    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>",
-    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>",
-    "<Kompetenz>: <Beleg aus Lebenslauf + Relevanzbegründung>"
-  ],
-  "gaps": [
-    "<Fehlende Kompetenz (2-4 Wörter)>: <Was fehlt, ob es ein K.O.-Kriterium ist und — wenn nicht — wie die Person es kompensieren kann>",
-    "<Fehlende Kompetenz>: <Erklärung + Einordnung>",
-    "<Fehlende Kompetenz>: <Erklärung + Einordnung>",
-    "<Fehlende Kompetenz>: <Erklärung + Einordnung>"
-  ],
-  "recommendations": ["<Konkreter Tipp 1 für die Bewerbung>", "<Tipp 2>", "<Tipp 3>"]
-}}
-
-Lebenslauf:
-\"\"\"
-{resume_text}
-\"\"\"
-
-Stellenbeschreibung:
-\"\"\"
-{job_description}
-\"\"\"
-"""
-    result = _strip_code_fences(_call_groq(prompt, system=system, max_tokens=2048, temperature=0.7))
-    try:
-        raw = json.loads(result)
-    except json.JSONDecodeError:
-        return {"score": None, "summary": result, "strengths": [], "gaps": [], "recommendations": []}
-
-    # Compute score in Python — bypasses LLM anchoring entirely
-    reqs = raw.get("requirements", [])
-    req_total = sum(
-        min(2, max(0, int(r.get("score", 0))))
-        for r in reqs if isinstance(r, dict)
-    )
-    bonus   = min(20, max(0, int(raw.get("bonus",   0))))
-    penalty = min(20, max(0, int(raw.get("penalty", 0))))
-    base    = round(req_total / 12 * 100)
-    computed_score = max(42, min(95, base + bonus - penalty))
-
-    # Build score_rationale from actual requirements — LLM never sees the final number
-    met   = [r["req"] for r in reqs if isinstance(r, dict) and min(2, max(0, int(r.get("score", 0)))) == 2]
-    part  = [r["req"] for r in reqs if isinstance(r, dict) and min(2, max(0, int(r.get("score", 0)))) == 1]
-    unmet = [r["req"] for r in reqs if isinstance(r, dict) and min(2, max(0, int(r.get("score", 0)))) == 0]
-    rationale_parts = [f"Ihr Profil erreicht {computed_score}% Übereinstimmung."]
-    if met:
-        rationale_parts.append(f"Vollständig erfüllt: {', '.join(met[:4])}.")
-    if part:
-        rationale_parts.append(f"Teilweise erfüllt: {', '.join(part[:3])}.")
-    if unmet:
-        rationale_parts.append(f"Nicht erfüllt: {', '.join(unmet[:3])}.")
-    score_rationale = " ".join(rationale_parts)
-
-    return {
-        "score":           computed_score,
-        "summary":         raw.get("summary", ""),
-        "verdict":         raw.get("verdict", ""),
-        "score_rationale": score_rationale,
-        "requirements":    reqs,
-        "strengths":       raw.get("strengths", []),
-        "gaps":            raw.get("gaps", []),
-        "recommendations": raw.get("recommendations", []),
-    }
-
-
 def generate_cover_letter(
     resume_text: str,
     job_description: str,
@@ -710,12 +593,6 @@ URL-Regeln (WICHTIG — jeder Kurs MUSS eine URL haben):
         return cleaned
     except json.JSONDecodeError:
         return []
-
-
-async def match_resume_to_job_async(resume_text: str, job_description: str) -> dict:
-    """Async wrapper — runs the synchronous scorer in a thread pool."""
-    import asyncio
-    return await asyncio.to_thread(match_resume_to_job, resume_text, job_description)
 
 
 async def polish_text(text: str, context: str = "") -> str:

@@ -40,7 +40,7 @@ function useKvWage(category) {
     : { min: kvMinimumFor(category), max: null, kv: "KV", url: null };
 }
 
-import { Spinner, DescriptionBody, FitSection } from "../components/job-detail/ui";
+import { Spinner, DescriptionBody } from "../components/job-detail/ui";
 import CompanyLogo from "../components/job-detail/CompanyLogo";
 import BearbeitenSheet from "../components/job-detail/BearbeitenSheet";
 import CoverLetterModal from "../components/job-detail/CoverLetterModal";
@@ -133,20 +133,6 @@ export default function JobDetailPage() {
       toast.success("Anschreiben erstellt");
     } catch (err) {
       toast.error(getAiErrorMessage(err, "Anschreiben konnte nicht erstellt werden"));
-    }
-  };
-
-  const matchMutation = useMutation(() => {
-    if (!resumeId) throw new Error("Kein Lebenslauf ausgewählt");
-    return jobApi.match(Number(jobId), resumeId);
-  });
-  const handleMatch = async () => {
-    try {
-      const res = await matchMutation.mutate();
-      setJob(res.data);
-      toast.success("Passung berechnet");
-    } catch (err) {
-      toast.error(getAiErrorMessage(err, "Passung konnte nicht berechnet werden"));
     }
   };
 
@@ -274,7 +260,7 @@ export default function JobDetailPage() {
       {confirmElement}
       <div key={jobId} className="animate-slide-up">
         {/* ── 1. Quiet header: breadcrumb + status + overflow ─────────────── */}
-        <div className="sticky top-0 z-20 -mx-5 sm:-mx-8 lg:mx-0 px-5 sm:px-8 lg:px-0 py-2.5 bg-[var(--color-bg)]/95 backdrop-blur border-b border-[var(--color-border-subtle)]">
+        <div className="sticky top-0 z-20 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 py-2.5 bg-[var(--color-bg)]/95 backdrop-blur border-b border-[var(--color-border-subtle)]">
           <div className="grid grid-cols-12 items-center gap-2">
             <nav className="col-span-6 min-w-0 flex items-center gap-2 text-[12px]" aria-label="Breadcrumb">
               <button
@@ -282,7 +268,7 @@ export default function JobDetailPage() {
                 onClick={() => navigate("/jobs")}
                 aria-label="Stelle schließen und zur Liste zurückkehren"
                 title="Stelle schließen"
-                className={`inline-flex items-center gap-1 h-7 px-1.5 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
+                className={`inline-flex items-center gap-1 h-8 px-2 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
                 Stellen schließen
@@ -292,7 +278,7 @@ export default function JobDetailPage() {
               </span>
             </nav>
 
-            <div className="col-span-6 justify-self-end flex items-center gap-1">
+            <div className="col-span-6 justify-self-end flex items-center gap-2">
               {/* Status — quiet control with dropdown */}
               <button
                 ref={statusBtnRef}
@@ -395,7 +381,7 @@ export default function JobDetailPage() {
                     onClick={() => setRouteOpen((open) => !open)}
                     aria-haspopup="menu"
                     aria-expanded={routeOpen}
-                    className={`inline-flex items-center gap-1.5 rounded-md text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
+                    className={`min-h-8 sm:min-h-0 inline-flex items-center gap-1.5 rounded-md text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
                   >
                     <Navigation className="w-3.5 h-3.5" aria-hidden="true" />
                     Route ab aktuellem Standort
@@ -492,16 +478,6 @@ export default function JobDetailPage() {
               </p>
             </section>
           ) : null}
-
-          <hr className="my-6 border-[var(--color-border-subtle)]" />
-
-          {/* ── 5. Why it could fit — replaces the percentage score ────────── */}
-          <FitSection
-            feedbackJson={job.match_feedback}
-            onRecheck={resumeId ? handleMatch : () => setEditOpen(true)}
-            recheckPending={matchMutation.loading}
-            resumeId={resumeId}
-          />
 
           <hr className="my-6 border-[var(--color-border-subtle)]" />
 

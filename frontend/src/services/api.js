@@ -31,8 +31,6 @@ const AI_PATH_HINTS = [
   "/cover-letter/",
   "/interview/",
   "/resume/",
-  "/jobs/match",
-  "/match",
   "/courses",
   "/research/",
   "/ai/",
@@ -306,7 +304,6 @@ export const jobApi = {
   list: (page = 1, pageSize = 100) => api.get(`/jobs/?page=${page}&page_size=${pageSize}`),
   get: (id) => api.get(`/jobs/${id}`),
   delete: (id) => api.delete(`/jobs/${id}`),
-  match: (jobId, resumeId) => api.post(`/jobs/${jobId}/match`, { resume_id: resumeId }),
   generateCoverLetter: (jobId, resumeId, tone = "professional") =>
     api.post("/cover-letter/generate", { job_id: jobId, resume_id: resumeId, tone }),
   generateInterviewPrep: (jobId, resumeId, numQuestions = 10) =>

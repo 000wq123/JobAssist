@@ -29,8 +29,7 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String, default="bookmarked", nullable=False) 
 
     # AI (Claude) outputs
-    match_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    match_feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # (match_score/match_feedback were removed in v1 — dropped by migration 0012)
     cover_letter: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     interview_qa: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     suggested_courses: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
