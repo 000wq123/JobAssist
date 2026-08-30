@@ -154,6 +154,30 @@ jobs:
       - name: Run pytest
         run: python -m pytest tests
 
+  # Live Groq model-availability check. Fails the pipeline when a configured
+  # model (MODEL / MODEL_FALLBACK in claude_service.py) is deprecated and
+  # removed by Groq — the failure mode behind the cover-letter 500 outage.
+  backend-model-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: test-secret-key-not-for-production
+      DEBUG: "true"
+      DATABASE_URL: sqlite+aiosqlite:///./modelcheck.db
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Verify configured Groq models exist
+        run: python -m pytest tests/test_claude_service.py -k "configured_models" -vv
+
   backend-smoke:
     runs-on: ubuntu-latest
     defaults:
