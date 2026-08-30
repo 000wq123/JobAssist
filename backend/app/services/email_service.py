@@ -236,28 +236,19 @@ def _build_job_alert_html(keywords: str, location: str, jobs: List[Dict], unsubs
         salary  = html_lib.escape(job.get("salary_range") or job.get("salary") or "")
         jtype   = html_lib.escape(job.get("contract_type") or job.get("job_type") or "")
 
-        if i == 0:
-            rank_badge = f'<span style="display:inline-block;background:{BRAND_SOFT};color:{BRAND_DARK};font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;letter-spacing:0.4px;">#1 &nbsp;Top-Match</span>'
-        else:
-            rank_badge = f'<span style="display:inline-block;background:{SURFACE_HV};color:{TEXT_MUTED};font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;">#{i+1}</span>'
-
-        loc_chip    = f'<span style="display:inline-block;background:{SURFACE_HV};color:{TEXT_SEC};font-size:11px;padding:3px 9px;border-radius:6px;margin:8px 5px 0 0;">&#128205;&nbsp;{loc}</span>' if loc else ""
-        salary_chip = f'<span style="display:inline-block;background:{SUCCESS}1A;color:{SUCCESS};font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;margin:8px 5px 0 0;">{salary}</span>' if salary else ""
-        type_chip   = f'<span style="display:inline-block;background:{SURFACE_HV};color:{TEXT_MUTED};font-size:11px;padding:3px 9px;border-radius:6px;margin:8px 5px 0 0;">{jtype}</span>' if jtype else ""
+        meta = " &#183; ".join(x for x in (loc, jtype, salary) if x)
 
         cards += f"""
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;border:1px solid {BORDER_STR};border-radius:12px;background:{SURFACE};">
-          <tr><td style="padding:16px 18px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px;border:1px solid {BORDER};border-radius:12px;background:{SURFACE};">
+          <tr><td style="padding:14px 18px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td valign="top">
-                  <div style="margin-bottom:8px;">{rank_badge}</div>
-                  <a href="{url}" style="font-size:15px;font-weight:700;color:{TEXT};text-decoration:none;line-height:1.4;display:block;">{title}</a>
-                  <span style="font-size:13px;color:{TEXT_MUTED};display:block;margin-top:3px;">{company}</span>
-                  <div>{loc_chip}{salary_chip}{type_chip}</div>
+                  <a href="{url}" style="font-size:14.5px;font-weight:700;color:{TEXT};text-decoration:none;line-height:1.4;display:block;">{title}</a>
+                  <span style="font-size:12.5px;color:{TEXT_MUTED};display:block;margin-top:4px;">{company}{(' &#183; ' + meta) if meta else ''}</span>
                 </td>
                 <td align="right" valign="middle" style="padding-left:16px;white-space:nowrap;">
-                  <a href="{url}" style="display:inline-block;background:{BRAND};color:#ffffff;font-size:12.5px;font-weight:700;padding:9px 18px;border-radius:8px;text-decoration:none;white-space:nowrap;">Bewerben &#8594;</a>
+                  <a href="{url}" style="display:inline-block;background:{SURFACE_HV};border:1px solid {BORDER_STR};color:{TEXT};font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;text-decoration:none;white-space:nowrap;">Ansehen</a>
                 </td>
               </tr>
             </table>
@@ -273,28 +264,17 @@ def _build_job_alert_html(keywords: str, location: str, jobs: List[Dict], unsubs
         Neue Jobs zu <strong style="color:{TEXT};">{kw_esc}</strong>{loc_line} auf JobAssist.
       </p>
 
-      { _attrs(["Direkt als PDF &amp; online bewerben", "Bewerbungen zentral verfolgen"]) }
-
       { _rule() }
 
-      <p style="margin:18px 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:{TEXT_FAINT};">Top-Treffer nach Relevanz</p>
+      <p style="margin:18px 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:{TEXT_FAINT};">Neue Stellen</p>
 
       {cards}
-
-      <!-- Inline tip -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{BRAND_SOFT};border-radius:12px;margin:6px 0 0;">
-        <tr><td style="padding:14px 18px;">
-          <p style="margin:0;font-size:12.5px;color:{TEXT_SEC};line-height:1.6;">
-            <span style="color:{TEXT};"><strong>Tipp:</strong></span> Wer sich in den ersten 48 Stunden bewirbt, erh&#228;lt h&#228;ufiger eine Antwort. Mit dem JobAssist AI-Builder passt du deinen Lebenslauf in wenigen Minuten f&#252;r jede Stelle an.
-          </p>
-        </td></tr>
-      </table>
 
       { _button("Alle Stellen ansehen", app_url + "/jobs") }
 
       <p style="margin:20px 0 0;font-size:12px;color:{TEXT_MUTED};line-height:1.7;">
         Du erh&#228;ltst diese E-Mail, weil du einen Job-Alert f&#252;r <strong style="color:{TEXT_SEC};">{kw_esc}</strong> eingerichtet hast.
-        &nbsp; <a href="{html_lib.escape(unsubscribe_url) if unsubscribe_url else f'{app_url}/job-alerts'}" style="color:{BRAND};text-decoration:underline;">Alert abbestellen</a>
+        &nbsp; <a href="{html_lib.escape(unsubscribe_url) if unsubscribe_url else f'{app_url}/job-alerts'}" style="color:{TEXT_MUTED};text-decoration:underline;">Alert abbestellen</a>
       </p>
     """
 
@@ -413,9 +393,8 @@ def send_verification_email(to_email: str, token: str) -> bool:
       <p style="margin:0 0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:{BRAND};">E-Mail best&#228;tigen</p>
       <h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:{TEXT};letter-spacing:-0.3px;">Willkommen bei JobAssist</h1>
       <p style="margin:0 0 4px;font-size:14px;color:{TEXT_SEC};line-height:1.65;">
-        Sch&#246;n, dass du da bist. Best&#228;tige deine E-Mail-Adresse und du kannst sofort loslegen:
+        Bitte best&#228;tige deine E-Mail-Adresse, um dein Konto zu aktivieren:
       </p>
-      { _attrs(["Lebenslauf erstellen", "Stellen finden &amp; speichern", "KI-Hilfe f&#252;r Bewerbungen"]) }
       { _button("E-Mail-Adresse best&#228;tigen", verify_url) }
       { _note("&#128337;", "Der Link ist <strong>24&nbsp;Stunden</strong> g&#252;ltig. Falls du dich nicht registriert hast, ignoriere diese E-Mail einfach.") }
     """
@@ -430,11 +409,10 @@ def send_password_reset_email(to_email: str, token: str) -> bool:
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     body = f"""
       <p style="margin:0 0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:{BRAND};">Passwort zur&#252;cksetzen</p>
-      <h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:{TEXT};letter-spacing:-0.3px;">Kein Problem &#8212; wir setzen es zur&#252;ck</h1>
+      <h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:{TEXT};letter-spacing:-0.3px;">Passwort zur&#252;cksetzen</h1>
       <p style="margin:0 0 4px;font-size:14px;color:{TEXT_SEC};line-height:1.65;">
-        Du hast ein neues Passwort angefordert. Klicke auf den Button, um eins zu vergeben:
+        Du hast ein neues Passwort angefordert. Klicke auf den Button, um ein neues Passwort zu vergeben:
       </p>
-      { _attrs(["Du kannst weiterhin alle Bewerbungen ansehen", "Der Link funktioniert einmalig"]) }
       { _button("Passwort zur&#252;cksetzen", reset_url) }
       { _note("&#128337;", "Der Link ist <strong>1&nbsp;Stunde</strong> g&#252;ltig. Falls du kein neues Passwort angefordert hast, ignoriere diese E-Mail einfach.") }
     """
@@ -451,5 +429,5 @@ def send_job_alert_email(to_email: str, keywords: str, location: str, jobs: List
         return False
 
     html_body = _build_job_alert_html(keywords, location or "", jobs, unsubscribe_url=unsubscribe_url)
-    subject = f"⚡ {len(jobs)} neue Stellen für '{keywords.strip()}' – Jetzt bewerben"
+    subject = f"JobAssist: {len(jobs)} neue Stellen für '{keywords.strip()}'"
     return send_transactional_email(to_email, subject, html_body=html_body)
