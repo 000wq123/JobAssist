@@ -114,15 +114,29 @@ def _company_domains(company: str, url: str = "") -> list[str]:
 
     seen: set[str] = set()
     candidates: list[str] = []
-    # Full company names are much less likely to resolve to an unrelated
-    # business than a generic first token (e.g. anton.at vs
-    # antonprokschinstitut.at), so probe the specific candidates first.
-    # Exception: when the FIRST token is very short (2–3 chars, e.g. "dm"),
-    # the concatenated slug is almost never the real domain — the short brand
-    # token is. Probe the short first token FIRST, before any slug variant.
+    # Ordering matters: the provider fallback passes only probe the first
+    # handful of candidates, so the most-likely-real domains must come first.
+    #  * dash-form pair ("drees-sommer") beats the concatenated slug — most
+    #    multi-word brands use dashes in their domain
+    #  * very long slugs (>24 chars) never resolve; skip them entirely
+    #  * contraction "tu" + "wien" -> "tuwien" catches TU-style abbreviations
+    #  * short first token ("dm", "billa") beats any slug variant
     short_first = tokens[0] if tokens and len(tokens[0]) <= 3 else None
-    probe_order = ([short_first, slug, pair, slug_h, pair_h]
-                   if short_first else [slug, pair, slug_h, pair_h])
+    contraction = (
+        tokens[0][:2] + tokens[-1]
+        if len(tokens) > 1 and len(tokens[0]) > 3 and len(tokens[-1]) >= 3
+        else None
+    )
+    probe_order: list[str | None] = []
+    if short_first:
+        probe_order.append(short_first)
+    if len(slug) <= 24:
+        probe_order.append(slug)
+    probe_order.append(pair_h)
+    if len(slug_h) <= 24:
+        probe_order.append(slug_h)
+    probe_order.append(pair)
+    probe_order.append(contraction)
     for c in filter(None, [*probe_order, *tokens]):
         if 2 <= len(c) <= 63 and c not in seen:
             seen.add(c)
@@ -198,7 +212,13 @@ async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
 
         # Pass 2: Google returns a consistently sized PNG and is preferable to
         # tiny ICO files when a direct high-resolution asset is unavailable.
-        provider_domains = list(dict.fromkeys(domains[:6]))
+        # Coverage must span short brand candidates ("mooons", "ortoproban",
+        # "tuwien"), not just the long slug variants that dominate the head of
+        # `domains` — otherwise the short, most-likely-real candidate never
+        # gets probed by providers. Prioritize short candidates first.
+        provider_domains = list(dict.fromkeys(
+            sorted(domains, key=len)[:12] + domains[:6]
+        ))
         google_urls = [
             f"https://www.google.com/s2/favicons?domain={domain}&sz=256"
             for domain in provider_domains
