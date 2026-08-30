@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>JobAssist Bewerbungshelfer einrichten</title>
+    <link rel="stylesheet" href="onboarding.css">
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <img src="../assets/icon-128.png" width="72" height="72" alt="">
+        <div>
+          <p class="eyebrow">Erfolgreich installiert</p>
+          <h1>Dein Bewerbungshelfer ist bereit.</h1>
+          <p>Einmal Daten hinterlegen. Danach entscheidest du auf jeder Bewerbungsseite selbst, was ausgefüllt wird.</p>
+        </div>
+      </header>
+
+      <section class="steps" aria-label="So funktioniert es">
+        <article><span>1</span><div><strong>Stelle öffnen</strong><p>Starte auf JobAssist mit „Jetzt bewerben“.</p></div></article>
+        <article><span>2</span><div><strong>Helfer anklicken</strong><p>Öffne auf der Arbeitgeberseite das JobAssist-Symbol.</p></div></article>
+        <article><span>3</span><div><strong>Prüfen und absenden</strong><p>Wir füllen nur leere Felder. Du behältst die Kontrolle.</p></div></article>
+      </section>
+
+      <section class="setup-card">
+        <div class="section-heading">
+          <div><p class="eyebrow">Lokales Profil</p><h2>Welche Daten dürfen eingesetzt werden?</h2></div>
+          <span class="local-badge">Nur dieses Gerät</span>
+        </div>
+        <form id="onboarding-form">
+          <div class="grid">
+            <label>Vorname<input name="firstName" autocomplete="given-name"></label>
+            <label>Nachname<input name="lastName" autocomplete="family-name"></label>
+            <label class="wide">E-Mail<input name="email" type="email" autocomplete="email"></label>
+            <label class="wide">Telefon<input name="phone" type="tel" autocomplete="tel"></label>
+            <label class="wide">Straße und Hausnummer<input name="address" autocomplete="street-address"></label>
+            <label>PLZ<input name="postalCode" autocomplete="postal-code"></label>
+            <label>Ort<input name="city" autocomplete="address-level2"></label>
+            <label class="wide">LinkedIn (optional)<input name="linkedin" type="url" placeholder="https://linkedin.com/in/…"></label>
+          </div>
+
+          <div class="privacy-box">
+            <strong>Privat bleibt privat.</strong>
+            <p>Die Erweiterung speichert diese Angaben ausschließlich im lokalen Chrome-Speicher. Sie liest keine Passwörter, verfolgt keinen Browserverlauf und sendet keine Bewerbung automatisch ab.</p>
+          </div>
+
+          <label class="consent">
+            <input id="profile-consent" type="checkbox" required>
+            <span>Ich stimme zu, dass meine Angaben lokal gespeichert und nur nach meinem Klick in leere Bewerbungsfelder eingesetzt werden.</span>
+          </label>
+
+          <div class="actions">
+            <button type="submit">Einrichtung abschließen</button>
+            <a href="https://www.jobassist.tech/privacy#browser-extension" target="_blank" rel="noopener noreferrer">Datenschutz lesen</a>
+          </div>
+          <p id="status" class="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+    <script src="onboarding.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "JobAssist Application Helper"
+  },
+  "extensionDescription": {
+    "message": "Fills empty application fields when you ask – locally, under your control, and never submits automatically."
+  },
+  "actionTitle": {
+    "message": "Apply with JobAssist"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "JobAssist Bewerbungshelfer"
+  },
+  "extensionDescription": {
+    "message": "Füllt leere Bewerbungsfelder auf deinen Klick aus – lokal, kontrolliert und ohne automatisches Absenden."
+  },
+  "actionTitle": {
+    "message": "Mit JobAssist bewerben"
+  }
+}

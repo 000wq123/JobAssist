@@ -1,0 +1,145 @@
+#jobassist-extension-root {
+  --jae-brand: #E30613;
+  --jae-brand-hover: #C9000B;
+  --jae-brand-soft: #FFF0F1;
+  --jae-bg: #FAFAF8;
+  --jae-surface: #FFFFFF;
+  --jae-surface-hover: #F5F5F3;
+  --jae-border: #E0E0DC;
+  --jae-text: #171717;
+  --jae-text-secondary: #525252;
+  --jae-text-muted: #6B6B66;
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483646;
+  color: var(--jae-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+#jobassist-extension-root * { box-sizing: border-box; }
+#jobassist-extension-root [hidden] { display: none !important; }
+
+.jae-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--jae-brand);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.jae-launcher:hover { background: var(--jae-brand-hover); }
+
+.jae-panel {
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 32px));
+  overflow: auto;
+  border: 1px solid var(--jae-border);
+  border-radius: 16px;
+  background: var(--jae-surface);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+}
+
+.jae-header,
+.jae-section,
+.jae-footer { padding: 16px; }
+
+.jae-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--jae-border);
+}
+
+.jae-mark {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--jae-brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.jae-heading { min-width: 0; flex: 1; }
+.jae-heading strong,
+.jae-heading span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jae-heading strong { font-size: 14px; }
+.jae-heading span { margin-top: 2px; color: var(--jae-text-muted); font-size: 12px; }
+
+.jae-icon-button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--jae-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 20px;
+}
+
+.jae-icon-button:hover { background: var(--jae-surface-hover); color: var(--jae-text); }
+.jae-section + .jae-section { border-top: 1px solid var(--jae-border); }
+.jae-label { margin: 0 0 8px; color: var(--jae-text-muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.jae-copy { margin: 0; color: var(--jae-text-secondary); font-size: 12.5px; line-height: 1.55; }
+
+.jae-actions { display: grid; gap: 8px; margin-top: 12px; }
+.jae-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--jae-border);
+  border-radius: 9px;
+  background: var(--jae-surface);
+  color: var(--jae-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.jae-button:hover { background: var(--jae-surface-hover); color: var(--jae-text); }
+.jae-button-primary { border-color: var(--jae-brand); background: var(--jae-brand); color: #fff; }
+.jae-button-primary:hover { background: var(--jae-brand-hover); color: #fff; }
+.jae-button:disabled { cursor: not-allowed; opacity: .5; }
+
+.jae-status { min-height: 18px; margin: 9px 0 0; color: var(--jae-text-muted); font-size: 11.5px; }
+.jae-file-target { outline: 3px solid rgba(227, 6, 19, .28) !important; outline-offset: 3px !important; }
+.jae-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid var(--jae-border); background: var(--jae-bg); color: var(--jae-text-muted); font-size: 11px; }
+
+@media (prefers-color-scheme: dark) {
+  #jobassist-extension-root {
+    --jae-brand-soft: rgba(227, 6, 19, .16);
+    --jae-bg: #0B0B0F;
+    --jae-surface: #141419;
+    --jae-surface-hover: #1D1D23;
+    --jae-border: rgba(255, 255, 255, .12);
+    --jae-text: #F1F1F3;
+    --jae-text-secondary: #C2C2C8;
+    --jae-text-muted: #92929D;
+  }
+}
+
+@media (max-width: 520px) {
+  #jobassist-extension-root { right: 12px; bottom: 12px; }
+}
