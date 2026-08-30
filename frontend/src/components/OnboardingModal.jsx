@@ -23,7 +23,7 @@ const SLIDES = [
   {
     eyebrow: "Lebenslauf",
     heading: "Lade deinen Lebenslauf hoch.",
-    body: "In den Einstellungen kannst du deinen Lebenslauf hinterlegen. Die KI berechnet damit Matches, prüft deine Passung und erstellt Anschreiben für dich.",
+    body: "In den Einstellungen kannst du deinen Lebenslauf hinterlegen. Die KI erstellt damit Anschreiben und Interview-Vorbereitungen für dich.",
     cta: null,
   },
   {
