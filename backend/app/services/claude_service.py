@@ -9,8 +9,28 @@ from app.core.config import settings
 client = Groq(api_key=settings.GROQ_API_KEY)
 _async_client: AsyncGroq | None = None
 
-MODEL          = "llama-3.3-70b-versatile"
-MODEL_FALLBACK = "llama-3.1-8b-instant"   # Higher TPM limit — used after rate-limit hits
+MODEL          = "openai/gpt-oss-120b"
+MODEL_FALLBACK = "qwen/qwen3.8-27b"   # Different family — used after rate-limit hits
+
+# gpt-oss models emit reasoning tokens before the answer; a max_tokens budget
+# below ~200 can be consumed entirely by reasoning and return empty content.
+# Qwen (and legacy llama models) answer directly.
+def _reasoning_overhead(model: str) -> int:
+    return 512 if model.startswith("openai/") else 0
+
+
+def _strip_reasoning(text: str) -> str:
+    """Some models return analysis/thinking blocks; strip them so JSON parsing
+    and letter output only see the final answer."""
+    if not text:
+        return text
+    # <think>...</think> blocks (qwen-style)
+    text = re.sub(r"<think>[\s\S]*?</think>", "", text).strip()
+    # "analysis...assistantfinal" channel markers (gpt-oss style)
+    m = re.search(r"assistantfinal", text)
+    if m:
+        text = text[m.end():].strip()
+    return text
 
 
 def _get_async_client() -> AsyncGroq:
@@ -59,11 +79,11 @@ async def call_groq_async(
             response = await ac.chat.completions.create(
                 model=model_to_use,
                 messages=messages,
-                max_tokens=max_tokens,
+                max_tokens=max_tokens + _reasoning_overhead(model_to_use),
                 temperature=temperature,
                 **kwargs,
             )
-            content = response.choices[0].message.content
+            content = _strip_reasoning(response.choices[0].message.content or "")
             if not content:
                 raise HTTPException(status_code=502, detail="AI returned an empty response. Please try again.")
             return content.strip()
@@ -86,7 +106,7 @@ def _call_groq(prompt: str, system: str = "", max_tokens: int = 2048, temperatur
     Strategy on 429:
       attempt 0 → primary model, immediate
       attempt 1 → primary model, wait 3 s
-      attempt 2 → fallback model (llama-3.1-8b-instant, higher TPM), wait 5 s
+      attempt 2 → fallback model (qwen3.8-27b, different family), wait 5 s
       attempt 3 → fallback model, wait 10 s
     This avoids long blocking waits while still recovering gracefully.
     """
@@ -111,11 +131,11 @@ def _call_groq(prompt: str, system: str = "", max_tokens: int = 2048, temperatur
             response = client.chat.completions.create(
                 model=model_to_use,
                 messages=messages,
-                max_tokens=max_tokens,
+                max_tokens=max_tokens + _reasoning_overhead(model_to_use),
                 temperature=temperature,
                 **kwargs,
             )
-            content = response.choices[0].message.content
+            content = _strip_reasoning(response.choices[0].message.content or "")
             if not content:
                 raise HTTPException(status_code=502, detail="AI returned an empty response. Please try again.")
             return content.strip()
