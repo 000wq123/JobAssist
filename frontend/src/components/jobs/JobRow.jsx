@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MapPin, Clock, ExternalLink, Bookmark, BookmarkCheck, ArrowRight } from "lucide-react";
 import clsx from "clsx";
 import { defaultBaseURL } from "../../services/api";
+import { isLogoFailed, markLogoFailed } from "../job-detail/CompanyLogo";
 
 /**
  * Formats relative time in German (de-AT).
@@ -46,10 +47,15 @@ function getCompanyInitials(name) {
  * @param {{ company: string, url?: string }} props
  */
 function CompanyLogo({ company, url }) {
-  const [imgState, setImgState] = useState("loading");
+  const [imgState, setImgState] = useState(() =>
+    // Cached 404 — render initials immediately, no re-request.
+    isLogoFailed(company, url) ? "failed" : "loading"
+  );
   const initials = getCompanyInitials(company);
   const tileClass = "relative grid h-10 w-10 flex-shrink-0 rounded-xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] overflow-hidden transition-colors duration-150";
-  const src = company ? `${defaultBaseURL}/proxy/logo/best?company=${encodeURIComponent(company)}&url=${encodeURIComponent(url || "")}` : null;
+  const src = company && imgState !== "failed"
+    ? `${defaultBaseURL}/proxy/logo/best?company=${encodeURIComponent(company)}&url=${encodeURIComponent(url || "")}`
+    : null;
 
   return (
     <div aria-hidden="true" className={tileClass}>
@@ -62,7 +68,10 @@ function CompanyLogo({ company, url }) {
           alt=""
           loading="lazy"
           onLoad={() => setImgState("loaded")}
-          onError={() => setImgState("failed")}
+          onError={() => {
+            markLogoFailed(company, url);
+            setImgState("failed");
+          }}
           className="col-start-1 row-start-1 h-full w-full object-contain p-1 rounded-xl"
           style={{ opacity: imgState === "loaded" ? 1 : 0, transition: "opacity 0.25s" }}
         />

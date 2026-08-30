@@ -11,8 +11,27 @@ import { logoAbbrev, logoColor } from "./domain";
 // single authenticated request. Object URLs remain valid for the app session.
 const LOGO_REQUESTS = new Map();
 
+// 404 results are cached for the session: browsers don't cache 404s and the
+// rejected promise would otherwise be deleted and retried on every mount, so
+// companies with no logo would re-request on every page visit.
+const FAILED_LOGOS = new Set();
+
+function logoKey(company, url) {
+  return JSON.stringify([company || "", url || ""]);
+}
+
+/** True when a previous request for this logo 404'd — skip re-requesting. */
+export function isLogoFailed(company, url) {
+  return FAILED_LOGOS.has(logoKey(company, url));
+}
+
+/** Record a logo 404 (also used by plain-<img> callers like JobRow). */
+export function markLogoFailed(company, url) {
+  FAILED_LOGOS.add(logoKey(company, url));
+}
+
 function requestLogo(company, url, priority) {
-  const key = JSON.stringify([company || "", url || ""]);
+  const key = logoKey(company, url);
   if (!LOGO_REQUESTS.has(key)) {
     const request = logoApi.best(company, url, priority ? "high" : "auto")
       .then(({ data }) => {
@@ -22,6 +41,12 @@ function requestLogo(company, url, priority) {
         return URL.createObjectURL(data);
       })
       .catch((error) => {
+        if (error?.response?.status === 404) {
+          // Cache the 404: keep the rejected promise cached so duplicate
+          // mounts never re-request. Other errors allow a retry next mount.
+          FAILED_LOGOS.add(key);
+          return Promise.reject(error);
+        }
         LOGO_REQUESTS.delete(key);
         throw error;
       });
@@ -46,6 +71,12 @@ export default function CompanyLogo({ company, url, size = "md", priority = fals
     setLogoSrc(null);
     setFailed(false);
     if (!company) return () => { cancelled = true; };
+
+    // Cached 404 — skip the request entirely.
+    if (isLogoFailed(company, url)) {
+      setFailed(true);
+      return () => { cancelled = true; };
+    }
 
     requestLogo(company, url, priority)
       .then((src) => { if (!cancelled) setLogoSrc(src); })
