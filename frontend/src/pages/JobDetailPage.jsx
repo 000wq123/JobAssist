@@ -27,6 +27,7 @@ import {
   parseSalary, daysUntil, kvMinimumFor, categoryLabel,
 } from "../components/job-detail/domain";
 import { formatEuro } from "../utils/format";
+import { getAiErrorMessage } from "../utils/aiError";
 
 /** Fetch KV wage for a category (direct endpoint). Falls back to hardcoded floor. */
 function useKvWage(category) {
@@ -131,7 +132,7 @@ export default function JobDetailPage() {
       setCoverLetterOpen(true);
       toast.success("Anschreiben erstellt");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Anschreiben konnte nicht erstellt werden");
+      toast.error(getAiErrorMessage(err, "Anschreiben konnte nicht erstellt werden"));
     }
   };
 
@@ -145,7 +146,7 @@ export default function JobDetailPage() {
       setJob(res.data);
       toast.success("Passung berechnet");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Passung konnte nicht berechnet werden");
+      toast.error(getAiErrorMessage(err, "Passung konnte nicht berechnet werden"));
     }
   };
 
@@ -197,9 +198,13 @@ export default function JobDetailPage() {
 
   const statusMutation = useMutation((status) => jobApi.updateStatus(jobId, status));
   const handleStatusChange = async (status) => {
-    // Optimistic: patch the cached list immediately so the master list never
-    // blanks (invalidate → refetch made every row vanish mid-flight), then
-    // reconcile with the server response.
+    if (!job || job.status === status) return;
+
+    // Update both surfaces before starting the request. Previously only the
+    // cached list changed immediately, so the status button on this detail page
+    // appeared stuck until the API response arrived.
+    const previousJob = job;
+    setJob((current) => (current ? { ...current, status } : current));
     const previousJobs = mutateSwrCache("jobs:list", (current) => (
       Array.isArray(current)
         ? current.map((item) => (String(item.id) === String(jobId) ? { ...item, status } : item))
@@ -215,6 +220,7 @@ export default function JobDetailPage() {
           : current
       ));
     } catch (err) {
+      setJob((current) => (current?.status === status ? previousJob : current));
       if (previousJobs !== undefined) mutateSwrCache("jobs:list", previousJobs);
       else invalidateSwrCache("jobs:list");
       toast.error(err.response?.data?.detail || "Status konnte nicht aktualisiert werden");
@@ -546,28 +552,53 @@ export default function JobDetailPage() {
 
           {/* ── 9. Actions ──────────────────────────────────────────────────── */}
           <section className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) handleCoverLetter(); else setEditOpen(true); }}
-              disabled={coverLetterMutation.loading}
-              className={`flex-1 min-w-[200px] h-11 px-5 rounded-xl bg-[var(--color-accent-500)] text-white font-semibold text-[13.5px] inline-flex items-center justify-center gap-2 hover:bg-[var(--color-accent-600)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${FOCUS}`}
-            >
-              {coverLetterMutation.loading
-                ? <><Spinner />Wird erstellt…</>
-                : job.cover_letter ? <><FileText className="w-4 h-4" aria-hidden="true" />Anschreiben ansehen</>
-                  : <><FileText className="w-4 h-4" aria-hidden="true" />Bewerbung schreiben</>}
-            </button>
+            {job.url ? (
+              <a
+                href={job.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-jobassist-apply=""
+                data-job-id={job.id}
+                data-job-title={job.role || ""}
+                data-job-company={job.company || ""}
+                data-job-location={job.location || ""}
+                data-job-source={job.source || ""}
+                data-cover-letter={job.cover_letter || ""}
+                className={`flex-1 min-w-[200px] h-11 px-5 rounded-xl bg-[var(--color-accent-500)] text-white font-semibold text-[13.5px] inline-flex items-center justify-center gap-2 hover:bg-[var(--color-accent-600)] transition-colors ${FOCUS}`}
+              >
+                Jetzt bewerben
+                <ExternalLink className="w-4 h-4" aria-hidden="true" />
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) handleCoverLetter(); else setEditOpen(true); }}
+                disabled={coverLetterMutation.loading}
+                className={`flex-1 min-w-[200px] h-11 px-5 rounded-xl bg-[var(--color-accent-500)] text-white font-semibold text-[13.5px] inline-flex items-center justify-center gap-2 hover:bg-[var(--color-accent-600)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${FOCUS}`}
+              >
+                {coverLetterMutation.loading
+                  ? <><Spinner />Wird vorbereitet…</>
+                  : job.cover_letter ? <><FileText className="w-4 h-4" aria-hidden="true" />Anschreiben ansehen</>
+                    : <><FileText className="w-4 h-4" aria-hidden="true" />Bewerbung vorbereiten</>}
+              </button>
+            )}
             {job.url ? (
               <button
                 type="button"
-                onClick={() => { window.open(job.url, "_blank", "noopener,noreferrer"); }}
-                className={`h-11 px-5 rounded-xl border text-[13.5px] inline-flex items-center justify-center gap-1.5 transition-colors ${urlExpired
-                  ? "border-[var(--color-warning)]/40 text-[var(--color-warning)] hover:bg-[var(--color-warning-soft)]"
-                  : "border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)]"} ${FOCUS}`}
+                onClick={() => { if (job.cover_letter) setCoverLetterOpen(true); else if (resumeId) handleCoverLetter(); else setEditOpen(true); }}
+                disabled={coverLetterMutation.loading}
+                className={`h-11 px-5 rounded-xl border border-[var(--color-border)] text-[var(--color-fg-muted)] text-[13.5px] inline-flex items-center justify-center gap-1.5 hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${FOCUS}`}
               >
-                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                {urlExpired ? "Abgelaufen — Anzeige öffnen" : `Bei ${job.source || "der Jobbörse"} öffnen`}
+                {coverLetterMutation.loading
+                  ? <><Spinner />Wird erstellt…</>
+                  : job.cover_letter ? <><FileText className="w-3.5 h-3.5" aria-hidden="true" />Anschreiben ansehen</>
+                    : <><FileText className="w-3.5 h-3.5" aria-hidden="true" />Anschreiben erstellen</>}
               </button>
+            ) : null}
+            {urlExpired ? (
+              <p className="basis-full text-[11.5px] text-[var(--color-warning)]">
+                Die Anzeige könnte abgelaufen sein. Der Link wird trotzdem geöffnet.
+              </p>
             ) : null}
           </section>
         </div>

@@ -17,6 +17,8 @@ import { aiApi } from "../services/api";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 const required = (v) => v && String(v).trim().length > 0;
+import { getAiErrorMessage } from "../utils/aiError";
+
 const PLZ_OK = /^\d{4}$/;
 const EMAIL_OK = /^[^\s@]+@[^\s@.]+\.[^\s@]{2,}$/;
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -40,8 +42,8 @@ function AiPolishButton({ value, context, onResult, square = false }) {
       const res = await aiApi.polish(value.trim(), context);
       const improved = res.data?.text || res.data?.result || value;
       onResult(improved);
-    } catch {
-      toast.error("KI-Optimierung gerade nicht verfügbar.");
+    } catch (err) {
+      toast.error(getAiErrorMessage(err, "KI-Optimierung gerade nicht verfügbar."));
     } finally {
       setBusy(false);
     }

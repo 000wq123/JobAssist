@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import AIDisclosureBanner from "../AIDisclosureBanner";
 import { interviewApi } from "../../services/api";
+import { getAiErrorMessage } from "../../utils/aiError";
 import { Spinner } from "./ui";
 import useFocusTrap from "../../hooks/useFocusTrap";
 
@@ -77,7 +78,7 @@ export default function InterviewSheet({ open, onClose, job, mutate, pending, re
       );
       setRatings((prev) => ({ ...prev, [idx]: { status: "done", ...res.data } }));
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Bewertung fehlgeschlagen. Bitte versuche es erneut.");
+      toast.error(getAiErrorMessage(err, "Bewertung fehlgeschlagen. Bitte versuche es erneut."));
       setRatings((prev) => ({ ...prev, [idx]: { status: "fallback" } }));
     }
   };
