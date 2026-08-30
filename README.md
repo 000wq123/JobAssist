@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="branding/logo.png" alt="JobAssist Logo" width="160" />
+</div>
+
 # JobAssist
 
 > Open-Source Bewerbungstools für Österreich — Praktikum, Teilzeit, Lehre, Samstagsjob, Ferialjob.
