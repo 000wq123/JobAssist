@@ -2,13 +2,9 @@
 
 Asserts the notification email is professional/simple and uses the JobAssist
 brand design tokens (same palette as app/services/email_service.py).
-No real email is sent — send_transactional_email is mocked.
+No real email is sent — the template is rendered statically.
 """
-import asyncio
 import re
-from unittest.mock import patch
-
-import pytest
 
 
 def _route_source() -> str:
@@ -23,14 +19,15 @@ def _render_contact_html(
     message: str = "Hallo, ich habe eine Frage zu meinem Abonnement.",
 ) -> str:
     """Extract the html_body f-string template from the route and render it
-    with the sanitized sample values (mirroring the route's own escaping)."""
+    with sanitized sample values (mirroring the route's own escaping)."""
     src = _route_source()
     m = re.search(r'html_body = f"""(.*?)"""', src, re.S)
     assert m, "html_body template not found in contact.py"
     template = m.group(1)
-    # Apply the route's sanitization
+
     def one_line(s: str) -> str:
         return " ".join(s.replace("\r", " ").replace("\n", " ").split())
+
     safe_name = one_line(name)[:200]
     safe_topic = one_line(topic)[:200]
     safe_email = email
@@ -118,7 +115,6 @@ def test_contact_email_sanitizes_newlines_in_name():
 
 
 def test_contact_email_rejects_short_message():
-    # Route-level behavior guard: the 10-char minimum check is still in source
     src = _route_source()
     assert "Nachricht zu kurz" in src
     assert "len(payload.message.strip()) < 10" in src
