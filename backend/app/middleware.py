@@ -86,6 +86,26 @@ def _build_security_headers(request: Request) -> dict[str, str]:
     return headers
 
 
+def _cors_headers_for(request: Request) -> dict[str, str]:
+    """CORS headers to echo on error responses. Starlette's CORSMiddleware
+    does not run on exception responses raised past it (unhandled 500s from
+    BaseHTTPMiddleware, validation errors, etc.), which surfaces in the
+    browser as a confusing 'blocked by CORS policy' error instead of the real
+    4xx/5xx. Mirror the origin here when it is allowed."""
+    origin = request.headers.get("origin", "")
+    if not origin:
+        return {}
+    if origin in settings.allowed_origins_list or (
+        settings.ALLOWED_ORIGIN_REGEX
+        and bool(re.fullmatch(settings.ALLOWED_ORIGIN_REGEX, origin))
+    ):
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }
+    return {}
+
+
 def install_middleware(app: FastAPI) -> None:
     """Register the unified HTTP middleware stack on `app`."""
 
@@ -154,6 +174,22 @@ def install_middleware(app: FastAPI) -> None:
 
             # 4. main pipeline
             response: Response = await call_next(request)
+        except Exception:
+            # Unhandled exception: return a 500 with CORS headers so the
+            # browser shows the real status instead of a CORS block.
+            logger.exception(
+                "Unhandled exception",
+                extra={"path": request.url.path, "method": request.method},
+            )
+            detail = str(sys.exc_info()[1]) if settings.DEBUG else "Internal server error"
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": detail, "request_id": request_id},
+                headers={
+                    **_cors_headers_for(request),
+                    "X-Request-ID": request_id,
+                },
+            )
         finally:
             duration_ms = elapsed_ms(start)
             status_code = getattr(locals().get("response"), "status_code", 500)
@@ -180,4 +216,11 @@ def install_middleware(app: FastAPI) -> None:
         response.headers["X-Request-ID"] = request_id
         for key, value in _build_security_headers(request).items():
             response.headers.setdefault(key, value)
+        # CORS echo on error responses (401/404/422/429/5xx): Starlette's
+        # CORSMiddleware can miss responses that bypass it (exceptions raised
+        # past BaseHTTPMiddleware, some HTTPException paths), which the browser
+        # then reports as a CORS block instead of the real status.
+        if response.status_code >= 400:
+            for key, value in _cors_headers_for(request).items():
+                response.headers.setdefault(key, value)
         return response
