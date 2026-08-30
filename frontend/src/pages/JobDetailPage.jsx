@@ -212,7 +212,11 @@ export default function JobDetailPage() {
     ));
     try {
       const res = await statusMutation.mutate(status);
-      if (res?.data) setJob(res.data);
+      if (res?.data) {
+        setJob((current) => (
+          String(current?.id) === String(previousJob.id) ? res.data : current
+        ));
+      }
       // Reconcile the cache with the canonical server record (keeps updated_at).
       mutateSwrCache("jobs:list", (current) => (
         Array.isArray(current)
@@ -220,7 +224,11 @@ export default function JobDetailPage() {
           : current
       ));
     } catch (err) {
-      setJob((current) => (current?.status === status ? previousJob : current));
+      setJob((current) => (
+        String(current?.id) === String(previousJob.id) && current?.status === status
+          ? previousJob
+          : current
+      ));
       if (previousJobs !== undefined) mutateSwrCache("jobs:list", previousJobs);
       else invalidateSwrCache("jobs:list");
       toast.error(err.response?.data?.detail || "Status konnte nicht aktualisiert werden");
