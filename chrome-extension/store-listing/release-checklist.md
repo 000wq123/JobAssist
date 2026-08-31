@@ -8,6 +8,7 @@
 - [ ] `node chrome-extension/scripts/validate-release.mjs` besteht.
 - [ ] `node chrome-extension/tests/ui-smoke.mjs` besteht.
 - [ ] `node chrome-extension/tests/smoke.mjs` besteht.
+- [ ] Der CI-Job `chrome-extension` besteht und das ZIP-Artefakt wurde geprüft.
 
 ## Öffentliche Seiten
 
@@ -34,6 +35,7 @@
 - [ ] Demo auf hellem und dunklem Systemdesign getestet.
 - [ ] Bestehende Formularwerte bleiben unverändert.
 - [ ] Passwortfelder werden ignoriert.
+- [ ] `Lokale Daten löschen` entfernt Profil, Einwilligung und aktiven Bewerbungskontext.
 - [ ] Geschützte Seiten (`chrome://`, Chrome Web Store) zeigen eine verständliche Fehlermeldung.
 - [ ] Entfernen der Erweiterung löscht die lokalen Erweiterungsdaten.
 - [ ] Finale Einreichung und rechtliche Bestätigungen durch den Kontoinhaber durchgeführt.

@@ -36,8 +36,13 @@ try {
         body: `<!doctype html><html><body>
           <form><label>Vorname <input name="firstName"></label>
           <label>E-Mail <input type="email" name="email"></label>
+          <label>Ort <input name="city" value="Graz"></label>
+          <label>Passwort <input type="password" name="password"></label>
+          <label>Newsletter <input type="checkbox" name="newsletter"></label>
           <label>Lebenslauf <input type="file" name="resume"></label>
-          <label>Anschreiben <textarea name="coverLetter"></textarea></label></form>
+          <label>Anschreiben <textarea name="coverLetter"></textarea></label>
+          <button type="submit">Absenden</button></form>
+          <script>document.querySelector('form').addEventListener('submit', (event) => { event.preventDefault(); window.submitCount = (window.submitCount || 0) + 1; });</script>
         </body></html>`,
       });
       return;
@@ -98,7 +103,15 @@ try {
   assert.equal(await employer.locator('input[name="firstName"]').inputValue(), "Anna");
   assert.equal(await employer.locator('input[name="email"]').inputValue(), "anna@example.com");
   assert.equal(await employer.locator('textarea[name="coverLetter"]').inputValue(), "Mein Anschreiben");
+  assert.equal(await employer.locator('input[name="city"]').inputValue(), "Graz");
+  assert.equal(await employer.locator('input[name="password"]').inputValue(), "");
+  assert.equal(await employer.locator('input[name="newsletter"]').isChecked(), false);
+  assert.equal(await employer.evaluate(() => window.submitCount || 0), 0);
   assert.match(await employer.locator(".jae-status").textContent(), /3 leere Felder ausgefüllt/);
+
+  await employer.getByRole("button", { name: "Lebenslauf-Feld zeigen" }).click();
+  assert.equal(await employer.locator('input[name="resume"]').evaluate((element) => element.classList.contains("jae-file-target")), true);
+  assert.equal(await employer.locator('input[name="resume"]').inputValue(), "");
 
   console.log("Extension smoke test passed: least-privilege handoff and explicit autofill work.");
 } finally {

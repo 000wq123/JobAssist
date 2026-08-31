@@ -45,6 +45,13 @@ form.addEventListener("submit", async (event) => {
 });
 
 document.getElementById("open-assistant").addEventListener("click", async () => {
+  const storedConsent = await chrome.storage.local.get(CONSENT_KEY);
+  if (!storedConsent[CONSENT_KEY]) {
+    status.textContent = "Speichere zuerst deine Daten und bestätige die lokale Speicherung.";
+    form.elements.namedItem("firstName")?.focus();
+    return;
+  }
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
   if (!/^https?:\/\//i.test(tab.url || "")) {
@@ -70,6 +77,15 @@ document.getElementById("open-assistant").addEventListener("click", async () => 
   } catch {
     status.textContent = "Chrome schützt diese Seite. Öffne das Bewerbungsformular in einem normalen Web-Tab.";
   }
+});
+
+document.getElementById("clear-data").addEventListener("click", async () => {
+  await chrome.storage.local.remove([PROFILE_KEY, APPLICATION_KEY, CONSENT_KEY]);
+  form.reset();
+  applicationCard.hidden = true;
+  emptyApplication.hidden = false;
+  chrome.runtime.sendMessage({ type: "APPLICATION_FINISHED" });
+  status.textContent = "Alle lokalen JobAssist-Daten wurden gelöscht.";
 });
 
 initialize();

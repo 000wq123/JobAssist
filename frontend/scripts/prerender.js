@@ -25,6 +25,7 @@ const ROUTES = [
   { url: "/impressum", out: "impressum/index.html" },
   { url: "/terms", out: "terms/index.html" },
   { url: "/privacy", out: "privacy/index.html" },
+  { url: "/extension-demo", out: "extension-demo/index.html" },
 ];
 
 function startStaticServer() {

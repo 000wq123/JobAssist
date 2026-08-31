@@ -24,6 +24,7 @@ Funktionen:
 - setzt ein vorhandenes Anschreiben in passende leere Textfelder ein;
 - markiert das Lebenslauf-Uploadfeld, ohne eine Datei selbstständig auszuwählen;
 - speichert Profildaten ausschließlich lokal in Chrome;
+- lässt alle lokal gespeicherten JobAssist-Daten direkt im Popup löschen;
 - sendet niemals automatisch ein Bewerbungsformular ab;
 - erhält nur nach deinem Klick vorübergehenden Zugriff auf den aktuellen Tab.
 
@@ -43,4 +44,3 @@ Zum sicheren Ausprobieren steht unter https://www.jobassist.tech/extension-demo 
 - Primäre Sprache: Deutsch
 - Empfohlene erste Distribution: Österreich, Deutschland, Schweiz
 - Sichtbarkeit für den ersten Review: Nicht gelistet oder vertrauenswürdige Tester; nach bestandenem Test öffentlich
-

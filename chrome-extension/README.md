@@ -9,6 +9,7 @@ Store-fertige Manifest-V3-Erweiterung für den Weg von einer gespeicherten JobAs
 - füllt ausschließlich leere, eindeutig erkannte Felder und nur nach einem Klick;
 - markiert Lebenslauf-Uploads, setzt Dateien aber aus Sicherheitsgründen niemals automatisch ein;
 - speichert Profildaten ausschließlich in `chrome.storage.local`;
+- löscht Profil, Einwilligung und aktiven Bewerbungskontext auf Wunsch direkt im Popup;
 - erhält erst nach einem Klick auf das Erweiterungssymbol temporären Zugriff auf den aktuellen Tab;
 - sendet und übermittelt niemals automatisch ein Formular.
 

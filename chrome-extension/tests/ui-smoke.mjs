@@ -26,11 +26,14 @@ popupDom.window.close = () => {};
 popupDom.window.chrome = {
   storage: {
     local: {
-      get: async (keys) => Object.fromEntries(keys.map((key) => [key, popupStored[key]])),
+      get: async (keys) => Object.fromEntries((Array.isArray(keys) ? keys : [keys]).map((key) => [key, popupStored[key]])),
       set: async (value) => { calls.writes.push(value); Object.assign(popupStored, value); },
-      remove: async (key) => { delete popupStored[key]; },
+      remove: async (keys) => {
+        for (const key of Array.isArray(keys) ? keys : [keys]) delete popupStored[key];
+      },
     },
   },
+  runtime: { sendMessage: () => {} },
   tabs: { query: async () => [{ id: 17, url: "https://careers.example/apply" }] },
   scripting: {
     insertCSS: async (options) => { calls.css.push(options); },
@@ -46,11 +49,27 @@ assert.equal(popupDom.window.document.getElementById("empty-application").hidden
 assert.equal(popupDom.window.document.querySelector('[name="firstName"]').value, "Anna");
 assert.equal(popupDom.window.document.getElementById("profile-consent").checked, true);
 
+delete popupStored.profileConsentAt;
+popupDom.window.document.getElementById("open-assistant").click();
+await tick();
+assert.equal(calls.scripts.length, 0);
+assert.match(popupDom.window.document.getElementById("status").textContent, /Speichere zuerst/);
+
+popupStored.profileConsentAt = "2026-08-30T10:00:00.000Z";
 popupDom.window.document.getElementById("open-assistant").click();
 await tick();
 assert.equal(Array.from(calls.css[0].files).join(","), "content/application-assistant.css");
 assert.equal(Array.from(calls.scripts[0].files).join(","), "content/application-assistant.js");
 assert.equal(calls.scripts[0].target.tabId, 17);
+
+popupDom.window.document.getElementById("clear-data").click();
+await tick();
+assert.equal(popupStored.applicantProfile, undefined);
+assert.equal(popupStored.profileConsentAt, undefined);
+assert.equal(popupStored.activeApplication, undefined);
+assert.equal(popupDom.window.document.getElementById("active-application").hidden, true);
+assert.equal(popupDom.window.document.getElementById("empty-application").hidden, false);
+assert.match(popupDom.window.document.getElementById("status").textContent, /gelöscht/);
 
 const onboardingHtml = fs.readFileSync(path.join(extensionDir, "onboarding/onboarding.html"), "utf8");
 const onboardingDom = new JSDOM(onboardingHtml, {

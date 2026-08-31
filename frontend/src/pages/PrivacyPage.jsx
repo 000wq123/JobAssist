@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title={<><span className="font-display italic text-[var(--app-brand)]">Datenschutz</span>­erklärung</>}
-      subtitle="Stand: 29. August 2026 — gemäß DSGVO (EU-Datenschutz-Grundverordnung) und österreichischem Datenschutzgesetz (DSG)"
+      subtitle="Stand: 30. August 2026 — gemäß DSGVO (EU-Datenschutz-Grundverordnung) und österreichischem Datenschutzgesetz (DSG)"
     >
       <div className="space-y-6 text-[14px] leading-relaxed text-[var(--color-fg-muted)]">
         <section className={sectionClass}>
@@ -278,8 +278,46 @@ export default function PrivacyPage() {
           </p>
         </section>
 
+        <section id="browser-extension" className={`${sectionClass} scroll-mt-8`}>
+          <h2 className={h2Class}>12. Chrome-Erweiterung „JobAssist Bewerbungshelfer“</h2>
+          <p>
+            Die Erweiterung hat den einzigen Zweck, dich beim Ausfüllen von Online-Bewerbungsformularen zu
+            unterstützen. Sie wird auf einer Arbeitgeberseite nur aktiv, wenn du das Erweiterungssymbol anklickst,
+            und erhält dann vorübergehend Zugriff auf den aktuellen Tab.
+          </p>
+          <ul className="list-disc pl-5 space-y-1 mt-3">
+            <li>
+              <strong className="text-[var(--color-fg)]">Lokal gespeicherte Profildaten:</strong> Vor- und
+              Nachname, E-Mail-Adresse, Telefonnummer, Anschrift, Ort und optional LinkedIn-URL.
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Temporäre Bewerbungsdaten:</strong> Stellenbezeichnung,
+              Unternehmen, Ort, Quelle und vorhandenes Anschreiben. Der aktive Bewerbungskontext läuft nach
+              spätestens zwölf Stunden ab.
+            </li>
+            <li>
+              <strong className="text-[var(--color-fg)]">Formularerkennung:</strong> Nach deinem Klick werden
+              Beschriftungen und der Leerstatus sichtbarer Formularfelder im aktuellen Tab lokal ausgewertet.
+              Passwörter sowie versteckte oder bereits ausgefüllte Felder werden nicht verarbeitet.
+            </li>
+          </ul>
+          <p className="mt-3">
+            Diese Daten werden ausschließlich in <strong className="text-[var(--color-fg)]">chrome.storage.local</strong>{" "}
+            auf deinem Gerät gespeichert oder verarbeitet. Die Erweiterung übermittelt sie nicht an JobAssist,
+            verkauft sie nicht, verwendet sie nicht für Werbung und erstellt keinen Browserverlauf. Beim Ausfüllen
+            werden Angaben lediglich in die sichtbaren Felder der von dir geöffneten Arbeitgeberseite eingesetzt;
+            erst du entscheidest, ob du das Formular an den jeweiligen Arbeitgeber absendest.
+          </p>
+          <p className="mt-3">
+            Die Nutzung von Daten durch die Erweiterung ist auf diesen beschriebenen Zweck beschränkt und entspricht
+            den Limited-Use-Anforderungen der Chrome Web Store User Data Policy. Du kannst deine lokalen Profildaten
+            jederzeit im Erweiterungs-Popup ändern, dort über „Lokale Daten löschen“ vollständig entfernen oder
+            durch Entfernen der Erweiterung aus Chrome löschen.
+          </p>
+        </section>
+
         <section className={sectionClass}>
-          <h2 className={h2Class}>12. Beschwerderecht</h2>
+          <h2 className={h2Class}>13. Beschwerderecht</h2>
           <p>
             Du hast das Recht, eine Beschwerde bei der zuständigen Datenschutzbehörde einzureichen:
           </p>

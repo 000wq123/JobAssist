@@ -10,7 +10,7 @@
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --report-unused-disable-directives",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:stable": "playwright test e2e/auth.spec.js e2e/job-alerts.spec.js e2e/settings.spec.js e2e/smoke.spec.js",
+    "test:e2e:stable": "playwright test e2e/auth.spec.js e2e/extension-demo.spec.js e2e/job-alerts.spec.js e2e/settings.spec.js e2e/smoke.spec.js",
     "test:e2e:visual": "playwright test e2e/landing-visual.spec.js",
     "test:e2e:install": "playwright install --with-deps chromium"
   },

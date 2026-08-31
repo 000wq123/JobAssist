@@ -28,6 +28,7 @@ const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
 const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadVerifyEmailPage = () => import("./pages/VerifyEmailPage");
 const loadUnsubscribePage = () => import("./pages/UnsubscribePage");
+const loadExtensionDemoPage = () => import("./pages/ExtensionDemoPage");
 
 const LandingPage = lazy(loadLandingPage);
 const LoginPage = lazy(loadLoginPage);
@@ -48,6 +49,7 @@ const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
 const VerifyEmailPage = lazy(loadVerifyEmailPage);
 const UnsubscribePage = lazy(loadUnsubscribePage);
+const ExtensionDemoPage = lazy(loadExtensionDemoPage);
 
 const preloaders = [
   loadDashboardPage,
@@ -105,6 +107,7 @@ function AppRoutes() {
         <Route path="/reset-password" element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
         <Route path="/verify-email" element={<Suspense fallback={null}><VerifyEmailPage /></Suspense>} />
         <Route path="/unsubscribe" element={<Suspense fallback={null}><UnsubscribePage /></Suspense>} />
+        <Route path="/extension-demo" element={<Suspense fallback={null}><ExtensionDemoPage /></Suspense>} />
 
         <Route
           element={

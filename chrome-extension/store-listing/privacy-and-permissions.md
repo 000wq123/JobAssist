@@ -19,6 +19,7 @@ Fügt nach dem ausdrücklichen Klick des Nutzers den sichtbaren JobAssist-Helfer
 ### `storage`
 
 Speichert das vom Nutzer eingegebene Bewerbungsprofil, dessen Einwilligungszeitpunkt und einen höchstens zwölf Stunden aktiven Bewerbungskontext ausschließlich lokal im Browser.
+Profil, Einwilligung und Bewerbungskontext können jederzeit gemeinsam über `Lokale Daten löschen` im Popup entfernt werden.
 
 ### Zugriff auf `jobassist.tech`
 
@@ -41,4 +42,3 @@ Das deklarative Content Script läuft ausschließlich auf `jobassist.tech` und `
 ## Limited Use
 
 Die Nutzung der verarbeiteten Daten ist auf den beschriebenen Bewerbungszweck beschränkt und entspricht den Limited-Use-Anforderungen der Chrome Web Store User Data Policy.
-
