@@ -58,7 +58,6 @@ jobs:
 
   frontend-e2e:
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: frontend
@@ -77,7 +76,10 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      # Functional E2E is a blocking gate. Screenshot assertions are owned by
+      # the dedicated frontend-visual job below, avoiding duplicate pixel
+      # comparisons with different worker pressure.
+      - run: npm run test:e2e -- --ignore-snapshots
       - name: Upload full e2e report
         if: failure() || cancelled()
         uses: actions/upload-artifact@v6
