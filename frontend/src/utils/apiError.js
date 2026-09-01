@@ -13,6 +13,13 @@ export function getApiErrorMessage(err, fallback = "Etwas ist schiefgelaufen") {
 
   const detail = err?.response?.data?.detail;
 
+  if (detail === "Internal server error") {
+    const requestId = err?.response?.data?.request_id;
+    return requestId && requestId !== "-"
+      ? `Interner Serverfehler. Referenz: ${requestId}`
+      : "Interner Serverfehler. Bitte versuche es erneut.";
+  }
+
   if (typeof detail === "string") return detail;
 
   if (Array.isArray(detail)) {

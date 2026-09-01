@@ -309,6 +309,7 @@ export const jobApi = {
   list: (page = 1, pageSize = 100) => api.get(`/jobs/?page=${page}&page_size=${pageSize}`),
   get: (id) => api.get(`/jobs/${id}`),
   delete: (id) => api.delete(`/jobs/${id}`),
+  bulkDelete: (ids) => api.post("/jobs/bulk-delete", { ids }),
   generateCoverLetter: (jobId, resumeId, tone = "professional") =>
     api.post("/cover-letter/generate", { job_id: jobId, resume_id: resumeId, tone }),
   generateInterviewPrep: (jobId, resumeId, numQuestions = 10) =>
@@ -324,6 +325,10 @@ export const jobApi = {
   searchCustom: (keywords, location = "", jobType = "", page = 1) => {
     const params = new URLSearchParams({ keywords, location, job_type: jobType, page });
     return api.get(`/jobs/search/custom?${params.toString()}`);
+  },
+  searchAll: (keywords, location = "", jobType = "", page = 1) => {
+    const params = new URLSearchParams({ keywords, location, job_type: jobType, page });
+    return api.get(`/jobs/search/all?${params.toString()}`);
   },
   searchJooble: (keywords, location = "", page = 1) => {
     const params = new URLSearchParams({ keywords, location, page });

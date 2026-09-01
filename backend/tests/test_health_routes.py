@@ -43,13 +43,17 @@ def _load_main_module():
 
 
 class _HealthySession:
+    queries = []
+
     async def __aenter__(self):
+        type(self).queries = []
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         return False
 
-    async def execute(self, _query):
+    async def execute(self, query):
+        type(self).queries.append(str(query))
         return None
 
 
@@ -110,6 +114,34 @@ async def test_health_dependencies_reports_ready_when_db_and_providers_are_ok(mo
     assert payload["database"] == {"ok": True}
     assert payload["providers"]["email"]["active_provider"] == "brevo"
     assert payload["request_id"] == "qa-health-2"
+    assert any("refresh_tokens" in query for query in _HealthySession.queries)
+
+
+@pytest.mark.asyncio
+async def test_health_dependencies_does_not_require_stripe_when_billing_is_disabled(monkeypatch):
+    main = _load_main_module()
+    from app.api.routes import health as health_module
+
+    monkeypatch.setattr(health_module, "AsyncSessionLocal", lambda: _HealthySession())
+    monkeypatch.setattr(health_module.settings, "ENABLE_BILLING", False)
+    monkeypatch.setattr(
+        health_module,
+        "get_provider_health",
+        lambda: {
+            "groq": {"configured": True, "model": "test"},
+            "adzuna": {"configured": True, "circuit_breaker": {"open": False}},
+            "email": {"active_provider": "brevo"},
+            "stripe": {"configured": False},
+            "sentry": {"configured": False, "traces_sample_rate": 0.0},
+        },
+    )
+
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.get("/health/dependencies")
+
+    assert response.status_code == 200
+    assert response.json()["ready"] is True
 
 
 @pytest.mark.asyncio
@@ -397,4 +429,3 @@ async def test_init_serializes_datetime_fields(monkeypatch):
         assert body["me"]["daily_counts_reset_at"].startswith("2026-08-26")
     finally:
         main.app.dependency_overrides.clear()
-

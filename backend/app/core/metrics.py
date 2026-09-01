@@ -107,6 +107,7 @@ register("jobassist_http_requests_total", "HTTP requests received, partitioned b
 register("jobassist_scheduler_runs_total", "Scheduler ticks, partitioned by task/outcome.")
 register("jobassist_adzuna_cache_total", "Adzuna search-cache events, partitioned by outcome (hit/miss/skip).")
 register("jobassist_adzuna_circuit_breaker_open", "1 if the Adzuna circuit breaker is currently open, else 0.")
+register("jobassist_job_search_provider_total", "Job-search provider calls, partitioned by provider/outcome.")
 register("jobassist_db_errors_total", "Database errors caught by the retry helper.")
 register("jobassist_admin_actions_total", "Admin endpoint invocations, partitioned by action/outcome.")
 

@@ -27,6 +27,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # The target JSON column supplies the cast on PostgreSQL; keeping the
+    # literal dialect-neutral also lets fresh SQLite databases migrate.
+    json_array_default = sa.text("'[]'")
     # ── users ────────────────────────────────────────────────────────────────
     op.create_table(
         "users",
@@ -54,11 +57,11 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="CASCADE"),
                   nullable=False, unique=True),
-        sa.Column("desired_locations", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("desired_locations", sa.JSON(), nullable=False, server_default=json_array_default),
         sa.Column("salary_min", sa.Float(), nullable=True),
         sa.Column("salary_max", sa.Float(), nullable=True),
-        sa.Column("job_types", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
-        sa.Column("industries", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("job_types", sa.JSON(), nullable=False, server_default=json_array_default),
+        sa.Column("industries", sa.JSON(), nullable=False, server_default=json_array_default),
         sa.Column("experience_level", sa.String(), nullable=True),
         sa.Column("is_open_to_relocation", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("avatar", sa.Text(), nullable=True),

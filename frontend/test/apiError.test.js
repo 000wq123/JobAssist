@@ -24,6 +24,16 @@ test("returns string detail when backend sends plain detail", () => {
   expect(result).toBe("Ungültige E-Mail-Adresse oder Passwort");
 });
 
+test("translates an internal error and preserves its support reference", () => {
+  const result = getApiErrorMessage({
+    response: {
+      data: { detail: "Internal server error", request_id: "req-123" },
+    },
+  });
+
+  expect(result).toBe("Interner Serverfehler. Referenz: req-123");
+});
+
 test("returns first validation message when detail is an array", () => {
   const result = getApiErrorMessage({
     response: {

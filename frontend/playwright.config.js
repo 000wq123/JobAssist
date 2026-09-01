@@ -14,7 +14,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run preview -- --host 127.0.0.1 --port 4173",
+    // `vite preview` serves dist/. Rebuild so direct Playwright runs never
+    // validate a stale bundle left by an earlier test session.
+    command: "npm run build && npm run preview -- --host 127.0.0.1 --port 4173",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

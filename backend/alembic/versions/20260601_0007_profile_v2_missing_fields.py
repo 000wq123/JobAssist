@@ -21,6 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    json_array_default = sa.text("'[]'")
     # ── Persönliches ─────────────────────────────────────────────────────────
     op.add_column("profiles_v2", sa.Column("geburtsort", sa.String(100), nullable=True))
 
@@ -31,11 +32,11 @@ def upgrade() -> None:
     # ── Suche / Präferenzen ──────────────────────────────────────────────────
     op.add_column(
         "profiles_v2",
-        sa.Column("job_arten", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("job_arten", sa.JSON(), nullable=False, server_default=json_array_default),
     )
     op.add_column(
         "profiles_v2",
-        sa.Column("branchen", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("branchen", sa.JSON(), nullable=False, server_default=json_array_default),
     )
     op.add_column("profiles_v2", sa.Column("max_anfahrt_min", sa.SmallInteger(), nullable=True))
     op.add_column("profiles_v2", sa.Column("verfuegbar_ab", sa.String(20), nullable=True))
@@ -43,11 +44,11 @@ def upgrade() -> None:
     # ── Weiterbildung / Aktivitäten ─────────────────────────────────────────
     op.add_column(
         "profiles_v2",
-        sa.Column("weiterbildungen", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("weiterbildungen", sa.JSON(), nullable=False, server_default=json_array_default),
     )
     op.add_column(
         "profiles_v2",
-        sa.Column("aktivitaeten", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("aktivitaeten", sa.JSON(), nullable=False, server_default=json_array_default),
     )
 
     # ── Vorlage ──────────────────────────────────────────────────────────────

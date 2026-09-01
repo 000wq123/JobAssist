@@ -9,6 +9,7 @@ describe("parseJobSearchResponse", () => {
     expect(parseJobSearchResponse({ jobs: [job], total_count: 1 })).toEqual({
       jobs: [job],
       error: null,
+      unavailableSources: [],
     });
   });
 
@@ -22,12 +23,20 @@ describe("parseJobSearchResponse", () => {
     ).toEqual({
       jobs: [],
       error: "Jobsuche vorübergehend nicht verfügbar.",
+      unavailableSources: [],
     });
   });
 
   it("keeps legacy response shapes compatible", () => {
     expect(parseJobSearchResponse({ items: [{ title: "Legacy" }] }).jobs).toHaveLength(1);
-    expect(parseJobSearchResponse(null)).toEqual({ jobs: [], error: null });
+    expect(parseJobSearchResponse(null)).toEqual({ jobs: [], error: null, unavailableSources: [] });
+  });
+
+  it("preserves unavailable sources when partial results still succeed", () => {
+    expect(parseJobSearchResponse({
+      jobs: [{ title: "QA" }],
+      unavailable_sources: ["AMS", "Jooble"],
+    }).unavailableSources).toEqual(["AMS", "Jooble"]);
   });
 });
 

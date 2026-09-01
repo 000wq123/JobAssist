@@ -41,7 +41,7 @@ const CITY_OPTIONS = [
   "St. Pölten", "Eisenstadt", "Bregenz",
 ];
 
-/** Search sources exposed in the Stellen-Finder. `alle` = backend default (Adzuna). */
+/** Search sources exposed in the Stellen-Finder. `alle` queries every provider. */
 const SEARCH_SOURCES = [
   { value: "alle", label: "Alle Quellen", desc: "Adzuna + mehr" },
   { value: "willhaben", label: "willhaben", desc: "Nebenjobs & Kleinanzeigen" },
@@ -259,6 +259,9 @@ function FindenTab({ onSaved }) {
   const results = useMemo(() => {
     return parseJobSearchResponse(searchData).jobs;
   }, [searchData]);
+  const unavailableSources = useMemo(() => {
+    return parseJobSearchResponse(searchData).unavailableSources;
+  }, [searchData]);
 
   const runSearch = async (kw, jt) => {
     const id = ++searchIdRef.current;
@@ -270,7 +273,7 @@ function FindenTab({ onSaved }) {
         : source === "karriere" ? call(jobApi.searchKarriere)
         : source === "jooble" ? call(jobApi.searchJooble)
         : source === "ams" ? call(jobApi.searchAms)
-        : jobApi.searchCustom(kw, city, jt, 1));
+        : jobApi.searchAll(kw, city, jt, 1));
       if (id !== searchIdRef.current) return; // stale — a newer search won
       const parsed = parseJobSearchResponse(res.data);
       setSearchData(res.data);
@@ -454,6 +457,18 @@ function FindenTab({ onSaved }) {
             <span className="font-semibold" style={{ color: T("text") }}>{results.length}</span>{" "}
             Treffer
           </p>
+          {unavailableSources.length > 0 && (
+            <div
+              className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 mb-3 text-[12px]"
+              role="status"
+              style={{ background: T("warning-soft"), color: T("text-secondary") }}
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: T("warning") }} />
+              <span>
+                Ergebnisse werden angezeigt. Nicht erreichbar: {unavailableSources.join(", ")}.
+              </span>
+            </div>
+          )}
           <div className="rounded-xl border overflow-hidden" style={{ borderColor: T("border"), background: T("surface") }}>
             {results.map((job, i) => {
               const title = job.title || job.role || "Stelle";
@@ -461,7 +476,7 @@ function FindenTab({ onSaved }) {
               const type = job.job_type || "";
               const url = job.full_url || job.url || "";
               const sourceName = job.source || (submitted.source === "alle"
-                ? "Adzuna"
+                ? "Jobbörse"
                 : SEARCH_SOURCES.find((item) => item.value === submitted.source)?.label) || "Jobbörse";
               const enrichedJob = { ...job, source: sourceName };
               const key = jobKey(enrichedJob);
@@ -713,7 +728,23 @@ export default function StellenPage() {
     clearSelection();
     if (jobId && removedIds.has(String(jobId))) navigate("/jobs", { replace: true });
 
-    const results = await Promise.allSettled(normalizedIds.map((id) => jobApi.delete(id)));
+    let results;
+    if (normalizedIds.length === 1) {
+      results = await Promise.allSettled([jobApi.delete(normalizedIds[0])]);
+    } else {
+      try {
+        await jobApi.bulkDelete(normalizedIds.map(Number));
+        results = normalizedIds.map(() => ({ status: "fulfilled" }));
+      } catch (error) {
+        // During a rolling deploy the frontend can briefly reach an older API.
+        // Fall back only when that API does not know the new route yet.
+        if ([404, 405].includes(error?.response?.status)) {
+          results = await Promise.allSettled(normalizedIds.map((id) => jobApi.delete(id)));
+        } else {
+          results = normalizedIds.map(() => ({ status: "rejected", reason: error }));
+        }
+      }
+    }
     const failedIds = new Set(
       normalizedIds.filter((_, index) => results[index].status === "rejected"),
     );

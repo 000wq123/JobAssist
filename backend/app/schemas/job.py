@@ -135,6 +135,17 @@ class JobStatusUpdate(BaseModel):
     status: Literal["bookmarked", "applied", "interviewing", "offered", "rejected"]
 
 
+class JobBulkDelete(BaseModel):
+    ids: list[int] = Field(..., min_length=1, max_length=100)
+
+    @field_validator("ids")
+    @classmethod
+    def validate_ids(cls, values):
+        if any(value <= 0 for value in values):
+            raise ValueError("Job IDs must be positive")
+        return list(dict.fromkeys(values))
+
+
 class JobNotesUpdate(BaseModel):
     notes: Optional[str] = Field(None, max_length=10000)
 

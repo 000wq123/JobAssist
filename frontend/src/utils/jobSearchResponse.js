@@ -16,6 +16,9 @@ export function parseJobSearchResponse(payload) {
       typeof envelope.error === "string" && envelope.error.trim()
         ? envelope.error.trim()
         : null,
+    unavailableSources: Array.isArray(envelope.unavailable_sources)
+      ? envelope.unavailable_sources.filter((source) => typeof source === "string" && source.trim())
+      : [],
   };
 }
 

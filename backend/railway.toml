@@ -2,8 +2,10 @@
 builder = "nixpacks"
 
 [deploy]
-preDeployCommand = "alembic stamp head || true"
-startCommand = "gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --timeout 120 --bind 0.0.0.0:$PORT"
+# Railway injects DATABASE_URL into the running container. Apply real
+# migrations before starting workers; `stamp head` only changes Alembic's
+# bookkeeping and can leave production columns/tables missing.
+startCommand = "alembic upgrade head && gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --timeout 120 --bind 0.0.0.0:$PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"

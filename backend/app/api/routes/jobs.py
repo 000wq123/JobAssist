@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import logging
@@ -5,11 +6,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
-from sqlalchemy import func as sa_func, or_, select
+from sqlalchemy import delete as sa_delete, func as sa_func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer
 
+from app.core import metrics
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.usage import require_usage, check_usage_limit, increment_usage
@@ -18,7 +20,7 @@ from app.models.job import Job
 from app.models.resume import Resume
 from app.models.user import User
 from app.models.user_profile import UserProfile
-from app.schemas.job import JobCreate, JobListResponse, JobOut, JobStatusUpdate, JobNotesUpdate, JobDeadlineUpdate, JobUrlUpdate, JobResearchUpdate, PipelineStats, CoursesRequest
+from app.schemas.job import JobBulkDelete, JobCreate, JobListResponse, JobOut, JobStatusUpdate, JobNotesUpdate, JobDeadlineUpdate, JobUrlUpdate, JobResearchUpdate, PipelineStats, CoursesRequest
 from app.services.job_enrich import extract_metadata
 from app.services.job_search import search_jobs, search_jobs_by_preferences
 from app.services.jooble_service import search_jooble
@@ -27,6 +29,72 @@ from app.services.claude_service import suggest_courses_for_job
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+_ALL_SEARCH_TIMEOUT_SECONDS = 20
+
+
+async def _run_search_provider(name: str, call) -> tuple[str, dict]:
+    """Bound one provider so a slow job board cannot block all results."""
+    try:
+        result = await asyncio.wait_for(call, timeout=_ALL_SEARCH_TIMEOUT_SECONDS)
+        normalized = result if isinstance(result, dict) else {"jobs": []}
+        metrics.inc(
+            "jobassist_job_search_provider_total",
+            labels={"provider": name, "outcome": "error" if normalized.get("error") else "success"},
+        )
+        return name, normalized
+    except TimeoutError:
+        metrics.inc("jobassist_job_search_provider_total", labels={"provider": name, "outcome": "timeout"})
+        logger.warning("Job search provider timed out", extra={"provider": name})
+        return name, {"jobs": [], "error": f"{name} hat zu lange gebraucht."}
+    except Exception as exc:
+        metrics.inc("jobassist_job_search_provider_total", labels={"provider": name, "outcome": "exception"})
+        logger.error(
+            "Job search provider failed",
+            extra={"provider": name, "error_type": type(exc).__name__},
+            exc_info=True,
+        )
+        return name, {"jobs": [], "error": f"{name} ist vorübergehend nicht verfügbar."}
+
+
+def _merge_search_results(results: list[tuple[str, dict]], page: int) -> dict:
+    jobs: list[dict] = []
+    seen: set[tuple[str, ...]] = set()
+    unavailable: list[str] = []
+
+    for provider, result in results:
+        provider_jobs = result.get("jobs") or []
+        if result.get("error"):
+            unavailable.append(provider)
+        for job in provider_jobs:
+            source = str(job.get("source") or provider).strip()
+            source_id = str(job.get("source_id") or "").strip()
+            url = str(job.get("full_url") or job.get("url") or "").strip()
+            if url:
+                key = ("url", url.casefold())
+            elif source_id:
+                key = ("source", source.casefold(), source_id)
+            else:
+                key = (
+                    "listing",
+                    str(job.get("title") or "").strip().casefold(),
+                    str(job.get("company") or "").strip().casefold(),
+                    str(job.get("location") or "").strip().casefold(),
+                )
+            if key in seen:
+                continue
+            seen.add(key)
+            jobs.append(job)
+
+    payload = {
+        "jobs": jobs,
+        "total_count": len(jobs),
+        "page": page,
+        "unavailable_sources": unavailable,
+    }
+    if not jobs and unavailable:
+        payload["error"] = "Die Jobbörsen sind gerade nicht erreichbar. Bitte versuche es später erneut."
+    return payload
 
 async def _get_resume_text(resume_id: int, user_id: int, db: AsyncSession) -> str:
     result = await db.execute(
@@ -379,6 +447,63 @@ async def search_custom_jobs(
     except Exception as e:
         logger.error(f"Search error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Suche fehlgeschlagen. Bitte versuche es später erneut.")
+
+
+@router.get("/search/all", response_model=dict)
+async def search_all_jobs(
+    keywords: str = Query(..., description="Job title or keywords", min_length=1, max_length=200),
+    location: str = Query("", description="City/location", max_length=100),
+    job_type: str = Query("", description="Job type", max_length=50),
+    page: int = Query(1, ge=1, le=5),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _usage_ctx=Depends(check_usage_limit("job_search")),
+) -> dict:
+    """Search every source concurrently and preserve partial results."""
+    results = await asyncio.gather(
+        _run_search_provider("Adzuna", search_jobs(keywords=keywords, location=location, job_type=job_type, page=page)),
+        _run_search_provider("karriere.at", search_karriere(keywords=keywords, location=location, page=page)),
+        _run_search_provider("willhaben", search_willhaben(keywords=keywords, location=location, page=page)),
+        _run_search_provider("Jooble", search_jooble(keywords=keywords, location=location, page=page)),
+        _run_search_provider("AMS", search_ams(keywords=keywords, location=location, page=page)),
+    )
+    payload = _merge_search_results(results, page)
+    if payload["jobs"]:
+        await increment_usage(db, current_user.id, "job_search")
+    return payload
+
+
+@router.post("/bulk-delete", response_model=dict)
+@limiter.limit("10/minute")
+async def bulk_delete_jobs(
+    request: Request,
+    payload: JobBulkDelete,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Delete a user's selected jobs in one transaction.
+
+    Missing IDs are treated as already deleted, which makes retries safe and
+    prevents a stale row from turning an otherwise successful bulk action into
+    a confusing partial failure.
+    """
+    requested_ids = payload.ids
+    result = await db.execute(
+        select(Job.id).where(Job.user_id == current_user.id, Job.id.in_(requested_ids))
+    )
+    existing_ids = set(result.scalars().all())
+
+    if existing_ids:
+        await db.execute(
+            sa_delete(Job).where(Job.user_id == current_user.id, Job.id.in_(existing_ids))
+        )
+        await db.commit()
+
+    return {
+        "deleted_ids": requested_ids,
+        "deleted_count": len(existing_ids),
+        "already_absent_ids": [job_id for job_id in requested_ids if job_id not in existing_ids],
+    }
 
 
 @router.get("/search/jooble", response_model=dict)

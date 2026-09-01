@@ -27,6 +27,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    json_array_default = sa.text("'[]'")
     # ── users: v1 additions ──────────────────────────────────────────────────
     op.add_column("users", sa.Column("plan", sa.String(20), nullable=False, server_default="free"))
     op.add_column("users", sa.Column("notification_channel", sa.String(20), nullable=False, server_default="email"))
@@ -78,9 +79,9 @@ def upgrade() -> None:
         sa.Column("klasse", sa.String(20), nullable=True),
         sa.Column("abschlussjahr", sa.SmallInteger(), nullable=True),
         # Arrays stored as JSON
-        sa.Column("erfahrungen", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
-        sa.Column("sprachkenntnisse", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
-        sa.Column("faehigkeiten", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+        sa.Column("erfahrungen", sa.JSON(), nullable=False, server_default=json_array_default),
+        sa.Column("sprachkenntnisse", sa.JSON(), nullable=False, server_default=json_array_default),
+        sa.Column("faehigkeiten", sa.JSON(), nullable=False, server_default=json_array_default),
         sa.Column("hobbies", sa.Text(), nullable=True),
         sa.Column("foto_url", sa.Text(), nullable=True),
         # Meta

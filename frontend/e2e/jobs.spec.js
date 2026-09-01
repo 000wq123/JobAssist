@@ -45,7 +45,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-async function mockSavedJobs(page, jobs, { holdDeletes = false, failingDeleteIds = [] } = {}) {
+async function mockSavedJobs(page, jobs, { holdDeletes = false, failBulkDelete = false } = {}) {
   let releaseDeletes;
   const deleteGate = new Promise((resolve) => { releaseDeletes = resolve; });
   const deleteRequests = [];
@@ -82,14 +82,24 @@ async function mockSavedJobs(page, jobs, { holdDeletes = false, failingDeleteIds
       body: JSON.stringify({ items: jobs, total: jobs.length, page: 1, page_size: 100, pages: 1 }),
     });
   });
+  await page.route("**/api/jobs/bulk-delete", async (route) => {
+    const ids = route.request().postDataJSON()?.ids || [];
+    deleteRequests.push(...ids);
+    if (holdDeletes) await deleteGate;
+    if (failBulkDelete) {
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "Delete failed" }) });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ deleted_ids: ids, deleted_count: ids.length, already_absent_ids: [] }),
+    });
+  });
   await page.route(/\/api\/jobs\/\d+$/, async (route) => {
     if (route.request().method() !== "DELETE") return route.fallback();
     deleteRequests.push(Number(new URL(route.request().url()).pathname.split("/").at(-1)));
     if (holdDeletes) await deleteGate;
-    if (failingDeleteIds.includes(deleteRequests.at(-1))) {
-      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "Delete failed" }) });
-      return;
-    }
     await route.fulfill({ status: 204, body: "" });
   });
 
@@ -180,12 +190,13 @@ test("finden page can search and see results", async ({ page }) => {
   let searchUrl = "";
   let savedPayload = null;
 
-  await page.route("**/api/jobs/search/custom**", async (route) => {
+  await page.route("**/api/jobs/search/all**", async (route) => {
     searchUrl = route.request().url();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        unavailable_sources: ["AMS"],
         jobs: [
           {
             source_id: "job-1",
@@ -227,6 +238,7 @@ test("finden page can search and see results", async ({ page }) => {
 
   // Wait for results to appear
   await expect(page.getByText("QA Engineer")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText("Nicht erreichbar: AMS.")).toBeVisible();
   expect(new URL(searchUrl).searchParams.get("location")).toBe("Wien");
   await expect(page.getByText("Gefunden auf Adzuna")).toBeVisible();
   await expect(page.getByRole("link", { name: /Original/i })).toHaveAttribute("href", "https://example.com/jobs/qa");
@@ -463,9 +475,9 @@ test("mobile users can select and bulk-delete Stellen without a keyboard", async
   await expect.poll(() => deleteRequests.sort((a, b) => a - b)).toEqual([21, 22]);
 });
 
-test("a partial bulk deletion reports one combined result", async ({ page }) => {
+test("a failed atomic bulk deletion restores every selected row", async ({ page }) => {
   const jobs = bulkDeleteJobs().slice(0, 2);
-  await mockSavedJobs(page, jobs, { failingDeleteIds: [22] });
+  await mockSavedJobs(page, jobs, { failBulkDelete: true });
 
   await page.goto("/jobs");
   const rows = page.locator('[role="list"] [role="listitem"]');
@@ -474,7 +486,6 @@ test("a partial bulk deletion reports one combined result", async ({ page }) => 
   await page.keyboard.press("Shift+Delete");
   await page.getByRole("button", { name: "2 löschen", exact: true }).click();
 
-  await expect(page.getByText("1 von 2 Stellen gelöscht. 1 Stelle konnte nicht gelöscht werden.")).toBeVisible();
-  await expect(page.getByText("1 Stellen gelöscht", { exact: true })).toHaveCount(0);
-  await expect(rows).toHaveCount(1);
+  await expect(page.getByText("Stellen konnten nicht gelöscht werden")).toBeVisible();
+  await expect(rows).toHaveCount(2);
 });

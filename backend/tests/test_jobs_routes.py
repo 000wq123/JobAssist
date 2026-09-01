@@ -13,6 +13,7 @@ from starlette.responses import JSONResponse, Response
 
 from app.api.routes import jobs as jobs_route
 from app.schemas.job import (
+    JobBulkDelete,
     JobCreate,
     JobDeadlineUpdate,
     JobNotesUpdate,
@@ -60,6 +61,113 @@ def _make_job(**kwargs):
 
 def _make_user(id=1):
     return SimpleNamespace(id=id, email="user@example.com")
+
+
+# ---------------------------------------------------------------------------
+# search_all_jobs
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_search_all_keeps_partial_results_and_counts_usage_once(monkeypatch):
+    shared_url = "https://example.com/jobs/qa"
+    monkeypatch.setattr(jobs_route, "search_jobs", AsyncMock(return_value={
+        "jobs": [{"title": "QA", "company": "Acme", "source": "Adzuna", "source_id": "a-1", "full_url": shared_url}],
+    }))
+    monkeypatch.setattr(jobs_route, "search_karriere", AsyncMock(return_value={
+        "jobs": [{"title": "QA", "company": "Acme", "source": "karriere.at", "source_id": "k-9", "full_url": shared_url}],
+    }))
+    monkeypatch.setattr(jobs_route, "search_willhaben", AsyncMock(return_value={
+        "jobs": [{"title": "Support", "company": "Donau", "source": "willhaben", "source_id": "w-2", "full_url": "https://example.com/jobs/support"}],
+    }))
+    monkeypatch.setattr(jobs_route, "search_jooble", AsyncMock(return_value={
+        "jobs": [], "error": "Jooble unavailable",
+    }))
+    monkeypatch.setattr(jobs_route, "search_ams", AsyncMock(side_effect=RuntimeError("login required")))
+    increment = AsyncMock()
+    monkeypatch.setattr(jobs_route, "increment_usage", increment)
+
+    db = AsyncMock()
+    result = await jobs_route.search_all_jobs(
+        keywords="QA",
+        location="Wien",
+        job_type="Praktikum",
+        page=1,
+        db=db,
+        current_user=_make_user(),
+        _usage_ctx=None,
+    )
+
+    assert [job["title"] for job in result["jobs"]] == ["QA", "Support"]
+    assert result["total_count"] == 2
+    assert result["unavailable_sources"] == ["Jooble", "AMS"]
+    assert "error" not in result
+    increment.assert_awaited_once_with(db, 1, "job_search")
+
+
+@pytest.mark.asyncio
+async def test_search_all_returns_one_error_when_every_provider_fails(monkeypatch):
+    unavailable = {"jobs": [], "error": "unavailable"}
+    for name in ("search_jobs", "search_karriere", "search_willhaben", "search_jooble", "search_ams"):
+        monkeypatch.setattr(jobs_route, name, AsyncMock(return_value=unavailable))
+    increment = AsyncMock()
+    monkeypatch.setattr(jobs_route, "increment_usage", increment)
+
+    result = await jobs_route.search_all_jobs(
+        keywords="IT",
+        location="Wien",
+        job_type="",
+        page=1,
+        db=AsyncMock(),
+        current_user=_make_user(),
+        _usage_ctx=None,
+    )
+
+    assert result["jobs"] == []
+    assert result["error"].startswith("Die Jobbörsen")
+    assert len(result["unavailable_sources"]) == 5
+    increment.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# bulk_delete_jobs
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_bulk_delete_is_atomic_and_treats_missing_ids_as_already_deleted():
+    db = AsyncMock()
+    db.execute = AsyncMock(side_effect=[FakeResult(scalars=[21, 23]), MagicMock()])
+
+    result = await jobs_route.bulk_delete_jobs(
+        request=SimpleNamespace(),
+        payload=JobBulkDelete(ids=[21, 22, 23, 21]),
+        db=db,
+        current_user=_make_user(),
+    )
+
+    assert result == {
+        "deleted_ids": [21, 22, 23],
+        "deleted_count": 2,
+        "already_absent_ids": [22],
+    }
+    assert db.execute.await_count == 2
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_bulk_delete_with_only_missing_ids_is_idempotent():
+    db = AsyncMock()
+    db.execute = AsyncMock(return_value=FakeResult(scalars=[]))
+
+    result = await jobs_route.bulk_delete_jobs(
+        request=SimpleNamespace(),
+        payload=JobBulkDelete(ids=[99]),
+        db=db,
+        current_user=_make_user(),
+    )
+
+    assert result["deleted_ids"] == [99]
+    assert result["already_absent_ids"] == [99]
+    db.commit.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------

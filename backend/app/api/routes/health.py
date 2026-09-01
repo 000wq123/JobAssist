@@ -32,6 +32,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+_REQUIRED_SCHEMA_TABLES = (
+    "users",
+    "refresh_tokens",
+    "jobs",
+    "resumes",
+    "profiles_v2",
+    "job_alerts",
+    "cv_library_entries",
+)
+
 
 @router.get("/health")
 async def health_check(request: Request):
@@ -92,6 +102,11 @@ async def health_dependencies(request: Request, deep: bool = False):
     try:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
+            # A reachable Postgres server is not enough: a previously used
+            # `alembic stamp head` can report the latest revision while leaving
+            # application tables absent. Cheap zero-row reads catch that drift.
+            for table_name in _REQUIRED_SCHEMA_TABLES:
+                await session.execute(text(f"SELECT 1 FROM {table_name} LIMIT 0"))
         database = {"ok": True}
     except Exception as exc:
         logger.warning("Database health check failed", extra={"error": str(exc)})
@@ -108,15 +123,16 @@ async def health_dependencies(request: Request, deep: bool = False):
         providers["groq"]["configured"]
         and providers["adzuna"]["configured"]
         and providers["email"]["active_provider"] is not None
-        and providers["stripe"]["configured"]
+        and (not settings.ENABLE_BILLING or providers["stripe"]["configured"])
     )
 
+    ready = database["ok"] and providers_ok
     return {
-        "status": "ok" if database["ok"] else "degraded",
+        "status": "ok" if ready else "degraded",
         "request_id": getattr(request.state, "request_id", "-"),
         "database": database,
         "providers": providers,
-        "ready": database["ok"] and providers_ok,
+        "ready": ready,
     }
 
 

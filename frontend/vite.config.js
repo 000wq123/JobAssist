@@ -35,9 +35,27 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['lucide-react'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('yoga-layout')) return 'pdf-layout-engine';
+          if (
+            id.includes('/fontkit/')
+            || id.includes('/unicode-properties/')
+            || id.includes('/unicode-trie/')
+            || id.includes('/dfa/')
+            || id.includes('/brotli/')
+          ) return 'pdf-font-engine';
+          if (id.includes('/@react-pdf/pdfkit/')) return 'pdf-kit';
+          if (id.includes('/@react-pdf/')) return 'react-pdf';
+          if (
+            id.includes('/react/')
+            || id.includes('/react-dom/')
+            || id.includes('/react-router-dom/')
+            || id.includes('/react-router/')
+            || id.includes('/scheduler/')
+          ) return 'vendor';
+          if (id.includes('/lucide-react/')) return 'ui';
+          return undefined;
         },
       },
     },
