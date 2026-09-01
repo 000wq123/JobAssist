@@ -39,6 +39,13 @@
 }
 
 .jae-launcher:hover { background: var(--jae-brand-hover); }
+.jae-launcher-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #111116;
+  object-fit: contain;
+}
 
 .jae-panel {
   width: min(360px, calc(100vw - 32px));
@@ -62,16 +69,13 @@
 }
 
 .jae-mark {
-  display: grid;
+  display: block;
   flex: 0 0 auto;
   width: 32px;
   height: 32px;
-  place-items: center;
   border-radius: 8px;
-  background: var(--jae-brand);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 800;
+  background: #111116;
+  object-fit: contain;
 }
 
 .jae-heading { min-width: 0; flex: 1; }
@@ -98,6 +102,44 @@
 .jae-section + .jae-section { border-top: 1px solid var(--jae-border); }
 .jae-label { margin: 0 0 8px; color: var(--jae-text-muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .jae-copy { margin: 0; color: var(--jae-text-secondary); font-size: 12.5px; line-height: 1.55; }
+
+.jae-scan-button { width: 100%; margin-top: 12px; }
+.jae-review { margin-top: 12px; }
+.jae-review-summary { margin: 0 0 8px; color: var(--jae-text-secondary); font-size: 11.5px; font-weight: 700; }
+.jae-proposal-list { display: grid; max-height: 238px; gap: 6px; overflow: auto; padding-right: 2px; }
+.jae-proposal {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid var(--jae-border);
+  border-radius: 9px;
+  background: var(--jae-bg);
+  cursor: pointer;
+}
+.jae-proposal-ready { border-color: rgba(227, 6, 19, .22); background: var(--jae-brand-soft); }
+.jae-proposal input { flex: 0 0 auto; width: 15px; height: 15px; margin: 2px 0 0; accent-color: var(--jae-brand); }
+.jae-proposal-marker {
+  display: grid;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--jae-surface-hover);
+  color: var(--jae-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+.jae-proposal-details { min-width: 0; }
+.jae-proposal-details strong,
+.jae-proposal-details span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jae-proposal-details strong { color: var(--jae-text); font-size: 11.5px; }
+.jae-proposal-details span { margin-top: 2px; color: var(--jae-text-muted); font-size: 10.5px; }
+.jae-empty-review { margin: 0; padding: 12px; border-radius: 9px; background: var(--jae-bg); color: var(--jae-text-muted); font-size: 11.5px; }
+.jae-review-actions { display: grid; grid-template-columns: auto 1fr; gap: 8px; margin-top: 9px; }
+.jae-secondary-actions { display: grid; gap: 7px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--jae-border); }
 
 .jae-actions { display: grid; gap: 8px; margin-top: 12px; }
 .jae-button {

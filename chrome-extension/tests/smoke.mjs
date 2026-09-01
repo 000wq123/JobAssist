@@ -74,7 +74,8 @@ try {
   // Exercise the same assistant files the popup injects after the user invokes
   // the extension. Browser chrome cannot be clicked in headless mode, so this
   // supplies only the isolated storage/runtime APIs used by the injected code.
-  await employer.evaluate(({ application }) => {
+  const extensionIconUrl = await worker.evaluate(() => chrome.runtime.getURL("assets/icon-48.png"));
+  await employer.evaluate(({ application, iconUrl }) => {
     const values = {
       applicantProfile: { firstName: "Anna", email: "anna@example.com" },
       activeApplication: application,
@@ -91,14 +92,18 @@ try {
     });
     Object.defineProperty(globalThis.chrome, "runtime", {
       configurable: true,
-      value: { sendMessage: () => {} },
+      value: { sendMessage: () => {}, getURL: () => iconUrl },
     });
-  }, { application: stored.activeApplication });
+  }, { application: stored.activeApplication, iconUrl: extensionIconUrl });
   await employer.addStyleTag({ path: path.join(extensionDir, "content/application-assistant.css") });
   await employer.addScriptTag({ path: path.join(extensionDir, "content/application-assistant.js") });
 
   await employer.locator("#jobassist-extension-root .jae-panel").waitFor();
-  await employer.getByRole("button", { name: "Leere Felder ausfüllen" }).click();
+  assert.equal(await employer.locator(".jae-mark").getAttribute("src"), extensionIconUrl);
+  await employer.getByRole("button", { name: "Felder prüfen" }).click();
+  assert.equal(await employer.locator('[data-jae-proposal="ready"]').count(), 3);
+  assert.equal((await employer.locator(".jae-panel").textContent()).includes("anna@example.com"), false);
+  await employer.getByRole("button", { name: "Ausgewählte Felder ausfüllen" }).click();
 
   assert.equal(await employer.locator('input[name="firstName"]').inputValue(), "Anna");
   assert.equal(await employer.locator('input[name="email"]').inputValue(), "anna@example.com");
@@ -107,7 +112,7 @@ try {
   assert.equal(await employer.locator('input[name="password"]').inputValue(), "");
   assert.equal(await employer.locator('input[name="newsletter"]').isChecked(), false);
   assert.equal(await employer.evaluate(() => window.submitCount || 0), 0);
-  assert.match(await employer.locator(".jae-status").textContent(), /3 leere Felder ausgefüllt/);
+  assert.match(await employer.locator(".jae-status").textContent(), /3 Felder ausgefüllt/);
 
   await employer.getByRole("button", { name: "Lebenslauf-Feld zeigen" }).click();
   assert.equal(await employer.locator('input[name="resume"]').evaluate((element) => element.classList.contains("jae-file-target")), true);

@@ -8,6 +8,7 @@
 - [ ] `node chrome-extension/scripts/validate-release.mjs` besteht.
 - [ ] `node chrome-extension/tests/ui-smoke.mjs` besteht.
 - [ ] `node chrome-extension/tests/smoke.mjs` besteht.
+- [ ] `node chrome-extension/tests/compatibility.mjs` besteht.
 - [ ] Der CI-Job `chrome-extension` besteht und das ZIP-Artefakt wurde geprüft.
 
 ## Öffentliche Seiten

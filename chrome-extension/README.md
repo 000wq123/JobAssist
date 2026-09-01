@@ -6,7 +6,9 @@ Store-fertige Manifest-V3-Erweiterung für den Weg von einer gespeicherten JobAs
 
 - übernimmt beim Klick auf `Jetzt bewerben` Titel, Firma und vorhandenes Anschreiben;
 - zeigt auf der externen Bewerbungsseite einen kleinen JobAssist-Helfer;
-- füllt ausschließlich leere, eindeutig erkannte Felder und nur nach einem Klick;
+- zeigt zuerst eine sichere Vorschau und füllt nur ausgewählte, eindeutig erkannte leere Felder;
+- erkennt nachgeladene Schritte, offene Shadow-DOM-Felder und zugängliche eingebettete Formulare;
+- lässt einzelne Vorschläge abwählen und die letzte Füllaktion rückgängig machen;
 - markiert Lebenslauf-Uploads, setzt Dateien aber aus Sicherheitsgründen niemals automatisch ein;
 - speichert Profildaten ausschließlich in `chrome.storage.local`;
 - löscht Profil, Einwilligung und aktiven Bewerbungskontext auf Wunsch direkt im Popup;
@@ -36,6 +38,7 @@ node --check chrome-extension/onboarding/onboarding.js
 node chrome-extension/scripts/validate-release.mjs
 node chrome-extension/tests/ui-smoke.mjs
 node chrome-extension/tests/smoke.mjs
+node chrome-extension/tests/compatibility.mjs
 ```
 
 ## Store-Paket erstellen

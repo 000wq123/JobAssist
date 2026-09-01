@@ -20,7 +20,10 @@ Du öffnest eine Stelle über JobAssist, klickst auf der Arbeitgeberseite auf da
 
 Funktionen:
 
-- erkennt typische Felder für Name, E-Mail, Telefon, Anschrift und LinkedIn;
+- erkennt typische Felder für Name, E-Mail, Telefon, Anschrift, Land, Geburtsdatum und LinkedIn;
+- zeigt erkannte und unsichere Felder getrennt, bevor etwas eingesetzt wird;
+- lässt einzelne Vorschläge vor dem Ausfüllen abwählen und Änderungen wieder rückgängig machen;
+- erkennt neue Felder in mehrstufigen Formularen sowie Felder in offenen Komponenten und eingebetteten Formularen, soweit der Browserzugriff dies erlaubt;
 - setzt ein vorhandenes Anschreiben in passende leere Textfelder ein;
 - markiert das Lebenslauf-Uploadfeld, ohne eine Datei selbstständig auszuwählen;
 - speichert Profildaten ausschließlich lokal in Chrome;

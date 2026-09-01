@@ -144,6 +144,7 @@ jobs:
         run: |
           node chrome-extension/tests/ui-smoke.mjs
           node chrome-extension/tests/smoke.mjs
+          node chrome-extension/tests/compatibility.mjs
       - name: Build and test public extension demo
         working-directory: frontend
         run: |

@@ -81,13 +81,13 @@ export default function StepInteressen({ profile, onChange }) {
               onClick={handlePolish}
               disabled={polishing}
               title="KI-Optimierung: Beschreibung verbessern"
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-all disabled:opacity-50 hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-300)]"
+              className="min-h-8 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[12px] font-medium border transition-all disabled:opacity-50 hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-300)]"
               style={{ borderColor: "rgba(227,6,19,0.3)", color: "var(--color-accent-400)" }}
             >
               <Sparkles className={`w-3 h-3 ${polishing ? "animate-pulse" : ""}`} />
               {polishing ? "Optimiert…" : "KI-Vorschlag"}
             </button>
-            <span className="text-[11px] text-[var(--color-fg-faint)]">
+            <span className="text-[12px] text-[var(--color-fg-faint)]">
               {prose.length}/250
             </span>
           </div>

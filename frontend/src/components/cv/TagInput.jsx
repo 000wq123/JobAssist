@@ -84,7 +84,7 @@ export default function TagInput({
                 remove(t);
               }}
               aria-label={`${t} entfernen`}
-              className="h-5 w-5 inline-flex items-center justify-center rounded-full text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+              className="h-6 w-6 inline-flex items-center justify-center rounded-full text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
             >
               <X className="h-3 w-3" />
             </button>
@@ -103,13 +103,13 @@ export default function TagInput({
       </div>
 
       {remainingSuggestions.length > 0 && !atCap && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1">
           {remainingSuggestions.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => add(s)}
-              className="h-7 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
+              className="h-8 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
             >
               + {s}
             </button>

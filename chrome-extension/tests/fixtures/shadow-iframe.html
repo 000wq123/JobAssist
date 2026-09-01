@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="de">
+  <head><meta charset="utf-8"></head>
+  <body>
+    <form id="outer-form">
+      <label for="shadow-host">Vorname</label>
+      <div id="shadow-host"></div>
+      <iframe title="Zusätzliche Angaben" src="/fixtures/iframe-fields.html"></iframe>
+    </form>
+    <script>
+      const root = document.querySelector("#shadow-host").attachShadow({ mode: "open" });
+      root.innerHTML = '<label for="shadow-email">E-Mail</label><input id="shadow-email" name="email" autocomplete="email">';
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Mail, X, Menu } from "lucide-react";
+import { Briefcase, FileText, LayoutDashboard, Mail, X, Menu } from "lucide-react";
 import useFocusTrap from "../../hooks/useFocusTrap";
 import clsx from "clsx";
 
@@ -14,11 +14,12 @@ import { useBootstrap } from "../../context/BootstrapContext";
 import Sidebar from "./Sidebar";
 import CommandMenu from "./CommandMenu";
 import OnboardingModal from "../OnboardingModal";
+import BrandMark from "../BrandMark";
 
 const NAV_ITEMS = [
-  { to: "/dashboard",    label: "Übersicht",  icon: "LayoutDashboard" },
-  { to: "/jobs",         label: "Stellen",    icon: "Briefcase" },
-  { to: "/lebenslauf",   label: "Lebenslauf", icon: "FileText" },
+  { to: "/dashboard",    label: "Übersicht",  icon: LayoutDashboard },
+  { to: "/jobs",         label: "Stellen",    icon: Briefcase },
+  { to: "/lebenslauf",   label: "Lebenslauf", icon: FileText },
 ];
 
 /**
@@ -62,10 +63,7 @@ function MobileDrawer({ open, onClose, me }) {
         <div className="flex items-center justify-between h-14 px-4"
           style={{ borderColor: "var(--sidebar-border, #E7E7E4)" }}>
           <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-sm"
-              style={{ background: "var(--app-brand, #E30613)" }}>
-              <span className="text-white text-[10px] font-bold leading-none">JA</span>
-            </span>
+            <BrandMark size="sm" />
             <span className="text-[14px] font-bold" style={{ color: "var(--sidebar-text-active, #171717)" }}>JobAssist</span>
           </div>
           <button
@@ -267,10 +265,7 @@ export default function AppShell() {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-1.5">
-            <span className="grid h-6 w-6 place-items-center rounded-sm"
-              style={{ background: "var(--app-brand, #E30613)" }}>
-              <span className="text-white text-[9px] font-bold leading-none">JA</span>
-            </span>
+            <BrandMark size="xs" />
             <span className="text-[14px] font-bold tracking-[-0.02em]" style={{ color: "var(--app-text, #171717)" }}>JobAssist</span>
           </div>
           <div className="w-10" />{/* spacer for centering */}
@@ -311,22 +306,24 @@ export default function AppShell() {
           }}
         >
           <div className="grid grid-cols-3 h-14">
-            {NAV_ITEMS.map(({ to, label }) => {
+            {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
               const active = location.pathname === to || location.pathname.startsWith(to + "/");
               return (
                 <a
                   key={to}
                   href={to}
                   onClick={(e) => { e.preventDefault(); navigate(to); }}
+                  aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "flex flex-col items-center justify-center gap-0.5 transition-colors duration-100",
+                    "flex min-w-0 flex-col items-center justify-center gap-1 transition-colors duration-100",
                     active ? "font-semibold" : "",
                   )}
                   style={{
                     color: active ? "var(--sidebar-text-active, #171717)" : "var(--sidebar-text, #626262)",
                   }}
                 >
-                  <span className="text-[10px] font-medium">{label}</span>
+                  <Icon className="h-[17px] w-[17px]" aria-hidden="true" />
+                  <span className="max-w-full truncate text-[10px] font-medium">{label}</span>
                 </a>
               );
             })}

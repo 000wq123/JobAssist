@@ -27,7 +27,7 @@ Das deklarative Content Script läuft ausschließlich auf `jobassist.tech` und `
 
 ## Datenkategorien für das Dashboard
 
-- Personenbezogene Identifikationsdaten: Name, E-Mail, Telefon, Anschrift, LinkedIn-URL — lokale Speicherung nach Einwilligung.
+- Personenbezogene Identifikationsdaten: Name, E-Mail, Telefon, Anschrift, Land, optional Geburtsdatum und LinkedIn-URL — lokale Speicherung nach Einwilligung.
 - Vom Nutzer erzeugte Inhalte: vorhandenes Anschreiben — lokaler, zeitlich begrenzter Bewerbungskontext.
 - Website-Inhalte/Formulardaten: Feldbezeichnungen und Leerstatus des aktuellen Tabs — flüchtige lokale Verarbeitung nach Klick.
 - Kein Browserverlauf, keine Authentifizierungsdaten, keine Finanzdaten, keine Gesundheitsdaten und keine Standortverfolgung.

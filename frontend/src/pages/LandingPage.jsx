@@ -6,6 +6,7 @@ import {
   ShieldCheck, ExternalLink, Bookmark, MapPin, Briefcase,
 } from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
+import BrandMark from "../components/BrandMark";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    JOBASSIST LANDING PAGE — Light-only, Austrian Red, Asymmetric Workflow
@@ -49,9 +50,7 @@ function Nav() {
       <header className="lv5-header fixed top-3.5 left-1/2 -translate-x-1/2 z-50 hidden lg:block">
         <div className="rounded-full border bg-white px-1.5 py-1.5 flex items-center gap-1 shadow-[0_2px_16px_rgba(0,0,0,0.07)] border-[#e8e8e5]">
           <a href="#hero" className="flex items-center gap-2 flex-shrink-0 pl-2 pr-1" aria-label="JobAssist Startseite">
-            <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]">
-              <span className="text-white text-[10px] font-bold leading-none">JA</span>
-            </span>
+            <BrandMark size="sm" />
             <span className="text-[15px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
           </a>
           <nav className="flex items-center gap-0.5" aria-label="Hauptnavigation">
@@ -70,9 +69,7 @@ function Nav() {
       <header className="lv5-header lg:hidden fixed top-0 inset-x-0 z-50 bg-white border-b border-[#e8e8e5]">
         <div className="flex items-center justify-between h-[60px] px-4">
           <a href="#hero" className="flex items-center gap-2.5 flex-shrink-0" aria-label="JobAssist Startseite">
-            <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]">
-              <span className="text-white text-[10px] font-bold leading-none">JA</span>
-            </span>
+            <BrandMark size="sm" />
             <span className="text-[16px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
           </a>
           <div className="flex items-center gap-3">
@@ -89,7 +86,7 @@ function Nav() {
           <div className="fixed inset-0 z-[60] bg-black/40 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />
           <aside className="fixed inset-y-0 right-0 z-[70] w-[85vw] max-w-sm flex flex-col bg-white lg:hidden">
             <div className="flex items-center justify-between h-[60px] px-4 border-b border-[#e8e8e5]">
-              <span className="text-[16px] font-bold text-[#111]">JobAssist</span>
+              <span className="flex items-center gap-2.5 text-[16px] font-bold text-[#111]"><BrandMark size="sm" />JobAssist</span>
               <button type="button" onClick={() => setMobileOpen(false)} className="grid place-items-center w-10 h-10 rounded-sm text-[#111]" aria-label="Menü schließen"><X className="w-5 h-5" /></button>
             </div>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -609,7 +606,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-12 gap-8 min-w-0">
             <div className="col-span-2 md:col-span-4 min-w-0">
               <div className="flex items-center gap-2.5 mb-3">
-                <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]"><span className="text-white text-[10px] font-bold leading-none">JA</span></span>
+                <BrandMark size="sm" />
                 <span className="text-[16px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
               </div>
               <p className="text-[13px] text-[#5f5f5f]">Bewerbungstools für den österreichischen Arbeitsmarkt.</p>

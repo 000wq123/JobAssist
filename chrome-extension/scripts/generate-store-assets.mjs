@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "../../frontend/node_modules/@playwright/test/index.mjs";
@@ -29,7 +30,7 @@ try {
         </section></main>
     </body></html>`);
 
-  await page.evaluate(() => {
+  await page.evaluate((iconUrl) => {
     const values = {
       applicantProfile: { firstName: "Anna", lastName: "Berger", email: "anna.berger@example.at" },
       activeApplication: {
@@ -49,11 +50,12 @@ try {
         onChanged: { addListener: () => {} },
       },
     });
-    Object.defineProperty(chromeApi, "runtime", { configurable: true, value: { sendMessage: () => {} } });
-  });
+    Object.defineProperty(chromeApi, "runtime", { configurable: true, value: { sendMessage: () => {}, getURL: () => iconUrl } });
+  }, `data:image/png;base64,${fs.readFileSync(path.join(extensionDir, "assets/icon-48.png")).toString("base64")}`);
   await page.addStyleTag({ path: path.join(extensionDir, "content/application-assistant.css") });
   await page.addScriptTag({ path: path.join(extensionDir, "content/application-assistant.js") });
   await page.locator("#jobassist-extension-root .jae-panel").waitFor();
+  await page.getByRole("button", { name: "Felder prüfen" }).click();
   await page.screenshot({ path: output });
 
   const onboarding = await browser.newPage({ viewport: { width: 1280, height: 800 }, colorScheme: "light" });

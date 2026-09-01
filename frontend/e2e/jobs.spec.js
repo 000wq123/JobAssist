@@ -45,6 +45,61 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+async function mockSavedJobs(page, jobs, { holdDeletes = false } = {}) {
+  let releaseDeletes;
+  const deleteGate = new Promise((resolve) => { releaseDeletes = resolve; });
+  const deleteRequests = [];
+
+  await page.route("**/api/auth/refresh", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access_token: "test-access-token" }) });
+  });
+  await page.route("**/api/profile/cv-library", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ entries: [] }) });
+  });
+  await page.route("**/api/init", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        me: { id: 1, email: "qa@jobassist.tech", full_name: "QA User", is_verified: true },
+        profile: {},
+        resumes: [],
+        resumes_total: 0,
+        jobs_total: jobs.length,
+        jobs_by_status: { bookmarked: jobs.length },
+        usage: [],
+        plan: "max",
+      }),
+    });
+  });
+  await page.route("**/api/resume/**", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+  });
+  await page.route(/\/api\/jobs\/\?/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ items: jobs, total: jobs.length, page: 1, page_size: 100, pages: 1 }),
+    });
+  });
+  await page.route(/\/api\/jobs\/\d+$/, async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    deleteRequests.push(Number(new URL(route.request().url()).pathname.split("/").at(-1)));
+    if (holdDeletes) await deleteGate;
+    await route.fulfill({ status: 204, body: "" });
+  });
+
+  return { deleteRequests, releaseDeletes };
+}
+
+function bulkDeleteJobs() {
+  return [
+    { id: 21, role: "Frontend Praktikum", company: "Alpen Code", location: "Wien", status: "bookmarked", url: "https://example.com/21", updated_at: "2026-08-30T10:00:00Z" },
+    { id: 22, role: "Samstagsjob Verkauf", company: "Donau Markt", location: "Linz", status: "bookmarked", url: "https://example.com/22", updated_at: "2026-08-29T10:00:00Z" },
+    { id: 23, role: "Junior Support", company: "Berg Systems", location: "Graz", status: "bookmarked", url: "https://example.com/23", updated_at: "2026-08-28T10:00:00Z" },
+  ];
+}
+
 test("finden page can search and see results", async ({ page }) => {
   // Mock auth refresh so the interceptor doesn't fire unauthenticated
   await page.route("**/api/auth/refresh", async (route) => {
@@ -337,4 +392,50 @@ test("pipeline row menu changes status and detail page can delete", async ({ pag
   await expect(page.getByText("Noch keine Stellen gespeichert")).toBeVisible({ timeout: 10000 });
   releaseDelete();
   await expect.poll(() => deleted).toBe(true);
+});
+
+test("shift range selection and Shift+Delete remove Stellen optimistically", async ({ page }) => {
+  const jobs = bulkDeleteJobs();
+  const { deleteRequests, releaseDeletes } = await mockSavedJobs(page, jobs, { holdDeletes: true });
+
+  await page.goto("/jobs");
+  const rows = page.locator('[role="list"] [role="listitem"]');
+  await expect(rows).toHaveCount(3);
+
+  await rows.nth(0).click({ modifiers: ["Shift"] });
+  await rows.nth(2).click({ modifiers: ["Shift"] });
+  await expect(page.getByRole("toolbar", { name: "Stellenauswahl" })).toContainText("3 ausgewählt");
+
+  await page.keyboard.press("Shift+Delete");
+  await page.getByRole("button", { name: "3 löschen", exact: true }).click();
+
+  // The list disappears before the deliberately delayed requests return.
+  await expect(rows).toHaveCount(0);
+  await expect(page.getByText("Noch keine Stellen gespeichert")).toBeVisible();
+  await expect.poll(() => deleteRequests.sort((a, b) => a - b)).toEqual([21, 22, 23]);
+  releaseDeletes();
+});
+
+test("mobile users can select and bulk-delete Stellen without a keyboard", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const jobs = bulkDeleteJobs();
+  const { deleteRequests } = await mockSavedJobs(page, jobs);
+
+  await page.goto("/jobs");
+  await page.getByRole("button", { name: "Auswählen", exact: true }).click();
+
+  const firstSelect = page.getByRole("button", { name: "Frontend Praktikum auswählen" });
+  const secondSelect = page.getByRole("button", { name: "Samstagsjob Verkauf auswählen" });
+  await expect(firstSelect).toBeVisible();
+  expect((await firstSelect.boundingBox()).height).toBeGreaterThanOrEqual(40);
+  await firstSelect.click();
+  await secondSelect.click();
+
+  const toolbar = page.getByRole("toolbar", { name: "Stellenauswahl" });
+  await expect(toolbar).toContainText("2 ausgewählt");
+  await toolbar.getByRole("button", { name: "Löschen", exact: true }).click();
+  await page.getByRole("button", { name: "2 löschen", exact: true }).click();
+
+  await expect(page.locator('[role="list"] [role="listitem"]')).toHaveCount(1);
+  await expect.poll(() => deleteRequests.sort((a, b) => a - b)).toEqual([21, 22]);
 });

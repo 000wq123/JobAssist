@@ -11,6 +11,7 @@ import { authApi } from "../../services/api";
 import { useTheme } from "../../context/ThemeContext";
 import { getInitials } from "../../utils/initials";
 import Popover from "../../components/ui/Popover";
+import BrandMark from "../BrandMark";
 
 const PRIMARY = [
   { to: "/dashboard",  label: "Übersicht",   icon: LayoutDashboard, preload: () => import("../../pages/DashboardPage") },
@@ -138,12 +139,7 @@ export default function Sidebar({ me, profile, onCommandClick }) {
       {/* Brand */}
       <div className="pt-5 pb-3 px-3">
         <NavLink to="/dashboard" className="flex items-center gap-2.5 px-1.5" aria-label="JobAssist">
-          <span
-            className="grid h-[26px] w-[26px] place-items-center rounded-[5px] flex-shrink-0"
-            style={{ background: "var(--app-brand, #E30613)" }}
-          >
-            <span className="text-white text-[11px] font-bold leading-none">JA</span>
-          </span>
+          <BrandMark size="sm" className="!h-[26px] !w-[26px] !rounded-[7px]" />
           <span className="text-[15px] font-bold tracking-[-0.02em]" style={{ color: "var(--app-text, #171717)" }}>
             JobAssist
           </span>

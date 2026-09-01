@@ -98,19 +98,19 @@ export default function StepSkills({ profile, onChange, errors = {} }) {
           {langs.map((l, i) => (
             <div
               key={i}
-              className="grid grid-cols-[1fr_140px_36px] gap-2 items-center"
+              className="grid grid-cols-[minmax(0,1fr)_36px] gap-2 items-center sm:grid-cols-[minmax(0,1fr)_140px_36px]"
             >
               <input
                 value={l.sprache}
                 onChange={(e) => updateLang(i, { sprache: e.target.value })}
                 placeholder="Sprache"
                 list="cv-lang-suggestions"
-                className="h-9 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)]"
+                className="h-9 min-w-0 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)]"
               />
               <select
                 value={l.niveau}
                 onChange={(e) => updateLang(i, { niveau: e.target.value })}
-                className="h-9 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-2 text-[13px] text-[var(--color-fg)]"
+                className="col-span-2 row-start-2 h-9 min-w-0 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-2 text-[13px] text-[var(--color-fg)] sm:col-span-1 sm:row-auto"
               >
                 {NIVEAU_OPTIONS.map((n) => (
                   <option key={n} value={n} className="bg-[var(--color-bg-elev-1)]">
@@ -123,7 +123,7 @@ export default function StepSkills({ profile, onChange, errors = {} }) {
                 onClick={() => removeLang(i)}
                 aria-label={`${l.sprache || "Sprache"} entfernen`}
                 disabled={langs.length <= 1}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-dim)] hover:text-[var(--color-error)] hover:border-[var(--color-error)]/50 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="col-start-2 row-start-1 h-9 w-9 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-dim)] hover:text-[var(--color-error)] hover:border-[var(--color-error)]/50 disabled:opacity-30 disabled:cursor-not-allowed sm:col-auto sm:row-auto"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

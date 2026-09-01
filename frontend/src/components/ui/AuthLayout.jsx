@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import BrandMark from "../BrandMark";
 /**
  * Auth shell — split-screen desktop, stacked mobile.
  *
@@ -43,9 +44,7 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
       <header className="relative z-20">
         <div className="mx-auto flex items-center justify-between px-5 py-4 sm:px-8 max-w-[1240px]">
           <Link to="/" className="flex items-center gap-2.5" aria-label="JobAssist Startseite">
-            <span className="grid h-7 w-7 place-items-center rounded-sm bg-[#e30613]">
-              <span className="text-white text-[10px] font-bold leading-none">JA</span>
-            </span>
+            <BrandMark size="sm" />
             <span className="text-[15px] font-bold tracking-[-0.02em]" style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>JobAssist</span>
           </Link>
 

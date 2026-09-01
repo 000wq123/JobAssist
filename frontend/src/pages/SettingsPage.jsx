@@ -45,7 +45,7 @@ const EXPERIENCE_LEVELS = ["Noch in der Schule", "Gerade fertig / Studium", "Hab
 const INDUSTRIES = ["Gastronomie", "Handel/Verkauf", "Technik/IT", "Gesundheit", "Bildung", "Handwerk", "Büro/Verwaltung", "Sonstiges"];
 
 // ─── Shared primitives ───────────────────────────────────────────
-const CARD = "rounded-[10px] border p-5 sm:p-6";
+const CARD = "rounded-[10px] border p-4 sm:p-6";
 // Cards match every other page: no per-card transition. Theme switches
 // still cross-fade smoothly via the global html.theme-anim rule.
 const cardStyle = { background: "var(--app-surface, #FFF)", borderColor: "var(--app-border, #E7E7E4)" };
@@ -85,7 +85,9 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
             <span key={v} className="inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[12px] font-medium"
               style={{ background: "var(--app-surface-hover, #F5F5F3)", color: "var(--app-text, #171717)" }}>
               {v}
+              {/* 24px hit area (negative margin keeps the chip compact) */}
               <button type="button" onClick={(e) => remove(v, e)} aria-label={`${v} entfernen`}
+                className="-m-1 h-6 w-6 inline-flex items-center justify-center rounded-full transition-colors"
                 style={{ color: "var(--app-text-faint, #B0B0AD)" }}>×</button>
             </span>
           ))
@@ -167,13 +169,13 @@ export default function SettingsPage() {
   return (
     <div className="animate-slide-up">
       {/* ── Page header ────────────────────────────────────────── */}
-      <div className="flex items-end justify-between gap-4 mb-6">
+      <div className="flex flex-col items-stretch gap-4 mb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.03em] leading-[1.15]" style={{ color: "var(--app-text, #171717)" }}>Einstellungen</h1>
           <p className="mt-1 text-[13px]" style={{ color: "var(--app-text-muted, #888)" }}>Profil, Jobpräferenzen und Darstellung.</p>
         </div>
         <button type="submit" form="settings-form" disabled={isSubmitting}
-          className="btn btn-primary btn-md gap-2">
+          className="btn btn-primary btn-md w-full justify-center gap-2 sm:w-auto">
           <Save className="w-4 h-4" />
           <span>{isSubmitting ? "Wird gespeichert…" : "Speichern"}</span>
         </button>
@@ -227,7 +229,7 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 grid place-items-center h-6 w-6 rounded-[6px] text-white transition-colors duration-100"
+                    className="absolute -bottom-1 -right-1 grid place-items-center h-7 w-7 rounded-[6px] text-white transition-colors duration-100"
                     style={{ background: "var(--app-brand, #E30613)" }}
                     aria-label="Profilfoto ändern">
                     <Camera className="h-3 w-3" />

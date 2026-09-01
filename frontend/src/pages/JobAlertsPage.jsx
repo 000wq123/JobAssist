@@ -162,7 +162,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
 
   return (
     <div
-      className="relative rounded-xl border p-5 flex items-start gap-4"
+      className="relative rounded-xl border p-4 sm:p-5 flex items-start gap-3 sm:gap-4"
       style={{
         borderColor: T("border"),
         background: T("surface"),
@@ -207,7 +207,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
           <span
             className="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium border flex-shrink-0"
             style={{
-              color: alert.is_active ? "#5d9f68" : T("text-muted"),
+              color: alert.is_active ? "var(--app-success-strong)" : T("text-muted"),
               borderColor: alert.is_active ? "color-mix(in srgb, #5d9f68 22%, transparent)" : T("border-subtle"),
               background: alert.is_active ? "color-mix(in srgb, #5d9f68 10%, transparent)" : "transparent",
             }}
@@ -217,7 +217,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
         </div>
 
         {/* Bottom row: delivery + actions */}
-        <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${T("border-subtle")}` }}>
+        <div className="flex flex-col items-stretch gap-2 mt-3 pt-3 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between" style={{ borderTop: `1px solid ${T("border-subtle")}` }}>
           <div className="flex items-center gap-1.5">
             <Mail className="w-3 h-3 flex-shrink-0" style={{ color: T("text-faint") }} />
             <span className="text-[12px]" style={{ color: T("text-muted") }}>
@@ -225,7 +225,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 self-end min-[380px]:self-auto">
             <button
               type="button"
               onClick={() => onEdit(alert)}
@@ -357,7 +357,7 @@ function AlertModal({ mode, alert, isSaving, onClose, onSave }) {
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-medium" style={{ color: T("text") }}>Anstellungsart</span>
               <span className="relative block">
@@ -431,7 +431,10 @@ export default function JobAlertsPage() {
     loading: alertsFetching,
     error: alertsError,
     reload: alertsReload,
-  } = useFetch(() => jobAlertsApi.list().then((r) => r.data), { cacheKey: "alerts:list", maxAge: 120_000 });
+  /* Both this page and the dashboard share the "alerts:list" SWR cache — the
+     fetcher must normalize to the same ARRAY shape the dashboard expects,
+     otherwise a cache seeded here renders "Keine Alerts" there for maxAge. */
+  } = useFetch(() => jobAlertsApi.list().then((r) => r.data?.alerts ?? r.data ?? []), { cacheKey: "alerts:list", maxAge: 120_000 });
 
   const alerts = useMemo(() => alertsData?.alerts ?? alertsData ?? [], [alertsData]);
   const listAlerts = useMemo(() => (Array.isArray(alerts) ? alerts : []), [alerts]);
@@ -512,12 +515,12 @@ export default function JobAlertsPage() {
   return (
     <div className="animate-slide-up max-w-[1200px] mx-auto pt-6 pb-16 px-0">
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: T("brand") }}>
             ALERTS
           </p>
-          <h1 className="text-[32px] font-bold tracking-[-0.03em] leading-[1.15]" style={{ color: T("text") }}>
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] leading-[1.15] sm:text-[32px]" style={{ color: T("text") }}>
             Deine Job-Alerts
           </h1>
           <p className="mt-1.5 text-[14px]" style={{ color: T("text-secondary") }}>
@@ -579,7 +582,7 @@ export default function JobAlertsPage() {
       {!hasFailed && listAlerts.length > 0 && (
         <>
           {/* Metric cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-8">
             <MetricCard
               icon={Bell}
               label="Aktive Alerts"
@@ -617,13 +620,19 @@ export default function JobAlertsPage() {
             <div className="col-span-12 lg:col-span-8">
               {/* Filter bar */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-                <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: T("border-subtle") }}>
+                {/* Keep the filter as one swipeable segmented row on phones.
+                    Wrapping left the final option stranded on a second line. */}
+                <div
+                  className="scrollbar-hide flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg p-1 sm:gap-1"
+                  style={{ background: T("border-subtle"), WebkitOverflowScrolling: "touch" }}
+                  aria-label="Alerts filtern"
+                >
                   {FILTERS.map((f) => (
                     <button
                       key={f.key}
                       type="button"
                       onClick={() => setActiveFilter(f.key)}
-                      className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors"
+                      className="px-2 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap transition-colors sm:px-3"
                       style={{
                         background: activeFilter === f.key ? T("surface") : "transparent",
                         color: activeFilter === f.key ? T("text") : T("text-muted"),
@@ -631,9 +640,11 @@ export default function JobAlertsPage() {
                       }}
                     >
                       {f.label}
-                      {f.key === "all" && ` (${listAlerts.length})`}
-                      {f.key === "active" && ` (${activeAlerts.length})`}
-                      {f.key === "paused" && ` (${pausedAlerts.length})`}
+                      <span className="hidden sm:inline">
+                        {f.key === "all" && ` (${listAlerts.length})`}
+                        {f.key === "active" && ` (${activeAlerts.length})`}
+                        {f.key === "paused" && ` (${pausedAlerts.length})`}
+                      </span>
                     </button>
                   ))}
                 </div>

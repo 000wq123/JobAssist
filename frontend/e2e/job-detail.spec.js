@@ -89,9 +89,36 @@ test("job detail can generate a cover letter", async ({ page }) => {
   });
 
   let coverLetterGenerated = false;
+  let releaseStatusUpdate;
+  const statusUpdateGate = new Promise((resolve) => { releaseStatusUpdate = resolve; });
+
+  await page.route("**/api/jobs/123/status", async (route) => {
+    await statusUpdateGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 123,
+        company: "JobAssist",
+        role: "QA Engineer",
+        location: "Wien, Österreich",
+        source: "karriere.at",
+        description: "Teste Produktqualität und Nutzerflüsse.",
+        status: "offered",
+        notes: "",
+        deadline: null,
+        url: "https://example.com/jobs/qa",
+        match_score: null,
+        match_feedback: null,
+        cover_letter: null,
+        interview_qa: null,
+        research_data: null,
+      }),
+    });
+  });
 
   // Mock the single job endpoint (used by both JobDetailPage and the list page)
-  await page.route(/\/api\/jobs\/123/, async (route) => {
+  await page.route(/\/api\/jobs\/123(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -131,6 +158,14 @@ test("job detail can generate a cover letter", async ({ page }) => {
 
   await page.goto("/jobs/123");
 
+  // The detail status changes before the deliberately delayed API responds.
+  await page.getByRole("button", { name: "Status ändern: Gemerkt" }).click();
+  await page.getByRole("menuitem", { name: "Angebot", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Status ändern: Angebot" })).toBeVisible();
+  const statusResponse = page.waitForResponse((response) => response.url().includes("/api/jobs/123/status") && response.status() === 200);
+  releaseStatusUpdate();
+  await statusResponse;
+
   await expect(page.getByText(/Geschätzte Anfahrt/i)).toHaveCount(0);
   await page.getByRole("button", { name: /Route ab aktuellem Standort/i }).click();
   await expect(page.getByRole("menuitem", { name: /Google Maps/i })).toHaveAttribute(
@@ -147,10 +182,17 @@ test("job detail can generate a cover letter", async ({ page }) => {
   );
   await page.keyboard.press("Escape");
 
-  // Click the cover letter button
-  const ctaButton = page.getByRole("button", { name: /bewerbung schreiben/i });
-  await expect(ctaButton).toBeVisible({ timeout: 10000 });
-  await ctaButton.click();
+  // The primary CTA must still work without the extension. Its data contract lets
+  // the extension carry this job into the employer's application page.
+  const applicationLink = page.getByRole("link", { name: /jetzt bewerben/i });
+  await expect(applicationLink).toBeVisible({ timeout: 10000 });
+  await expect(applicationLink).toHaveAttribute("href", "https://example.com/jobs/qa");
+  await expect(applicationLink).toHaveAttribute("data-jobassist-apply", "");
+  await expect(applicationLink).toHaveAttribute("data-job-title", "QA Engineer");
+  await expect(applicationLink).toHaveAttribute("data-job-company", "JobAssist");
+
+  // Cover-letter generation remains available as a separate preparation step.
+  await page.getByRole("button", { name: /anschreiben erstellen/i }).click();
 
   // After generation, the button should change to "Anschreiben ansehen"
   await expect(page.getByRole("button", { name: /anschreiben ansehen/i })).toBeVisible({ timeout: 15000 });

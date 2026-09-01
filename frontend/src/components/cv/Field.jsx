@@ -70,7 +70,7 @@ export default function Field({
             aria-invalid={!!error || undefined}
             aria-required={required || undefined}
             aria-describedby={describedBy}
-            className="flex-1 bg-transparent px-3 h-9 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)] focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent px-3 h-9 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)] focus:outline-none"
           />
         </div>
       ) : (

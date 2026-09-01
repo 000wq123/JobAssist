@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="de">
+  <head><meta charset="utf-8"></head>
+  <body>
+    <main>
+      <h1>Online-Bewerbung</h1>
+      <form id="application-form">
+        <label for="first-name">Vorname</label>
+        <input id="first-name" name="firstName" autocomplete="given-name">
+        <label for="email">E-Mail-Adresse</label>
+        <input id="email" name="email" type="email" autocomplete="email">
+        <label for="city">Wohnort</label>
+        <input id="city" name="city" autocomplete="address-level2">
+        <label for="message">Motivationsschreiben</label>
+        <textarea id="message" name="coverLetter"></textarea>
+        <button type="submit">Absenden</button>
+      </form>
+      <p id="submit-count">0</p>
+    </main>
+    <script>
+      window.submitCount = 0;
+      document.querySelector("form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        window.submitCount += 1;
+        document.querySelector("#submit-count").textContent = window.submitCount;
+      });
+    </script>
+  </body>
+</html>

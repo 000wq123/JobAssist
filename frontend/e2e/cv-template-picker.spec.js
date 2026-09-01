@@ -110,7 +110,7 @@ test.describe("CV template gallery", () => {
     await expect(page).toHaveScreenshot("picker-desktop-light.png");
   });
 
-  test("thumbnails are art-directed: full width, content-dense, no blank paper", async ({ page }) => {
+  test("gallery thumbnails are cropped views of the same A4 document as fullscreen", async ({ page }) => {
     await installFixture(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPicker(page);
@@ -122,71 +122,55 @@ test.describe("CV template gallery", () => {
       const audit = await card.locator("[data-paper-frame]").evaluate((frame) => {
         const w = frame.clientWidth;
         const h = frame.clientHeight;
-        const inner = frame.querySelector("div");
-        const canvasW = inner ? inner.getBoundingClientRect().width : 0;
-        const canvasH = inner ? inner.getBoundingClientRect().height : 0;
-        const totalArea = w * h;
-        const origin = frame.getBoundingClientRect();
-        const clip = (rect) => {
-          const left = Math.max(0, rect.left - origin.left);
-          const top = Math.max(0, rect.top - origin.top);
-          const right = Math.min(w, rect.right - origin.left);
-          const bottom = Math.min(h, rect.top - origin.top + rect.height);
-          return { width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
-        };
-        let inkArea = 0;
-        const walker = document.createTreeWalker(frame, NodeFilter.SHOW_TEXT);
-        while (walker.nextNode()) {
-          const node = walker.currentNode;
-          if (!node.nodeValue || !node.nodeValue.trim()) continue;
-          const range = document.createRange();
-          range.selectNodeContents(node);
-          for (const rect of range.getClientRects()) {
-            const c = clip(rect);
-            inkArea += c.width * c.height;
-          }
-        }
-        frame.querySelectorAll("div, span").forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          if (rect.width < 2 || rect.height < 2) return;
-          const bg = getComputedStyle(el).backgroundColor;
-          if (!bg || bg === "transparent" || bg === "rgba(0, 0, 0, 0)") return;
-          const m = bg.match(/[\d.]+/g);
-          // Ink = any non-background paint. Warm paper (#F7F6F2 → 247/246/242)
-          // must NOT count as ink, hence the 235 threshold.
-          if (m && (Number(m[0]) < 235 || Number(m[1]) < 235 || Number(m[2]) < 235)) {
-            const c = clip(rect);
-            inkArea += c.width * c.height;
-          }
-        });
+        const canvas = frame.querySelector(".cv-stage");
+        const page = canvas?.querySelector(".cva4");
+        const canvasRect = canvas?.getBoundingClientRect();
+        const pageStyle = page ? getComputedStyle(page) : null;
         let sidebarRatio = 0;
-        frame.querySelectorAll("div").forEach((el) => {
+        page?.querySelectorAll("div").forEach((el) => {
           const bg = getComputedStyle(el).backgroundColor;
-          if (bg === "rgb(36, 42, 51)") sidebarRatio = el.getBoundingClientRect().width / w;
+          if (bg === "rgb(36, 42, 51)") sidebarRatio = el.getBoundingClientRect().width / canvasRect.width;
         });
         const frameRect = frame.getBoundingClientRect();
-        const canvasRect = inner ? inner.getBoundingClientRect() : { left: 0, right: 0 };
         return {
-          canvasFillsWidth: Math.abs(canvasW - w) <= 2,
-          canvasCoversViewport: canvasH >= h - 2,
-          canvasLeftOffset: canvasRect.left - frameRect.left,
-          canvasRightOffset: frameRect.right - canvasRect.right,
-          inkCoverage: inkArea / totalArea,
+          kind: canvas?.getAttribute("data-preview-kind"),
+          id: canvas?.getAttribute("data-template-id"),
+          logicalWidth: Number.parseFloat(canvas?.style.width || "0"),
+          logicalHeight: Number.parseFloat(canvas?.style.height || "0"),
+          pageWidth: Number.parseFloat(pageStyle?.width || "0"),
+          pageMinHeight: Number.parseFloat(pageStyle?.minHeight || "0"),
+          canvasFillsWidth: Math.abs((canvasRect?.width || 0) - w) <= 2,
+          canvasCoversViewport: (canvasRect?.height || 0) >= h - 2,
+          canvasLeftOffset: (canvasRect?.left || 0) - frameRect.left,
+          canvasRightOffset: frameRect.right - (canvasRect?.right || 0),
           sidebarRatio,
         };
       });
-      expect(audit.canvasFillsWidth, `${id}: thumbnail must span the full preview width`).toBe(true);
-      expect(audit.canvasCoversViewport, `${id}: thumbnail must fill the viewport height`).toBe(true);
+      expect(audit.kind, `${id}: gallery document must be identifiable`).toBe("gallery");
+      expect(audit.id).toBe(id);
+      expect(audit.logicalWidth, `${id}: gallery must retain the A4 document width`).toBeCloseTo(595.28, 1);
+      expect(audit.logicalHeight, `${id}: gallery must retain the A4 document height`).toBeCloseTo(841.89, 1);
+      expect(audit.pageWidth, `${id}: rendered template must use the A4 width`).toBeCloseTo(595.28, 1);
+      expect(audit.pageMinHeight, `${id}: rendered template must use the A4 height`).toBeCloseTo(841.89, 1);
+      expect(audit.canvasFillsWidth, `${id}: scaled A4 page must span the preview width`).toBe(true);
+      expect(audit.canvasCoversViewport, `${id}: scaled A4 page must cover the cropped viewport`).toBe(true);
       expect(audit.canvasLeftOffset, `${id}: left edge must align with the frame (0 horizontal clipping)`).toBeLessThan(2);
       expect(audit.canvasLeftOffset).toBeGreaterThan(-2);
       expect(audit.canvasRightOffset, `${id}: right edge must align with the frame (0 horizontal clipping)`).toBeLessThan(2);
       expect(audit.canvasRightOffset).toBeGreaterThan(-2);
-      expect(audit.inkCoverage, `${id}: thumbnail must be content-dense, not blank paper`).toBeGreaterThan(0.05);
       if (id === "slim-sidebar") {
-        expect(audit.sidebarRatio, "Mit Seitenleiste must show its dark sidebar column (~30% width)").toBeGreaterThan(0.24);
-        expect(audit.sidebarRatio).toBeLessThan(0.4);
+        expect(audit.sidebarRatio, "Mit Seitenleiste must preserve the real 150pt sidebar").toBeCloseTo(150 / 595.28, 2);
       }
     }
+
+    const sidebarCard = page.locator("article[data-template-id='slim-sidebar']");
+    const galleryMarkup = await sidebarCard.locator("[data-cv-document] > .cva4").evaluate((node) => node.innerHTML);
+    await sidebarCard.getByRole("button", { name: "Vorschau", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: /Mit Seitenleiste — Vollbildvorschau/u });
+    const fullscreenDocument = dialog.locator("[data-cv-document][data-template-id='slim-sidebar']");
+    await expect(fullscreenDocument).toHaveAttribute("data-preview-kind", "fullscreen");
+    const fullscreenMarkup = await fullscreenDocument.locator(":scope > .cva4").evaluate((node) => node.innerHTML);
+    expect(fullscreenMarkup, "gallery and fullscreen must render one identical CV tree").toBe(galleryMarkup);
   });
 
   test("mobile uses one full-width card per row", async ({ page }) => {

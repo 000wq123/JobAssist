@@ -157,13 +157,13 @@ export default function StepErfahrungen({ profile, onChange }) {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-fg-dim)]">
             Schnell hinzufügen
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {SUGGESTION_CHIPS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => openAdd({ art: s, titel: s })}
-                className="h-7 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
+                className="h-8 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
               >
                 + {s}
               </button>

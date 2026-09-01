@@ -288,7 +288,8 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 space-y-1 mt-3">
             <li>
               <strong className="text-[var(--color-fg)]">Lokal gespeicherte Profildaten:</strong> Vor- und
-              Nachname, E-Mail-Adresse, Telefonnummer, Anschrift, Ort und optional LinkedIn-URL.
+              Nachname, E-Mail-Adresse, Telefonnummer, Anschrift, Ort, Land, optional Geburtsdatum und
+              optional LinkedIn-URL.
             </li>
             <li>
               <strong className="text-[var(--color-fg)]">Temporäre Bewerbungsdaten:</strong> Stellenbezeichnung,

@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 import { ChevronLeft, ChevronRight, Download, FileText, Loader2, Maximize2, Minimize2, Minus, Plus, X } from "lucide-react";
 import { CV_TEMPLATES, TEMPLATE_FILTERS, templateMatchesFilter } from "./templateRegistry";
 import { renderCVBody } from "./cvPreview.jsx";
-import { renderCVThumbnail, THUMB } from "./cvThumbnail.jsx";
 import { normalizeProfile, DESIGN_PREVIEW, A4 } from "./cvModel.js";
 
 const DESIGN_MODEL = normalizeProfile(DESIGN_PREVIEW.profile);
@@ -83,13 +82,17 @@ function TemplateCard({ template, selected, scale, onSelect, onPreview }) {
     >
       <div className="p-2.5 sm:p-3">
         <div data-paper-frame className="relative w-full overflow-hidden rounded-[5px]" style={{ height: `clamp(210px, 18vw, ${THUMBNAIL_HEIGHT}px)`, background: "var(--app-cv-paper, #F7F6F2)", boxShadow: "0 0 0 1px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.08), 0 10px 24px rgba(0,0,0,0.14)" }}>
-          <div style={{ width: THUMB.W * scale, height: THUMB.H * scale, margin: "0 auto", overflow: "hidden", position: "relative", pointerEvents: "none" }}>
-            <div className="cv-stage" style={{ width: THUMB.W, height: THUMB.H, boxSizing: "border-box", transform: `scale(${scale})`, transformOrigin: "top left" }}>
-              {renderCVThumbnail(template.id, DESIGN_MODEL)}
+          <div style={{ width: A4.W * scale, height: A4.H * scale, margin: "0 auto", overflow: "hidden", position: "relative", pointerEvents: "none" }}>
+            <div
+              className="cv-stage"
+              data-cv-document="true"
+              data-preview-kind="gallery"
+              data-template-id={template.id}
+              style={{ width: A4.W, height: A4.H, boxSizing: "border-box", transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}
+            >
+              {renderCVBody(template.id, DESIGN_MODEL)}
             </div>
           </div>
-          {/* eslint-disable-next-line no-restricted-syntax -- hover scrim overlay, not layout */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
           {selected && <span className="absolute left-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "var(--app-brand)", boxShadow: "0 2px 8px rgba(0,0,0,0.28)" }} aria-hidden="true"><svg width="11" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>}
           <PhotoBadge template={template} />
         </div>
@@ -290,7 +293,13 @@ function PreviewOverlay({ startId, profile, onClose, onSelect, onDownload }) {
         <div ref={stageRef} className="relative min-h-0 flex-1 overflow-auto" style={{ background: VIEWER.stage }}>
           <div className="flex min-h-full min-w-full" style={{ padding: "clamp(18px, 3.5vh, 40px) 48px", background: VIEWER.stage }}>
             <div className="m-auto shrink-0 rounded-[2px]" style={{ width: A4.W * scale, height: A4.H * scale, boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 3px 10px rgba(0,0,0,0.4)" }}>
-              <div className="cv-stage" style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "var(--app-cv-paper, #FDFCF9)" }}>
+              <div
+                className="cv-stage"
+                data-cv-document="true"
+                data-preview-kind="fullscreen"
+                data-template-id={active.id}
+                style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "var(--app-cv-paper, #FDFCF9)" }}
+              >
                 {renderCVBody(active.id, model)}
               </div>
             </div>
@@ -359,7 +368,7 @@ export function CVTemplatePicker({ profile, onChange, onContinue }) {
   const [scale, setScale] = useState(0.5);
   const galleryRef = useCallback((node) => {
     if (!node) return undefined;
-    const measure = () => { const frame = node.querySelector("[data-paper-frame]"); if (frame) setScale(frame.offsetWidth / THUMB.W); };
+    const measure = () => { const frame = node.querySelector("[data-paper-frame]"); if (frame) setScale(frame.offsetWidth / A4.W); };
     requestAnimationFrame(measure);
     const observer = new ResizeObserver(measure);
     observer.observe(node);
@@ -392,5 +401,5 @@ export function TemplatePreviewPanel({ profile, templateId, onDownload }) {
   const [scale, setScale] = useState(0.5);
   const [open, setOpen] = useState(false);
   const ref = useCallback((node) => { if (!node) return undefined; const measure = () => setScale(node.offsetWidth / A4.W); requestAnimationFrame(measure); const observer = new ResizeObserver(measure); observer.observe(node); return () => observer.disconnect(); }, []);
-  return <div className="flex h-full flex-col gap-3" data-live-preview><div className="flex items-center justify-between"><p className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-faint)" }}>Vorlage — {CV_TEMPLATES.find((item) => item.id === id)?.name || id}</p><button type="button" onClick={() => setOpen(true)} className="cursor-pointer text-[11px] font-medium" style={{ color: "var(--app-brand)" }}>Vollbild öffnen</button></div><div ref={ref} className="relative overflow-hidden rounded-md" style={{ height: A4.H * scale, border: "1px solid var(--color-border)", background: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(id, model)}</div></div>{open && <TemplateLightbox templateId={id} profile={profile} onClose={() => setOpen(false)} onSelect={() => setOpen(false)} onDownload={onDownload} />}</div>;
+  return <div className="flex h-full flex-col gap-3" data-live-preview><div className="flex items-center justify-between"><p className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--color-fg-faint)" }}>Vorlage — {CV_TEMPLATES.find((item) => item.id === id)?.name || id}</p><button type="button" onClick={() => setOpen(true)} className="min-h-8 cursor-pointer text-[12px] font-medium" style={{ color: "var(--app-brand)" }}>Vollbild öffnen</button></div><div ref={ref} className="relative overflow-hidden rounded-md" style={{ height: A4.H * scale, border: "1px solid var(--color-border)", background: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}><div style={{ width: A4.W, height: A4.H, transform: `scale(${scale})`, transformOrigin: "top left", background: "#fff" }}>{renderCVBody(id, model)}</div></div>{open && <TemplateLightbox templateId={id} profile={profile} onClose={() => setOpen(false)} onSelect={() => setOpen(false)} onDownload={onDownload} />}</div>;
 }

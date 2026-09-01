@@ -246,6 +246,7 @@
   --app-focus-ring: #E30613;
   --app-success: #5D9F68;
   --app-success-soft: rgba(93, 159, 104, 0.10);
+  --app-success-strong: #166534;   /* green-800 — badge/chip text (AA) */
   --app-warning: #B79649;
   --app-warning-soft: rgba(183, 150, 73, 0.10);
   --app-error: #E05050;
@@ -263,7 +264,7 @@
   --status-saved-soft:   rgba(245, 158, 11, 0.12);
   --status-applied:      #2563EB;   /* blue-600 */
   --status-applied-soft: rgba(59, 130, 246, 0.10);
-  --status-interview:    #DB2777;   /* pink-600 */
+  --status-interview:    #BE185D;   /* pink-700 — badge text + icons (AA) */
   --status-interview-soft: rgba(236, 72, 153, 0.10);
   --status-offered:      #16A34A;   /* green-600 */
   --status-offered-soft: rgba(34, 197, 94, 0.10);
@@ -401,6 +402,7 @@
   --app-focus-ring: #FF4545;
   --app-success: #4ADE80;
   --app-success-soft: rgba(74, 222, 128, 0.10);
+  --app-success-strong: #4ADE80;
   --app-warning: #FBBF24;
   --app-warning-soft: rgba(251, 191, 36, 0.10);
   --app-error: #F87171;
@@ -775,7 +777,7 @@
     border-radius: var(--radius-sm);
     letter-spacing: 0.02em;
   }
-  .badge-success { background: var(--color-success-soft); color: var(--color-success); }
+  .badge-success { background: var(--color-success-soft); color: var(--app-success-strong); }
   .badge-warning { background: var(--color-warning-soft); color: var(--color-warning); }
   .badge-error   { background: var(--color-error-soft);   color: var(--color-error);   }
   .badge-info    { background: var(--color-info-soft);    color: var(--color-info);    }
@@ -1128,19 +1130,29 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear { display: none; }
 input[type="password"]::-webkit-textfield-decoration-container { display: none; }
 
-/* Prevent iOS viewport zoom on input focus */
-@media (max-width: 767px) {
+/* Prevent iOS viewport zoom on input focus: any focused control below 16px
+   triggers an auto-zoom on touch devices. Narrow viewports are always covered
+   (portrait phones), and touch devices at tablet/landscape widths via
+   pointer: coarse — desktops with a mouse keep the compact 12–13px design. */
+@media (pointer: coarse), (max-width: 767px) {
   input, select, textarea { font-size: 16px !important; }
 }
 
 /* ── CV picker: floating selection dock ─────────────────────────── */
 @keyframes ja-dock-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { transform: translateY(10px); }
+  to   { transform: translateY(0); }
 }
 [data-selection-dock] { animation: ja-dock-in 200ms ease-out both; }
 @media (prefers-reduced-motion: reduce) {
   [data-selection-dock] { animation: none; }
+}
+
+/* ── Phone tap comfort ─────────────────────────────────────────────
+   Card action links ("Alle Stellen →", "Bearbeiten", "Verwalten") render as
+   compact 20px text rows on desktop; on phones they need a tappable row. */
+@media (max-width: 767px) {
+  .btn-link, .section-link { min-height: 36px; }
 }
 
 /* ── Toast region: bottom-right, clear of mobile nav + selection dock ── */

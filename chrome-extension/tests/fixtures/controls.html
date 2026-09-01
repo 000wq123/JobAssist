@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+  <head><meta charset="utf-8"></head>
+  <body>
+    <form id="controls-form">
+      <label for="last-name">Nachname</label>
+      <input id="last-name" name="lastName" autocomplete="family-name">
+      <label for="phone">Telefon</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel">
+      <label for="phone-code">Ländervorwahl</label>
+      <input id="phone-code" name="phoneCountryCode" type="tel" autocomplete="tel-country-code">
+      <label for="phone-national">Nationale Telefonnummer</label>
+      <input id="phone-national" name="phoneNational" type="tel" autocomplete="tel-national">
+      <label for="birthday">Geburtsdatum</label>
+      <input id="birthday" name="birthday" type="date" autocomplete="bday">
+      <label for="country">Land</label>
+      <select id="country" name="country">
+        <option value="">Bitte auswählen</option>
+        <option value="AT">Austria</option>
+      </select>
+      <fieldset>
+        <legend>Arbeitsmodell</legend>
+        <label><input type="radio" name="workMode" value="remote"> Remote</label>
+        <label><input type="radio" name="workMode" value="office"> Büro</label>
+      </fieldset>
+      <label><input type="checkbox" name="consent"> Datenschutz akzeptieren</label>
+      <input type="hidden" name="csrf" value="fixture-token">
+      <label for="password">Passwort</label>
+      <input id="password" name="password" type="password">
+    </form>
+  </body>
+</html>

@@ -271,13 +271,13 @@ export default function DashboardPage() {
   return (
     <div className="animate-slide-up max-w-[1200px] mx-auto pt-2 pb-24 px-0">
       {/* ── Greeting ──────────────────────────────────────────────────── */}
-      <header className="mb-8">
+      <header className="mb-6 sm:mb-8">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-2" style={{ color: T("brand") }}>
           {new Date().toLocaleDateString("de-AT", {
             weekday: "long", day: "numeric", month: "long", year: "numeric",
           }).toUpperCase()}
         </p>
-        <h1 className="text-[34px] font-bold tracking-[-0.02em] leading-[1.15]" style={{ color: T("text") }}>
+        <h1 className="text-[28px] font-bold tracking-[-0.02em] leading-[1.15] sm:text-[34px]" style={{ color: T("text") }}>
           {greeting}
         </h1>
         <p className="mt-2 text-[15px]" style={{ color: T("text-secondary") }}>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
       </header>
 
       {/* ── Status strip — one unified panel, five semantic columns ───── */}
-      <section aria-label="Bewerbungsstatus" className="mb-10 pb-9" style={{ borderBottom: `1px solid ${T("border-subtle")}` }}>
+      <section aria-label="Bewerbungsstatus" className="mb-8 pb-7 sm:mb-10 sm:pb-9" style={{ borderBottom: `1px solid ${T("border-subtle")}` }}>
         <div
           className="grid grid-cols-2 md:grid-cols-5 gap-px rounded-2xl overflow-hidden"
           style={{ background: T("border-subtle"), boxShadow: "var(--app-shadow-card)" }}
@@ -301,21 +301,21 @@ export default function DashboardPage() {
                 onClick={() => navigate(`/jobs?status=${b.key}`)}
                 aria-label={`${count} ${b.stripLabel}`}
                 className={clsx(
-                  "group flex flex-col items-center justify-center gap-2.5 py-6 px-4 cursor-pointer",
+                  "group flex flex-col items-center justify-center gap-2 py-4 px-2 cursor-pointer sm:gap-2.5 sm:py-6 sm:px-4",
                   "bg-[var(--app-surface)] transition-colors duration-150 hover:bg-[var(--app-surface-hover)]",
                   "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--app-brand)] focus-visible:z-10",
                   i >= BUCKETS.length - 1 && "max-md:col-span-2",
                 )}
               >
                 <span
-                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.05]"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.05] sm:h-11 sm:w-11"
                   style={{ background: b.soft }}
                 >
                   <Icon className="w-[18px] h-[18px]" style={{ color: b.color }} />
                 </span>
                 <span className="text-center">
                   <span
-                    className="text-[26px] font-bold tracking-[-0.02em] block leading-none mb-1.5 transition-colors duration-150 group-hover:text-[var(--app-brand)]"
+                    className="text-[22px] font-bold tracking-[-0.02em] block leading-none mb-1.5 transition-colors duration-150 group-hover:text-[var(--app-brand)] sm:text-[26px]"
                     style={{ color: T("text"), fontVariantNumeric: "tabular-nums" }}
                   >
                     <CountUp value={count} />
@@ -553,7 +553,7 @@ export default function DashboardPage() {
         className="rounded-2xl border overflow-hidden grid grid-cols-12"
         style={{ ...CARD }}
       >
-        <div className="col-span-12 lg:col-span-7 px-7 py-7 flex flex-col justify-center min-w-0">
+        <div className="col-span-12 lg:col-span-7 px-5 py-6 sm:px-7 sm:py-7 flex flex-col justify-center min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: T("brand") }}>
             Mehr entdecken
           </p>

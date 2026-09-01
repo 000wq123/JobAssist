@@ -17,13 +17,16 @@ assert.deepEqual(
   "Only the reviewed runtime permissions may be required",
 );
 
-const serializedManifest = JSON.stringify(manifest);
-for (const forbidden of ["<all_urls>", "https://*/*", "http://*/*"]) {
-  assert(!serializedManifest.includes(forbidden), `Forbidden broad host access: ${forbidden}`);
-}
-
 const matches = manifest.content_scripts.flatMap((entry) => entry.matches || []);
 assert.deepEqual(matches.sort(), ["https://jobassist.tech/*", "https://www.jobassist.tech/*"].sort());
+assert.deepEqual(manifest.host_permissions || [], [], "The extension must not request persistent host access");
+assert.deepEqual(manifest.optional_host_permissions || [], [], "The extension must not request optional host access");
+assert.deepEqual(manifest.web_accessible_resources, [
+  {
+    resources: ["assets/icon-48.png"],
+    matches: ["http://*/*", "https://*/*"],
+  },
+], "Only the visible assistant logo may be exposed to employer pages");
 
 const germanMessages = readJson("_locales/de/messages.json");
 const description = germanMessages.extensionDescription.message;
@@ -54,6 +57,7 @@ for (const requiredPath of [
   manifest.action.default_popup,
   ...Object.values(manifest.icons),
   ...manifest.content_scripts.flatMap((entry) => entry.js || []),
+  ...manifest.web_accessible_resources.flatMap((entry) => entry.resources || []),
 ]) {
   assert(fs.existsSync(path.join(extensionDir, requiredPath)), `Missing manifest file: ${requiredPath}`);
 }

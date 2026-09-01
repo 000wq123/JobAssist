@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import BrandMark from "../BrandMark";
 
 /**
  * Shared shell for static legal / marketing pages (Terms, Privacy, Impressum,
@@ -46,9 +47,7 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
             Zur Startseite
           </Link>
           <Link to="/" className="col-span-6 flex items-center gap-2 justify-self-end">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-accent-500)]">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
+            <BrandMark size="md" />
             <span className="text-[15px] font-semibold tracking-tight text-[var(--color-fg)]">JobAssist</span>
           </Link>
         </div>

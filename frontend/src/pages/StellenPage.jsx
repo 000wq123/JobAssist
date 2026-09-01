@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Bookmark, Send, MessageCircle, CheckCircle2, Archive,
   Search, Plus, Loader2, AlertCircle, RefreshCw, MapPin,
   MoreHorizontal, ChevronDown, ExternalLink, FileText,
-  SlidersHorizontal,
+  SlidersHorizontal, Trash2, CheckSquare2, Square, X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -17,6 +17,7 @@ import { getApiErrorMessage } from "../utils/apiError";
 import { parseJobSearchResponse, toSavedJobPayload } from "../utils/jobSearchResponse";
 import Popover from "../components/ui/Popover";
 import CompanyLogo from "../components/job-detail/CompanyLogo";
+import useConfirmDialog from "../components/ui/ConfirmDialog";
 
 /* ── Tokens ── */
 function T(n) { return `var(--app-${n})`; }
@@ -24,7 +25,7 @@ function T(n) { return `var(--app-${n})`; }
 const BUCKETS = [
   { key: "bookmarked",   label: "Gemerkt",     icon: Bookmark,      color: "var(--status-saved-icon)",     soft: "var(--status-saved-soft)",     chip: "#B45309" },
   { key: "applied",      label: "Beworben",    icon: Send,          color: "var(--status-applied)",        soft: "var(--status-applied-soft)",   chip: "#2563EB" },
-  { key: "interviewing", label: "Im Gespräch", icon: MessageCircle, color: "var(--status-interview)",      soft: "var(--status-interview-soft)", chip: "#DB2777" },
+  { key: "interviewing", label: "Im Gespräch", icon: MessageCircle, color: "var(--status-interview)",      soft: "var(--status-interview-soft)", chip: "var(--status-interview)" },
   { key: "offered",      label: "Angebot",     icon: CheckCircle2,  color: "var(--status-offered)",        soft: "var(--status-offered-soft)",   chip: "#16A34A" },
   { key: "archived",     label: "Erledigt",    icon: Archive,       color: "var(--status-archived)",       soft: "var(--status-archived-soft)",  chip: "#64748B" },
 ];
@@ -62,7 +63,17 @@ function toApiStatus(status) {
 const BUCKET_BY_KEY = Object.fromEntries(BUCKETS.map((b) => [b.key, b]));
 
 /* ── PipelineRow — one compact, useful job row ── */
-function PipelineRow({ job, onStatusChange, isLast, selected, priority }) {
+function PipelineRow({
+  job,
+  onStatusChange,
+  onDelete,
+  onToggleSelection,
+  isLast,
+  selected,
+  priority,
+  selectionMode = false,
+  checked = false,
+}) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuBtnRef = useRef(null);
@@ -76,23 +87,47 @@ function PipelineRow({ job, onStatusChange, isLast, selected, priority }) {
     ? new Date(date).toLocaleDateString("de-AT", { day: "numeric", month: "short" })
     : "";
 
+  const activateRow = (event) => {
+    if (selectionMode || event.shiftKey) {
+      onToggleSelection(job.id, { range: event.shiftKey });
+      return;
+    }
+    navigate(`/jobs/${job.id}`);
+  };
+
   return (
     <div
       role="listitem"
       tabIndex={0}
       aria-label={`${role} bei ${company || "Unbekannt"}, ${bucket.label}`}
       aria-current={selected ? "true" : undefined}
+      aria-selected={selectionMode ? checked : undefined}
       className="interactive-row group flex items-center gap-3 py-3 px-3 rounded-lg focus:outline-none cursor-pointer"
       style={{
         borderBottom: isLast ? "none" : `1px solid ${T("border-subtle")}`,
-        background: selected ? T("surface-hover") : undefined,
-        boxShadow: selected ? "inset 2px 0 0 var(--app-brand)" : undefined,
+        background: checked || selected ? T("surface-hover") : undefined,
+        boxShadow: checked || selected ? "inset 2px 0 0 var(--app-brand)" : undefined,
       }}
-      onClick={() => navigate(`/jobs/${job.id}`)}
+      onClick={activateRow}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/jobs/${job.id}`); }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateRow(e); }
       }}
     >
+      {selectionMode && (
+        <button
+          type="button"
+          aria-label={`${role} auswählen`}
+          aria-pressed={checked}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleSelection(job.id, { range: event.shiftKey });
+          }}
+          className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-lg sm:h-8 sm:w-8"
+          style={{ color: checked ? T("brand") : T("text-faint") }}
+        >
+          {checked ? <CheckSquare2 className="h-5 w-5" /> : <Square className="h-5 w-5" />}
+        </button>
+      )}
       <CompanyLogo company={company} url={job.url} size="xs" priority={selected || priority} />
 
       {/* Identity */}
@@ -155,6 +190,33 @@ function PipelineRow({ job, onStatusChange, isLast, selected, priority }) {
               </button>
             );
           })}
+          <div className="my-1 border-t" style={{ borderColor: T("border-subtle") }} />
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setMenuOpen(false);
+              onToggleSelection(job.id, { range: false });
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors"
+            style={{ color: T("text-secondary") }}
+          >
+            <CheckSquare2 className="h-3.5 w-3.5" />
+            Auswählen
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setMenuOpen(false);
+              onDelete(job);
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors"
+            style={{ color: T("error") }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Stelle löschen
+          </button>
         </Popover>
       </div>
     </div>
@@ -501,12 +563,19 @@ function FindenTab({ onSaved }) {
 /* ── StellenPage ── */
 export default function StellenPage() {
   usePageTitle("Stellen");
+  const navigate = useNavigate();
   const { jobId } = useParams();
   const hasDetail = Boolean(jobId);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") === "finden" ? "finden" : "meine";
   const [tab, setTab] = useState(initialTab);
   const [rowSearch, setRowSearch] = useState("");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedJobIds, setSelectedJobIds] = useState(() => new Set());
+  const [deletingJobIds, setDeletingJobIds] = useState(() => new Set());
+  const selectionAnchorRef = useRef(null);
+  const deletePromptOpenRef = useRef(false);
+  const { confirm: confirmDelete, element: confirmDeleteElement } = useConfirmDialog();
 
   // Sync tab from URL when browser back/forward changes searchParams.
   useEffect(() => {
@@ -580,7 +649,118 @@ export default function StellenPage() {
     );
   }, [jobs, statusFilter, rowSearch]);
 
+  useEffect(() => {
+    const validIds = new Set(jobs.map((job) => String(job.id)));
+    setSelectedJobIds((current) => {
+      const next = new Set([...current].filter((id) => validIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [jobs]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedJobIds(new Set());
+    setSelectionMode(false);
+    selectionAnchorRef.current = null;
+  }, []);
+
+  const toggleJobSelection = (id, { range = false } = {}) => {
+    const normalizedId = String(id);
+    setSelectionMode(true);
+    setSelectedJobIds((current) => {
+      const next = new Set(current);
+      const anchorId = selectionAnchorRef.current;
+      if (range && anchorId) {
+        const anchorIndex = filteredJobs.findIndex((job) => String(job.id) === String(anchorId));
+        const targetIndex = filteredJobs.findIndex((job) => String(job.id) === normalizedId);
+        if (anchorIndex >= 0 && targetIndex >= 0) {
+          const [start, end] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+          filteredJobs.slice(start, end + 1).forEach((job) => next.add(String(job.id)));
+          return next;
+        }
+      }
+      if (next.has(normalizedId)) next.delete(normalizedId);
+      else next.add(normalizedId);
+      selectionAnchorRef.current = normalizedId;
+      return next;
+    });
+  };
+
+  const handleDeleteJobs = useCallback(async (ids) => {
+    const normalizedIds = [...new Set(ids.map(String))].filter((id) => jobs.some((job) => String(job.id) === id));
+    if (!normalizedIds.length || deletePromptOpenRef.current) return;
+
+    deletePromptOpenRef.current = true;
+    const count = normalizedIds.length;
+    const confirmed = await confirmDelete({
+      title: count === 1 ? "Stelle löschen?" : `${count} Stellen löschen?`,
+      body: count === 1
+        ? "Die Stelle wird dauerhaft aus deiner Liste entfernt."
+        : "Die ausgewählten Stellen werden dauerhaft aus deiner Liste entfernt.",
+      confirmLabel: count === 1 ? "Löschen" : `${count} löschen`,
+      danger: true,
+    });
+    deletePromptOpenRef.current = false;
+    if (!confirmed) return;
+
+    const removedIds = new Set(normalizedIds);
+    const snapshot = jobs;
+    setDeletingJobIds(removedIds);
+    mutateSwrCache("jobs:list", (current) => (
+      Array.isArray(current)
+        ? current.filter((job) => !removedIds.has(String(job.id)))
+        : current
+    ));
+    clearSelection();
+    if (jobId && removedIds.has(String(jobId))) navigate("/jobs", { replace: true });
+
+    const results = await Promise.allSettled(normalizedIds.map((id) => jobApi.delete(id)));
+    const failedIds = new Set(
+      normalizedIds.filter((_, index) => results[index].status === "rejected"),
+    );
+
+    if (failedIds.size) {
+      const failedJobs = snapshot.filter((job) => failedIds.has(String(job.id)));
+      mutateSwrCache("jobs:list", (current) => {
+        const next = Array.isArray(current) ? [...current] : [];
+        const present = new Set(next.map((job) => String(job.id)));
+        failedJobs.forEach((job) => {
+          if (!present.has(String(job.id))) next.push(job);
+        });
+        return next;
+      });
+      toast.error(
+        failedIds.size === count
+          ? "Stellen konnten nicht gelöscht werden"
+          : `${failedIds.size} von ${count} Stellen konnten nicht gelöscht werden`,
+      );
+    }
+
+    const deletedCount = count - failedIds.size;
+    if (deletedCount) toast.success(deletedCount === 1 ? "Stelle gelöscht" : `${deletedCount} Stellen gelöscht`);
+    setDeletingJobIds(new Set());
+  }, [clearSelection, confirmDelete, jobId, jobs, navigate]);
+
+  useEffect(() => {
+    if (!selectionMode || selectedJobIds.size === 0) return undefined;
+    const handleKeyDown = (event) => {
+      const target = event.target;
+      const isEditing = target instanceof HTMLElement
+        && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+      if (isEditing) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        clearSelection();
+      } else if (event.key === "Delete" || (event.shiftKey && event.key === "Backspace")) {
+        event.preventDefault();
+        handleDeleteJobs([...selectedJobIds]);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [clearSelection, handleDeleteJobs, selectionMode, selectedJobIds]);
+
   const switchTab = (t) => {
+    if (t !== "meine") clearSelection();
     setTab(t);
     const next = new URLSearchParams(searchParams);
     next.set("tab", t);
@@ -598,7 +778,7 @@ export default function StellenPage() {
 
   return (
     <div className={hasDetail ? "pt-2" : "pt-4"}>
-      <div className={`flex items-center justify-between ${hasDetail ? "mb-5" : "mb-8"}`}>
+      <div className={`flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between ${hasDetail ? "mb-5" : "mb-6 sm:mb-8"}`}>
         <div>
           <h1 className={hasDetail ? "text-[18px] font-semibold tracking-[-0.02em]" : "text-[22px] font-bold tracking-[-0.02em]"} style={{ color: T("text") }}>
             {tab === "finden" ? "Jobs finden" : "Meine Stellen"}
@@ -614,7 +794,7 @@ export default function StellenPage() {
             }
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border p-0.5" style={{ borderColor: T("border"), background: T("surface-hover") }}>
+        <div className="grid grid-cols-2 items-center gap-1 rounded-lg border p-0.5 sm:flex" style={{ borderColor: T("border"), background: T("surface-hover") }}>
           {[
             { key: "meine", label: hasDetail ? "Liste" : "Meine Stellen" },
             { key: "finden", label: "Finden" },
@@ -623,7 +803,7 @@ export default function StellenPage() {
               key={t.key}
               type="button"
               onClick={() => switchTab(t.key)}
-              className="h-8 px-3.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer"
+              className="h-9 px-3.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer sm:h-8"
               style={{
                 color: tab === t.key ? T("text") : T("text-muted"),
                 background: tab === t.key ? T("surface") : "transparent",
@@ -640,7 +820,7 @@ export default function StellenPage() {
         hasJobs ? (
           <div className={hasDetail ? "flex flex-col gap-3" : "flex flex-col gap-5"}>
             {/* Search and status are one quiet control row. */}
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-[minmax(0,1fr)_116px] sm:grid-cols-[minmax(0,1fr)_116px_auto]">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: T("text-faint") }} />
                 <input
@@ -652,13 +832,13 @@ export default function StellenPage() {
                   style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
                 />
               </div>
-              <label className="relative flex-shrink-0">
+              <label className="relative min-w-0">
                 <span className="sr-only">Status filtern</span>
                 <select
                   aria-label="Status filtern"
                   value={statusFilter || "all"}
                   onChange={(e) => selectStatus(e.target.value)}
-                  className="h-9 w-[116px] appearance-none rounded-lg border bg-transparent pl-3 pr-7 text-[12px] outline-none focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
+                  className="h-9 w-full appearance-none rounded-lg border bg-transparent pl-3 pr-7 text-[12px] outline-none focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
                   style={{ borderColor: T("border"), background: T("surface"), color: T("text-muted") }}
                 >
                   {[{ key: "all", label: "Alle" }, ...BUCKETS].map((bucket) => {
@@ -668,7 +848,64 @@ export default function StellenPage() {
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 w-3 h-3 -translate-y-1/2" style={{ color: T("text-faint") }} />
               </label>
+              <button
+                type="button"
+                onClick={() => (selectionMode ? clearSelection() : setSelectionMode(true))}
+                className="btn btn-secondary h-10 justify-center gap-2 rounded-lg px-3 text-[12px] min-[360px]:col-span-2 sm:col-span-1 sm:h-9"
+                aria-pressed={selectionMode}
+              >
+                {selectionMode ? <X className="h-3.5 w-3.5" /> : <CheckSquare2 className="h-3.5 w-3.5" />}
+                {selectionMode ? "Auswahl beenden" : "Auswählen"}
+              </button>
             </div>
+
+            {selectionMode && (
+              <div
+                className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex flex-wrap items-center gap-2 rounded-xl border p-2.5 shadow-lg md:bottom-4"
+                style={{ borderColor: T("border"), background: T("surface-raised") }}
+                role="toolbar"
+                aria-label="Stellenauswahl"
+              >
+                <div className="min-w-0 flex-1 px-1">
+                  <p className="text-[13px] font-semibold" style={{ color: T("text") }}>
+                    {selectedJobIds.size} ausgewählt
+                  </p>
+                  <p className="hidden text-[11px] md:block" style={{ color: T("text-muted") }}>
+                    Shift-Klick wählt einen Bereich · Entf löscht
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary h-10 px-3 text-[12px] sm:h-9"
+                  onClick={() => {
+                    const visibleIds = filteredJobs.map((job) => String(job.id));
+                    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedJobIds.has(id));
+                    setSelectedJobIds((current) => {
+                      const next = new Set(current);
+                      visibleIds.forEach((id) => (allVisibleSelected ? next.delete(id) : next.add(id)));
+                      return next;
+                    });
+                  }}
+                  disabled={filteredJobs.length === 0}
+                >
+                  {filteredJobs.length > 0 && filteredJobs.every((job) => selectedJobIds.has(String(job.id)))
+                    ? "Auswahl aufheben"
+                    : "Alle auswählen"}
+                </button>
+                <button
+                  type="button"
+                  className="btn h-10 gap-2 px-3 text-[12px] text-white sm:h-9"
+                  style={{ background: T("error") }}
+                  onClick={() => handleDeleteJobs([...selectedJobIds])}
+                  disabled={selectedJobIds.size === 0 || deletingJobIds.size > 0}
+                >
+                  {deletingJobIds.size > 0
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Trash2 className="h-3.5 w-3.5" />}
+                  Löschen
+                </button>
+              </div>
+            )}
 
             {/* Pipeline list — one surface */}
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: T("border-subtle"), background: T("surface") }}>
@@ -699,6 +936,10 @@ export default function StellenPage() {
                       selected={String(job.id) === String(jobId || "")}
                       priority={i < 8}
                       onStatusChange={handleStatusChange}
+                      selectionMode={selectionMode}
+                      checked={selectedJobIds.has(String(job.id))}
+                      onToggleSelection={toggleJobSelection}
+                      onDelete={(item) => handleDeleteJobs([item.id])}
                     />
                   ))}
                 </div>
@@ -740,6 +981,7 @@ export default function StellenPage() {
           </div>
         ) : null
       )}
+      {confirmDeleteElement}
     </div>
   );
 }

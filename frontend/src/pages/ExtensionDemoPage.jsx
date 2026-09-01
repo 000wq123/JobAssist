@@ -1,5 +1,6 @@
 import { CheckCircle2, ExternalLink, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import BrandMark from "../components/BrandMark";
 
 const fieldClass = "h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-[13px] text-[var(--color-fg)] outline-none focus:border-[var(--color-accent-500)] focus:ring-2 focus:ring-[var(--color-accent-500)]/15";
 
@@ -39,7 +40,7 @@ export default function ExtensionDemoPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg)] px-5 py-16 text-[var(--color-fg)]">
       <main className="mx-auto max-w-3xl">
-        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-accent-500)] text-[15px] font-black text-white">JA</span>
+        <BrandMark size="xl" label="JobAssist" />
         <p className="mt-8 text-[11px] font-semibold uppercase tracking-[.1em] text-[var(--color-accent-500)]">Sicherer Funktionstest</p>
         <h1 className="mt-2 text-4xl font-bold tracking-tight">Teste den Bewerbungshelfer ohne echte Bewerbung.</h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[var(--color-fg-muted)]">

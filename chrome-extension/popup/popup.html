@@ -8,7 +8,7 @@
   </head>
   <body>
     <header>
-      <span class="mark">JA</span>
+      <img class="mark" src="../assets/icon-128.png" alt="">
       <div><strong>JobAssist</strong><span>Bewerbungshelfer</span></div>
     </header>
 
@@ -41,6 +41,8 @@
           <label class="wide">Straße<input name="address" autocomplete="street-address"></label>
           <label>PLZ<input name="postalCode" autocomplete="postal-code"></label>
           <label>Ort<input name="city" autocomplete="address-level2"></label>
+          <label>Geburtsdatum<input name="birthDate" type="date" autocomplete="bday"></label>
+          <label>Land<select name="country" autocomplete="country-name"><option value="Österreich">Österreich</option><option value="Deutschland">Deutschland</option><option value="Schweiz">Schweiz</option><option value="">Anderes / offen</option></select></label>
           <label class="wide">LinkedIn<input name="linkedin" type="url" placeholder="https://linkedin.com/in/…"></label>
         </div>
         <p class="privacy">Diese Daten bleiben im lokalen Chrome-Speicher. Die Erweiterung sendet oder übermittelt keine Bewerbung automatisch.</p>

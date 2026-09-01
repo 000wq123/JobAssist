@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="de">
+  <head><meta charset="utf-8"></head>
+  <body>
+    <form id="wizard">
+      <section id="step-one">
+        <label for="first-name">Vorname</label>
+        <input id="first-name" name="firstName" autocomplete="given-name">
+        <button type="button" id="next">Weiter</button>
+      </section>
+      <section id="step-two" hidden></section>
+    </form>
+    <script>
+      document.querySelector("#next").addEventListener("click", () => {
+        document.querySelector("#step-one").hidden = true;
+        const step = document.querySelector("#step-two");
+        step.hidden = false;
+        step.innerHTML = '<label for="street">Straße</label><input id="street" name="street">' +
+          '<label for="house-number">Hausnummer</label><input id="house-number" name="houseNumber">' +
+          '<label for="postal">PLZ</label><input id="postal" name="postalCode" autocomplete="postal-code">';
+      });
+    </script>
+  </body>
+</html>
