@@ -2,9 +2,14 @@ import { test, expect } from "vitest";
 
 import { getApiErrorMessage } from "../src/utils/apiError.js";
 
-test("returns network fallback when no response exists", () => {
+test("returns a connection-specific message when no response exists", () => {
   const result = getApiErrorMessage(new Error("network"));
-  expect(result).toBe("Server nicht erreichbar. Bitte versuche es in einer Minute erneut.");
+  expect(result).toBe("Die Verbindung zum JobAssist-Server konnte nicht hergestellt werden. Bitte versuche es erneut.");
+});
+
+test("explains a client timeout instead of calling it a server outage", () => {
+  const result = getApiErrorMessage(new DOMException("Aborted", "AbortError"));
+  expect(result).toBe("Die Anfrage dauert länger als erwartet. Bitte versuche es erneut.");
 });
 
 test("returns string detail when backend sends plain detail", () => {

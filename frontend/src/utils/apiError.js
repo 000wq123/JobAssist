@@ -1,6 +1,14 @@
 export function getApiErrorMessage(err, fallback = "Etwas ist schiefgelaufen") {
   if (!err?.response) {
-    return "Server nicht erreichbar. Bitte versuche es in einer Minute erneut.";
+    if (err?.name === "AbortError") {
+      return "Die Anfrage dauert länger als erwartet. Bitte versuche es erneut.";
+    }
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return "Du bist gerade offline. Prüfe deine Internetverbindung und versuche es erneut.";
+    }
+
+    return "Die Verbindung zum JobAssist-Server konnte nicht hergestellt werden. Bitte versuche es erneut.";
   }
 
   const detail = err?.response?.data?.detail;

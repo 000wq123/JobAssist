@@ -728,15 +728,18 @@ export default function StellenPage() {
         });
         return next;
       });
-      toast.error(
-        failedIds.size === count
-          ? "Stellen konnten nicht gelöscht werden"
-          : `${failedIds.size} von ${count} Stellen konnten nicht gelöscht werden`,
-      );
     }
 
     const deletedCount = count - failedIds.size;
-    if (deletedCount) toast.success(deletedCount === 1 ? "Stelle gelöscht" : `${deletedCount} Stellen gelöscht`);
+    if (failedIds.size) {
+      toast.error(
+        failedIds.size === count
+          ? (count === 1 ? "Stelle konnte nicht gelöscht werden" : "Stellen konnten nicht gelöscht werden")
+          : `${deletedCount} von ${count} Stellen gelöscht. ${failedIds.size === 1 ? "1 Stelle konnte" : `${failedIds.size} Stellen konnten`} nicht gelöscht werden.`,
+      );
+    } else if (deletedCount) {
+      toast.success(deletedCount === 1 ? "Stelle gelöscht" : `${deletedCount} Stellen gelöscht`);
+    }
     setDeletingJobIds(new Set());
   }, [clearSelection, confirmDelete, jobId, jobs, navigate]);
 

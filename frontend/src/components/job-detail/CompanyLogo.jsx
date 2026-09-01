@@ -7,46 +7,59 @@ import { useEffect, useState } from "react";
 import { logoApi } from "../../services/api";
 import { logoAbbrev, logoColor } from "./domain";
 
-// Cache promises (not only completed URLs) so list/detail duplicates share a
-// single authenticated request. Object URLs remain valid for the app session.
+// Cache promises (not only completed URLs) so every row for the same company
+// shares one authenticated request. Job-board URLs identify the listing, not
+// the company; including them here made identical HOFER rows disagree about
+// whether a logo existed. Object URLs remain valid for the app session.
 const LOGO_REQUESTS = new Map();
 
-// 404 results are cached for the session: browsers don't cache 404s and the
-// rejected promise would otherwise be deleted and retried on every mount, so
-// companies with no logo would re-request on every page visit.
-const FAILED_LOGOS = new Set();
+// A miss is only remembered briefly. Logo providers occasionally time out, so
+// a single failure must not poison a real company for the entire app session.
+const FAILED_LOGOS = new Map();
+const FAILED_LOGO_TTL_MS = 30_000;
 
-function logoKey(company, url) {
-  return JSON.stringify([company || "", url || ""]);
+export function companyLogoKey(company) {
+  return String(company || "")
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/\b(?:gmbh|m\.?b\.?h\.?|ag|kg|ohg|se|austria|osterreich|oesterreich)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 /** True when a previous request for this logo 404'd — skip re-requesting. */
-export function isLogoFailed(company, url) {
-  return FAILED_LOGOS.has(logoKey(company, url));
+export function isLogoFailed(company) {
+  const key = companyLogoKey(company);
+  const failedAt = FAILED_LOGOS.get(key);
+  if (!failedAt) return false;
+  if (Date.now() - failedAt < FAILED_LOGO_TTL_MS) return true;
+  FAILED_LOGOS.delete(key);
+  return false;
 }
 
 /** Record a logo 404 (also used by plain-<img> callers like JobRow). */
-export function markLogoFailed(company, url) {
-  FAILED_LOGOS.add(logoKey(company, url));
+export function markLogoFailed(company) {
+  FAILED_LOGOS.set(companyLogoKey(company), Date.now());
 }
 
 function requestLogo(company, url, priority) {
-  const key = logoKey(company, url);
+  const key = companyLogoKey(company);
   if (!LOGO_REQUESTS.has(key)) {
     const request = logoApi.best(company, url, priority ? "high" : "auto")
       .then(({ data }) => {
         if (!(data instanceof Blob) || !data.type.startsWith("image/")) {
           throw new Error("Logo response is not an image");
         }
+        FAILED_LOGOS.delete(key);
         return URL.createObjectURL(data);
       })
       .catch((error) => {
         if (error?.response?.status === 404) {
-          // Cache the 404: keep the rejected promise cached so duplicate
-          // mounts never re-request. Other errors allow a retry next mount.
-          FAILED_LOGOS.add(key);
-          return Promise.reject(error);
+          FAILED_LOGOS.set(key, Date.now());
         }
+        // Never retain a rejected promise. After the short miss TTL (or
+        // immediately for transient errors), a later mount may recover.
         LOGO_REQUESTS.delete(key);
         throw error;
       });
@@ -73,7 +86,7 @@ export default function CompanyLogo({ company, url, size = "md", priority = fals
     if (!company) return () => { cancelled = true; };
 
     // Cached 404 — skip the request entirely.
-    if (isLogoFailed(company, url)) {
+    if (isLogoFailed(company)) {
       setFailed(true);
       return () => { cancelled = true; };
     }
@@ -103,7 +116,10 @@ export default function CompanyLogo({ company, url, size = "md", priority = fals
         data-company-logo
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
-        onError={() => setFailed(true)}
+        onError={() => {
+          markLogoFailed(company);
+          setFailed(true);
+        }}
         className={`${sizeClass} object-contain flex-shrink-0 bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] p-1.5`}
       />
     );

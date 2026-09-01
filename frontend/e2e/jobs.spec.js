@@ -45,7 +45,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-async function mockSavedJobs(page, jobs, { holdDeletes = false } = {}) {
+async function mockSavedJobs(page, jobs, { holdDeletes = false, failingDeleteIds = [] } = {}) {
   let releaseDeletes;
   const deleteGate = new Promise((resolve) => { releaseDeletes = resolve; });
   const deleteRequests = [];
@@ -86,6 +86,10 @@ async function mockSavedJobs(page, jobs, { holdDeletes = false } = {}) {
     if (route.request().method() !== "DELETE") return route.fallback();
     deleteRequests.push(Number(new URL(route.request().url()).pathname.split("/").at(-1)));
     if (holdDeletes) await deleteGate;
+    if (failingDeleteIds.includes(deleteRequests.at(-1))) {
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "Delete failed" }) });
+      return;
+    }
     await route.fulfill({ status: 204, body: "" });
   });
 
@@ -99,6 +103,25 @@ function bulkDeleteJobs() {
     { id: 23, role: "Junior Support", company: "Berg Systems", location: "Graz", status: "bookmarked", url: "https://example.com/23", updated_at: "2026-08-28T10:00:00Z" },
   ];
 }
+
+test("identical companies share one logo request across different job URLs", async ({ page }) => {
+  const logoRequests = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/proxy/logo/best")) logoRequests.push(request.url());
+  });
+
+  await mockSavedJobs(page, [
+    { id: 31, role: "Samstagsjob Verkauf", company: "HOFER KG", location: "Wien", status: "bookmarked", url: "https://karriere.at/jobs/31", updated_at: "2026-09-01T10:00:00Z" },
+    { id: 32, role: "Mitarbeiter Verkauf", company: "HOFER Österreich", location: "Wien", status: "bookmarked", url: "https://willhaben.at/jobs/32", updated_at: "2026-09-01T09:00:00Z" },
+  ]);
+
+  await page.goto("/jobs");
+  await expect(page.locator("img[data-company-logo]")).toHaveCount(2);
+  await expect.poll(() => logoRequests.length).toBe(1);
+
+  const sources = await page.locator("img[data-company-logo]").evaluateAll((images) => images.map((image) => image.src));
+  expect(new Set(sources).size).toBe(1);
+});
 
 test("finden page can search and see results", async ({ page }) => {
   // Mock auth refresh so the interceptor doesn't fire unauthenticated
@@ -438,4 +461,20 @@ test("mobile users can select and bulk-delete Stellen without a keyboard", async
 
   await expect(page.locator('[role="list"] [role="listitem"]')).toHaveCount(1);
   await expect.poll(() => deleteRequests.sort((a, b) => a - b)).toEqual([21, 22]);
+});
+
+test("a partial bulk deletion reports one combined result", async ({ page }) => {
+  const jobs = bulkDeleteJobs().slice(0, 2);
+  await mockSavedJobs(page, jobs, { failingDeleteIds: [22] });
+
+  await page.goto("/jobs");
+  const rows = page.locator('[role="list"] [role="listitem"]');
+  await rows.nth(0).click({ modifiers: ["Shift"] });
+  await rows.nth(1).click({ modifiers: ["Shift"] });
+  await page.keyboard.press("Shift+Delete");
+  await page.getByRole("button", { name: "2 löschen", exact: true }).click();
+
+  await expect(page.getByText("1 von 2 Stellen gelöscht. 1 Stelle konnte nicht gelöscht werden.")).toBeVisible();
+  await expect(page.getByText("1 Stellen gelöscht", { exact: true })).toHaveCount(0);
+  await expect(rows).toHaveCount(1);
 });

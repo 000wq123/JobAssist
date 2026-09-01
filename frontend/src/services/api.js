@@ -27,6 +27,10 @@ export const defaultBaseURL = (() => {
 // 15 s timeout would kill legitimate requests mid-flight.
 const TIMEOUT_DEFAULT_MS = 15000;
 const TIMEOUT_AI_MS = 90000;
+// External job boards regularly need longer than an ordinary API request.
+// Keep the UI connected while the backend waits for a provider rather than
+// aborting a valid search at the same time as the provider timeout.
+const TIMEOUT_JOB_SEARCH_MS = 45000;
 const AI_PATH_HINTS = [
   "/cover-letter/",
   "/interview/",
@@ -37,6 +41,7 @@ const AI_PATH_HINTS = [
 ];
 
 function pickTimeout(url = "") {
+  if (url.includes("/jobs/search/")) return TIMEOUT_JOB_SEARCH_MS;
   return AI_PATH_HINTS.some((hint) => url.includes(hint)) ? TIMEOUT_AI_MS : TIMEOUT_DEFAULT_MS;
 }
 

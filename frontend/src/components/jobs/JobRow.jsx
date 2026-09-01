@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { MapPin, Clock, ExternalLink, Bookmark, BookmarkCheck, ArrowRight } from "lucide-react";
 import clsx from "clsx";
-import { defaultBaseURL } from "../../services/api";
-import { isLogoFailed, markLogoFailed } from "../job-detail/CompanyLogo";
+import CompanyLogo from "../job-detail/CompanyLogo";
 
 /**
  * Formats relative time in German (de-AT).
@@ -30,55 +28,6 @@ const STATUS_PILL = {
   offered:      { label: "Angebot",     cls: "text-[var(--color-success)]   bg-[var(--color-success-soft)] border-[var(--color-success)]/25" },
   rejected:     { label: "Abgelehnt",   cls: "text-[var(--color-error)]     bg-[var(--color-error-soft)]   border-[var(--color-error)]/25" },
 };
-
-/**
- * Pulls 1-2 letter initials from a company name. Uses first letters of first
- * two whitespace-separated tokens; falls back to first two characters.
- */
-function getCompanyInitials(name) {
-  if (!name) return "·";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return parts[0].slice(0, 2).toUpperCase();
-}
-
-/**
- * Company logo tile — fetches from the backend proxy, falls back to initials.
- * @param {{ company: string, url?: string }} props
- */
-function CompanyLogo({ company, url }) {
-  const [imgState, setImgState] = useState(() =>
-    // Cached 404 — render initials immediately, no re-request.
-    isLogoFailed(company, url) ? "failed" : "loading"
-  );
-  const initials = getCompanyInitials(company);
-  const tileClass = "relative grid h-10 w-10 flex-shrink-0 rounded-xl bg-[var(--color-bg-elev-2)] border border-[var(--color-border-subtle)] overflow-hidden transition-colors duration-150";
-  const src = company && imgState !== "failed"
-    ? `${defaultBaseURL}/proxy/logo/best?company=${encodeURIComponent(company)}&url=${encodeURIComponent(url || "")}`
-    : null;
-
-  return (
-    <div aria-hidden="true" className={tileClass}>
-      <span className="col-start-1 row-start-1 grid place-items-center text-[12px] font-semibold tracking-tight text-[var(--color-fg-muted)]">
-        {initials}
-      </span>
-      {src && imgState !== "failed" && (
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          onLoad={() => setImgState("loaded")}
-          onError={() => {
-            markLogoFailed(company, url);
-            setImgState("failed");
-          }}
-          className="col-start-1 row-start-1 h-full w-full object-contain p-1 rounded-xl"
-          style={{ opacity: imgState === "loaded" ? 1 : 0, transition: "opacity 0.25s" }}
-        />
-      )}
-    </div>
-  );
-}
 
 /**
  * JobRow — single job listing row with company avatar tile, title, metadata
@@ -110,7 +59,7 @@ export default function JobRow({ job, onClick, onSave, isSaved = false, saving =
       )}
     >
       {/* Company logo tile */}
-      <CompanyLogo company={company} url={url} />
+      <CompanyLogo company={company} url={url} size="sm" />
 
       {/* Title + meta */}
       <button
