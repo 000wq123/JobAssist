@@ -174,7 +174,7 @@ export default function StepPersonal({ profile, onChange, errors = {} }) {
           id="cv-staatsbuergerschaft"
           value={profile.staatsbuergerschaft || "AT"}
           onChange={(e) => onChange({ staatsbuergerschaft: e.target.value })}
-          className="h-9 w-full rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)]"
+          className="h-11 w-full rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)]"
         >
           {COUNTRIES.map((c) => (
             <option key={c.code} value={c.code} className="bg-[var(--color-bg-elev-1)]">
@@ -208,7 +208,7 @@ export default function StepPersonal({ profile, onChange, errors = {} }) {
                   aria-checked={selected}
                   onClick={() => onChange({ arbeitserlaubnis: opt.v })}
                   className={
-                    "min-h-[40px] px-4 rounded-md border text-[13px] font-medium transition-colors " +
+                    "min-h-[44px] px-4 rounded-md border text-[13px] font-medium transition-colors " +
                     (selected
                       ? "border-[var(--color-accent-500)] bg-[var(--color-accent-500)]/15 text-[var(--color-accent-200)]"
                       : "border-[var(--color-border)] text-[var(--color-fg-muted)] hover:border-[var(--color-border-strong)]")

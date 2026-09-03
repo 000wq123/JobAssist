@@ -6,6 +6,8 @@ import pytest
 from fastapi import HTTPException, Response
 
 from app.api.routes import auth
+from app.core import security
+from app.core.user_data import DELETE_USER_DATA_MODELS
 from app.schemas.user import UserLogin
 
 
@@ -52,7 +54,7 @@ async def test_login_allows_unverified_user(monkeypatch):
     )
 
     assert result.access_token == "access-token"
-    assert result.refresh_token == "refresh-token"
+    assert not hasattr(result, "refresh_token")
     # Refresh token must be set as an httpOnly cookie
     set_cookie = response.headers.get("set-cookie", "")
     assert "ja_refresh=refresh-token" in set_cookie
@@ -90,8 +92,8 @@ async def test_refresh_returns_new_access_token_keeping_refresh_token(monkeypatc
     # Token must NOT be revoked — no rotation.
     assert refresh_row.revoked is False
     assert result.access_token == "new-access"
-    # Same refresh token returned — no new token created.
-    assert result.refresh_token == "raw-refresh"
+    # The raw refresh credential is never exposed to JavaScript.
+    assert not hasattr(result, "refresh_token")
     # No new cookie set — the existing one is still valid.
     assert "ja_refresh" not in (response.headers.get("set-cookie") or "")
     # No new row added to the DB.
@@ -183,6 +185,64 @@ async def test_verify_email_marks_user_verified(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("purpose", ["verify", "reset"])
+async def test_email_action_token_cannot_authenticate_as_bearer(purpose):
+    token = auth._create_email_token(7, purpose, expires_minutes=30)
+    db = AsyncMock()
+
+    with pytest.raises(HTTPException) as exc:
+        await security.get_current_user(token=token, db=db)
+
+    assert exc.value.status_code == 401
+    db.execute.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_access_token_requires_current_auth_version():
+    user = SimpleNamespace(id=7, auth_version=2)
+    db = AsyncMock()
+    db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=user))
+    stale = security.create_access_token({"sub": "7", "auth_version": 1})
+
+    with pytest.raises(HTTPException) as exc:
+        await security.get_current_user(token=stale, db=db)
+
+    assert exc.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_password_reset_token_is_single_use(monkeypatch):
+    nonce = "reset-nonce"
+    user = SimpleNamespace(
+        id=7,
+        password_reset_nonce=nonce,
+        auth_version=0,
+        hashed_password="old",
+    )
+    db = AsyncMock()
+    db.execute = AsyncMock(return_value=FakeResult(scalar_one_or_none=user))
+    monkeypatch.setattr(auth, "hash_password", lambda value: f"hashed:{value}")
+    token = auth._create_email_token(
+        user.id,
+        "reset",
+        expires_minutes=30,
+        nonce=nonce,
+    )
+    payload = auth.ResetPasswordRequest(token=token, new_password="NewPassword1")
+
+    result = await auth.reset_password(request=_request(), payload=payload, db=db)
+
+    assert result["message"] == "Passwort erfolgreich zurückgesetzt"
+    assert user.password_reset_nonce is None
+    assert user.auth_version == 1
+    assert user.hashed_password == "hashed:NewPassword1"
+
+    with pytest.raises(HTTPException) as exc:
+        await auth.reset_password(request=_request(), payload=payload, db=db)
+    assert exc.value.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_resend_verification_public_sends_only_for_unverified_user(monkeypatch):
     user = SimpleNamespace(id=8, email="user@example.com", is_verified=False)
     db = AsyncMock()
@@ -254,5 +314,5 @@ async def test_delete_account_deletes_all_related_records(monkeypatch):
     )
 
     assert result["message"] == "Konto und alle Daten wurden gelöscht"
-    assert db.execute.await_count == 8
+    assert db.execute.await_count == len(DELETE_USER_DATA_MODELS) + 1
     db.commit.assert_awaited_once()

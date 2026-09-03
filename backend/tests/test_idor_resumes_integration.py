@@ -5,11 +5,6 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import sys
-import types
-if 'pypdf' not in sys.modules:
-    sys.modules['pypdf'] = types.SimpleNamespace(PdfReader=object)
-
 from app.api.routes import auth, resume as resume_routes
 from app.core import security
 from app.core.database import Base, get_db
@@ -77,7 +72,7 @@ async def test_resumes_idor_blocked(idor_resume_env):
     client = idor_resume_env["client"]
     session_factory = idor_resume_env["session_factory"]
 
-    a_tokens = await _register_user(client, email="a@gmail.com")
+    await _register_user(client, email="a@gmail.com")
     b_tokens = await _register_user(client, email="b@gmail.com")
 
     async with session_factory() as session:

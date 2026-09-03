@@ -58,6 +58,9 @@ const Button = forwardRef(function Button(
       className={clsx(
         "inline-flex items-center justify-center font-semibold",
         "transition-colors duration-100",
+        // ≥44px hit area on phones (defined in index.css); desktop keeps the
+        // compact size scale.
+        "tap-44",
         "focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-400)]",
         SIZE_CLS[size],
         VARIANT_CLS[variant],

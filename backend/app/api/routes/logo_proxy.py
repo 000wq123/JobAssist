@@ -7,9 +7,12 @@ browser CORS / CORP / hotlink restrictions that block cross-origin <img> loads.
 from __future__ import annotations
 
 import asyncio
+from collections import OrderedDict
+import ipaddress
 import re
 import logging
-from urllib.parse import urlparse
+import socket
+from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -31,8 +34,161 @@ _HEADERS = {
     "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*,*/*;q=0.8",
 }
 
-_CACHE: dict[str, tuple[bytes, str]] = {}
+_CACHE: OrderedDict[str, tuple[bytes, str]] = OrderedDict()
 _MAX_CACHE = 600
+_MAX_CACHE_BYTES = 32 * 1024 * 1024
+_MAX_IMAGE_BYTES = 2 * 1024 * 1024
+_MAX_REDIRECTS = 3
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+_SAFE_IMAGE_TYPES = {
+    "image/avif",
+    "image/gif",
+    "image/jpeg",
+    "image/png",
+    "image/vnd.microsoft.icon",
+    "image/webp",
+    "image/x-icon",
+}
+
+
+class UnsafeLogoURL(ValueError):
+    """The URL could reach a non-public network destination."""
+
+
+class LogoTooLarge(ValueError):
+    """The remote response exceeded the image byte limit."""
+
+
+def _cache_get(key: str) -> tuple[bytes, str] | None:
+    value = _CACHE.get(key)
+    if value is not None:
+        _CACHE.move_to_end(key)
+    return value
+
+
+def _cache_set(key: str, value: tuple[bytes, str]) -> None:
+    if len(value[0]) > _MAX_IMAGE_BYTES:
+        return
+    _CACHE.pop(key, None)
+    _CACHE[key] = value
+    total_bytes = sum(len(content) for content, _media_type in _CACHE.values())
+    while _CACHE and (len(_CACHE) > _MAX_CACHE or total_bytes > _MAX_CACHE_BYTES):
+        _old_key, (old_content, _old_media_type) = _CACHE.popitem(last=False)
+        total_bytes -= len(old_content)
+
+
+def _public_ip(value: str) -> bool:
+    try:
+        return ipaddress.ip_address(value).is_global
+    except ValueError:
+        return False
+
+
+async def _resolve_public_ips(host: str) -> list[str]:
+    """Resolve once and return only public addresses for connection pinning."""
+    try:
+        literal = ipaddress.ip_address(host)
+    except ValueError:
+        literal = None
+    if literal is not None:
+        if not literal.is_global:
+            raise UnsafeLogoURL("Private or reserved network destinations are blocked")
+        return [literal.compressed]
+
+    try:
+        records = await asyncio.to_thread(
+            socket.getaddrinfo,
+            host,
+            443,
+            family=socket.AF_UNSPEC,
+            type=socket.SOCK_STREAM,
+        )
+    except socket.gaierror as exc:
+        raise UnsafeLogoURL("Logo host could not be resolved") from exc
+
+    addresses = list(dict.fromkeys(record[4][0] for record in records))
+    # Reject the entire answer if it mixes public and private addresses. This
+    # avoids choosing a seemingly safe record from a rebinding-style response.
+    if not addresses or not all(_public_ip(address) for address in addresses):
+        raise UnsafeLogoURL("Private or reserved network destinations are blocked")
+    return addresses
+
+
+async def _pinned_request(
+    client: httpx.AsyncClient,
+    url: str,
+) -> httpx.Response:
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        raise UnsafeLogoURL("Only credential-free HTTPS URLs are allowed")
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise UnsafeLogoURL("Invalid HTTPS port") from exc
+    if port not in (None, 443):
+        raise UnsafeLogoURL("Only the standard HTTPS port is allowed")
+
+    host = parsed.hostname.rstrip(".").lower()
+    addresses = await _resolve_public_ips(host)
+    address = addresses[0]
+    pinned_host = f"[{address}]" if ":" in address else address
+    pinned_url = urlunsplit(("https", pinned_host, parsed.path or "/", parsed.query, ""))
+    request = client.build_request(
+        "GET",
+        pinned_url,
+        headers={**_HEADERS, "Host": host},
+        extensions={"sni_hostname": host},
+    )
+    return await client.send(request, stream=True)
+
+
+async def _fetch_image(
+    client: httpx.AsyncClient,
+    url: str,
+    *,
+    min_size: int = 64,
+) -> tuple[bytes, str] | None:
+    """Fetch an image with address pinning, redirect checks, and byte limits."""
+    current = url
+    for redirect_count in range(_MAX_REDIRECTS + 1):
+        response = await _pinned_request(client, current)
+        try:
+            if response.status_code in _REDIRECT_STATUSES:
+                location = response.headers.get("location")
+                if not location or redirect_count == _MAX_REDIRECTS:
+                    return None
+                current = urljoin(current, location)
+                continue
+            if response.status_code != 200:
+                return None
+
+            media_type = response.headers.get("content-type", "").split(";", 1)[0].strip()
+            # SVG is intentionally excluded: returning attacker-controlled
+            # active XML from our own origin is unnecessary for favicons.
+            if media_type not in _SAFE_IMAGE_TYPES:
+                return None
+            content_length = response.headers.get("content-length")
+            if content_length:
+                try:
+                    if int(content_length) > _MAX_IMAGE_BYTES:
+                        raise LogoTooLarge("Remote image is too large")
+                except ValueError as exc:
+                    raise LogoTooLarge("Invalid remote image size") from exc
+
+            chunks: list[bytes] = []
+            total = 0
+            async for chunk in response.aiter_bytes():
+                total += len(chunk)
+                if total > _MAX_IMAGE_BYTES:
+                    raise LogoTooLarge("Remote image is too large")
+                chunks.append(chunk)
+            data = b"".join(chunks)
+            if len(data) < min_size:
+                return None
+            return data, media_type
+        finally:
+            await response.aclose()
+    return None
 
 _NON_COMPANY = re.compile(
     r"^(wen wir suchen|was wir bieten|das bringst du mit|wir bieten|"
@@ -165,28 +321,24 @@ def _company_domains(company: str, url: str = "") -> list[str]:
 
 async def _try_url(client: httpx.AsyncClient, url: str, min_size: int = 64) -> tuple[bytes, str] | None:
     """Fetch url, return (bytes, content_type) if it's a valid image, else None."""
-    if url in _CACHE:
-        return _CACHE[url]
+    if cached := _cache_get(url):
+        return cached
     try:
-        resp = await client.get(url, headers=_HEADERS)
-        if resp.status_code != 200:
-            return None
-        ct = resp.headers.get("content-type", "").split(";")[0].strip()
-        if not ct.startswith("image/"):
-            return None
-        data = resp.content
-        if len(data) < min_size:
-            return None
-        if len(_CACHE) < _MAX_CACHE:
-            _CACHE[url] = (data, ct)
-        return data, ct
-    except Exception:
+        result = await _fetch_image(client, url, min_size=min_size)
+        if result is not None:
+            _cache_set(url, result)
+        return result
+    except (httpx.HTTPError, UnsafeLogoURL, LogoTooLarge):
         return None
 
 
 async def _fetch_first_image(domains: list[str]) -> tuple[bytes, str] | None:
     """Try high-resolution direct paths and favicon providers in parallel."""
-    async with httpx.AsyncClient(follow_redirects=True, timeout=3.5) as client:
+    async with httpx.AsyncClient(
+        follow_redirects=False,
+        timeout=3.5,
+        trust_env=False,
+    ) as client:
         async def first_valid(urls: list[str], min_size: int) -> tuple[bytes, str] | None:
             results = await asyncio.gather(*(
                 _try_url(client, candidate, min_size=min_size) for candidate in urls
@@ -262,8 +414,8 @@ async def proxy_logo_best(
 ):
     """Single call: resolve company → domains → fetch first valid logo image."""
     cache_key = f"best:{company}:{url}"
-    if cache_key in _CACHE:
-        content, media_type = _CACHE[cache_key]
+    if cached := _cache_get(cache_key):
+        content, media_type = cached
         return Response(content=content, media_type=media_type,
                         headers={"Cache-Control": "public, max-age=604800, immutable"})
 
@@ -279,8 +431,7 @@ async def proxy_logo_best(
         raise HTTPException(status_code=404, detail="No logo found")
 
     content, media_type = result
-    if len(_CACHE) < _MAX_CACHE:
-        _CACHE[cache_key] = (content, media_type)
+    _cache_set(cache_key, (content, media_type))
 
     return Response(content=content, media_type=media_type,
                     headers={"Cache-Control": "public, max-age=604800, immutable"})
@@ -295,28 +446,30 @@ async def proxy_logo(
     if not _ALLOWED.match(url):
         raise HTTPException(status_code=400, detail="URL not permitted")
 
-    if url in _CACHE:
-        content, media_type = _CACHE[url]
+    if cached := _cache_get(url):
+        content, media_type = cached
         return Response(content=content, media_type=media_type,
                         headers={"Cache-Control": "public, max-age=604800, immutable"})
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=5) as client:
+    async with httpx.AsyncClient(
+        follow_redirects=False,
+        timeout=5,
+        trust_env=False,
+    ) as client:
         try:
-            resp = await client.get(url, headers=_HEADERS)
-        except Exception as exc:
+            result = await _fetch_image(client, url)
+        except UnsafeLogoURL as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except LogoTooLarge:
+            raise HTTPException(status_code=413, detail="Remote image is too large")
+        except httpx.HTTPError as exc:
             log.debug("logo_proxy fetch error %s: %s", url, exc)
             raise HTTPException(status_code=502, detail="Fetch failed")
 
-    if resp.status_code != 200:
+    if result is None:
         raise HTTPException(status_code=404, detail="Not found")
-
-    media_type = resp.headers.get("content-type", "image/png").split(";")[0].strip()
-    if not media_type.startswith("image/"):
-        raise HTTPException(status_code=404, detail="Not an image")
-
-    content = resp.content
-    if len(_CACHE) < _MAX_CACHE:
-        _CACHE[url] = (content, media_type)
+    content, media_type = result
+    _cache_set(url, result)
 
     return Response(content=content, media_type=media_type,
                     headers={"Cache-Control": "public, max-age=604800, immutable"})

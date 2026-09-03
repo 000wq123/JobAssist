@@ -69,14 +69,15 @@ export default function TagInput({
 
       <div
         onClick={() => inputRef.current?.focus()}
-        className="min-h-9 flex flex-wrap gap-1.5 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 py-1.5 focus-within:border-[var(--color-accent-500)] focus-within:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] hover:border-[var(--color-border-strong)] cursor-text"
+        className="min-h-[44px] md:min-h-9 flex flex-wrap gap-1.5 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 py-1.5 focus-within:border-[var(--color-accent-500)] focus-within:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] hover:border-[var(--color-border-strong)] cursor-text"
       >
         {tags.map((t) => (
           <span
             key={t}
-            className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[12px] text-[var(--color-fg)]"
+            className="inline-flex items-center gap-0.5 h-7 pl-2.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[12px] text-[var(--color-fg)]"
           >
             {t}
+            {/* 44px hit area on phones; compact chip via negative margin */}
             <button
               type="button"
               onClick={(e) => {
@@ -84,7 +85,7 @@ export default function TagInput({
                 remove(t);
               }}
               aria-label={`${t} entfernen`}
-              className="h-6 w-6 inline-flex items-center justify-center rounded-full text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+              className="h-11 w-11 my-auto -mx-1 inline-flex items-center justify-center rounded-full text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
             >
               <X className="h-3 w-3" />
             </button>
@@ -98,7 +99,7 @@ export default function TagInput({
           onBlur={() => draft && add(draft)}
           placeholder={tags.length === 0 ? placeholder : ""}
           disabled={atCap}
-          className="flex-1 min-w-[120px] bg-transparent h-7 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)] focus:outline-none disabled:opacity-50"
+          className="flex-1 min-w-[120px] bg-transparent h-11 md:h-7 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)] focus:outline-none disabled:opacity-50"
         />
       </div>
 
@@ -109,7 +110,7 @@ export default function TagInput({
               key={s}
               type="button"
               onClick={() => add(s)}
-              className="h-8 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
+              className="min-h-[44px] md:min-h-0 md:h-8 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
             >
               + {s}
             </button>

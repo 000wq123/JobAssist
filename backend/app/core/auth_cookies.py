@@ -6,7 +6,7 @@ Design:
   prevents it from being attached to non-auth requests, dramatically
   reducing the impact of any future CSRF vulnerability.
 - The access token is still returned in the JSON response body and lives
-  only in the SPA's in-memory state (Zustand). Bearer-header auth on every
+  only in the SPA's tab-scoped sessionStorage-backed auth store. Bearer-header auth on every
   other endpoint is unchanged.
 
 See `Settings` in `app.core.config` for cookie deployment modes.

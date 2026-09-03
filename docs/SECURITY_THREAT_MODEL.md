@@ -31,13 +31,13 @@ JobAssist is a multi-tenant SaaS that lets each user:
                              │  HTTPS, withCredentials=true
                              ▼
                 ┌──────────────────────────┐
-                │  Backend API (FastAPI)   │ (Render web service)
+                │  Backend API (FastAPI)   │ (Railway service)
                 │  api.* / railway.app     │
                 └────┬──────┬──────┬───────┘
                      │      │      │
             ┌────────▼┐  ┌──▼───┐  ┌──▼────────┐
             │Postgres │  │Stripe│  │ Groq /    │
-            │(Render) │  │      │  │ Adzuna /  │
+            │(Railway)│  │      │  │ Adzuna /  │
             └─────────┘  └──────┘  │ email     │
                                    └───────────┘
 ```
@@ -97,21 +97,21 @@ residual risk an on-call engineer should remember.
 
 | Threat | Mitigation | Residual risk |
 |---|---|---|
-| Refresh-token theft via XSS | Refresh token is HttpOnly cookie. Access token lives in `localStorage` (necessary for cross-tab sync), so XSS = full session compromise for ≤ 30 min. **Mitigated** by strict CSP on the SPA (`vercel.json` line 16: `script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.sentry.io …; object-src 'none'; base-uri 'self'`) and on the API (`backend/app/middleware.py:65` — `default-src 'none'; frame-ancestors 'none'`). | `'unsafe-inline'` is still in `script-src` because the React build inlines small chunks; a nonce-based CSP is the next ratchet. Never embed user-supplied HTML. |
-| Direct DB dump | DB lives on Render with managed backups + at-rest encryption. Admin access is gated by Render org SSO. | Render IAM changes need a quarterly audit. |
+| Refresh-token theft via XSS | Refresh tokens are HttpOnly cookies and are never returned in JSON. The access token lives in `sessionStorage`, so an active XSS can use that tab's session for at most the configured 60-minute access-token lifetime. Bearer tokens carry a server-checked auth version and password resets invalidate outstanding sessions. | CSP reduces exposure but does not make an XSS harmless. Never embed user-supplied HTML. |
+| Direct DB dump | Production PostgreSQL is hosted with the Railway deployment and uses provider-managed access controls and encryption. | Provider access and backup settings need a quarterly audit. |
 | PII in **Sentry** payloads | `backend/app/core/monitoring.py` `before_send` hook (`_scrub_event`) strips `Authorization`, `Cookie`, `Set-Cookie`, `x-admin-secret`, `password`, `token`, `refresh_token`, `secret`, `api_key`, `stripe_*`, `groq_api_key`, JWTs, and Stripe-style secret patterns from headers, request body, query, breadcrumbs, exception values, and `user.ip_address` / `user.email`. `send_default_pii=False`. | Hook is best-effort; any exception inside it drops the event entirely (safer than leaking). New SDK integrations need re-verification. |
 | PII in **stdout / structured logs** | `backend/app/core/logging.py` `SecretRedactingFilter` scrubs every record (message, %-args, `extra={}` fields) using the same `SENSITIVE_KEYS` + `SECRET_VALUE_PATTERNS` as the Sentry hook — both share `backend/app/core/redaction.py`. Locked by `backend/tests/test_redaction.py` (22 cases incl. case-insensitive key match, nested dicts/lists, JWT/Stripe/Groq value patterns, non-mutation, request-id preservation). | A custom log formatter that bypasses the root handler would also bypass redaction; new handlers must add the filter explicitly. New secret patterns / key names need adding to `redaction.py`. |
 | Avatar exposure | Avatars are stored as base64 inside `user_profiles.avatar` (`Text` column), retrievable only via the authenticated profile API; never served from a public URL. | Eats DB rows + cache lines on every profile read; migrate to object storage with signed URLs if avatars grow past ~50 KB median. |
-| Browser fingerprint disclosure | `users.fingerprint` (`@fingerprintjs/fingerprintjs` v5) is stored hashed, used only as a soft signal for account-security heuristics. Never returned in API responses. | Recital-30 personal data under GDPR — must be listed in `PRIVACY_POLICY.md` (it is) and erased on account delete (it is — `ON DELETE CASCADE` from `users`). |
+| Legacy device-hash disclosure | The nullable `users.fingerprint` column remains for legacy compatibility, but the current frontend does not collect a browser fingerprint. Historical values are included in the authenticated GDPR export and erased with the account. | Remove the legacy column in a future schema cleanup after confirming production contains no needed values. |
 | 3rd-party data sharing (Groq, Adzuna, Stripe) | Documented in `PRIVACY_POLICY.md` § "Subprocessors". | Each new subprocessor needs a contract review + privacy-policy update. |
-| Email enumeration on `/auth/register` and `/auth/forgot-password` | Both endpoints return uniform "check your email" responses; no leak of whether the address is registered. | None significant. |
+| Email enumeration | `/auth/forgot-password` returns a uniform response. Registration still reports duplicate addresses so existing users get an actionable message. | The registration response allows account enumeration; rate limiting reduces bulk probing but does not remove the signal. |
 
 ### Denial of service
 
 | Threat | Mitigation | Residual risk |
 |---|---|---|
-| Brute-force login | `slowapi` `Limiter` on `/auth/login`. Failed attempts return 401 + delayed response. | Distributed credential-stuffing attack can still saturate; rely on Render's edge. |
-| Resource exhaustion via AI endpoints | Per-feature daily/monthly quotas enforced at request time via `require_usage` / `get_usage_count` / `increment_usage` in `backend/app/core/usage.py`. Per-request timeout `TIMEOUT_AI_MS=90s` on the client (`frontend/src/services/api.js`); the Groq SDK uses its own connection timeout. | A single user on the Max plan can still burn Groq budget — set per-plan upstream limits in the Groq dashboard. |
+| Brute-force login | `slowapi` `Limiter` on `/auth/login`. Failed attempts return 401. | Distributed credential-stuffing can still saturate the service; edge controls and monitoring remain necessary. |
+| Resource exhaustion via AI endpoints | Per-feature daily/monthly quota units are atomically reserved by `require_usage` and refunded when downstream validation or provider work raises. Per-request timeout `TIMEOUT_AI_MS=90s` is also set on the client. | A single user on the Max plan can still burn Groq budget — set per-plan upstream limits in the Groq dashboard. |
 | Job-create flood | `MAX_JOBS_PER_USER = 500` enforced in `create_job`; surfaced as a 403 with structured payload. | None significant. |
 | Adzuna upstream meltdown | Adzuna client wraps a circuit breaker; failures return `{"jobs": [], "error": ...}` instead of cascading 500s (`app/services/job_search.py`). | If circuit stays open, scheduled alerts produce empty results — surfaced on `/health/dependencies?deep=true`. |
 | Scheduler thunder (multi-worker) | Postgres advisory locks (`app/core/advisory_lock.py`) wrap every scheduled job so only one worker runs each tick. | Cron expressions are still in code; a misconfigured cron will hit DB harder than expected. |
@@ -168,16 +168,16 @@ should be addressed in priority order:
 If you suspect a live incident:
 
 1. Capture `request_id` from logs / Sentry. Cross-reference structured
-   logs (`backend` service on Render).
+   logs (`backend` service on Railway).
 2. If credential / session compromise is suspected: rotate `SECRET_KEY`
-   in Render env. This invalidates **every** access token within
-   `ACCESS_TOKEN_EXPIRE_MINUTES` (30 min) and every refresh token
+   in the Railway environment. This invalidates **every** access token and
+   every refresh token immediately
    immediately. Communicate the forced logout before flipping.
-3. If `ADMIN_SECRET` is suspected leaked: rotate via Render env. Audit
+3. If `ADMIN_SECRET` is suspected leaked: rotate it in Railway. Audit
    the structured log for `admin` events in the previous 30 days.
 4. If `STRIPE_WEBHOOK_SECRET` is suspected leaked: rotate in Stripe
    dashboard → "Developers → Webhooks" → endpoint → "Reveal signing
-   secret" → "Roll secret". Update Render env. Confirm a real webhook
+   secret" → "Roll secret". Update the Railway environment. Confirm a real webhook
    replay (Stripe dashboard → "Send test webhook") still works.
 5. File a post-mortem in `docs/incidents/YYYY-MM-DD-<slug>.md` (folder
    created on demand — first incident also creates the README).

@@ -2,9 +2,8 @@
 
 No real HTTP calls or SMTP connections are made — providers are mocked.
 """
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from app.services.email_service import (
     _rank_jobs,

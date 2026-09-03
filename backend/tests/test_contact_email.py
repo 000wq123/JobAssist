@@ -32,7 +32,16 @@ def _render_contact_html(
     safe_topic = one_line(topic)[:200]
     safe_email = email
     safe_message = message.strip()[:5000]
-    return eval('f"""' + template + '"""')
+    return eval(
+        'f"""' + template + '"""',
+        {},
+        {
+            "safe_name": safe_name,
+            "safe_topic": safe_topic,
+            "safe_email": safe_email,
+            "safe_message": safe_message,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

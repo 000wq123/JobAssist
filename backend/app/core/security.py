@@ -4,7 +4,8 @@ import secrets
 import hashlib
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from slowapi.util import get_remote_address
@@ -26,7 +27,7 @@ def get_user_id_or_ip(request: Request) -> str:
             payload = jwt.decode(
                 auth[7:], settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
             )
-            if sub := payload.get("sub"):
+            if payload.get("token_use") == "access" and (sub := payload.get("sub")):
                 return f"user:{sub}"
         except JWTError:
             pass
@@ -48,7 +49,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    to_encode.update({"exp": expire})
+    # Every signed JWT in this application uses the same signing key. An
+    # explicit token class prevents verification/password-reset tokens from
+    # being confused with bearer access tokens.
+    to_encode.update({"exp": expire, "token_use": "access"})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -75,9 +79,14 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("sub")
-        if user_id is None:
+        token_version = payload.get("auth_version")
+        if (
+            user_id is None
+            or payload.get("token_use") != "access"
+            or not isinstance(token_version, int)
+        ):
             raise credentials_exception
-    except JWTError:
+    except (JWTError, TypeError, ValueError):
         raise credentials_exception
 
     # Import here to avoid circular imports
@@ -86,6 +95,6 @@ async def get_current_user(
 
     result = await db.execute(select(User).where(User.id == int(user_id)))
     user = result.scalar_one_or_none()
-    if user is None:
+    if user is None or user.auth_version != token_version:
         raise credentials_exception
     return user

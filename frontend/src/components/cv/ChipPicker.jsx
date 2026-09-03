@@ -71,7 +71,7 @@ export default function ChipPicker({
               disabled={disabled}
               onClick={() => handleClick(o.value)}
               className={
-                "min-h-[36px] px-3.5 rounded-full border text-[13px] font-medium transition-colors " +
+                "min-h-[44px] md:min-h-[36px] min-w-[44px] md:min-w-0 px-3.5 rounded-full border text-[13px] font-medium transition-colors " +
                 (selected
                   ? "border-[var(--color-accent-500)] bg-[var(--color-accent-500)]/15 text-[var(--color-accent-200)]"
                   : "border-[var(--color-border)] text-[var(--color-fg-muted)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]") +

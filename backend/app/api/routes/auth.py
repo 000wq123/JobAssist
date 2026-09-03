@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
+import secrets
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import delete as sa_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,14 +22,9 @@ from app.core.security import (
     verify_password,
 )
 from app.core.rate_limit import limiter
-from app.models.job import Job
-from app.models.job_alert import JobAlert
 from app.models.refresh_token import RefreshToken
-from app.models.resume import Resume
-from app.models.subscription import Subscription
 from app.models.user import User
-from app.models.user_profile import UserProfile
-from app.models.usage import UsageRecord
+from app.core.user_data import DELETE_USER_DATA_MODELS, EXPORT_DATA_SPECS
 from app.schemas.user import Token, UserCreate, UserLogin, UserOut
 from app.services.email_service import send_password_reset_email, send_verification_email
 
@@ -35,10 +32,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _create_email_token(user_id: int, purpose: str, expires_minutes: int) -> str:
+def _create_email_token(
+    user_id: int,
+    purpose: str,
+    expires_minutes: int,
+    *,
+    nonce: str | None = None,
+) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+    claims = {
+        "sub": str(user_id),
+        "purpose": purpose,
+        "token_use": "email_action",
+        "exp": expire,
+    }
+    if nonce is not None:
+        claims["nonce"] = nonce
     return jwt.encode(
-        {"sub": str(user_id), "purpose": purpose, "exp": expire},
+        claims,
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,
     )
@@ -47,7 +58,10 @@ def _create_email_token(user_id: int, purpose: str, expires_minutes: int) -> str
 def _decode_email_token(token: str, expected_purpose: str) -> int:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("purpose") != expected_purpose:
+        if (
+            payload.get("token_use") != "email_action"
+            or payload.get("purpose") != expected_purpose
+        ):
             raise HTTPException(status_code=400, detail="Ungültiger Token")
         user_id = payload.get("sub")
         if not user_id:
@@ -88,7 +102,9 @@ async def register(
     token = _create_email_token(user.id, "verify", expires_minutes=1440)
     bg.add_task(send_verification_email, user.email, token)
 
-    access_token = create_access_token({"sub": str(user.id)})
+    access_token = create_access_token(
+        {"sub": str(user.id), "auth_version": getattr(user, "auth_version", 0)}
+    )
     raw_refresh, refresh_hash = generate_refresh_token()
     rt = RefreshToken(
         user_id=user.id,
@@ -99,9 +115,7 @@ async def register(
     await db.commit()
 
     set_refresh_cookie(response, raw_refresh)
-    # `refresh_token` is also returned in the body for one transitional
-    # release so existing clients still work; the SPA will ignore it.
-    return Token(access_token=access_token, refresh_token=raw_refresh)
+    return Token(access_token=access_token)
 
 
 @router.post("/login", response_model=Token)
@@ -146,7 +160,9 @@ async def login(
         else:
             kept += 1
 
-    access_token = create_access_token({"sub": str(user.id)})
+    access_token = create_access_token(
+        {"sub": str(user.id), "auth_version": getattr(user, "auth_version", 0)}
+    )
     raw_refresh, refresh_hash = generate_refresh_token()
     rt = RefreshToken(
         user_id=user.id,
@@ -157,7 +173,7 @@ async def login(
     await db.commit()
 
     set_refresh_cookie(response, raw_refresh)
-    return Token(access_token=access_token, refresh_token=raw_refresh)
+    return Token(access_token=access_token)
 
 
 class RefreshRequest(BaseModel):
@@ -217,8 +233,10 @@ async def refresh(
     # `/refresh` idempotent and concurrent-safe. Security is preserved by the
     # httpOnly + Secure + SameSite cookie, the 2-session cap at login, and the
     # explicit revoke on logout / password reset.
-    access_token = create_access_token({"sub": str(rt.user_id)})
-    return Token(access_token=access_token, refresh_token=raw)
+    access_token = create_access_token(
+        {"sub": str(rt.user_id), "auth_version": getattr(user, "auth_version", 0)}
+    )
+    return Token(access_token=access_token)
 
 
 @router.post("/logout", status_code=204)
@@ -277,7 +295,9 @@ class ResetPasswordRequest(BaseModel):
 @limiter.limit("10/minute")
 async def verify_email(request: Request, payload: VerifyEmailRequest, db: AsyncSession = Depends(get_db)) -> dict[str, str]:
     user_id = _decode_email_token(payload.token, "verify")
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User).where(User.id == user_id).with_for_update()
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
@@ -329,7 +349,15 @@ async def forgot_password(
     result = await db.execute(select(User).where(User.email == payload.email))
     user = result.scalar_one_or_none()
     if user:
-        token = _create_email_token(user.id, "reset", expires_minutes=60)
+        nonce = secrets.token_urlsafe(32)
+        user.password_reset_nonce = nonce
+        await db.commit()
+        token = _create_email_token(
+            user.id,
+            "reset",
+            expires_minutes=60,
+            nonce=nonce,
+        )
         bg.add_task(send_password_reset_email, user.email, token)
     return {"message": "Falls ein Konto mit dieser E-Mail existiert, wurde eine E-Mail gesendet"}
 
@@ -338,11 +366,26 @@ async def forgot_password(
 @limiter.limit("5/minute")
 async def reset_password(request: Request, payload: ResetPasswordRequest, db: AsyncSession = Depends(get_db)) -> dict[str, str]:
     user_id = _decode_email_token(payload.token, "reset")
-    result = await db.execute(select(User).where(User.id == user_id))
+    try:
+        token_payload = jwt.decode(
+            payload.token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Token ist ungültig oder abgelaufen")
+    nonce = token_payload.get("nonce")
+    result = await db.execute(
+        select(User).where(User.id == user_id).with_for_update()
+    )
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    if not nonce or not secrets.compare_digest(nonce, user.password_reset_nonce or ""):
+        raise HTTPException(status_code=400, detail="Token ist ungültig oder wurde bereits verwendet")
     user.hashed_password = hash_password(payload.new_password)
+    user.password_reset_nonce = None
+    user.auth_version += 1
     await db.execute(sa_delete(RefreshToken).where(RefreshToken.user_id == user.id))
     await db.commit()
     return {"message": "Passwort erfolgreich zurückgesetzt"}
@@ -364,67 +407,54 @@ async def export_account_data(
 
     The response is served as an attachment so browsers prompt for download.
     """
-    from datetime import datetime as _dt
+    from datetime import date as _date, datetime as _dt
     from fastapi.responses import JSONResponse as _JSONResponse
+    from sqlalchemy import inspect as _sa_inspect
 
     def _serialize(obj) -> dict:
         """Best-effort SQLAlchemy row → JSON-safe dict."""
         if obj is None:
             return {}
         out: dict = {}
-        for col in obj.__table__.columns:
-            value = getattr(obj, col.name, None)
-            if isinstance(value, _dt):
+        for attribute in _sa_inspect(obj).mapper.column_attrs:
+            value = getattr(obj, attribute.key, None)
+            if isinstance(value, (_date, _dt)):
                 value = value.isoformat()
-            out[col.name] = value
+            out[attribute.key] = value
         return out
-
-    # Fetch everything in parallel-friendly sequential queries (small per-user).
-    profile_res = await db.execute(select(UserProfile).where(UserProfile.user_id == current_user.id))
-    profile = profile_res.scalar_one_or_none()
-
-    resumes_res = await db.execute(select(Resume).where(Resume.user_id == current_user.id))
-    resumes = resumes_res.scalars().all()
-
-    jobs_res = await db.execute(select(Job).where(Job.user_id == current_user.id))
-    jobs = jobs_res.scalars().all()
-
-    alerts_res = await db.execute(select(JobAlert).where(JobAlert.user_id == current_user.id))
-    alerts = alerts_res.scalars().all()
-
-    subscription_res = await db.execute(select(Subscription).where(Subscription.user_id == current_user.id))
-    subscription = subscription_res.scalar_one_or_none()
-
-    usage_res = await db.execute(select(UsageRecord).where(UsageRecord.user_id == current_user.id))
-    usage = usage_res.scalars().all()
 
     user_dict = _serialize(current_user)
     # Never export credentials, even hashed.
     user_dict.pop("hashed_password", None)
-    user_dict.pop("fingerprint", None)  # device-fingerprinting metadata
+    user_dict.pop("password_reset_nonce", None)
 
     payload = {
-        "export_version": 1,
-        "exported_at": _dt.utcnow().isoformat() + "Z",
+        "export_version": 2,
+        "exported_at": _dt.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "user": user_dict,
-        "profile": _serialize(profile) if profile else None,
-        "resumes": [
-            {k: v for k, v in _serialize(r).items() if k not in {"content"}}
-            for r in resumes
+        "security_credentials_excluded": [
+            "hashed_password",
+            "password_reset_nonce",
+            "refresh_token_hashes",
         ],
-        "resume_content_note": "Resume binary content is excluded from this export for size. Contact support if you need the source files.",
-        "jobs": [_serialize(j) for j in jobs],
-        "job_alerts": [_serialize(a) for a in alerts],
-        "subscription": _serialize(subscription) if subscription else None,
-        "usage_records": [_serialize(u) for u in usage],
     }
+    for spec in EXPORT_DATA_SPECS:
+        result = await db.execute(
+            select(spec.model).where(spec.model.user_id == current_user.id)
+        )
+        rows = result.scalars().all()
+        payload[spec.key] = (
+            [_serialize(row) for row in rows]
+            if spec.many
+            else (_serialize(rows[0]) if rows else None)
+        )
 
     logger.info(
         "gdpr.export",
         extra={"user_id": current_user.id, "request_id": getattr(request.state, "request_id", "-")},
     )
 
-    filename = f"jobassist-export-{current_user.id}-{_dt.utcnow().strftime('%Y%m%d')}.json"
+    filename = f"jobassist-export-{current_user.id}-{_dt.now(timezone.utc).strftime('%Y%m%d')}.json"
     return _JSONResponse(
         content=payload,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
@@ -447,13 +477,8 @@ async def delete_account(
         raise HTTPException(status_code=400, detail="Passwort ist nicht korrekt")
 
     try:
-        await db.execute(sa_delete(JobAlert).where(JobAlert.user_id == current_user.id))
-        await db.execute(sa_delete(Job).where(Job.user_id == current_user.id))
-        await db.execute(sa_delete(Resume).where(Resume.user_id == current_user.id))
-        await db.execute(sa_delete(UserProfile).where(UserProfile.user_id == current_user.id))
-        await db.execute(sa_delete(Subscription).where(Subscription.user_id == current_user.id))
-        await db.execute(sa_delete(UsageRecord).where(UsageRecord.user_id == current_user.id))
-        await db.execute(sa_delete(RefreshToken).where(RefreshToken.user_id == current_user.id))
+        for model in DELETE_USER_DATA_MODELS:
+            await db.execute(sa_delete(model).where(model.user_id == current_user.id))
         await db.execute(sa_delete(User).where(User.id == current_user.id))
         await db.commit()
     except Exception:

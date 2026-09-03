@@ -3,9 +3,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from pydantic import BaseModel
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import case, func as sa_func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -311,6 +312,7 @@ async def run_alert_now(
         alert.location,
         alert.job_type,
         alert.email,
+        current_user.id,
     )
 
     remaining = (run_limit - locked_user.daily_manual_run_count) if run_limit != -1 else -1
@@ -375,33 +377,169 @@ async def unsubscribe(request: Request, payload: UnsubscribeRequest, db: AsyncSe
     return {"message": "Du wurdest erfolgreich abgemeldet"}
 
 
-async def _run_and_send(alert_id: int, keywords: str, location: str, job_type: str, email: str):
-    try:
-        now = datetime.now(timezone.utc)
+async def _run_and_send(
+    alert_id: int,
+    keywords: str,
+    location: str,
+    job_type: str,
+    email: str,
+    manual_user_id: int | None = None,
+):
+    # The positional details are retained for compatibility with already
+    # queued BackgroundTasks; the durable row is the source of truth.
+    del keywords, location, job_type, email
+    sent = await _deliver_alert(alert_id, force=True, use_cache=False)
+    if not sent and manual_user_id is not None:
         async with AsyncSessionLocal() as session:
-            res = await session.execute(select(JobAlert).where(JobAlert.id == alert_id))
-            saved_alert = res.scalar_one_or_none()
-            if saved_alert:
-                saved_alert.last_sent_at = now
-                await session.commit()
+            await session.execute(
+                update(User)
+                .where(User.id == manual_user_id)
+                .values(
+                    daily_manual_run_count=case(
+                        (User.daily_manual_run_count > 0, User.daily_manual_run_count - 1),
+                        else_=0,
+                    )
+                )
+            )
+            await session.commit()
+    return sent
+
+
+async def _claim_alert(
+    alert_id: int,
+    *,
+    force: bool,
+    sent_before: datetime | None = None,
+) -> bool:
+    now = datetime.now(timezone.utc)
+    lease_expired = now - timedelta(minutes=15)
+    conditions = [
+        JobAlert.id == alert_id,
+        JobAlert.is_active.is_(True),
+        or_(JobAlert.claimed_at.is_(None), JobAlert.claimed_at <= lease_expired),
+    ]
+    if sent_before is not None:
+        conditions.append(
+            or_(JobAlert.last_sent_at.is_(None), JobAlert.last_sent_at <= sent_before)
+        )
+    if not force:
+        conditions.append(
+            or_(JobAlert.next_attempt_at.is_(None), JobAlert.next_attempt_at <= now)
+        )
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            update(JobAlert)
+            .where(*conditions)
+            .values(
+                delivery_status="in_flight",
+                claimed_at=now,
+                last_attempt_at=now,
+                delivery_error=None,
+            )
+            .execution_options(synchronize_session=False)
+        )
+        await session.commit()
+        return result.rowcount == 1
+
+
+async def _finish_delivery(
+    alert_id: int,
+    *,
+    status: str,
+    error: str | None = None,
+    retry_after: timedelta | None = None,
+) -> None:
+    now = datetime.now(timezone.utc)
+    values: dict = {
+        "delivery_status": status,
+        "claimed_at": None,
+        "delivery_error": error[:500] if error else None,
+        "next_attempt_at": now + retry_after if retry_after else None,
+    }
+    if status == "sent":
+        values.update(last_sent_at=now, failure_count=0)
+    elif status == "no_results":
+        values.update(failure_count=0)
+    else:
+        values["failure_count"] = JobAlert.failure_count + 1
+
+    async with AsyncSessionLocal() as session:
+        await session.execute(
+            update(JobAlert)
+            .where(JobAlert.id == alert_id)
+            .values(**values)
+            .execution_options(synchronize_session=False)
+        )
+        await session.commit()
+
+
+async def _deliver_alert(
+    alert_id: int,
+    *,
+    force: bool = False,
+    sent_before: datetime | None = None,
+    use_cache: bool = False,
+) -> bool:
+    """Claim, deliver, and durably record one alert attempt."""
+    if not await _claim_alert(alert_id, force=force, sent_before=sent_before):
+        return False
+
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(JobAlert).where(JobAlert.id == alert_id))
+            alert = result.scalar_one_or_none()
+            if alert is None:
+                return False
+            details = {
+                "keywords": alert.keywords,
+                "location": alert.location or "",
+                "job_type": alert.job_type or "",
+                "email": alert.email,
+                "failure_count": alert.failure_count,
+            }
 
         results = await search_jobs(
-            keywords=keywords,
-            location=location or "",
-            job_type=job_type or "",
+            keywords=details["keywords"],
+            location=details["location"],
+            job_type=details["job_type"],
             page=1,
+            use_cache=use_cache,
         )
         jobs = results.get("jobs", [])
+        if not jobs:
+            if results.get("error"):
+                raise RuntimeError(str(results["error"]))
+            await _finish_delivery(
+                alert_id,
+                status="no_results",
+                retry_after=timedelta(hours=6),
+            )
+            return False
+
         token = _make_unsubscribe_token(alert_id)
         app_url = getattr(settings, "FRONTEND_URL", "https://jobassist.tech")
-        unsubscribe_url = f"{app_url}/unsubscribe?token={token}"
-        await asyncio.to_thread(
+        sent = await asyncio.to_thread(
             send_job_alert_email,
-            to_email=email,
-            keywords=keywords,
-            location=location or "",
+            to_email=details["email"],
+            keywords=details["keywords"],
+            location=details["location"],
             jobs=jobs,
-            unsubscribe_url=unsubscribe_url,
+            unsubscribe_url=f"{app_url}/unsubscribe?token={token}",
         )
-    except Exception as e:
-        logger.error(f"Alert run failed for alert {alert_id}: {e}", exc_info=True)
+        if not sent:
+            raise RuntimeError("Email provider did not confirm delivery")
+        await _finish_delivery(alert_id, status="sent")
+        logger.info("Job alert sent", extra={"alert_id": alert_id, "job_count": len(jobs)})
+        return True
+    except Exception as exc:
+        failure_count = int(details.get("failure_count", 0)) if "details" in locals() else 0
+        delay_minutes = min(360, 15 * (2 ** min(failure_count, 4)))
+        await _finish_delivery(
+            alert_id,
+            status="failed",
+            error=str(exc),
+            retry_after=timedelta(minutes=delay_minutes),
+        )
+        logger.error("Alert delivery failed for alert %s: %s", alert_id, exc, exc_info=True)
+        return False

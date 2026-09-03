@@ -123,7 +123,6 @@ def _call_groq(prompt: str, system: str = "", max_tokens: int = 2048, temperatur
         (MODEL_FALLBACK, 10),
     ]
 
-    last_err = None
     for model_to_use, wait in schedule:
         if wait:
             time.sleep(wait)
@@ -144,7 +143,6 @@ def _call_groq(prompt: str, system: str = "", max_tokens: int = 2048, temperatur
         except Exception as e:
             err = str(e).lower()
             if "rate" in err or "429" in err:
-                last_err = e
                 continue
             if "api key" in err or "authentication" in err or "401" in err:
                 raise HTTPException(status_code=503, detail="AI service temporarily unavailable.")
@@ -333,12 +331,18 @@ def generate_company_research(company_name: str, job_description: str = "", know
     known_info = ""
     if known_data:
         parts = []
-        if known_data.get("ceo"):        parts.append(f"CEO: {known_data['ceo']}")
-        if known_data.get("mission"):    parts.append(f"Mission: {known_data['mission']}")
-        if known_data.get("industry"):   parts.append(f"Branche: {known_data['industry']}")
-        if known_data.get("employees"):  parts.append(f"Mitarbeiter: {known_data['employees']}")
-        if known_data.get("founded"):    parts.append(f"Gegründet: {known_data['founded']}")
-        if known_data.get("hq"):         parts.append(f"Hauptsitz: {known_data['hq']}")
+        if known_data.get("ceo"):
+            parts.append(f"CEO: {known_data['ceo']}")
+        if known_data.get("mission"):
+            parts.append(f"Mission: {known_data['mission']}")
+        if known_data.get("industry"):
+            parts.append(f"Branche: {known_data['industry']}")
+        if known_data.get("employees"):
+            parts.append(f"Mitarbeiter: {known_data['employees']}")
+        if known_data.get("founded"):
+            parts.append(f"Gegründet: {known_data['founded']}")
+        if known_data.get("hq"):
+            parts.append(f"Hauptsitz: {known_data['hq']}")
         known_info = "\n".join(parts)
 
     system = (

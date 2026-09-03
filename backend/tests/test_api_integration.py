@@ -1,4 +1,4 @@
-from pathlib import Path
+from datetime import date
 
 import pytest
 import pytest_asyncio
@@ -18,10 +18,15 @@ from app.models import subscription as _subscription_model  # noqa: F401
 from app.models import usage as _usage_model  # noqa: F401
 from app.models import user as _user_model  # noqa: F401
 from app.models import user_profile as _user_profile_model  # noqa: F401
+from app.models.cv_library_entry import CvLibraryEntry
+from app.models.deadline import Deadline
+from app.models.inbox_item import InboxItem
 from app.models.job_alert import JobAlert
+from app.models.profile_v2 import ProfileV2
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.models.user_profile import UserProfile
+from app.models.web_push_subscription import WebPushSubscription
 
 
 @pytest_asyncio.fixture
@@ -107,14 +112,11 @@ async def test_auth_register_verify_refresh_and_delete_account_integration(integ
 
     refresh_response = await client.post(
         "/api/auth/refresh",
-        json={"refresh_token": tokens["refresh_token"]},
     )
     assert refresh_response.status_code == 200, refresh_response.text
     refreshed = refresh_response.json()
     assert refreshed["access_token"]
-    # Refresh is intentionally non-rotating: the same refresh token stays
-    # valid so parallel tabs don't invalidate each other (multi-tab fix).
-    assert refreshed["refresh_token"] == tokens["refresh_token"]
+    assert "refresh_token" not in refreshed
 
     delete_response = await client.post(
         "/api/auth/delete-account",
@@ -168,6 +170,82 @@ async def test_auth_refresh_and_resend_negative_paths_integration(integration_en
     )
     assert resend_after_verify.status_code == 200
     assert resend_after_verify.json()["message"] == "E-Mail bereits bestätigt"
+
+
+@pytest.mark.asyncio
+async def test_gdpr_export_and_delete_cover_all_sensitive_profile_stores(integration_env):
+    client = integration_env["client"]
+    session_factory = integration_env["session_factory"]
+    tokens = await _register_user(client, email="privacy@gmail.com")
+
+    async with session_factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == "privacy@gmail.com"))
+        ).scalar_one()
+        user.fingerprint = "legacy-device-hash"
+        session.add_all(
+            [
+                ProfileV2(
+                    user_id=user.id,
+                    vorname="Anna",
+                    nachname="Muster",
+                    geburtsdatum=date(2007, 5, 3),
+                ),
+                CvLibraryEntry(
+                    user_id=user.id,
+                    entry_id="cv-1",
+                    name="Praktikum CV",
+                    profile={"vorname": "Anna", "telefon": "+431234"},
+                ),
+                WebPushSubscription(
+                    user_id=user.id,
+                    endpoint="https://push.example/subscription",
+                    p256dh="public-key",
+                    auth="auth-secret",
+                ),
+                InboxItem(user_id=user.id, kind="system", title="Willkommen"),
+                Deadline(
+                    user_id=user.id,
+                    title="Bewerbungsfrist",
+                    closes_on=date(2026, 10, 1),
+                    source="user",
+                ),
+            ]
+        )
+        await session.commit()
+
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+    export_response = await client.get("/api/auth/export-data", headers=headers)
+    assert export_response.status_code == 200, export_response.text
+    exported = export_response.json()
+    assert exported["export_version"] == 2
+    assert exported["user"]["fingerprint"] == "legacy-device-hash"
+    assert exported["profile_v2"]["vorname"] == "Anna"
+    assert exported["profile_v2"]["geburtsdatum"] == "2007-05-03"
+    assert exported["cv_library_entries"][0]["profile"]["telefon"] == "+431234"
+    assert exported["web_push_subscriptions"][0]["endpoint"].startswith("https://")
+    assert exported["inbox_items"][0]["title"] == "Willkommen"
+    assert exported["deadlines"][0]["closes_on"] == "2026-10-01"
+    assert "hashed_password" not in exported["user"]
+    assert "password_reset_nonce" not in exported["user"]
+
+    delete_response = await client.post(
+        "/api/auth/delete-account",
+        json={"password": "Password1"},
+        headers=headers,
+    )
+    assert delete_response.status_code == 200, delete_response.text
+
+    async with session_factory() as session:
+        for model in (
+            ProfileV2,
+            CvLibraryEntry,
+            WebPushSubscription,
+            InboxItem,
+            Deadline,
+        ):
+            rows = (await session.execute(select(model))).scalars().all()
+            assert rows == []
 
 
 @pytest.mark.asyncio

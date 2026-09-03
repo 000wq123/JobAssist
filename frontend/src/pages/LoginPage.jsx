@@ -90,7 +90,7 @@ export default function LoginPage() {
             </label>
             <Link
               to="/forgot-password"
-              className="text-[12px] font-medium hover:underline transition-colors"
+              className="inline-flex items-center min-h-[44px] px-2 -mx-2 text-[12px] font-medium hover:underline transition-colors"
               style={{ color: "var(--ja-auth-link, #e30613)" }}
             >
               Vergessen?
@@ -116,7 +116,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               // eslint-disable-next-line no-restricted-syntax -- icon overlay inside relative input, not layout
-              className="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
+              className="absolute inset-y-0 right-0 flex items-center px-3 w-11 justify-center transition-colors"
               tabIndex={-1}
               style={{ color: "var(--ja-auth-muted, #909090)" }}
               aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}
@@ -155,7 +155,7 @@ export default function LoginPage() {
         Noch kein Konto?{" "}
         <Link
           to="/register"
-          className="font-semibold hover:underline transition-colors"
+          className="inline-flex items-center min-h-[44px] font-semibold hover:underline transition-colors"
           style={{ color: "var(--ja-auth-link, #e30613)" }}
         >
           Jetzt registrieren

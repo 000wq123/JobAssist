@@ -29,6 +29,10 @@ class JobAlertOut(BaseModel):
     frequency: str
     is_active: bool
     last_sent_at: Optional[datetime]
+    delivery_status: str = "idle"
+    last_attempt_at: Optional[datetime] = None
+    next_attempt_at: Optional[datetime] = None
+    failure_count: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
 

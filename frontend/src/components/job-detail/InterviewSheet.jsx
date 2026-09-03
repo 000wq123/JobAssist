@@ -96,7 +96,7 @@ export default function InterviewSheet({ open, onClose, job, mutate, pending, re
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
           {mode === "practice" && (
-            <button onClick={exitPractice} className="grid place-items-center w-7 h-7 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Zurück">
+            <button onClick={exitPractice} className="grid place-items-center h-11 w-11 -m-2 md:m-0 md:w-7 md:h-7 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Zurück">
               <ArrowLeft className="w-3.5 h-3.5" />
             </button>
           )}
@@ -117,7 +117,7 @@ export default function InterviewSheet({ open, onClose, job, mutate, pending, re
           {mode === "practice" && (
             <span className="text-[11px] tabular-nums text-[var(--color-fg-dim)] mr-1">{idx + 1} / {total}</span>
           )}
-          <button onClick={onClose} className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
+          <button onClick={onClose} className="grid place-items-center h-11 w-11 -m-1.5 md:m-0 md:w-8 md:h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
             <X className="w-4 h-4" />
           </button>
         </div>

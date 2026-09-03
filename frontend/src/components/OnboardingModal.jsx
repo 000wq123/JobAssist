@@ -93,7 +93,7 @@ function OnboardingModalInner({ onDone }) {
           type="button"
           onClick={close}
           aria-label="Schließen"
-          className="absolute top-4 right-4 h-7 w-7 grid place-items-center rounded-lg text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-white/[0.06] transition-colors"
+          className="absolute top-2 right-2 h-11 w-11 grid place-items-center rounded-lg text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-white/[0.06] transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -157,14 +157,23 @@ function OnboardingModalInner({ onDone }) {
               key={i}
               type="button"
               onClick={() => setIdx(i)}
-              className="transition-all rounded-full"
+              className="transition-all rounded-full grid place-items-center h-9"
               style={{
-                width: i === idx ? "18px" : "5px",
-                height: "5px",
-                background: i === idx ? "rgba(255,255,255,0.70)" : "rgba(255,255,255,0.14)",
+                width: i === idx ? "24px" : "11px",
+                background: "transparent",
               }}
               aria-label={`Schritt ${i + 1}`}
-            />
+              aria-current={i === idx ? "step" : undefined}
+            >
+              <span
+                className="block rounded-full"
+                style={{
+                  width: i === idx ? "18px" : "5px",
+                  height: "5px",
+                  background: i === idx ? "rgba(255,255,255,0.70)" : "rgba(255,255,255,0.14)",
+                }}
+              />
+            </button>
           ))}
         </div>
       </div>

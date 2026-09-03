@@ -80,8 +80,6 @@ export default defineConfig({
       exclude: [
         'src/main.jsx',
         'src/**/index.js',
-        // Manual debug helper, see file header.
-        'src/utils/authTest.js',
       ],
       thresholds: {
         lines: 22,

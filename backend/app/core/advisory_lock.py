@@ -1,10 +1,9 @@
 """Cross-process scheduler coordination via PostgreSQL advisory locks.
 
-Render runs the backend with `--workers 2` (and could scale higher), which
+Railway runs the backend with `--workers 2` (and could scale higher), which
 means the FastAPI lifespan starts the scheduler loops once **per worker**.
 Without coordination, daily resets and stale-user cleanup would run twice;
-job-alert dispatch is already protected at the row level by an atomic
-`UPDATE ... WHERE last_sent_at <= threshold`, but the helpers below let us
+job-alert dispatch is also protected by an atomic row lease, but the helpers below let us
 guarantee at-most-once execution for non-row-level work as well.
 
 On SQLite (used by tests) advisory locks don't exist; the helpers degrade

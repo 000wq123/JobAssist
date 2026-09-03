@@ -115,7 +115,7 @@ export default function StepErfahrungen({ profile, onChange }) {
                   onClick={() => move(i, -1)}
                   disabled={i === 0}
                   aria-label="Nach oben"
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-25 disabled:cursor-not-allowed"
+                  className="h-11 w-11 -m-1.5 md:m-0 md:h-7 md:w-7 inline-flex items-center justify-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-25 disabled:cursor-not-allowed"
                 >
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
@@ -124,7 +124,7 @@ export default function StepErfahrungen({ profile, onChange }) {
                   onClick={() => move(i, +1)}
                   disabled={i === list.length - 1}
                   aria-label="Nach unten"
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-25 disabled:cursor-not-allowed"
+                  className="h-11 w-11 -m-1.5 md:m-0 md:h-7 md:w-7 inline-flex items-center justify-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-25 disabled:cursor-not-allowed"
                 >
                   <ArrowDown className="h-3.5 w-3.5" />
                 </button>
@@ -134,7 +134,7 @@ export default function StepErfahrungen({ profile, onChange }) {
                 type="button"
                 onClick={() => openEdit(exp)}
                 aria-label={`${exp.titel || "Eintrag"} bearbeiten`}
-                className="self-start h-8 w-8 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:border-[var(--color-border-strong)]"
+                className="self-start h-11 w-11 -m-1.5 md:m-0 md:h-8 md:w-8 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:border-[var(--color-border-strong)]"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
@@ -147,7 +147,7 @@ export default function StepErfahrungen({ profile, onChange }) {
         <button
           type="button"
           onClick={() => openAdd(null)}
-          className="self-start inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[13px] font-medium text-[var(--color-fg)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-elev-2)]"
+          className="self-start inline-flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] text-[13px] font-medium text-[var(--color-fg)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-elev-2)]"
         >
           <Plus className="h-3.5 w-3.5" />
           Erfahrung hinzufügen
@@ -163,7 +163,7 @@ export default function StepErfahrungen({ profile, onChange }) {
                 key={s}
                 type="button"
                 onClick={() => openAdd({ art: s, titel: s })}
-                className="h-8 px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
+                className="min-h-[44px] px-3 rounded-full border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
               >
                 + {s}
               </button>

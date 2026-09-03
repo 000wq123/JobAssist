@@ -31,7 +31,7 @@ JobAssist web application at {{PRODUCT_URL}} and the API at
 |---|---|---|
 | Account identifiers | email, hashed password, full name | registration form |
 | Profile data        | preferred locations, salary range, job types, industries, experience level, avatar image | settings page |
-| Curriculum vitae    | uploaded PDF/DOCX text, structured parse | resume upload |
+| Curriculum vitae    | uploaded PDF/TXT text, structured parse | resume upload |
 | Job applications    | company, role, URL, notes, deadline, status, AI-generated cover letters and interview Q&A | job tracker |
 | Job alerts          | search keywords, location filters, frequency | alerts page |
 | Communication       | feedback, support requests | contact form |
@@ -41,7 +41,7 @@ JobAssist web application at {{PRODUCT_URL}} and the API at
 | Category | Examples | Why |
 |---|---|---|
 | Authentication state   | refresh tokens (httpOnly cookie), session timestamps | keep you logged in |
-| Browser fingerprint    | per-account device hash | account-security signals |
+| Legacy device hash field | no current collection; historical test/legacy values may remain until export or account deletion | legacy compatibility |
 | Usage counters         | per-feature daily / monthly counts | enforce plan quotas |
 | Diagnostic logs        | structured logs with `request_id`, status, latency | operational debugging |
 | Error reports          | stack traces (with redacted PII) via Sentry | bug triage |

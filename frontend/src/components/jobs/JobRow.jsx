@@ -100,22 +100,21 @@ export default function JobRow({ job, onClick, onSave, isSaved = false, saving =
         </span>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-0.5 flex-shrink-0">
+      {/* Actions — compact icons, ≥44px tappable wrappers on phones */}
+      <div className="flex items-center -mx-1 sm:mx-0">
         {!compact && onSave && (
           <button
             type="button"
             onClick={onSave}
             disabled={saving || isSaved}
             className={clsx(
-              "w-8 h-8 grid place-items-center rounded-md transition-colors",
+              "grid place-items-center w-11 h-11 sm:w-8 sm:h-8 rounded-md transition-colors",
               isSaved
                 ? "text-[var(--color-accent-300)]"
                 : "text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)]",
               "disabled:opacity-50",
             )}
             aria-label={isSaved ? "Gespeichert" : "Speichern"}
-            title={isSaved ? "Gespeichert" : "Speichern"}
           >
             {isSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
           </button>
@@ -128,7 +127,6 @@ export default function JobRow({ job, onClick, onSave, isSaved = false, saving =
             onClick={(e) => e.stopPropagation()}
             className="hidden sm:grid w-8 h-8 place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
             aria-label="Original öffnen"
-            title="Original öffnen"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
@@ -136,7 +134,7 @@ export default function JobRow({ job, onClick, onSave, isSaved = false, saving =
         <button
           type="button"
           onClick={onClick}
-          className="w-8 h-8 grid place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
+          className="grid place-items-center w-11 h-11 sm:w-8 sm:h-8 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
           aria-label="Details"
         >
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />

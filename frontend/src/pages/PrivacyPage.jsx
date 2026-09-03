@@ -3,7 +3,9 @@ import LegalLayout from "../components/ui/LegalLayout";
 
 /** Static GDPR-compliant privacy policy page (DSGVO / österreichisches DSG). */
 export default function PrivacyPage() {
-  const linkClass = "text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors";
+  // Inline links inside running text: WCAG 2.5.5 exemption, verified by the
+  // audit (expanded hit area via the data-tap-inline pseudo-element).
+  const linkClass = "inline text-[var(--app-brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--app-brand-hover)] transition-colors [overflow-wrap:anywhere]";
   const sectionClass = "rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)]/60 backdrop-blur-sm p-6 sm:p-7";
   const h2Class = "text-[18px] font-semibold tracking-tight text-[var(--color-fg)] mb-3";
   const h3Class = "text-[14px] font-semibold text-[var(--color-fg)] mt-4 mb-2";
@@ -18,7 +20,7 @@ export default function PrivacyPage() {
           <h2 className={h2Class}>1. Verantwortliche Stelle</h2>
           <p>
             Verantwortlich für die Datenverarbeitung ist der Betreiber von JobAssist (Davor Radeski, Österreich,
-            siehe <Link to="/impressum" className={linkClass}>Impressum</Link>). Bei Fragen zum Datenschutz erreichst
+            siehe <Link to="/impressum" data-tap-inline className={linkClass}>Impressum</Link>). Bei Fragen zum Datenschutz erreichst
             du uns unter <strong className="text-[var(--color-fg)]">hallo@jobassist.tech</strong>.
           </p>
         </section>
@@ -46,21 +48,9 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 space-y-1">
             <li>Feature-Nutzung (Anzahl Analysen, Anschreiben, Chat-Nachrichten)</li>
             <li>Geräte- und Browser-Informationen (User-Agent)</li>
-            <li>Zeitpunkt des letzten Logins</li>
           </ul>
 
-          <h3 className={h3Class}>d) Geräte-Fingerabdruck (bei Registrierung)</h3>
-          <p>
-            Bei der Registrierung erstellen wir einen anonymisierten Geräte-Fingerabdruck aus technischen
-            Browser-Merkmalen (z.&nbsp;B. Bildschirmauflösung, installierte Schriftarten, Grafikkarten-Rendering,
-            Zeitzone). Daraus wird ein eindeutiger Hash-Wert generiert und gespeichert. Es werden{" "}
-            <strong className="text-[var(--color-fg)]">keine personenbezogenen Daten</strong> wie Name,
-            IP-Adresse oder Cookies für den Fingerabdruck verwendet. Der Fingerabdruck dient ausschließlich der
-            Missbrauchsprävention (Verhinderung mehrerer Gratiskonten pro Gerät) und wird nicht für Werbezwecke
-            genutzt.
-          </p>
-
-          <h3 className={h3Class}>e) Zahlungsdaten</h3>
+          <h3 className={h3Class}>d) Zahlungsdaten</h3>
           <p>
             Derzeit ist JobAssist <strong className="text-[var(--color-fg)]">kostenlos</strong>; es werden{" "}
             <strong className="text-[var(--color-fg)]">keine Zahlungsdaten erhoben</strong>. Sollten in Zukunft
@@ -160,7 +150,7 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-[var(--color-fg)]">Brevo</strong> (Frankreich) — Versand von
               transaktionalen E-Mails (E-Mail-Bestätigung, Passwort-Reset, Job-Alerts).{" "}
-              <a href="https://www.brevo.com/legal/dataprotectionagreement/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              <a href="https://www.brevo.com/legal/dataprotectionagreement/" target="_blank" rel="noopener noreferrer" data-tap-inline className={linkClass}>
                 Datenschutz von Brevo
               </a>
             </li>
@@ -177,14 +167,14 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-[var(--color-fg)]">Groq, Inc.</strong> (USA) — KI-API zur Analyse und
               Textgenerierung (Zero Data Retention).{" "}
-              <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" data-tap-inline className={linkClass}>
                 Datenschutz von Groq
               </a>
             </li>
             <li>
               <strong className="text-[var(--color-fg)]">Google Fonts</strong> (USA) — Schriftarten werden
               direkt von Google-Servern geladen; dabei wird deine IP-Adresse an Google übermittelt.{" "}
-              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" data-tap-inline className={linkClass}>
                 Datenschutz von Google
               </a>
             </li>
@@ -246,35 +236,13 @@ export default function PrivacyPage() {
         </section>
 
         <section className={sectionClass}>
-          <h2 className={h2Class}>11. Geräte-Fingerabdruck</h2>
+          <h2 className={h2Class}>11. Geräte-Fingerprinting</h2>
           <p>
-            Um Missbrauch (z.&nbsp;B. mehrfache Gratiskonten) zu verhindern, setzen wir bei der Registrierung ein
-            clientseitiges Fingerprinting-Verfahren ein (<strong className="text-[var(--color-fg)]">FingerprintJS Open Source</strong>).
-            Dabei werden folgende Browser- und Geräteeigenschaften lokal im Browser ausgewertet:
-          </p>
-          <ul className="list-disc pl-5 space-y-1 mt-3">
-            <li>Canvas- und WebGL-Rendering-Eigenschaften der Grafikkarte</li>
-            <li>Bildschirmauflösung und Farbtiefe</li>
-            <li>Systemschriftarten und installierte Plugins</li>
-            <li>Zeitzone und Spracheinstellung</li>
-            <li>Browser-Version und Betriebssystem</li>
-          </ul>
-          <p className="mt-3">
-            Aus diesen Merkmalen wird ein anonymisierter Hash-Wert (Fingerabdruck) berechnet und bei
-            Kontoerstellung gespeichert. Dieser Hash enthält{" "}
-            <strong className="text-[var(--color-fg)]">keine direkt personenbezogenen Daten</strong> und lässt
-            keinen Rückschluss auf deine Identität zu.
-          </p>
-          <p className="mt-3">
-            <strong className="text-[var(--color-fg)]">Zweck:</strong> Verhinderung von Mehrfachregistrierungen auf demselben Gerät zur Umgehung von Nutzungslimits.<br />
-            <strong className="text-[var(--color-fg)]">Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).<br />
-            <strong className="text-[var(--color-fg)]">Drittanbieter:</strong> Keiner — das Fingerprinting läuft vollständig im Browser, es werden keine Daten an externe Dienste übermittelt.<br />
-            <strong className="text-[var(--color-fg)]">Speicherdauer:</strong> Der Fingerabdruck wird zusammen mit deinem Konto gespeichert und bei Kontolöschung entfernt.
-          </p>
-          <p className="mt-3 text-[13px]">
-            Du kannst der Verarbeitung widersprechen, indem du uns unter{" "}
-            <strong className="text-[var(--color-fg)]">hallo@jobassist.tech</strong> kontaktierst. In diesem Fall
-            kann die Nutzung des Dienstes eingeschränkt sein.
+            JobAssist verwendet derzeit kein Canvas-, WebGL- oder sonstiges Geräte-Fingerprinting und
+            bindet dafür auch keinen Drittanbieter ein. Ein nicht mehr verwendetes Datenbankfeld aus
+            einer älteren Entwicklungsversion kann bei bestehenden Test- oder Altkonten noch einen
+            Geräte-Hash enthalten. Ein solcher Wert wird im Datenexport offengelegt und bei
+            Kontolöschung mit dem Konto entfernt.
           </p>
         </section>
 
@@ -325,7 +293,7 @@ export default function PrivacyPage() {
           <p className="mt-2 text-[13px]">
             Österreichische Datenschutzbehörde<br />
             Barichgasse 40–42, 1030 Wien<br />
-            <a href="https://www.dsb.gv.at" target="_blank" rel="noopener noreferrer" className={linkClass}>
+            <a href="https://www.dsb.gv.at" target="_blank" rel="noopener noreferrer" data-tap-inline className={linkClass}>
               www.dsb.gv.at
             </a>
           </p>

@@ -16,6 +16,12 @@ class User(Base):
     fingerprint: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Incrementing this invalidates every outstanding bearer access token.
+    # Password resets use it so stolen access tokens do not survive a reset.
+    auth_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # A reset JWT must carry the currently stored nonce. Clearing it makes the
+    # token single-use and requesting a new reset invalidates older links.
+    password_reset_nonce: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Daily job-alert usage counters — reset at 00:00 UTC by the scheduler.

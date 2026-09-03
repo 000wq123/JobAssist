@@ -69,7 +69,7 @@ function MobileDrawer({ open, onClose, me }) {
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 grid place-items-center rounded-sm"
+            className="w-11 h-11 grid place-items-center rounded-sm"
             style={{ color: "var(--sidebar-text, #626262)" }}
             aria-label="Menü schließen"
           >
@@ -97,7 +97,7 @@ function MobileDrawer({ open, onClose, me }) {
               key={to}
               href={to}
               onClick={(e) => { e.preventDefault(); navigate(to); onClose(); }}
-              className="block px-3 py-2.5 rounded-sm text-[14px] font-medium"
+              className="block min-h-[44px] px-3 py-2.5 rounded-sm text-[14px] font-medium"
               style={{ color: "var(--sidebar-text, #626262)" }}
             >{label}</a>
           ))}
@@ -105,13 +105,13 @@ function MobileDrawer({ open, onClose, me }) {
           <a
             href="/job-alerts"
             onClick={(e) => { e.preventDefault(); navigate("/job-alerts"); onClose(); }}
-            className="block px-3 py-2.5 rounded-sm text-[14px] font-medium"
+            className="block min-h-[44px] px-3 py-2.5 rounded-sm text-[14px] font-medium"
             style={{ color: "var(--sidebar-text, #626262)" }}
           >Alerts</a>
           <a
             href="/settings"
             onClick={(e) => { e.preventDefault(); navigate("/settings"); onClose(); }}
-            className="block px-3 py-2.5 rounded-sm text-[14px] font-medium"
+            className="block min-h-[44px] px-3 py-2.5 rounded-sm text-[14px] font-medium"
             style={{ color: "var(--sidebar-text, #626262)" }}
           >Einstellungen</a>
         </nav>
@@ -120,7 +120,7 @@ function MobileDrawer({ open, onClose, me }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full px-3 py-2.5 rounded-sm text-[13px] font-medium text-left"
+            className="w-full min-h-[44px] px-3 py-2.5 rounded-sm text-[13px] font-medium text-left"
             style={{ color: "var(--app-error, #E05050)" }}
           >Abmelden</button>
         </div>
@@ -258,7 +258,7 @@ export default function AppShell() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="grid place-items-center w-10 h-10 -ml-1.5 rounded-sm"
+            className="grid place-items-center w-11 h-11 rounded-sm"
             style={{ color: "var(--app-text, #171717)" }}
             aria-label="Menü öffnen"
           >
@@ -302,7 +302,7 @@ export default function AppShell() {
           style={{
             background: "var(--app-bg, #FAFAF8)",
             borderColor: "var(--app-border, #E7E7E4)",
-            paddingBottom: "env(safe-area-inset-bottom)",
+            paddingBottom: "var(--ja-safe-area-bottom, env(safe-area-inset-bottom))",
           }}
         >
           <div className="grid grid-cols-3 h-14">

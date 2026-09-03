@@ -403,7 +403,7 @@ export default function ResumePage() {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }}
                         disabled={deleteMut.loading}
-                        className="flex-shrink-0 w-7 h-7 grid place-items-center rounded-md text-[var(--color-fg-faint)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="flex-shrink-0 w-11 h-11 -m-2 md:m-0 md:w-7 md:h-7 grid place-items-center rounded-md text-[var(--color-fg-faint)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 opacity-0 group-hover:opacity-100 transition-opacity max-md:opacity-100"
                         aria-label="Löschen"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

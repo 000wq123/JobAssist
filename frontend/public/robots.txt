@@ -12,4 +12,4 @@ Disallow: /billing
 Disallow: /settings
 
 # Sitemap (generate and expose at build time if available)
-# Sitemap: https://jobassist.at/sitemap.xml
+# Sitemap: https://jobassist.tech/sitemap.xml

@@ -320,7 +320,6 @@ async def test_init_returns_etag_and_304_on_matching_if_none_match(monkeypatch):
         return []
 
     monkeypatch.setattr(health_module, "get_all_usage", _fake_usage)
-    import app.api.routes.health as h
     from app.core.database import get_db
 
     async def _override_db():
@@ -329,7 +328,6 @@ async def test_init_returns_etag_and_304_on_matching_if_none_match(monkeypatch):
 
     main.app.dependency_overrides[get_db] = _override_db
     # get_current_user is a dependency imported into the route module — patch it there
-    import app.api.routes.health as h  # noqa: F811
     try:
         transport = ASGITransport(app=main.app)
         # Auth: patch security dependency via app dependency_overrides too

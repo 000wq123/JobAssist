@@ -229,9 +229,9 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
             <button
               type="button"
               onClick={() => onEdit(alert)}
-              className="h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+              className="-m-1 h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
               style={{ color: T("text-secondary") }}
-              title="Bearbeiten"
+              aria-label="Bearbeiten"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -242,9 +242,9 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
               onClick={() => setMenuOpen((v) => !v)}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              className="h-8 w-8 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+              className="-m-1 h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-150 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
               style={{ color: T("text-secondary") }}
-              title="Mehr"
+              aria-label="Mehr Optionen"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
@@ -259,7 +259,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
                   <button
                     type="button"
                     onClick={() => { onToggleActive(alert); setMenuOpen(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                    className="w-full flex items-center gap-2 px-3 min-h-[44px] py-1.5 text-[13px] text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
                     style={{ color: T("text") }}
                   >
                     {alert.is_active ? <Clock className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -268,7 +268,7 @@ function AlertCard({ alert, onDelete, onEdit, onToggleActive }) {
                   <button
                     type="button"
                     onClick={() => { onDelete(alert); setMenuOpen(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                    className="w-full flex items-center gap-2 px-3 min-h-[44px] py-1.5 text-[13px] text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
                     style={{ color: T("error") }}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -291,7 +291,7 @@ function AlertModal({ mode, alert, isSaving, onClose, onSave }) {
   const [jobType, setJobType] = useState(alert?.job_type || "");
   const [frequency, setFrequency] = useState(alert?.frequency || "daily");
   const modalRef = useRef(null);
-  useFocusTrap(modalRef);
+  useFocusTrap(true, modalRef);
 
   const title = mode === "edit" ? "Alert bearbeiten" : "Neuer Alert";
   const cta = mode === "edit" ? "Speichern" : "Alert erstellen";
@@ -302,20 +302,30 @@ function AlertModal({ mode, alert, isSaving, onClose, onSave }) {
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
+  // Lock background scroll while the modal is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   return createPortal(
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         ref={modalRef}
-        className="w-full max-w-[440px] rounded-xl border p-6 flex flex-col gap-5"
+        className="w-full max-w-[440px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-xl border p-6 flex flex-col gap-5"
         style={{ background: T("surface"), borderColor: T("border"), boxShadow: T("shadow-modal") }}
       >
         <div className="flex items-center justify-between">
           <h2 className="text-[16px] font-semibold" style={{ color: T("text") }}>{title}</h2>
-          <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/[0.04]" style={{ color: T("text-muted") }}>
+          <button type="button" onClick={onClose} aria-label="Dialog schließen" className="-m-1 h-11 w-11 flex items-center justify-center rounded-md hover:bg-black/[0.04]" style={{ color: T("text-muted") }}>
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -632,7 +642,7 @@ export default function JobAlertsPage() {
                       key={f.key}
                       type="button"
                       onClick={() => setActiveFilter(f.key)}
-                      className="px-2 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap transition-colors sm:px-3"
+                      className="px-2 min-h-[44px] rounded-md text-[12px] font-medium whitespace-nowrap transition-colors sm:min-h-0 sm:py-1.5 sm:px-3"
                       style={{
                         background: activeFilter === f.key ? T("surface") : "transparent",
                         color: activeFilter === f.key ? T("text") : T("text-muted"),
@@ -655,7 +665,7 @@ export default function JobAlertsPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Alerts durchsuchen…"
-                    className="w-full h-9 pl-9 pr-3 rounded-md text-[13px] border outline-none transition-colors"
+                    className="w-full min-h-[44px] pl-9 pr-3 rounded-md text-[13px] border outline-none transition-colors"
                     style={{
                       background: T("surface"),
                       borderColor: T("border"),

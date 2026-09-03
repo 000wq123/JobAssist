@@ -6,7 +6,11 @@ const fieldClass = "h-11 rounded-xl border border-[var(--color-border)] bg-[var(
 
 function DemoForm() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-fg)] px-5 py-12">
+    // [overflow-wrap:anywhere] inherits to every text node: long German
+    // compounds ("JobAssist-Erweiterungssymbol") must break instead of
+    // pushing the document beyond 320px (regression-tested at 320px in
+    // mobile-compat.spec.js).
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-fg)] px-5 py-12 [overflow-wrap:anywhere]">
       <main className="mx-auto max-w-2xl">
         <div className="mb-7 flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--color-accent-500)] text-[12px] font-black text-white">JA</span>
@@ -14,7 +18,10 @@ function DemoForm() {
         </div>
         <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] p-6 sm:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[var(--color-accent-500)]">Testbewerbung</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight">Junior Projektassistenz</h1>
+          {/* overflow-wrap:anywhere — German compounds ("Bewerbungshelfer")
+              are unbreakable at 320px otherwise and push the document to
+              331px (regression-tested in mobile-compat.spec.js). */}
+          <h1 className="mt-2 text-2xl font-bold tracking-tight [overflow-wrap:anywhere]">Junior Projektassistenz</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-fg-muted)]">
             Öffne jetzt das JobAssist-Erweiterungssymbol und wähle „Diese Seite ausfüllen“.
           </p>
@@ -24,7 +31,7 @@ function DemoForm() {
             <label className="grid gap-1.5 text-[12px] font-medium text-[var(--color-fg-muted)] sm:col-span-2">E-Mail<input className={fieldClass} name="email" type="email" autoComplete="email" /></label>
             <label className="grid gap-1.5 text-[12px] font-medium text-[var(--color-fg-muted)] sm:col-span-2">Telefon<input className={fieldClass} name="phone" type="tel" autoComplete="tel" /></label>
             <label className="grid gap-1.5 text-[12px] font-medium text-[var(--color-fg-muted)] sm:col-span-2">Anschreiben<textarea className={`${fieldClass} min-h-28 py-3`} name="coverLetter" /></label>
-            <label className="grid gap-1.5 text-[12px] font-medium text-[var(--color-fg-muted)] sm:col-span-2">Lebenslauf<input className="rounded-xl border border-dashed border-[var(--color-border)] p-4 text-[12px]" name="resume" type="file" accept="application/pdf" /></label>
+            <label className="grid gap-1.5 text-[12px] font-medium text-[var(--color-fg-muted)] sm:col-span-2">Lebenslauf<input className="w-full min-w-0 rounded-xl border border-dashed border-[var(--color-border)] px-3 py-3 text-[12px] file:mr-3 file:rounded-lg file:border-0 file:bg-transparent file:text-[12px]" name="resume" type="file" accept="application/pdf" /></label>
             <button type="submit" className="mt-2 h-11 rounded-xl bg-[var(--color-fg)] text-[13px] font-semibold text-[var(--color-bg)] sm:col-span-2">Demo nicht absenden</button>
           </form>
         </section>
@@ -38,12 +45,14 @@ export default function ExtensionDemoPage() {
   if (searchParams.get("form") === "1") return <DemoForm />;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] px-5 py-16 text-[var(--color-fg)]">
+    <div className="min-h-screen bg-[var(--color-bg)] px-5 py-16 text-[var(--color-fg)] [overflow-wrap:anywhere]">
       <main className="mx-auto max-w-3xl">
         <BrandMark size="xl" label="JobAssist" />
         <p className="mt-8 text-[11px] font-semibold uppercase tracking-[.1em] text-[var(--color-accent-500)]">Sicherer Funktionstest</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-tight">Teste den Bewerbungshelfer ohne echte Bewerbung.</h1>
-        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[var(--color-fg-muted)]">
+        {/* [overflow-wrap:anywhere] keeps the text-4xl German compound words
+            inside a 320px viewport (see DemoForm note above). */}
+        <h1 className="mt-2 text-4xl font-bold tracking-tight [overflow-wrap:anywhere]">Teste den Bewerbungshelfer ohne echte Bewerbung.</h1>
+        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[var(--color-fg-muted)] [overflow-wrap:anywhere]">
           Die nächste Seite ist ein reines Demo-Formular. Es werden keine Angaben versendet oder auf einem Server gespeichert.
         </p>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">

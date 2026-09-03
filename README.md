@@ -49,12 +49,12 @@ backend/app/api/routes/kv_wage.py
 
 | Layer | Technologie |
 |-------|-------------|
-| **Frontend** | React 19, Vite, Tailwind v4, TanStack Query, Zustand |
+| **Frontend** | React 19, Vite, Tailwind v4, eigene Fetch-/State-Hooks |
 | **Backend** | FastAPI (Python 3.11+), SQLAlchemy 2 async, Alembic |
 | **Datenbank** | PostgreSQL (Produktion), SQLite (lokal) |
-| **AI** | Groq (Llama, Mixtral) |
+| **AI** | Groq (GPT-OSS, Qwen-Fallback) |
 | **Job-Daten** | Adzuna API, Jooble API, native Scraper |
-| **E-Mail** | Brevo (SMTP + HTTP API) |
+| **E-Mail** | Brevo HTTP API |
 | **Monitoring** | Sentry |
 
 ### Lokal starten
@@ -77,7 +77,7 @@ npm install
 npm run dev                        # → http://localhost:5173
 ```
 
-> Details: [`docs/guides/SETUP.md`](docs/guides/SETUP.md)
+> Details: [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md)
 
 ### Tests & Linting
 
@@ -104,7 +104,7 @@ backend/         FastAPI, SQLAlchemy, Alembic, pytest
 frontend/        React SPA, Vitest, Playwright, Tailwind
 docs/            Setup, Deployment, Security, Operations
 scripts/         Wartungsskripte
-extension/       Chrome Extension (Manifest V3)
+chrome-extension/ Chrome Extension (Manifest V3)
 ```
 
 ---

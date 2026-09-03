@@ -50,7 +50,7 @@ const CARD = "rounded-[10px] border p-4 sm:p-6";
 // still cross-fade smoothly via the global html.theme-anim rule.
 const cardStyle = { background: "var(--app-surface, #FFF)", borderColor: "var(--app-border, #E7E7E4)" };
 const labelCls = "block text-[11px] font-semibold uppercase tracking-[0.08em] mb-1.5";
-const inputCls = "w-full h-10 rounded-[6px] border px-3 text-[13.5px] outline-none transition-colors duration-100";
+const inputCls = "w-full min-h-[44px] rounded-[6px] border px-3 text-[13.5px] outline-none transition-colors duration-100";
 const inputStyle = { background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text, #171717)" };
 
 function SectionTitle({ icon: Icon, title, desc }) {
@@ -75,19 +75,20 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
 
   return (
     <div>
-      <div ref={anchorRef} onClick={() => setOpen((o) => !o)}
-        className="min-h-10 w-full rounded-[6px] border px-2 py-1.5 text-[13.5px] cursor-pointer flex flex-wrap gap-1 items-center outline-none transition-colors duration-100"
+      <div ref={anchorRef} onClick={() => setOpen((o) => !o)} role="button" aria-label={placeholder} aria-expanded={open} aria-haspopup="listbox"
+        className="min-h-11 sm:min-h-10 w-full rounded-[6px] border px-2 py-1 text-[13.5px] cursor-pointer flex flex-wrap gap-1 items-center outline-none transition-colors duration-100"
         style={{ background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text, #171717)" }}>
         {value.length === 0 ? (
           <span className="px-1 py-0.5" style={{ color: "var(--app-text-faint, #B0B0AD)" }}>{placeholder}</span>
         ) : (
           value.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[12px] font-medium"
+            <span key={v} className="inline-flex items-center gap-0.5 rounded-[4px] pl-1.5 text-[12px] font-medium"
               style={{ background: "var(--app-surface-hover, #F5F5F3)", color: "var(--app-text, #171717)" }}>
               {v}
-              {/* 24px hit area (negative margin keeps the chip compact) */}
+              {/* Full 44px hit area on phones; visual chip stays compact via
+                  negative margin (no 24px exception). */}
               <button type="button" onClick={(e) => remove(v, e)} aria-label={`${v} entfernen`}
-                className="-m-1 h-6 w-6 inline-flex items-center justify-center rounded-full transition-colors"
+                className="h-11 w-11 -mx-1.5 my-auto inline-flex items-center justify-center rounded-full transition-colors"
                 style={{ color: "var(--app-text-faint, #B0B0AD)" }}>×</button>
             </span>
           ))
@@ -97,7 +98,9 @@ function MultiSelectDropdown({ options, value = [], onChange, placeholder = "Aus
       <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchorRef} align="left" className="w-[min(100%,320px)] rounded-[8px] border overflow-hidden"
         style={{ borderColor: "var(--app-border, #E7E7E4)", background: "var(--app-surface, #FFF)" }}>
         {options.map((option) => (
-          <label key={option} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none" style={{ color: "var(--app-text, #171717)" }}>
+          // Full 44px option rows on phones (WCAG 2.5.5); the checkbox glyph
+          // itself is hit through the ≥44px label.
+          <label key={option} className="flex items-center gap-2.5 px-3 min-h-[44px] py-2 cursor-pointer select-none" style={{ color: "var(--app-text, #171717)" }}>
             <input type="checkbox" checked={value.includes(option)} onChange={() => toggle(option)} className="w-4 h-4 rounded accent-[#E30613] flex-shrink-0" />
             <span className="text-[13.5px]">{option}</span>
           </label>
@@ -229,10 +232,10 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 grid place-items-center h-7 w-7 rounded-[6px] text-white transition-colors duration-100"
+                    className="absolute -bottom-2 -right-2 grid place-items-center h-11 w-11 rounded-[6px] text-white transition-colors duration-100"
                     style={{ background: "var(--app-brand, #E30613)" }}
                     aria-label="Profilfoto ändern">
-                    <Camera className="h-3 w-3" />
+                    <Camera className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -244,7 +247,7 @@ export default function SettingsPage() {
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <button type="button" onClick={() => fileInputRef.current?.click()}
-                      className="rounded-[6px] border px-3 py-1.5 text-[13px] font-semibold transition-colors duration-100"
+                      className="min-h-[44px] rounded-[6px] border px-3 text-[13px] font-semibold transition-colors duration-100"
                       style={{ background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text-secondary, #626262)" }}>
                       {avatar ? "Foto ändern" : "Foto hochladen"}
                     </button>
@@ -278,7 +281,7 @@ export default function SettingsPage() {
                 <Controller name="experience_level" control={control} render={({ field }) => (
                   <div>
                     <label className={labelCls} style={{ color: "var(--app-text-muted, #888)" }} htmlFor="experience_level">Erfahrung</label>
-                    <select id="experience_level" {...field} className={`${inputCls} appearance-none`} style={inputStyle} value={field.value || ""}>
+                    <select id="experience_level" {...field} className={`${inputCls} min-h-[44px] sm:min-h-0 appearance-none`} style={inputStyle} value={field.value || ""}>
                       <option value="">Wähle dein Niveau…</option>
                       {EXPERIENCE_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                     </select>
@@ -305,11 +308,10 @@ export default function SettingsPage() {
                   </div>
                   <button type="button" role="switch" aria-checked={!!field.value} aria-label="Umzugsbereitschaft"
                     onClick={() => field.onChange(!field.value)}
-                    className="relative h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-100"
+                    className="relative h-10 w-16 p-2 flex-shrink-0 rounded-full transition-colors duration-100 tap-44"
                     style={{ background: field.value ? "var(--app-brand, #E30613)" : "var(--app-border-strong, #D8D8D4)" }}>
-                    {/* eslint-disable-next-line no-restricted-syntax -- toggle knob, not layout */}
-                    <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-100"
-                      style={{ transform: field.value ? "translateX(20px)" : "translateX(0)" }} />
+                    <span className="absolute left-2 top-2 h-6 w-6 rounded-full bg-white shadow transition-transform duration-100"
+                      style={{ transform: field.value ? "translateX(24px)" : "translateX(0)" }} />
                   </button>
                 </div>
               )} />
@@ -406,7 +408,8 @@ function CVUploadSection() {
                 {r.filename || r.original_filename || `Lebenslauf ${r.id}`}
               </span>
               <button type="button" onClick={() => handleDeleteResume(r.id)} disabled={deleteMut.loading}
-                className="flex-shrink-0 transition-colors duration-100 disabled:opacity-50" style={{ color: "var(--app-text-faint, #B0B0AD)" }}
+                className="flex-shrink-0 -mr-1 h-11 w-11 inline-flex items-center justify-center rounded-md transition-colors duration-100 disabled:opacity-50"
+                style={{ color: "var(--app-text-faint, #B0B0AD)" }}
                 aria-label="Lebenslauf entfernen">
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -419,7 +422,7 @@ function CVUploadSection() {
         </p>
       )}
       <button type="button" onClick={() => cvInputRef.current?.click()} disabled={uploadMut.loading}
-        className="inline-flex items-center gap-2 rounded-[6px] border px-3 py-2 text-[13px] font-semibold transition-colors duration-100 disabled:opacity-50 w-fit"
+        className="inline-flex items-center gap-2 min-h-[44px] sm:min-h-0 rounded-[6px] border px-3 py-2 text-[13px] font-semibold transition-colors duration-100 disabled:opacity-50 w-fit"
         style={{ background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text-secondary, #626262)" }}>
         {uploadMut.loading ? (
           <span className="inline-block w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: "var(--app-border, #E7E7E4)", borderTopColor: "var(--app-brand, #E30613)" }} />
@@ -498,7 +501,7 @@ function DeleteAccountSection() {
       </div>
       {!showConfirm ? (
         <button onClick={() => setShowConfirm(true)}
-          className="mt-3 inline-flex items-center gap-2 rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors duration-100"
+          className="mt-3 inline-flex items-center gap-2 min-h-[44px] sm:min-h-0 rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors duration-100"
           style={{ background: "#c0392b" }}>
           <Trash2 className="h-3.5 w-3.5" /> Konto löschen
         </button>
@@ -514,12 +517,12 @@ function DeleteAccountSection() {
           </div>
           <div className="flex gap-2">
             <button onClick={handleDelete} disabled={deleting}
-              className="rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors duration-100 disabled:opacity-50"
+              className="rounded-[6px] min-h-[44px] sm:min-h-0 px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors duration-100 disabled:opacity-50"
               style={{ background: "var(--app-error, #E05050)" }}>
               {deleting ? "Wird gelöscht…" : "Unwiderruflich löschen"}
             </button>
             <button onClick={() => { setShowConfirm(false); setPassword(""); }}
-              className="rounded-[6px] border px-3 py-1.5 text-[12.5px] font-semibold transition-colors duration-100"
+              className="rounded-[6px] border min-h-[44px] sm:min-h-0 px-3 py-1.5 text-[12.5px] font-semibold transition-colors duration-100"
               style={{ background: "var(--app-bg, #FAFAF8)", borderColor: "var(--app-border, #E7E7E4)", color: "var(--app-text-secondary, #626262)" }}>
               Abbrechen
             </button>

@@ -1,4 +1,3 @@
-import pytest
 
 from app.services.email_service import _mask_email
 

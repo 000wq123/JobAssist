@@ -130,6 +130,12 @@
     0% { opacity: 0; }
     100% { opacity: 1; }
   }
+
+  /* ── Breakpoints ─────────────────────────────────────────────── */
+  /* Extra-small phones (e.g. 320px iPhone SE/5 class). Narrower than the
+     default `sm` (40rem) so components can adapt before the first standard
+     step up. Tailwind v4 generates the `xs:` variant from this token. */
+  --breakpoint-xs: 22.5rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1094,6 +1100,15 @@
               transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
 }
+/* Reduced motion: no scroll-reveal animation — content is immediately
+   visible (also keeps full-page screenshots deterministic). */
+@media (prefers-reduced-motion: reduce) {
+  .landing-v5 .lv5-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
 .landing-v5 .lv5-reveal.lv5-visible {
   opacity: 1;
   transform: translateY(0);
@@ -1149,16 +1164,57 @@ input[type="password"]::-webkit-textfield-decoration-container { display: none; 
 }
 
 /* ── Phone tap comfort ─────────────────────────────────────────────
+   Every actionable control gets a ≥44px hit area on phones (WCAG 2.5.5).
+   `.tap-44` is applied to icon buttons, filters, tabs and menu items whose
+   compact desktop size must not change; the media query keeps desktop
+   visuals byte-identical.
    Card action links ("Alle Stellen →", "Bearbeiten", "Verwalten") render as
    compact 20px text rows on desktop; on phones they need a tappable row. */
+@media (pointer: coarse), (max-width: 767px) {
+  .tap-44 { min-width: 44px; min-height: 44px; }
+  .btn { min-height: 44px; }
+  .btn-sm, .btn-md, .btn-lg { min-height: 44px; }
+  .btn-icon { width: 44px; height: 44px; }
+  .btn-link, .section-link { min-height: 44px; }
+}
+
+/* Inline text links (inline display inside p/li/heading blocks, or those
+   explicitly marked with data-tap-inline): WCAG 2.5.5 exempts links inside
+   running text from the 44px minimum because the line box separates them
+   from neighbouring targets. To keep the exemption honest on touch, the
+   tap area is expanded via a pseudo-element without moving the glyphs or
+   changing the line layout. */
+@media (pointer: coarse), (max-width: 767px) {
+  [data-tap-inline] {
+    position: relative;
+  }
+  [data-tap-inline]::after {
+    content: "";
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    top: -10px;
+    bottom: -10px;
+  }
+}
 @media (max-width: 767px) {
-  .btn-link, .section-link { min-height: 36px; }
+  .btn-link, .section-link { min-height: 44px; }
+}
+
+/* ── Testable safe-area inset ────────────────────────────────────────────
+   The cookie banner and other fixed chrome must respect the notched-phone
+   bottom inset. env() cannot be simulated in tests, so every consumer reads
+   the --ja-safe-area-bottom custom property (with env() as its value and
+   fallback), while E2E tests override the property to exercise real notch
+   geometry deterministically. */
+:root {
+  --ja-safe-area-bottom: env(safe-area-inset-bottom);
 }
 
 /* ── Toast region: bottom-right, clear of mobile nav + selection dock ── */
 @media (max-width: 767px) {
   .ja-toast-region {
-    bottom: calc(env(safe-area-inset-bottom) + 132px) !important;
+    bottom: calc(var(--ja-safe-area-bottom, env(safe-area-inset-bottom)) + 132px) !important;
     right: 16px !important;
   }
 }

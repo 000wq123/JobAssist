@@ -74,7 +74,7 @@ export default function UnsubscribePage() {
             <p className="text-[13px] text-[var(--color-fg-muted)] mb-6 leading-relaxed">{message}</p>
             <Link
               to="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] text-[var(--color-fg)] text-[13px] font-semibold hover:bg-[var(--color-bg-elev-3)] hover:border-[var(--color-border-strong)] transition-colors"
+              className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev-2)] text-[var(--color-fg)] text-[13px] font-semibold hover:bg-[var(--color-bg-elev-3)] hover:border-[var(--color-border-strong)] transition-colors"
             >
               Zur Startseite
             </Link>

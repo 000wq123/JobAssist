@@ -15,6 +15,7 @@ import { test, expect } from "@playwright/test";
  */
 
 const VIEWPORTS = [
+  { name: "mobile-xs", width: 320, height: 700, deviceScaleFactor: 2 },
   { name: "mobile-sm", width: 375, height: 812, deviceScaleFactor: 2 },
   { name: "mobile-md", width: 414, height: 896, deviceScaleFactor: 2 },
   { name: "tablet", width: 768, height: 1024, deviceScaleFactor: 2 },
@@ -39,6 +40,15 @@ async function newLandingPageContext(browser, viewport) {
 /**
  * Navigate to the landing page and wait for the hero to be ready.
  *
+ * The reveal-on-scroll animation is a visual-test blind spot: elements with
+ * `.lv5-reveal` sit at opacity 0 until IntersectionObserver fires, so a
+ * full-page screenshot can silently capture large blank sections and still
+ * pass. Two guards prevent that:
+ * - contexts run with reducedMotion: "reduce", and the CSS makes reveals
+ *   immediately visible under reduced motion;
+ * - every capture asserts the page holds no unrevealed `.lv5-reveal`
+ *   content before comparing against the baseline.
+ *
  * @param {import("@playwright/test").Page} page
  */
 async function gotoLandingPage(page) {
@@ -46,6 +56,51 @@ async function gotoLandingPage(page) {
   await page.locator(".landing-v5").waitFor({ state: "visible" });
   await expect(page.locator("h1").first()).toBeVisible();
   await page.waitForTimeout(500);
+  await assertNothingHidden(page);
+}
+
+/**
+ * Scroll through the page so any JS-driven reveal has fired, then fail if
+ * `.lv5-reveal` content is still invisible (the blank-section blind spot).
+ *
+ * @param {import("@playwright/test").Page} page
+ */
+async function assertNothingHidden(page) {
+  await page.evaluate(async () => {
+    const scroller = document.scrollingElement || document.documentElement;
+    const step = () => Math.max(320, window.innerHeight * 0.8);
+
+    const sweep = async () => {
+      // Instant scrolls only: html carries scroll-behavior:smooth, and rapid
+      // smooth scrolls never finish animating, leaving bottom sections
+      // unvisited (and therefore unrevealed).
+      window.scrollTo({ top: 0, behavior: "instant" });
+      for (let y = 0; y <= scroller.scrollHeight; y += step()) {
+        window.scrollTo({ top: y, behavior: "instant" });
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      }
+      window.scrollTo({ top: 0, behavior: "instant" });
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    };
+
+    // The first sweep reveals everything in the initial layout; additional
+    // sweeps cover late layout growth (fonts, images) that moved sections
+    // below the reach of the first pass.
+    for (let pass = 0; pass < 3; pass++) {
+      await sweep();
+      const stuck = document.querySelectorAll(".lv5-reveal:not(.lv5-visible)");
+      if (stuck.length === 0) return;
+    }
+  });
+  const hidden = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".lv5-reveal:not(.lv5-visible)"))
+      .filter((el) => (el.textContent || "").trim().length > 0)
+      .map((el) => (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 80)),
+  );
+  expect(
+    hidden,
+    ".lv5-reveal content stayed invisible — full-page captures would silently approve blank sections",
+  ).toEqual([]);
 }
 
 for (const vp of VIEWPORTS) {
@@ -87,6 +142,7 @@ for (const vp of SECTION_VIEWPORTS) {
 
       const locator = page.locator(section.selector).first();
       await locator.scrollIntoViewIfNeeded();
+      await assertNothingHidden(page);
 
       await expect(locator).toHaveScreenshot(
         `landing-${section.name}-${vp.name}.png`,

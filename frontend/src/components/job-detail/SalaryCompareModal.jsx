@@ -75,7 +75,8 @@ export default function SalaryCompareModal({ open, onClose, currentJob, allJobs 
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 grid place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
+            aria-label="Dialog schließen"
+            className="h-11 w-11 -m-2 md:m-0 md:w-7 md:h-7 grid place-items-center rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>

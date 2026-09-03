@@ -148,7 +148,6 @@ def test_configured_models_exist_on_groq():
     environment problem, not a configuration regression.
     """
     import asyncio
-    import os
 
     from app.core.config import settings
     from app.services.claude_service import MODEL, MODEL_FALLBACK

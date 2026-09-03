@@ -161,7 +161,7 @@ function PipelineRow({
           type="button"
           ref={menuBtnRef}
           onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-          className="h-8 w-8 grid place-items-center rounded-md transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+          className="h-11 w-11 -m-1.5 md:m-0 md:h-8 md:w-8 grid place-items-center rounded-md transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
           style={{ color: T("text-faint") }}
           aria-label={`Status ändern: ${bucket.label}`}
           aria-expanded={menuOpen}
@@ -181,7 +181,7 @@ function PipelineRow({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onStatusChange(job.id, b.key); }}
                 disabled={isCurrent}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[12.5px] text-left transition-colors disabled:opacity-40"
+                className="w-full flex items-center gap-2.5 px-3 min-h-[44px] py-1.5 text-[12.5px] text-left transition-colors disabled:opacity-40"
                 style={{ color: isCurrent ? T("text") : T("text-secondary") }}
               >
                 <Icon className="w-3.5 h-3.5" style={{ color: isCurrent ? b.chip : b.color }} />
@@ -198,7 +198,7 @@ function PipelineRow({
               setMenuOpen(false);
               onToggleSelection(job.id, { range: false });
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors"
+            className="flex w-full items-center gap-2.5 px-3 min-h-[44px] py-2 text-left text-[12.5px] transition-colors"
             style={{ color: T("text-secondary") }}
           >
             <CheckSquare2 className="h-3.5 w-3.5" />
@@ -211,7 +211,7 @@ function PipelineRow({
               setMenuOpen(false);
               onDelete(job);
             }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors"
+            className="flex w-full items-center gap-2.5 px-3 min-h-[44px] py-2 text-left text-[12.5px] transition-colors"
             style={{ color: T("error") }}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -377,7 +377,7 @@ function FindenTab({ onSaved }) {
           type="button"
           onClick={() => setFiltersOpen((value) => !value)}
           aria-expanded={filtersOpen}
-          className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border text-[12px] font-medium transition-colors"
+          className="inline-flex items-center gap-2 min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg border text-[12px] font-medium transition-colors"
           style={{ borderColor: T("border"), color: T("text-muted"), background: filtersOpen ? T("surface-hover") : "transparent" }}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -506,7 +506,7 @@ function FindenTab({ onSaved }) {
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[11.5px] font-medium border transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                        className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-md text-[11.5px] font-medium border transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                         style={{ borderColor: T("border"), color: T("text-secondary") }}
                       >
                         Original <ExternalLink className="w-3 h-3" />
@@ -516,7 +516,7 @@ function FindenTab({ onSaved }) {
                       type="button"
                       onClick={() => handleSave(enrichedJob)}
                       disabled={isPending || isSaved}
-                      className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[11.5px] font-medium border transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04] disabled:opacity-60"
+                      className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-md text-[11.5px] font-medium border transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04] disabled:opacity-60"
                       style={{ borderColor: T("border"), color: T("text-secondary") }}
                     >
                       {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
@@ -526,7 +526,7 @@ function FindenTab({ onSaved }) {
                       type="button"
                       onClick={() => handleApply(enrichedJob)}
                       disabled={isPending}
-                      className="btn btn-primary h-8 px-3 rounded-md text-[11.5px] font-semibold gap-1.5 disabled:opacity-60"
+                      className="btn btn-primary min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-md text-[11.5px] font-semibold gap-1.5 disabled:opacity-60"
                     >
                       {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                       Bewerbung vorbereiten
@@ -555,7 +555,7 @@ function FindenTab({ onSaved }) {
           <button
             type="button"
             onClick={handleSearch}
-            className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0"
+            className="btn btn-secondary min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0"
           >
             Erneut versuchen
           </button>
@@ -837,7 +837,7 @@ export default function StellenPage() {
               key={t.key}
               type="button"
               onClick={() => switchTab(t.key)}
-              className="h-9 px-3.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer sm:h-8"
+              className="min-h-[44px] px-3.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer sm:min-h-0 sm:h-8"
               style={{
                 color: tab === t.key ? T("text") : T("text-muted"),
                 background: tab === t.key ? T("surface") : "transparent",
@@ -862,7 +862,7 @@ export default function StellenPage() {
                   value={rowSearch}
                   onChange={(e) => setRowSearch(e.target.value)}
                   placeholder="Stellen durchsuchen…"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg text-[13px] border outline-none transition-colors focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
+                  className="w-full min-h-[44px] pl-9 pr-3 rounded-lg text-[13px] border outline-none transition-colors focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
                   style={{ borderColor: T("border"), background: T("surface"), color: T("text") }}
                 />
               </div>
@@ -872,7 +872,7 @@ export default function StellenPage() {
                   aria-label="Status filtern"
                   value={statusFilter || "all"}
                   onChange={(e) => selectStatus(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border bg-transparent pl-3 pr-7 text-[12px] outline-none focus:ring-2 focus:ring-[var(--app-focus-ring)]/30"
+                  className="min-h-[44px] w-full appearance-none rounded-lg border bg-transparent pl-3 pr-7 text-[12px] outline-none focus:ring-2 focus:ring-[var(--app-focus-ring)]/30 sm:min-h-0 sm:h-9"
                   style={{ borderColor: T("border"), background: T("surface"), color: T("text-muted") }}
                 >
                   {[{ key: "all", label: "Alle" }, ...BUCKETS].map((bucket) => {
@@ -993,7 +993,7 @@ export default function StellenPage() {
             <button
               type="button"
               onClick={() => reload()}
-              className="btn btn-secondary h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0"
+              className="btn btn-secondary min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-md text-[12px] font-medium flex-shrink-0"
             >
               <RefreshCw className="w-3 h-3" /> Erneut versuchen
             </button>

@@ -105,12 +105,12 @@ export default function StepSkills({ profile, onChange, errors = {} }) {
                 onChange={(e) => updateLang(i, { sprache: e.target.value })}
                 placeholder="Sprache"
                 list="cv-lang-suggestions"
-                className="h-9 min-w-0 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)]"
+                className="h-11 min-w-0 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)] placeholder:text-[var(--color-fg-faint)]"
               />
               <select
                 value={l.niveau}
                 onChange={(e) => updateLang(i, { niveau: e.target.value })}
-                className="col-span-2 row-start-2 h-9 min-w-0 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-2 text-[13px] text-[var(--color-fg)] sm:col-span-1 sm:row-auto"
+                className="col-span-2 row-start-2 h-11 min-w-0 rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-2 text-[13px] text-[var(--color-fg)] sm:col-span-1 sm:row-auto sm:h-9"
               >
                 {NIVEAU_OPTIONS.map((n) => (
                   <option key={n} value={n} className="bg-[var(--color-bg-elev-1)]">
@@ -123,7 +123,7 @@ export default function StepSkills({ profile, onChange, errors = {} }) {
                 onClick={() => removeLang(i)}
                 aria-label={`${l.sprache || "Sprache"} entfernen`}
                 disabled={langs.length <= 1}
-                className="col-start-2 row-start-1 h-9 w-9 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-dim)] hover:text-[var(--color-error)] hover:border-[var(--color-error)]/50 disabled:opacity-30 disabled:cursor-not-allowed sm:col-auto sm:row-auto"
+                className="col-start-2 row-start-1 h-11 w-11 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-dim)] hover:text-[var(--color-error)] hover:border-[var(--color-error)]/50 disabled:opacity-30 disabled:cursor-not-allowed sm:col-auto sm:row-auto sm:h-9 sm:w-9"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -140,7 +140,7 @@ export default function StepSkills({ profile, onChange, errors = {} }) {
         <button
           type="button"
           onClick={addLang}
-          className="self-start inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
+          className="self-start inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md border border-dashed border-[var(--color-border)] text-[12px] text-[var(--color-fg-muted)] hover:border-[var(--color-accent-500)] hover:text-[var(--color-accent-200)] transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Sprache hinzufügen

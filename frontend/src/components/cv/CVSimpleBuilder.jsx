@@ -143,7 +143,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
             <button
               type="button"
               onClick={onBack}
-              className="min-h-9 inline-flex items-center gap-1.5 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
+              className="min-h-[44px] lg:min-h-9 inline-flex items-center gap-1.5 text-[12px] text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Übersicht
@@ -157,7 +157,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
             type="button"
               onClick={() => requestDownload()}
             disabled={pdfBusy}
-            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-[13px] font-semibold bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-50 transition-all"
+            className="inline-flex items-center gap-1.5 min-h-[44px] lg:min-h-0 lg:h-9 px-4 rounded-lg text-[13px] font-semibold bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-50 transition-all"
           >
             <Download className="w-3.5 h-3.5" />
             {pdfBusy ? "Wird erstellt…" : "PDF"}
@@ -176,7 +176,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                 type="button"
                 onClick={() => scrollTo(s.id)}
                 className={clsx(
-                  "flex-shrink-0 inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-[12px] font-medium border transition-colors",
+                  "flex-shrink-0 inline-flex items-center gap-1.5 min-h-[44px] lg:min-h-0 lg:h-8 px-2.5 rounded-full text-[12px] font-medium border transition-colors",
                   activeSection === s.id
                     ? "border-[var(--color-accent-500)] text-[var(--color-accent-600)] bg-[var(--color-accent-50)]"
                     : "border-[var(--color-border)] text-[var(--color-fg-dim)]"
@@ -295,7 +295,7 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                   type="button"
                   onClick={() => requestDownload()}
                   disabled={pdfBusy}
-                  className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-lg text-[13.5px] font-semibold bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-50 transition-all self-start"
+                  className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg text-[13.5px] font-semibold bg-[var(--color-accent-500)] text-white hover:opacity-90 disabled:opacity-50 transition-all self-start"
                 >
                   <Download className="w-4 h-4" />
                   {pdfBusy ? "Wird erstellt…" : "Als PDF herunterladen"}
@@ -331,7 +331,9 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                           key={a.value}
                           type="button"
                           onClick={() => patchDesign({ accent: a.value })}
-                          className={`w-6 h-6 rounded-full border-2 transition-all ${design.accent === a.value ? "border-[var(--color-accent-400)] scale-110" : "border-transparent"}`}
+                          aria-label={`Akzentfarbe ${a.name}`}
+                          aria-pressed={design.accent === a.value}
+                          className={`h-11 w-11 -m-2.5 lg:m-0 lg:h-6 lg:w-6 rounded-full border-2 transition-all ${design.accent === a.value ? "border-[var(--color-accent-400)] scale-110" : "border-transparent"}`}
                           style={{ background: a.value }}
                           title={a.name}
                         />
@@ -347,7 +349,8 @@ export default function CVSimpleBuilder({ profile, onChange, onBack, onDownload,
                           key={f.value}
                           type="button"
                           onClick={() => patchDesign({ font: f.value })}
-                          className={`min-h-8 px-2.5 rounded-md text-[12px] font-medium border transition-all ${design.font === f.value ? "border-[var(--color-accent-400)] text-[var(--color-accent-600)] bg-[var(--color-accent-50)]" : "border-[var(--color-border)] text-[var(--color-fg-dim)]"}`}
+                          aria-pressed={design.font === f.value}
+                          className={`min-h-[44px] lg:min-h-0 lg:min-h-8 px-2.5 rounded-md text-[12px] font-medium border transition-all ${design.font === f.value ? "border-[var(--color-accent-400)] text-[var(--color-accent-600)] bg-[var(--color-accent-50)]" : "border-[var(--color-border)] text-[var(--color-fg-dim)]"}`}
                         >
                           {f.name}
                         </button>

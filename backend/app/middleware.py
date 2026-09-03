@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Hard cap on request body size. Anything larger is rejected before the route
 # handler is invoked. Routes that legitimately need bigger payloads (resume
-# uploads — currently capped to 2 MB by the route) are well under this limit.
+# uploads — currently capped to 5 MB by the route) are within this limit.
 MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024  # 5 MiB
 
 # State-changing methods that must come from an allowed Origin when they carry
@@ -174,14 +174,14 @@ def install_middleware(app: FastAPI) -> None:
 
             # 4. main pipeline
             response: Response = await call_next(request)
-        except Exception:
+        except Exception as exc:
             # Unhandled exception: return a 500 with CORS headers so the
             # browser shows the real status instead of a CORS block.
             logger.exception(
                 "Unhandled exception",
                 extra={"path": request.url.path, "method": request.method},
             )
-            detail = str(sys.exc_info()[1]) if settings.DEBUG else "Internal server error"
+            detail = str(exc) if settings.DEBUG else "Internal server error"
             response = JSONResponse(
                 status_code=500,
                 content={"detail": detail, "request_id": request_id},

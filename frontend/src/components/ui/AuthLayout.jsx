@@ -43,7 +43,7 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
       {/* ── Minimal auth header ──────────────────────────────────── */}
       <header className="relative z-20">
         <div className="mx-auto flex items-center justify-between px-5 py-4 sm:px-8 max-w-[1240px]">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="JobAssist Startseite">
+          <Link to="/" className="flex items-center gap-2.5 min-h-[44px]" aria-label="JobAssist Startseite">
             <BrandMark size="sm" />
             <span className="text-[15px] font-bold tracking-[-0.02em]" style={{ color: "var(--ja-auth-text, #171717)", transition: t }}>JobAssist</span>
           </Link>
@@ -61,13 +61,12 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
                     key={tPref}
                     type="button"
                     onClick={() => setTheme(tPref)}
-                    className="grid place-items-center w-7 h-7 rounded-full"
+                    className="grid place-items-center h-11 w-11 -m-2 lg:m-0 lg:w-7 lg:h-7 rounded-full"
                     style={{
                       background: isActive ? "var(--ja-auth-theme-active, #fff)" : "transparent",
                       transition: "background-color 130ms ease-out",
                     }}
-                    title={label}
-                    aria-label={label}
+                    aria-label={`${label} Theme`}
                     aria-pressed={isActive}
                   >
                     <Icon className={iconCls} style={{ color: isActive ? "var(--ja-auth-text, #171717)" : "var(--ja-auth-muted, #909090)", transition: "color 110ms ease-out" }} />
@@ -78,7 +77,7 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
 
             <Link
               to={backTo}
-              className="inline-flex items-center gap-1.5 text-[13px] hover:underline"
+              className="inline-flex items-center gap-1.5 min-h-[44px] text-[13px] hover:underline"
               style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}
             >
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -173,11 +172,12 @@ export default function AuthLayout({ children, backTo = "/", backLabel = "Zur St
                 {children}
               </div>
 
-              {/* Legal strip under card */}
-              <div className="mt-5 flex justify-center gap-5 text-[11px]">
-                <Link to="/terms"     className="hover:underline" style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>AGB</Link>
-                <Link to="/privacy"   className="hover:underline" style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>Datenschutz</Link>
-                <Link to="/impressum" className="hover:underline" style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>Impressum</Link>
+              {/* Legal strip: own row, not running text → full tap targets.
+                  Wrapped labels keep their full accessible name. */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-0 min-h-[44px] text-[11px]">
+                <Link to="/terms"     className="flex items-center min-h-[44px] min-w-[44px] justify-center hover:underline" style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>AGB</Link>
+                <Link to="/privacy"   className="flex items-center min-h-[44px] min-w-[44px] justify-center hover:underline" style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>Datenschutz</Link>
+                <Link to="/impressum" className="flex items-center min-h-[44px] min-w-[44px] justify-center hover:underline" style={{ color: "var(--ja-auth-muted, #909090)", transition: t }}>Impressum</Link>
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import {
   ShieldCheck, ExternalLink, Bookmark, MapPin, Briefcase,
 } from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
+import useFocusTrap from "../hooks/useFocusTrap";
 import BrandMark from "../components/BrandMark";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -19,7 +20,13 @@ function useReveal(ref) {
   useEffect(() => {
     const root = ref?.current ?? document;
     const els = root.querySelectorAll(".lv5-reveal");
-    if (!els.length) return;
+    if (!els.length) return undefined;
+    // Fail visible: without IntersectionObserver (old WebViews, bots, blocked
+    // JS) the reveal-on-scroll animation must never leave content invisible.
+    if (typeof IntersectionObserver === "undefined") {
+      els.forEach((el) => el.classList.add("lv5-visible"));
+      return undefined;
+    }
     const obs = new IntersectionObserver(
       (entries) => { entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("lv5-visible"); obs.unobserve(e.target); } }); },
       { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
@@ -44,6 +51,25 @@ const NAV_LINKS = [
 
 function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const drawerRef = useRef(null);
+  useFocusTrap(mobileOpen, drawerRef);
+
+  // Escape closes the drawer while open.
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
+  // Lock background scroll while the drawer is open (mirrors AppShell).
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [mobileOpen]);
+
   return (
     <>
       {/* Floating pill navbar — desktop */}
@@ -68,13 +94,21 @@ function Nav() {
       {/* Mobile: static top bar */}
       <header className="lv5-header lg:hidden fixed top-0 inset-x-0 z-50 bg-white border-b border-[#e8e8e5]">
         <div className="flex items-center justify-between h-[60px] px-4">
-          <a href="#hero" className="flex items-center gap-2.5 flex-shrink-0" aria-label="JobAssist Startseite">
+          <a href="#hero" className="flex items-center gap-2.5 flex-shrink-0 min-h-[44px]" aria-label="JobAssist Startseite">
             <BrandMark size="sm" />
             <span className="text-[16px] font-bold tracking-[-0.02em] text-[#111]">JobAssist</span>
           </a>
-          <div className="flex items-center gap-3">
-            <Link to="/register" className="inline-flex items-center h-[36px] px-4 rounded-full text-white text-[13px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
-            <button type="button" onClick={() => setMobileOpen(true)} className="grid place-items-center w-10 h-10 rounded-sm text-[#111]" aria-label="Menü öffnen">
+          <div className="flex items-center gap-1">
+            {/* Single line at 320px: shorter label + tighter padding on xs,
+                full wording from xs onward (one line there regardless). */}
+            <Link
+              to="/register"
+              className="inline-flex items-center h-[44px] px-3.5 xs:px-4 whitespace-nowrap rounded-full text-white text-[12.5px] xs:text-[13px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150"
+            >
+              <span className="xs:hidden">Starten</span>
+              <span className="hidden xs:inline">Kostenlos starten</span>
+            </Link>
+            <button type="button" onClick={() => setMobileOpen(true)} className="grid place-items-center min-w-[44px] min-h-[44px] rounded-sm text-[#111]" aria-label="Menü öffnen" aria-expanded={mobileOpen} aria-haspopup="dialog">
               <Menu className="w-5 h-5" />
             </button>
           </div>
@@ -84,17 +118,23 @@ function Nav() {
       {mobileOpen && (
         <>
           <div className="fixed inset-0 z-[60] bg-black/40 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />
-          <aside className="fixed inset-y-0 right-0 z-[70] w-[85vw] max-w-sm flex flex-col bg-white lg:hidden">
+          <aside
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigationsmenü"
+            className="fixed inset-y-0 right-0 z-[70] w-[85vw] max-w-sm flex flex-col bg-white lg:hidden"
+          >
             <div className="flex items-center justify-between h-[60px] px-4 border-b border-[#e8e8e5]">
               <span className="flex items-center gap-2.5 text-[16px] font-bold text-[#111]"><BrandMark size="sm" />JobAssist</span>
-              <button type="button" onClick={() => setMobileOpen(false)} className="grid place-items-center w-10 h-10 rounded-sm text-[#111]" aria-label="Menü schließen"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setMobileOpen(false)} className="grid place-items-center min-w-[44px] min-h-[44px] rounded-sm text-[#111]" aria-label="Menü schließen"><X className="w-5 h-5" /></button>
             </div>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
               {NAV_LINKS.map((l) => (
-                <a key={l.label} href={l.href} onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-sm text-[15px] font-medium text-[#111]">{l.label}</a>
+                <a key={l.label} href={l.href} onClick={() => setMobileOpen(false)} className="flex items-center min-h-[44px] px-3 py-2.5 rounded-sm text-[15px] font-medium text-[#111]">{l.label}</a>
               ))}
               <hr className="my-3 border-[#e8e8e5]" />
-              <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-sm text-[15px] font-medium text-[#111]">Anmelden</Link>
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="flex items-center min-h-[44px] px-3 py-2.5 rounded-sm text-[15px] font-medium text-[#111]">Anmelden</Link>
             </nav>
           </aside>
         </>
@@ -203,7 +243,7 @@ function RepoPreview() {
       <div className="p-4 font-mono text-[11.5px] leading-relaxed text-[#565656]">
         <div className="text-[#111]">JobAssist/</div>
         <div className="ml-3">├── backend/</div><div className="ml-3">├── frontend/</div><div className="ml-3">├── docs/</div>
-        <div className="ml-3">├── extension/</div><div className="ml-3">├── README.md</div><div className="ml-3">└── LICENSE</div>
+        <div className="ml-3">├── chrome-extension/</div><div className="ml-3">├── README.md</div><div className="ml-3">└── LICENSE</div>
       </div>
       <div className="px-4 pb-4 flex flex-wrap gap-1.5">
         {["React","FastAPI","PostgreSQL","AGPL-3.0"].map(t => (
@@ -470,7 +510,7 @@ export default function LandingPage() {
         <section id="hero" className="relative pt-[100px] pb-[48px] md:pt-[112px] md:pb-[56px] overflow-hidden bg-white">
           <div className="mx-auto max-w-[1280px] px-4 md:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-start min-w-0">
-              <div className="lg:col-span-5 min-w-0">
+              <div className="lg:col-span-5 min-w-0 flex flex-col">
                 <div className="lv5-reveal flex items-center gap-2 mb-4">
                   <span aria-hidden className="block w-0 h-0" style={{ borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: "7px solid #e30613" }} />
                   <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#e30613]">Für Österreich. Für deine Karriere.</span>
@@ -482,7 +522,7 @@ export default function LandingPage() {
                 <p className="lv5-reveal lv5-delay-2 mt-4 text-[15.5px] leading-[1.6] max-w-[440px] text-[#565656]">
                   JobAssist unterstützt dich bei jedem Schritt deiner Bewerbung — vom Lebenslauf bis Gehaltscheck.
                 </p>
-                <ul className="lv5-reveal lv5-delay-3 mt-5 space-y-2">
+                <ul className="lv5-reveal lv5-delay-3 mt-3 sm:mt-5 space-y-1.5 sm:space-y-2 max-[767px]:order-10">
                   {[
                     "Lebenslauf & Anschreiben in Minuten erstellen",
                     "Stellen auf unterstützten österreichischen Jobbörsen finden",
@@ -494,17 +534,24 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <div className="lv5-reveal lv5-delay-4 mt-7 flex flex-col sm:flex-row items-start gap-3">
+                <div className="lv5-reveal lv5-delay-4 mt-3 mb-1 flex flex-col sm:flex-row items-start gap-3 sm:mt-7 sm:mb-0">
+                  {/* On phones the CTA row is pulled ABOVE the feature list
+                      (order utilities below): the fixed cookie banner occupies
+                      the lower ~110–145px of the viewport (145px with a 34px
+                      notch inset) and the hero CTA must stay fully clear of
+                      it (asserted in the mobile-compat suite, including the
+                      simulated 34px inset). Desktop keeps the list above the
+                      buttons — identical desktop layout. */}
                   <Link to="/register" className="inline-flex items-center h-[44px] px-6 rounded-[3px] text-white text-[14px] font-semibold bg-[#e30613] hover:bg-[#c9000b] transition-colors duration-150">Kostenlos starten</Link>
                   <a href="#funktionen" className="inline-flex items-center gap-2 h-[44px] px-6 rounded-[3px] border border-[#dcdcd8] text-[14px] font-medium text-[#111] hover:border-[#e30613] transition-colors duration-150">
                     <Play className="w-3 h-3" /> So funktioniert&apos;s
                   </a>
                 </div>
-                <div className="lv5-reveal lv5-delay-4 mt-5 flex items-center gap-3 text-[12px] text-[#6f6f6f]">
+                <div className="lv5-reveal lv5-delay-4 mt-5 flex items-center gap-3 text-[12px] text-[#6f6f6f] max-[767px]:order-20">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Transparent. Open Source. AGPL-3.0.</span>
                   <span aria-hidden className="w-px h-3 bg-[#e8e8e5]" />
-                  <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="font-medium hover:underline text-[#4f4f4f]">Quellcode auf GitHub</a>
+                  <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="tap-44 inline-flex items-center font-medium hover:underline text-[#4f4f4f]">Quellcode auf GitHub</a>
                 </div>
               </div>
               <div className="lg:col-span-7 lv5-reveal lv5-delay-2 min-w-0">
@@ -549,16 +596,16 @@ export default function LandingPage() {
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 h-[42px] px-5 rounded-[3px] border border-[#111] text-[13px] font-semibold text-[#111] hover:bg-[#111] hover:text-white transition-colors duration-150">
+                  className="tap-44 inline-flex items-center gap-2 h-[42px] px-5 rounded-[3px] border border-[#111] text-[13px] font-semibold text-[#111] hover:bg-[#111] hover:text-white transition-colors duration-150">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
                   Auf GitHub ansehen
                 </a>
-                <a href="https://github.com/davorrr/JobAssist#readme" target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[#5f5f5f] hover:text-[#111] transition-colors">Dokumentation →</a>
+                <a href="https://github.com/davorrr/JobAssist#readme" target="_blank" rel="noopener noreferrer" className="tap-44 inline-flex items-center text-[13px] font-medium text-[#5f5f5f] hover:text-[#111] transition-colors">Dokumentation →</a>
               </div>
               <div className="mt-5 pt-3 border-t border-[#e8e8e5] flex flex-wrap items-center gap-3">
                 <span className="text-[12px] font-medium text-[#111]">Mitentwickeln?</span>
                 <span className="text-[12px] text-[#5f5f5f]">Bugs melden, Scraper reparieren oder neue Features beitragen.</span>
-                <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-[#e30613] hover:text-[#c9000b] transition-colors duration-150">Zum Repository <ExternalLink className="w-3 h-3" /></a>
+                <a href="https://github.com/davorrr/JobAssist" target="_blank" rel="noopener noreferrer" className="tap-44 inline-flex items-center gap-1 text-[12px] font-medium text-[#e30613] hover:text-[#c9000b] transition-colors duration-150">Zum Repository <ExternalLink className="w-3 h-3" /></a>
               </div>
             </div>
             <div className="lg:col-span-6 lv5-reveal lv5-delay-2 min-w-0"><RepoPreview /></div>
@@ -617,7 +664,7 @@ export default function LandingPage() {
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Produkt</h4>
               <div className="flex flex-col gap-2">
                 {[{label:"Funktionen",href:"#funktionen"},{label:"KV-Check",href:"#funktionen"},{label:"Jobbörsen",href:"#funktionen"},{label:"Bewerbungs-Tracker",href:"#funktionen"}].map(l=>(
-                  <a key={l.label} href={l.href} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
+                  <a key={l.label} href={l.href} className="flex items-center min-h-[44px] md:min-h-0 text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
                 ))}
               </div>
             </div>
@@ -625,7 +672,7 @@ export default function LandingPage() {
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Open Source</h4>
               <div className="flex flex-col gap-2">
                 {[{label:"GitHub",href:"https://github.com/davorrr/JobAssist"},{label:"Dokumentation",href:"https://github.com/davorrr/JobAssist#readme"},{label:"Lizenz (AGPL-3.0)",href:"https://github.com/davorrr/JobAssist/blob/main/LICENSE"}].map(l=>(
-                  <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
+                  <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="flex items-center min-h-[44px] md:min-h-0 text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
                 ))}
               </div>
             </div>
@@ -633,7 +680,7 @@ export default function LandingPage() {
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Ressourcen</h4>
               <div className="flex flex-col gap-2">
                 {[{label:"So funktioniert's",href:"#funktionen"},{label:"FAQ",href:"#faq"},{label:"Open Source",href:"#open-source"}].map(l=>(
-                  <a key={l.label} href={l.href} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
+                  <a key={l.label} href={l.href} className="flex items-center min-h-[44px] md:min-h-0 text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</a>
                 ))}
               </div>
             </div>
@@ -641,11 +688,11 @@ export default function LandingPage() {
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Rechtliches</h4>
               <div className="flex flex-col gap-2 mb-4">
                 {[{label:"Datenschutz",to:"/privacy"},{label:"AGB",to:"/terms"},{label:"Impressum",to:"/impressum"}].map(l=>(
-                  <Link key={l.label} to={l.to} className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</Link>
+                  <Link key={l.label} to={l.to} className="flex items-center min-h-[44px] md:min-h-0 text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">{l.label}</Link>
                 ))}
               </div>
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-3 text-[#6f6f6f]">Kontakt</h4>
-              <a href="mailto:hallo@jobassist.tech" className="text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
+              <a href="mailto:hallo@jobassist.tech" className="flex items-center min-h-[44px] md:min-h-0 text-[13px] text-[#5f5f5f] hover:text-[#111] transition-colors">hallo@jobassist.tech</a>
             </div>
           </div>
         </div>

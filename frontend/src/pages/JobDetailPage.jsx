@@ -268,7 +268,7 @@ export default function JobDetailPage() {
                 onClick={() => navigate("/jobs")}
                 aria-label="Stelle schließen und zur Liste zurückkehren"
                 title="Stelle schließen"
-                className={`inline-flex items-center gap-1 h-8 px-2 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
+                className={`inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 sm:h-8 px-2 rounded-md text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
                 Stellen schließen
@@ -287,7 +287,7 @@ export default function JobDetailPage() {
                 aria-haspopup="menu"
                 aria-expanded={statusOpen}
                 aria-label={`Status ändern: ${currentStatusLabel}`}
-                className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[12px] font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
+                className={`inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg text-[12px] font-medium text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
               >
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusDot }} aria-hidden="true" />
                 <span className="hidden sm:inline">{currentStatusLabel}</span>
@@ -303,7 +303,7 @@ export default function JobDetailPage() {
                       role="menuitem"
                       onClick={() => { handleStatusChange(s.key); setStatusOpen(false); }}
                       disabled={statusMutation.loading || job.status === s.key}
-                      className={`flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] disabled:opacity-40 cursor-pointer ${FOCUS}`}
+                      className={`flex items-center gap-2.5 w-full px-3.5 min-h-[44px] py-2 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] disabled:opacity-40 cursor-pointer ${FOCUS}`}
                     >
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} aria-hidden="true" />
                       {s.label}
@@ -320,7 +320,7 @@ export default function JobDetailPage() {
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 aria-label="Mehr Aktionen"
-                className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
+                className={`inline-flex items-center justify-center h-11 w-11 -m-1.5 sm:m-0 sm:h-8 sm:w-8 rounded-lg text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-1)] transition-colors ${FOCUS}`}
               >
                 <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -329,7 +329,7 @@ export default function JobDetailPage() {
                   type="button"
                   role="menuitem"
                   onClick={() => { setEditOpen(true); setMenuOpen(false); }}
-                  className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] ${FOCUS}`}
+                  className={`flex items-center gap-2.5 w-full px-3.5 min-h-[44px] py-2.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-3)] ${FOCUS}`}
                 >
                   <Edit3 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" /> Bearbeiten
                 </button>
@@ -338,7 +338,7 @@ export default function JobDetailPage() {
                   type="button"
                   role="menuitem"
                   onClick={async () => { setMenuOpen(false); if (await askDelete()) handleDelete(); }}
-                  className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)] ${FOCUS}`}
+                  className={`flex items-center gap-2.5 w-full px-3.5 min-h-[44px] py-2.5 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-bg-elev-3)] ${FOCUS}`}
                 >
                   <Trash2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" /> Stelle löschen
                 </button>
@@ -381,7 +381,7 @@ export default function JobDetailPage() {
                     onClick={() => setRouteOpen((open) => !open)}
                     aria-haspopup="menu"
                     aria-expanded={routeOpen}
-                    className={`min-h-8 sm:min-h-0 inline-flex items-center gap-1.5 rounded-md text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
+                    className={`min-h-[44px] sm:min-h-0 inline-flex items-center gap-1.5 rounded-md text-[var(--color-accent-500)] hover:text-[var(--color-accent-600)] transition-colors ${FOCUS}`}
                   >
                     <Navigation className="w-3.5 h-3.5" aria-hidden="true" />
                     Route ab aktuellem Standort
@@ -399,7 +399,7 @@ export default function JobDetailPage() {
                         rel="noopener noreferrer"
                         role="menuitem"
                         onClick={() => setRouteOpen(false)}
-                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-3)] hover:text-[var(--color-fg)] ${FOCUS}`}
+                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 min-h-[44px] py-2 text-[13px] text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-elev-3)] hover:text-[var(--color-fg)] ${FOCUS}`}
                       >
                         {route.label}
                         <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />

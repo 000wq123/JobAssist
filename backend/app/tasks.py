@@ -12,11 +12,10 @@ import traceback
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import or_, select, update
+from sqlalchemy import select, update
 
 from app.core import metrics
 from app.core.advisory_lock import try_advisory_lock
-from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.user import User
 
@@ -98,10 +97,8 @@ async def run_due_job_alerts() -> None:
 
 
 async def _run_due_job_alerts_inner() -> None:
-    from app.api.routes.job_alerts import _make_unsubscribe_token
+    from app.api.routes.job_alerts import _deliver_alert
     from app.models.job_alert import JobAlert
-    from app.services.email_service import send_job_alert_email
-    from app.services.job_search import search_jobs
 
     now = datetime.now(timezone.utc)
     BATCH = 100
@@ -140,57 +137,11 @@ async def _run_due_job_alerts_inner() -> None:
                 if not due:
                     continue
 
-                # Atomically claim the alert via conditional UPDATE so concurrent
-                # manual runs (which stamp last_sent_at before sending) prevent
-                # this scheduler tick from also sending — no duplicate emails.
-                async with AsyncSessionLocal() as claim_session:
-                    claim_stmt = (
-                        update(JobAlert)
-                        .where(
-                            JobAlert.id == alert.id,
-                            or_(
-                                JobAlert.last_sent_at.is_(None),
-                                JobAlert.last_sent_at <= threshold,
-                            ),
-                        )
-                        .values(last_sent_at=now)
-                        .execution_options(synchronize_session=False)
-                    )
-                    claim_result = await claim_session.execute(claim_stmt)
-                    await claim_session.commit()
-
-                if claim_result.rowcount == 0:
-                    logger.info(
-                        "job_alert_scheduler: skipping alert %s — already sent recently",
-                        alert.id,
-                    )
-                    continue
-
-                results = await search_jobs(
-                    keywords=alert.keywords,
-                    location=alert.location or "",
-                    job_type=alert.job_type or "",
-                    page=1,
-                    use_cache=False,  # scheduler must see fresh upstream data
+                await _deliver_alert(
+                    alert.id,
+                    sent_before=threshold,
+                    use_cache=False,
                 )
-                jobs = results.get("jobs", [])
-                if jobs:
-                    token = _make_unsubscribe_token(alert.id)
-                    app_url = getattr(settings, "FRONTEND_URL", "https://jobassist.tech")
-                    unsubscribe_url = f"{app_url}/unsubscribe?token={token}"
-                    await asyncio.to_thread(
-                        send_job_alert_email,
-                        to_email=alert.email,
-                        keywords=alert.keywords,
-                        location=alert.location or "",
-                        jobs=jobs,
-                        unsubscribe_url=unsubscribe_url,
-                    )
-                    logger.info(
-                        "Job alert sent: id=%s job_count=%s",
-                        alert.id,
-                        len(jobs),
-                    )
             except Exception:
                 traceback.print_exc()
 

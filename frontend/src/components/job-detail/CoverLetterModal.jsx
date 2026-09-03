@@ -87,12 +87,12 @@ export default function CoverLetterModal({ open, onClose, job, followUpDays = 10
           <div className="col-span-3 justify-self-end flex items-center gap-1">
             <button
               onClick={() => { navigator.clipboard.writeText(job.cover_letter); setCopied(true); setTimeout(() => setCopied(false), 2000); toast.success("Kopiert"); }}
-              className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
+              className="grid place-items-center h-11 w-11 -m-1.5 md:m-0 md:w-8 md:h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]"
               title="Kopieren"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            <button onClick={onClose} className="grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
+            <button onClick={onClose} className="grid place-items-center h-11 w-11 -m-1.5 md:m-0 md:w-8 md:h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)]" aria-label="Schließen">
               <X className="w-4 h-4" />
             </button>
           </div>

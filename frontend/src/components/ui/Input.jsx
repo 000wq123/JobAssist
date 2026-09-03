@@ -7,6 +7,10 @@ const SIZE_CLS = {
   lg: "h-10 px-3.5 text-sm rounded-lg",
 };
 
+// Touch: every Input reaches a 44px hit area on phones while desktop keeps
+// its compact size (WCAG 2.5.5; audited by mobile-compat.spec.js).
+const TOUCH_MIN_H = "min-h-[44px]";
+
 /**
  * Input primitive — text inputs, search, email, password, etc.
  * Uses border + bg-input pattern (no shadows, no gradients).
@@ -35,6 +39,7 @@ const Input = forwardRef(function Input(
           ? "border-[var(--color-error)] focus:border-[var(--color-error)]"
           : "border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)]",
         SIZE_CLS[size],
+        TOUCH_MIN_H,
         leadingIcon && "pl-9",
         trailingIcon && "pr-9",
         className,

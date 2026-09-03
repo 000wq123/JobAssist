@@ -8,6 +8,7 @@ Docs: https://jooble.org/api/docs
 from __future__ import annotations
 
 import logging
+import re
 import time
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
@@ -212,19 +213,17 @@ async def search_jooble(
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-import re as _re
-
 
 def _extract_salary_min(raw: str | None) -> float | None:
     if not raw:
         return None
     # Match patterns like "€2500", "€ 2 500 - 3 000", "2000-3000"
-    nums = [float(n.replace(" ", "").replace(",", "")) for n in _re.findall(r"[\d\s,]+", raw) if n.strip()]
+    nums = [float(n.replace(" ", "").replace(",", "")) for n in re.findall(r"[\d\s,]+", raw) if n.strip()]
     return nums[0] if nums else None
 
 
 def _extract_salary_max(raw: str | None) -> float | None:
     if not raw:
         return None
-    nums = [float(n.replace(" ", "").replace(",", "")) for n in _re.findall(r"[\d\s,]+", raw) if n.strip()]
+    nums = [float(n.replace(" ", "").replace(",", "")) for n in re.findall(r"[\d\s,]+", raw) if n.strip()]
     return nums[-1] if len(nums) > 1 else None

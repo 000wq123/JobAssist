@@ -68,7 +68,7 @@ export default function StepSchule({ profile, onChange, errors = {} }) {
               const v = e.target.value;
               onChange({ abschlussjahr: v ? Number(v) : null });
             }}
-            className="h-9 w-full rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)]"
+            className="h-11 w-full rounded-md border border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-accent-500)] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.15)] focus:outline-none bg-[var(--color-bg-input)] px-3 text-[13px] text-[var(--color-fg)]"
           >
             <option value="" className="bg-[var(--color-bg-elev-1)]">— Jahr wählen —</option>
             {YEAR_OPTIONS.map((y) => (

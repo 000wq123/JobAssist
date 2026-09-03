@@ -2,7 +2,7 @@
  * Shared domain types for the JobAssist frontend.
  *
  * These types mirror the backend Pydantic schemas so that props, API
- * responses, and Zustand state are statically checked.
+ * responses, and application state are statically checked.
  */
 
 export interface Job {

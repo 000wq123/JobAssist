@@ -3,7 +3,7 @@
 All Stripe API calls are mocked; only the DB logic is exercised against a
 real SQLite database to verify subscription state transitions.
 """
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -113,7 +113,7 @@ async def test_webhook_checkout_completed_upgrades_plan(billing_env):
     client = billing_env["client"]
     session_factory = billing_env["session_factory"]
 
-    tokens = await _register(client)
+    await _register(client)
     async with session_factory() as session:
         user = (await session.execute(select(User).where(User.email == "billing@gmail.com"))).scalar_one()
 

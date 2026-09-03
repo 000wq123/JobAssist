@@ -150,7 +150,8 @@ async def init(
     )
     profile = profile_result.scalar_one_or_none()
 
-    # 2. Fire independent reads concurrently.
+    # 2. Keep reads sequential: one request owns one AsyncSession, and an
+    # AsyncSession is not safe to use from concurrent asyncio tasks.
     async def _resumes():
         result = await db.execute(
             select(Resume)
@@ -208,9 +209,11 @@ async def init(
             "updated_at": cv.updated_at,
         }
 
-    resumes, resumes_total, plan, jobs_summary, cv_profile = await asyncio.gather(
-        _resumes(), _resumes_total(), _plan(), _jobs_summary(), _cv_profile()
-    )
+    resumes = await _resumes()
+    resumes_total = await _resumes_total()
+    plan = await _plan()
+    jobs_summary = await _jobs_summary()
+    cv_profile = await _cv_profile()
 
     # 3. Usage depends on plan, so it runs after.
     usage = await get_all_usage(db, current_user.id, plan)

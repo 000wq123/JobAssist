@@ -239,13 +239,12 @@ export default function Sidebar({ me, profile, onCommandClick }) {
                     key={t}
                     type="button"
                     onClick={() => setTheme(t)}
-                    className="grid place-items-center w-8 h-8 rounded-md transition-colors duration-100 cursor-pointer"
+                    className="grid place-items-center h-11 w-11 -m-2 md:m-0 md:w-8 md:h-8 rounded-md transition-colors duration-100 cursor-pointer"
                     style={{
                       background: isActive ? "var(--app-surface-hover, rgba(0,0,0,0.04))" : "transparent",
                       color: isActive ? "var(--app-text, #171717)" : "var(--app-text-muted, #888)",
                     }}
-                    title={label}
-                    aria-label={label}
+                    aria-label={`${label} Theme`}
                     aria-pressed={isActive}
                   >
                     <Icon className="w-[15px] h-[15px]" />

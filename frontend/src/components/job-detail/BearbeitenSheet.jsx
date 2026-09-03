@@ -54,7 +54,7 @@ export default function BearbeitenSheet({ open, onClose, job, resumes, selectedR
       <div ref={dialogRef} className="w-full sm:max-w-md grid grid-cols-12 gap-0 rounded-t-2xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev-1)] shadow-2xl shadow-black/60">
         <div className="col-span-12 grid grid-cols-12 items-center px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
           <h2 id="bearbeiten-title" className="col-span-10 text-[14px] font-semibold tracking-tight text-[var(--color-fg)]">Bearbeiten</h2>
-          <button onClick={onClose} disabled={savingMeta} className="col-span-2 justify-self-end grid place-items-center w-8 h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-50" aria-label="Schließen">
+          <button onClick={onClose} disabled={savingMeta} className="col-span-2 justify-self-end grid place-items-center h-11 w-11 -m-1.5 md:m-0 md:w-8 md:h-8 rounded-md text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-elev-2)] disabled:opacity-50" aria-label="Schließen">
             <X className="w-4 h-4" />
           </button>
         </div>

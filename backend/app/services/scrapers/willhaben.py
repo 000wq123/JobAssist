@@ -67,7 +67,7 @@ def _parse_entry(entry: dict) -> Optional[dict]:
         return None
 
     locations = entry.get("jobLocations") or []
-    location = _strip(", ".join(l["name"] for l in locations if l.get("name")))
+    location = _strip(", ".join(location["name"] for location in locations if location.get("name")))
 
     company = (entry.get("company") or {}).get("title") or ""
 

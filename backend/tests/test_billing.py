@@ -4,7 +4,7 @@ Stripe calls and DB are mocked — no network or database required.
 """
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import HTTPException

@@ -8,7 +8,7 @@ validated here.
 
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class CvLibraryEntryIn(BaseModel):

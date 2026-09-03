@@ -41,12 +41,12 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
         <div className="mx-auto grid max-w-[1200px] grid-cols-12 items-center gap-4 px-5 py-5 sm:px-8">
           <Link
             to="/"
-            className="col-span-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
+            className="col-span-6 inline-flex items-center gap-1.5 min-h-[44px] text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Zur Startseite
           </Link>
-          <Link to="/" className="col-span-6 flex items-center gap-2 justify-self-end">
+          <Link to="/" className="col-span-6 flex items-center gap-2 justify-self-end min-h-[44px]">
             <BrandMark size="md" />
             <span className="text-[15px] font-semibold tracking-tight text-[var(--color-fg)]">JobAssist</span>
           </Link>
@@ -72,12 +72,13 @@ export default function LegalLayout({ children, title, subtitle, wide = false })
             </div>
             {children}
 
-            {/* Footer link strip */}
-            <div className="mt-10 mb-4 pt-6 border-t border-[var(--color-border-subtle)] flex flex-wrap justify-center gap-5 text-[12px] text-[var(--color-fg-dim)]">
-              <Link to="/terms"     className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">AGB</Link>
-              <Link to="/privacy"   className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Datenschutz</Link>
-              <Link to="/impressum" className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Impressum</Link>
-              <Link to="/contact"   className="underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Kontakt</Link>
+            {/* Footer strip sits in its own row (not running text), so every
+                link is a full tap target — no inline exemption here. */}
+            <div className="mt-10 mb-4 pt-6 border-t border-[var(--color-border-subtle)] flex flex-wrap items-center justify-center gap-x-5 gap-y-0 min-h-[44px] text-[12px] text-[var(--color-fg-dim)]">
+              <Link to="/terms"     className="flex items-center min-h-[44px] min-w-[44px] justify-center underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">AGB</Link>
+              <Link to="/privacy"   className="flex items-center min-h-[44px] min-w-[44px] justify-center underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Datenschutz</Link>
+              <Link to="/impressum" className="flex items-center min-h-[44px] min-w-[44px] justify-center underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Impressum</Link>
+              <Link to="/contact"   className="flex items-center min-h-[44px] min-w-[44px] justify-center underline decoration-dotted underline-offset-2 hover:text-[var(--color-accent-400)] transition-colors">Kontakt</Link>
             </div>
           </div>
         </div>

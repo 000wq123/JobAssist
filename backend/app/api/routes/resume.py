@@ -20,11 +20,14 @@ router = APIRouter()
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 MAX_RAW_TEXT_LENGTH = 100_000  # 100k chars — prevents unbounded DB growth
 MAX_RESUMES_PER_USER = 10
+PDF_PARSE_TIMEOUT_SECONDS = 10
 
 
 def _sanitize_filename(name: str) -> str:
     """Strip path traversal and control characters from uploaded filenames."""
-    import os, re
+    import os
+    import re
+
     base = os.path.basename(name)
     return re.sub(r"[^\w.\-]", "_", base)[:120]
 
@@ -51,20 +54,15 @@ async def upload_resume(
         chunks.append(chunk)
     file_bytes = b"".join(chunks)
 
-    # Validate actual file content — content_type header is client-controlled and untrustworthy
-    is_pdf = file_bytes[:4] == b"%PDF"
-    is_text = False
-    if not is_pdf:
-        try:
-            file_bytes.decode("utf-8")
-            is_text = True
-        except UnicodeDecodeError:
-            pass
-    if not is_pdf and not is_text:
-        raise HTTPException(status_code=400, detail="Only PDF and TXT files are supported")
-
     try:
-        raw_text = extract_resume_text(file.filename, file_bytes)
+        # PDF parsing is CPU-bound and malformed PDFs can be expensive. Keep it
+        # off the event loop and cap how long the request waits for it.
+        raw_text = await asyncio.wait_for(
+            asyncio.to_thread(extract_resume_text, file.filename, file_bytes),
+            timeout=PDF_PARSE_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        raise HTTPException(status_code=408, detail="PDF processing timed out")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
